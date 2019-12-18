@@ -1,0 +1,33 @@
+{
+  "name": "sol2ligo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madfish-solutions/sol2ligo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/madfish-solutions/sol2ligo/issues"
+  },
+  "homepage": "https://github.com/madfish-solutions/sol2ligo#readme",
+  "dependencies": {
+    "ast4gen": "github:hu2prod/ast4gen",
+    "fy": "github:hu2prod/fy",
+    "minimist": "^1.2.0",
+    "solc": "^0.5.14",
+    "type": "github:hu2prod/type"
+  },
+  "devDependencies": {
+    "iced-coffee-coverage": "^1.0.21",
+    "iced-coffee-script": "^108.0.11",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0"
+  }
+}
