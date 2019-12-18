@@ -8,13 +8,17 @@ solc_hash = {}
 module.exports = (code, opt={})->
   {
     solc_version
+    suggest_solc_version
     auto_version
+    debug
   } = opt
   
   solc_full_name = null
   auto_version ?= true
   
   pick_version = (candidate_version)->
+    if debug
+      p "try pick_version #{candidate_version}" # DEBUG
     if full_name = release_hash[candidate_version]
       solc_full_name = full_name
     else
@@ -22,11 +26,16 @@ module.exports = (code, opt={})->
   
   if auto_version and !solc_version?
     # HACKY WAY
-    header = code.split('\n')[0].trim()
+    header = code.trim().split('\n')[0].trim()
     if reg_ret = /^pragma solidity \^?([.0-9]+);/.exec header
+      pick_version reg_ret[1]
+    else if reg_ret = /^pragma solidity >=([.0-9]+)/.exec header
       pick_version reg_ret[1]
   else if solc_version
     pick_version solc_version
+  
+  if !solc_full_name and suggest_solc_version
+    pick_version suggest_solc_version
   
   solc_full_name ?= "soljson-latest.js"
   
@@ -34,6 +43,8 @@ module.exports = (code, opt={})->
     puts "loading solc #{solc_full_name}"
     solc_hash[solc_full_name] = solc = setupMethods(require("../solc-bin/bin/#{solc_full_name}"))
   
+  if debug
+    p "use #{solc_full_name}" # DEBUG
   input = {
       language: 'Solidity',
       sources: {
