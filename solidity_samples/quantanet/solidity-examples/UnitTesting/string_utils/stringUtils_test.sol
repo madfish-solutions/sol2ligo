@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+import "https://github.com/vird/truffle/blob/develop/packages/core/lib/testing/Assert.sol";
 import "./stringUtils.sol";
 
 contract strTest {
@@ -13,7 +14,9 @@ contract strTest {
     function stringCompareTest() public {
         string memory str_1 = "hello World";
         string memory str_2 = "hello World";
-        Assert.ok(str_1.stringCompare(str_2), "working");
+        //Assert.ok(str_1.stringCompare(str_2), "working");
+        // TMP FIX
+        assert(str_1.stringCompare(str_2));
     }
 
     function stringLenTest() public {

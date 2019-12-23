@@ -2,7 +2,7 @@ pragma solidity ^0.4.16;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
-import {Bytes} from "../src/bytes/Bytes.sol";
+import {Bytes} from "../../src/bytes/Bytes.sol";
 
 
 contract BytesExamples {
@@ -58,14 +58,19 @@ contract BytesExamples {
         bytes memory bts1 = hex"0304";
 
         // Copy with start index.
-        var bts0Copy1 = bts0.copy(2);
+        // var bts0Copy1 = bts0.copy(2);
+        // TMP FIX
+        var bts0Copy1 = bts0.copy();
 
         assert(bts0Copy1.equals(bts1));
 
         bytes memory bts2 = hex"0203";
 
         // Copy with start index and length.
-        var bts0Copy2 = bts0.copy(1, 2);
+        // var bts0Copy2 = bts0.copy(1, 2);
+        // TMP FIX
+        var bts0Copy2 = bts0.copy();
+        
 
         assert(bts0Copy2.equals(bts2));
     }

@@ -1,4 +1,6 @@
 pragma solidity ^0.5.0;
+
+import "https://github.com/vird/truffle/blob/develop/packages/core/lib/testing/Assert.sol";
 import "./SafeMath.sol";
 
 contract safeMathTest {

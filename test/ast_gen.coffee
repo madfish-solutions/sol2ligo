@@ -1,5 +1,6 @@
 assert = require 'assert'
 ast_gen = require '../src/ast_gen'
+import_resolver = require '../src/import_resolver'
 fs_tree = require './walk_fs_tree'
 fs = require 'fs'
 
@@ -49,12 +50,12 @@ describe 'ast_gen section', ()->
   
   describe 'solidity samples', ()->
     fs_tree.walk "solidity_samples", (path)->
-      # strip all imports for now
-      code = fs.readFileSync path, 'utf-8'
-      return if /import/.test code
-      code = code.replace('pragma experimental "v0.5.0";', '')
       it path, ()->
-        @timeout 10000
+        # reasons for too long
+        # 10 sec foc compiler load
+        # 20 sec foc http(s) downloads
+        @timeout 30000
+        code = import_resolver path
         ast_gen code, {
           silent : true
           suggest_solc_version : '0.4.26'

@@ -78,7 +78,9 @@ contract PerfPatriciaTreeValidateProof1To10AverageCost is PatriciaTreeDataPerf, 
             bts[0] = byte(i);
             var (mask, siblings) = getProof(bts);
             uint gasPre = msg.gas;
-            verifyProof(root, bts, bts, mask, siblings);
+            //verifyProof(root, bts, bts, mask, siblings);
+            // TMP FIX
+            verifyProof(tree.root, bts, bts, mask, siblings);
             aggregateGas += gasPre - msg.gas;
         }
         return aggregateGas / uint(10);
@@ -98,7 +100,9 @@ contract PerfPatriciaTreeValidateProof91To100AverageCost is PatriciaTreeDataPerf
             bts[0] = byte(i);
             var (mask, siblings) = getProof(bts);
             uint gasPre = msg.gas;
-            verifyProof(root, bts, bts, mask, siblings);
+            //verifyProof(root, bts, bts, mask, siblings);
+            // TMP FIX
+            verifyProof(tree.root, bts, bts, mask, siblings);
             aggregateGas += gasPre - msg.gas;
         }
         return aggregateGas / uint(10);
@@ -118,7 +122,9 @@ contract PerfPatriciaTreeValidateProof191To200AverageCost is PatriciaTreeDataPer
             bts[0] = byte(i);
             var (mask, siblings) = getProof(bts);
             uint gasPre = msg.gas;
-            verifyProof(root, bts, bts, mask, siblings);
+            //verifyProof(root, bts, bts, mask, siblings);
+            // TMP FIX
+            verifyProof(tree.root, bts, bts, mask, siblings);
             aggregateGas += gasPre - msg.gas;
         }
         return aggregateGas / uint(10);

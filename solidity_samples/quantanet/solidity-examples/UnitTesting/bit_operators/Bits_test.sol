@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+import "https://github.com/vird/truffle/blob/develop/packages/core/lib/testing/Assert.sol";
 import "./Bits.sol";
 
 contract bitsTest {
@@ -21,13 +22,17 @@ contract bitsTest {
 
     function bitSetTest() public {
         uint a = 35; // 35 in binary 00100011 and 5th bit is set
-        Assert.ok(a.bitSet(5), "working");
+        // Assert.ok(a.bitSet(5), "working");
+        // TMP FIX
+        assert(a.bitSet(5));
     }
 
     function bitEqual() public {
         uint a = 3; // 3 in binary 11 and 2 in binary 10 1th bit is equal
         uint b = 2;
-        Assert.ok(a.bitEqual(b, 1), "working");
+        // Assert.ok(a.bitEqual(b, 1), "working");
+        // TMP FIX
+        assert(a.bitEqual(b, 1));
     }
 
     function bitsliceTest() public {

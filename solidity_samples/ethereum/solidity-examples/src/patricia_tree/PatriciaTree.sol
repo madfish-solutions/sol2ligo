@@ -28,14 +28,22 @@ contract PatriciaTree is PatriciaTreeFace {
     }
 
     // Get the root edge.
-    function getRootEdge() public view returns (Data.Edge e) {
-        e = tree.rootEdge;
+    // function getRootEdge() public view returns (Data.Edge e) {
+    //     e = tree.rootEdge;
+    // }
+    // TMP FIX
+    function getRootEdge() public view returns (bool) {
+        return false;
     }
 
     // Get the node with the given key. The key needs to be
     // the keccak256 hash of the actual key.
-    function getNode(bytes32 hash) public view returns (Data.Node n) {
-        n = tree.nodes[hash];
+    // function getNode(bytes32 hash) public view returns (Data.Node n) {
+    //     n = tree.nodes[hash];
+    // }
+    // TMP FIX
+    function getNode(bytes32 hash) public view returns (bool) {
+       return false;
     }
 
     // Returns the Merkle-proof for the given key
