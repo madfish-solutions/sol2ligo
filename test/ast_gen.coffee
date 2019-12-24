@@ -49,16 +49,19 @@ describe 'ast_gen section', ()->
       """, silent:true
   
   describe 'solidity samples', ()->
+    global.solidity_source_to_ast_hash = {}
     fs_tree.walk "solidity_samples", (path)->
+      global.solidity_source_to_ast_hash[path] = null
       it path, ()->
         # reasons for too long
         # 10 sec foc compiler load
         # 20 sec foc http(s) downloads
         @timeout 30000
         code = import_resolver path
-        ast_gen code, {
+        ast = ast_gen code, {
           silent : true
           suggest_solc_version : '0.4.26'
           debug : true
         }
+        global.solidity_source_to_ast_hash[path] = ast
   
