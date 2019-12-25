@@ -35,9 +35,19 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
   
   constructor:()->
     @list = []
-  
+
 class @Ternary
   cond: null
   t   : null
   f   : null
+
+class @New
+  cls : null
+  arg_list: []
+  constructor:()->
+    @arg_list = []
   
+
+class @Type_cast
+  target_type : null
+  t : null
