@@ -90,6 +90,8 @@ unpack_id_type = (root, ctx)->
       new Type "byte"
     when "uint256"
       new Type "uint"
+    when "int256"
+      new Type "int"
     else
       # puts root # temp disable
       throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")

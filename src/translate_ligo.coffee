@@ -36,20 +36,23 @@ config = require './config'
   ASS_DIV : (a, b)-> "#{a} := #{a} / #{b}"
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
-    "#{a}[#{b}]"
-  # INDEX_ACCESS : (a, b, ctx, ast)->
-  #   ret = if ctx.lvalue
-  #     "#{a}[#{b}]"
-  #   else
-  #     val = type2default_value ast.type
-  #     "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
-  #     # "get_force(#{b}, #{a})"
+    ret = if ctx.lvalue
+      "#{a}[#{b}]"
+    else
+      val = type2default_value ast.type
+      "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
+      # "get_force(#{b}, #{a})"
   # nat - nat edge case
-  # SUB : (a, b, ctx, ast)->
-  #   if ast.a.type.main == 't_uint256' and ast.b.type.main == 't_uint256'
-  #     "abs(#{a} - #{b})"
-  #   else
-  #     "(#{a} - #{b})"
+  SUB : (a, b, ctx, ast)->
+    if ast.a.type.main == 'uint' and ast.b.type.main == 'uint'
+      "abs(#{a} - #{b})"
+    else
+      "(#{a} - #{b})"
+
+@un_op_name_cb_map =
+  MINUS   : (a)->"-(#{a})"
+  PLUS    : (a)->"+(#{a})"
+  BIT_NOT : (a)->"not (#{a})"
 
 # ###################################################################################################
 #    type trans
@@ -62,6 +65,8 @@ translate_type = (type, ctx)->
     # ###################################################################################################
     when 'uint'
       'nat'
+    when 'int'
+      'int'
     when 'address'
       'address'
     # ###################################################################################################
@@ -93,7 +98,7 @@ translate_type = (type, ctx)->
       if ctx.type_decl_hash[type.main]
         type.main
       else
-        p ctx.type_decl_hash
+        puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
 type2default_value = (type)->
@@ -127,11 +132,12 @@ translate_var_name = (name)->
 # ###################################################################################################
 
 class @Gen_context
-  next_gen : null
+  next_gen          : null
   
-  is_class_decl : false
-  type_decl_hash: {}
-  contract_var_hash      : {}
+  is_class_decl     : false
+  lvalue            : false
+  type_decl_hash    : {}
+  contract_var_hash : {}
   
   constructor:()->
     @type_decl_hash = {}
@@ -143,7 +149,9 @@ class @Gen_context
     obj_set t.type_decl_hash, @type_decl_hash
     t
 
+last_bracket_state = false
 walk = (root, ctx)->
+  last_bracket_state = false
   switch root.constructor.name
     when "Scope"
       switch root.original_node_type
@@ -232,18 +240,6 @@ walk = (root, ctx)->
       else
         name
     
-    when "Bin_op"
-      # TODO lvalue ctx ???
-      _a = walk root.a, ctx
-      _b = walk root.b, ctx
-      
-      ret = if op = module.bin_op_name_map[root.op]
-        "(#{_a} #{op} #{_b})"
-      else if cb = module.bin_op_name_cb_map[root.op]
-        cb(_a, _b, ctx, root)
-      else
-        throw new Error "Unknown/unimplemented bin_op #{root.op}"
-    
     when "Const"
       switch root.type.main
         when "uint"
@@ -252,6 +248,28 @@ walk = (root, ctx)->
           JSON.stringify root.val
         else
           root.val
+    
+    when "Bin_op"
+      # TODO lvalue ctx ???
+      ctx_lvalue = ctx.mk_nest()
+      ctx_lvalue.lvalue = true if 0 == root.op.indexOf 'ASS'
+      _a = walk root.a, ctx_lvalue
+      _b = walk root.b, ctx
+      
+      ret = if op = module.bin_op_name_map[root.op]
+        last_bracket_state = true
+        "(#{_a} #{op} #{_b})"
+      else if cb = module.bin_op_name_cb_map[root.op]
+        cb(_a, _b, ctx, root)
+      else
+        throw new Error "Unknown/unimplemented bin_op #{root.op}"
+    
+    when "Un_op"
+      a = walk root.a, ctx
+      if cb = module.un_op_name_cb_map[root.op]
+        cb a, ctx
+      else
+        throw new Error "Unknown/unimplemented un_op #{root.op}"
     
     when "Field_access"
       t = walk root.t, ctx
@@ -280,18 +298,19 @@ walk = (root, ctx)->
     
     when "Var_decl"
       name = translate_var_name root.name
+      type = translate_type root.type, ctx
       if ctx.is_class_decl
         ctx.contract_var_hash[name] = true
-        "#{root.name}: #{translate_type root.type, ctx};"
+        "#{root.name}: #{type};"
       else
-        if ast.assign_value
-          val = walk ast.assign_value, ctx
+        if root.assign_value
+          val = walk root.assign_value, ctx
           """
           const #{name} : #{type} = #{val}
           """
         else
           """
-          const #{name} : #{type} = #{type2default_value ast.type}
+          const #{name} : #{type} = #{type2default_value root.type}
           """
     
     when "Ret_multi"
@@ -300,6 +319,15 @@ walk = (root, ctx)->
         jl.push walk v, ctx
       """
       with (#{jl.join ', '})
+      """
+    
+    when "If"
+      cond = walk root.cond,  ctx
+      cond = "(#{cond})" if !last_bracket_state
+      t    = walk root.t,     ctx
+      f    = walk root.f,     ctx
+      """
+      if #{cond} then #{t} else #{f};
       """
     
     when "Fn_decl_multiret"

@@ -5,6 +5,7 @@ ast   = require './ast'
 
 do ()=>
   walk = (root, ctx)->
+    {walk} = ctx
     switch root.constructor.name
       when "Scope"
         for v, idx in root.list
@@ -16,15 +17,14 @@ do ()=>
       when "Var", "Const"
         root
       
+      when "Un_op"
+        root.a = walk root.a, ctx
+        root
+      
       when "Bin_op"
-        if reg_ret = /^ASS_(.*)/.exec root.op
-          # TODO unpack...
-          p root
-          xxx
-        else
-          root.a = walk root.a, ctx
-          root.b = walk root.b, ctx
-          root
+        root.a = walk root.a, ctx
+        root.b = walk root.b, ctx
+        root
       
       when "Field_access"
         root.t = walk root.t, ctx
@@ -46,6 +46,12 @@ do ()=>
           root.t_list[idx] = walk v, ctx
         root
       
+      when "If"
+        root.cond = walk root.cond, ctx
+        root.t    = walk root.t,    ctx
+        root.f    = walk root.f,    ctx
+        root
+      
       when "Class_decl"
         root.scope = walk root.scope, ctx
         root
@@ -58,42 +64,41 @@ do ()=>
         puts root
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
-  
-  @ass_op_unpack = (root)->
-    walk root, {}
+  module.default_walk = walk
+
 
 do ()=>
   walk = (root, ctx)->
+    {walk} = ctx
     switch root.constructor.name
-      when "Scope"
-        for v, idx in root.list
-          root.list[idx] = walk v, ctx
-        root
-      # ###################################################################################################
-      #    expr
-      # ###################################################################################################
-      when "Var", "Const"
-        root
+      when "Bin_op"
+        if reg_ret = /^ASS_(.*)/.exec root.op
+          # TODO unpack...
+          p root
+          xxx
+        else
+          root.a = walk root.a, ctx
+          root.b = walk root.b, ctx
+          root
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @ass_op_unpack = (root)->
+    walk root, {walk, next_gen: module.default_walk}
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
       # ###################################################################################################
       #    stmt
       # ###################################################################################################
-      when "Var_decl", "Comment"
-        root
-      
-      when "Bin_op"
-        root.a = walk root.a, ctx
-        root.b = walk root.b, ctx
-        root
-      
       when "Ret_multi"
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
         root.t_list.unshift inject = new ast.Var
         inject.name = config.contract_storage
-        root
-      
-      when "Class_decl"
-        root.scope = walk root.scope, ctx
         root
       
       when "Fn_decl_multiret"
@@ -111,11 +116,10 @@ do ()=>
         root
       
       else
-        puts root
-        throw new Error "unknown root.constructor.name #{root.constructor.name}"
+        ctx.next_gen root, ctx
   
   @contract_storage_fn_decl_fn_call_ret_inject = (root)->
-    walk root, {}
+    walk root, {walk, next_gen: module.default_walk}
     
 
 

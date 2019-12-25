@@ -28,7 +28,7 @@ module = @
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
   MINUS : [
-    ['t_int256', 't_int256']
+    ['int', 'int']
   ]
 }
 # ###################################################################################################
@@ -36,11 +36,11 @@ module = @
 # ###################################################################################################
 for v in "ADD SUB MUL POW".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = [
-    ['t_uint256', 't_uint256', 't_uint256']
+    ['uint', 'uint', 'uint']
   ]
 for v in "EQ NE GT LT GTE LTE".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = [
-    ['t_uint256', 't_uint256', 'bool']
+    ['uint', 'uint', 'bool']
   ]
 # ###################################################################################################
 
@@ -73,15 +73,15 @@ class Ti_context
       return @parent.check_type _type
     throw new Error "can't find type '#{_type}'"
 
-class_prepare = (ctx, t)->
-  ctx.type_hash[t.name] = t
-  for v in t.scope.list
+class_prepare = (ctx, root)->
+  ctx.type_hash[root.name] = root
+  for v in root.scope.list
     switch v.constructor.name
       when "Var_decl"
-        t._prepared_field2type[v.name] = v.type
+        root._prepared_field2type[v.name] = v.type
       when "Fn_decl"
         # BUG внутри scope уже есть this и ему нужен тип...
-        t._prepared_field2type[v.name] = v.type
+        root._prepared_field2type[v.name] = v.type
   return
 
 is_not_a_type = (type)->
@@ -89,21 +89,21 @@ is_not_a_type = (type)->
 
 @gen = (ast_tree, opt)->
   # phase 1 bottom-to-top walk + type reference
-  walk = (t, ctx)->
-    switch t.constructor.name
+  walk = (root, ctx)->
+    switch root.constructor.name
       # ###################################################################################################
       #    expr
       # ###################################################################################################
       when "Var"
-        t.type = ctx.check_id t.name
+        root.type = ctx.check_id root.name
       
       when "Const"
-        t.type
+        root.type
       
       when "Bin_op"
-        list = module.bin_op_ret_type_hash_list[t.op]
-        a = (walk(t.a, ctx) or '').toString()
-        b = (walk(t.b, ctx) or '').toString()
+        list = module.bin_op_ret_type_hash_list[root.op]
+        a = (walk(root.a, ctx) or '').toString()
+        b = (walk(root.b, ctx) or '').toString()
         
         found = false
         if list
@@ -111,56 +111,56 @@ is_not_a_type = (type)->
             continue if tuple[0] != a
             continue if tuple[1] != b
             found = true
-            t.type = new Type tuple[2]
+            root.type = new Type tuple[2]
         
         # extra cases
         if !found
           # may produce invalid result
-          if t.op == 'ASSIGN'
-            t.type = t.a.type
+          if root.op == 'ASSIGN'
+            root.type = root.a.type
             found = true
-          else if t.op in ['EQ', 'NE']
-            t.type = new Type 'bool'
+          else if root.op in ['EQ', 'NE']
+            root.type = new Type 'bool'
             found = true
-          else if t.op == 'INDEX_ACCESS'
-            switch t.a.type.main
+          else if root.op == 'INDEX_ACCESS'
+            switch root.a.type.main
               when 'string'
-                t.type = new Type 'string'
+                root.type = new Type 'string'
                 found = true
               when 'map'
-                key = t.a.type.nest_list[0]
-                if !key.cmp t.b.type
-                  throw new Error("bad index access to '#{t.a.type}' with index '#{t.b.type}'")
-                t.type = t.a.type.nest_list[1]
+                key = root.a.type.nest_list[0]
+                if !key.cmp root.b.type
+                  throw new Error("bad index access to '#{root.a.type}' with index '#{root.b.type}'")
+                root.type = root.a.type.nest_list[1]
                 found = true
               # when 'array'
-                # t.type = t.a.type.nest_list[0]
+                # root.type = root.a.type.nest_list[0]
                 # found = true
               # when 'hash'
-                # t.type = t.a.type.nest_list[0]
+                # root.type = root.a.type.nest_list[0]
                 # found = true
               # when 'hash_int'
-                # t.type = t.a.type.nest_list[0]
+                # root.type = root.a.type.nest_list[0]
                 # found = true
         # if !found
-          # throw new Error "unknown bin_op=#{t.op} a=#{a} b=#{b}"
-        t.type
+          # throw new Error "unknown bin_op=#{root.op} a=#{a} b=#{b}"
+        root.type
       
       when "Un_op"
-        list = module.un_op_ret_type_hash_list[t.op]
-        a = walk(t.a, ctx).toString()
+        list = module.un_op_ret_type_hash_list[root.op]
+        a = walk(root.a, ctx).toString()
         found = false
         if list
           for tuple in list
             continue if tuple[0] != a
             found = true
-            t.type = new Type tuple[1]
+            root.type = new Type tuple[1]
         if !found
-          throw new Error "unknown un_op=#{t.op} a=#{a}"
-        t.type
+          throw new Error "unknown un_op=#{root.op} a=#{a}"
+        root.type
       
       when "Field_access"
-        root_type = walk(t.t, ctx)
+        root_type = walk(root.t, ctx)
         
         if root_type.main == 'struct'
           field_hash = root_type.field_hash
@@ -168,19 +168,19 @@ is_not_a_type = (type)->
           class_decl = ctx.check_type root_type.main
           field_hash = class_decl._prepared_field2type
         
-        if !field_type = field_hash[t.name]
-          throw new Error "unknown field. '#{t.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+        if !field_type = field_hash[root.name]
+          throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
-        # field_type = ast.type_actualize field_type, t.t.type
-        t.type = field_type
-        t.type
+        # field_type = ast.type_actualize field_type, root.t.type
+        root.type = field_type
+        root.type
       
       when "Fn_call"
-        root_type = walk t.fn, ctx
-        for arg in t.arg_list
+        root_type = walk root.fn, ctx
+        for arg in root.arg_list
           walk arg, ctx
-        t.type = root_type.nest_list[0].nest_list[0]
+        root.type = root_type.nest_list[0].nest_list[0]
       
       # ###################################################################################################
       #    stmt
@@ -189,107 +189,107 @@ is_not_a_type = (type)->
         null
       
       when "Var_decl"
-        if t.assign_value
-          walk t.assign_value, ctx
-        ctx.var_hash[t.name] = t.type
+        if root.assign_value
+          walk root.assign_value, ctx
+        ctx.var_hash[root.name] = root.type
         null
       
       when "Scope"
         ctx_nest = ctx.mk_nest()
-        for v in t.list
+        for v in root.list
           if v.constructor.name == "Class_decl"
             class_prepare ctx, v
-        for v in t.list
+        for v in root.list
           walk v, ctx_nest
         
         null
       
       when "Ret_multi"
-        for v in t.t_list
+        for v in root.t_list
           walk v, ctx
         null
       
       when "Class_decl"
-        class_prepare ctx, t
+        class_prepare ctx, root
         
         ctx_nest = ctx.mk_nest()
-        # ctx_nest.var_hash["this"] = new Type t.name
-        walk t.scope, ctx_nest
-        t.type
+        # ctx_nest.var_hash["this"] = new Type root.name
+        walk root.scope, ctx_nest
+        root.type
       
       when "Fn_decl_multiret"
         complex_type = new Type 'function2'
-        complex_type.nest_list.push t.type_i
-        complex_type.nest_list.push t.type_o
-        ctx.var_hash[t.name] = complex_type
+        complex_type.nest_list.push root.type_i
+        complex_type.nest_list.push root.type_o
+        ctx.var_hash[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
-        for name,k in t.arg_name_list
-          type = t.type_i.nest_list[k]
+        for name,k in root.arg_name_list
+          type = root.type_i.nest_list[k]
           ctx_nest.var_hash[name] = type
-        walk t.scope, ctx_nest
-        t.type
+        walk root.scope, ctx_nest
+        root.type
       
       # ###################################################################################################
       #    control flow
       # ###################################################################################################
       when "If"
-        walk(t.cond, ctx)
-        walk(t.t, ctx.mk_nest())
-        walk(t.f, ctx.mk_nest())
+        walk(root.cond, ctx)
+        walk(root.t, ctx.mk_nest())
+        walk(root.f, ctx.mk_nest())
         null
       
       when "While"
-        walk t.cond, ctx.mk_nest()
-        walk t.scope, ctx.mk_nest()
+        walk root.cond, ctx.mk_nest()
+        walk root.scope, ctx.mk_nest()
         null
       
       else
         ### !pragma coverage-skip-block ###
-        p t
-        throw new Error "ti phase 1 unknown node '#{t.constructor.name}'"
+        puts root
+        throw new Error "ti phase 1 unknown node '#{root.constructor.name}'"
   walk ast_tree, new Ti_context
   
   # phase 2
   # iterable
   
   change_count = 0
-  walk = (t, ctx)->
-    switch t.constructor.name
+  walk = (root, ctx)->
+    switch root.constructor.name
       # ###################################################################################################
       #    expr
       # ###################################################################################################
       when "Var"
-        t.type = ctx.check_id t.name
+        root.type = ctx.check_id root.name
       
       when "Const"
-        t.type
+        root.type
       
       when "Bin_op"
-        bruteforce_a = is_not_a_type t.a.type
-        bruteforce_b = is_not_a_type t.b.type
+        bruteforce_a = is_not_a_type root.a.type
+        bruteforce_b = is_not_a_type root.b.type
           
-        list = module.bin_op_ret_type_hash_list[t.op]
-        can_bruteforce = t.type?
+        list = module.bin_op_ret_type_hash_list[root.op]
+        can_bruteforce = root.type?
         can_bruteforce and= bruteforce_a or bruteforce_b
         can_bruteforce and= list?
         
-        if t.op == 'ASSIGN'
+        if root.op == 'ASSIGN'
           if bruteforce_a and !bruteforce_b
             change_count++
-            t.a.type = t.b.type
+            root.a.type = root.b.type
           else if !bruteforce_a and bruteforce_b
             change_count++
-            t.b.type = t.a.type
+            root.b.type = root.a.type
         else
           if !list?
-            perr "can't type inference bin_op=  '#{t.op}'"
+            perr "can't type inference bin_op=  '#{root.op}'"
         
         if can_bruteforce
-          a_type_list = if bruteforce_a then [] else [t.a.type.toString()]
-          b_type_list = if bruteforce_b then [] else [t.b.type.toString()]
+          a_type_list = if bruteforce_a then [] else [root.a.type.toString()]
+          b_type_list = if bruteforce_b then [] else [root.b.type.toString()]
           
           refined_list = []
-          cmp_ret_type = t.type.toString()
+          cmp_ret_type = root.type.toString()
           for v in list
             continue if cmp_ret_type != v[2]
             a_type_list.push v[0] if bruteforce_a
@@ -307,21 +307,21 @@ is_not_a_type = (type)->
           if candidate_list.length == 1
             change_count++
             [a_type, b_type] = candidate_list[0]
-            t.a.type = new Type a_type
-            t.b.type = new Type b_type
+            root.a.type = new Type a_type
+            root.b.type = new Type b_type
           else
             p "candidate_list=#{candidate_list.length}"
         
-        walk(t.a, ctx)
-        walk(t.b, ctx)
-        t.type
+        walk(root.a, ctx)
+        walk(root.b, ctx)
+        root.type
       when "Un_op"
         # TODO bruteforce
-        walk(t.a, ctx)
-        t.type
+        walk(root.a, ctx)
+        root.type
       
       when "Field_access"
-        root_type = walk(t.t, ctx)
+        root_type = walk(root.t, ctx)
         
         if root_type.main == 'struct'
           field_hash = root_type.field_hash
@@ -329,23 +329,23 @@ is_not_a_type = (type)->
           class_decl = ctx.check_type root_type.main
           field_hash = class_decl._prepared_field2type
         
-        if !field_type = field_hash[t.name]
-          throw new Error "unknown field. '#{t.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+        if !field_type = field_hash[root.name]
+          throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
-        # field_type = ast.type_actualize field_type, t.t.type
-        t.type = field_type
-        t.type
+        # field_type = ast.type_actualize field_type, root.t.type
+        root.type = field_type
+        root.type
       
       when "Fn_call"
-        root_type = walk t.fn, ctx
-        for arg,i in t.arg_list
+        root_type = walk root.fn, ctx
+        for arg,i in root.arg_list
           walk arg, ctx
-          expected_type = t.fn.type.nest_list[0].nest_list[i]
+          expected_type = root.fn.type.nest_list[0].nest_list[i]
           if is_not_a_type arg.type
             change_count++
             arg.type = expected_type
-        t.type = root_type.nest_list[0].nest_list[0]
+        root.type = root_type.nest_list[0].nest_list[0]
       
       # ###################################################################################################
       #    stmt
@@ -354,64 +354,64 @@ is_not_a_type = (type)->
         null
       
       when "Var_decl"
-        if t.assign_value
-          if is_not_a_type t.assign_value.type
+        if root.assign_value
+          if is_not_a_type root.assign_value.type
             change_count++
-            t.assign_value.type = t.type
-          walk t.assign_value, ctx
-        ctx.var_hash[t.name] = t.type
+            root.assign_value.type = root.type
+          walk root.assign_value, ctx
+        ctx.var_hash[root.name] = root.type
         null
       
       when "Scope"
         ctx_nest = ctx.mk_nest()
-        for v in t.list
+        for v in root.list
           walk v, ctx_nest
         
         null
       
       when "Ret_multi"
         # TODO match return type
-        for v in t.t_list
+        for v in root.t_list
           walk v, ctx
         null
       
       when "Class_decl"
-        class_prepare ctx, t
+        class_prepare ctx, root
         
         ctx_nest = ctx.mk_nest()
-        # ctx_nest.var_hash["this"] = new Type t.name
-        walk t.scope, ctx_nest
-        t.type
+        # ctx_nest.var_hash["this"] = new Type root.name
+        walk root.scope, ctx_nest
+        root.type
       
       when "Fn_decl_multiret"
         complex_type = new Type 'function2'
-        complex_type.nest_list.push t.type_i
-        complex_type.nest_list.push t.type_o
-        ctx.var_hash[t.name] = complex_type
+        complex_type.nest_list.push root.type_i
+        complex_type.nest_list.push root.type_o
+        ctx.var_hash[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
-        for name,k in t.arg_name_list
-          type = t.type_i.nest_list[k]
+        for name,k in root.arg_name_list
+          type = root.type_i.nest_list[k]
           ctx_nest.var_hash[name] = type
-        walk t.scope, ctx_nest
-        t.type
+        walk root.scope, ctx_nest
+        root.type
       # ###################################################################################################
       #    control flow
       # ###################################################################################################
       when "If"
-        walk(t.cond, ctx)
-        walk(t.t, ctx.mk_nest())
-        walk(t.f, ctx.mk_nest())
+        walk(root.cond, ctx)
+        walk(root.t, ctx.mk_nest())
+        walk(root.f, ctx.mk_nest())
         null
       
       when "While"
-        walk t.cond, ctx.mk_nest()
-        walk t.scope, ctx.mk_nest()
+        walk root.cond, ctx.mk_nest()
+        walk root.scope, ctx.mk_nest()
         null
       
       else
         ### !pragma coverage-skip-block ###
-        p t
-        throw new Error "ti phase 2 unknown node '#{t.constructor.name}'"
+        puts root
+        throw new Error "ti phase 2 unknown node '#{root.constructor.name}'"
   
   for i in [0 ... 100] # prevent infinite
     walk ast_tree, new Ti_context
