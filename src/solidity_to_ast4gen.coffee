@@ -30,6 +30,7 @@ bin_op_map =
   "-=" : "ASS_SUB"
   "*=" : "ASS_MUL"
   "/=" : "ASS_DIV"
+  "%=" : "ASS_MOD"
   
   ">>=": "ASS_SHR"
   "<<=": "ASS_SHL"

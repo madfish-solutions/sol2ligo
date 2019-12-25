@@ -73,9 +73,12 @@ do ()=>
     switch root.constructor.name
       when "Bin_op"
         if reg_ret = /^ASS_(.*)/.exec root.op
-          # TODO unpack...
-          p root
-          xxx
+          ext = new ast.Bin_op
+          ext.op = "ASSIGN"
+          ext.a = root.a
+          ext.b = root
+          root.op = reg_ret[1]
+          ext
         else
           root.a = walk root.a, ctx
           root.b = walk root.b, ctx

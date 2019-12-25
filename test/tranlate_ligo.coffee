@@ -52,7 +52,7 @@ describe 'translate section', ()->
   it 'uint ops', ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Expr {
       uint public value;
       
@@ -68,6 +68,14 @@ describe 'translate section', ()->
         c = a & b;
         c = a | b;
         c = a ^ b;
+        c += b;
+        c -= b;
+        c *= b;
+        c /= b;
+        c %= b;
+        c &= b;
+        c |= b;
+        c ^= b;
         return c;
       }
     }
@@ -90,6 +98,14 @@ describe 'translate section', ()->
           c := bitwise_and(a, b);
           c := bitwise_or(a, b);
           c := bitwise_xor(a, b);
+          c := (c + b);
+          c := abs(c - b);
+          c := (c * b);
+          c := (c / b);
+          c := (c mod b);
+          c := bitwise_and(c, b);
+          c := bitwise_or(c, b);
+          c := bitwise_xor(c, b);
         } with (contractStorage, c);
       
     """
@@ -115,6 +131,14 @@ describe 'translate section', ()->
         c = a & b;
         c = a | b;
         c = a ^ b;
+        c += b;
+        c -= b;
+        c *= b;
+        c /= b;
+        c %= b;
+        c &= b;
+        c |= b;
+        c ^= b;
         return c;
       }
     }
@@ -138,6 +162,14 @@ describe 'translate section', ()->
           c := bitwise_and(a, b);
           c := bitwise_or(a, b);
           c := bitwise_xor(a, b);
+          c := (c + b);
+          c := (c - b);
+          c := (c * b);
+          c := (c / b);
+          c := (c mod b);
+          c := bitwise_and(c, b);
+          c := bitwise_or(c, b);
+          c := bitwise_xor(c, b);
         } with (contractStorage, c);
       
     """
