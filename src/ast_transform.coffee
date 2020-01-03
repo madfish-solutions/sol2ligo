@@ -52,6 +52,23 @@ do ()=>
         root.f    = walk root.f,    ctx
         root
       
+      when "While"
+        root.cond = walk root.cond, ctx
+        root.scope= walk root.scope,ctx
+        root
+      
+      # when "For3"
+      #   ### !pragma coverage-skip-block ###
+      #   # NOTE will be wiped in first ligo_pack preprocessor. So will be not covered
+      #   if root.init
+      #     root.init = walk root.init, ctx
+      #   if root.cond
+      #     root.cond = walk root.cond, ctx
+      #   if root.iter
+      #     root.iter = walk root.iter, ctx
+      #   root.scope= walk root.scope, ctx
+      #   root
+      
       when "Class_decl"
         root.scope = walk root.scope, ctx
         root
@@ -61,11 +78,43 @@ do ()=>
         root
       
       else
+        ### !pragma coverage-skip-block ###
         puts root
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
   module.default_walk = walk
 
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "For3"
+        ret = new ast.Scope
+        ret._phantom = true
+        
+        if root.init
+          ret.list.push root.init
+        
+        while_inside = new ast.While
+        if root.cond
+          while_inside.cond = root.cond
+        else
+          while_inside.cond = new ast.Const
+          while_inside.cond.val = 'true'
+          while_inside.cond.type = new Type 'bool'
+        # clone scope
+        while_inside.scope.list.append root.scope.list
+        if root.iter
+          while_inside.scope.list.push root.iter
+        ret.list.push while_inside
+        
+        ret
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @for3_unpack = (root)->
+    walk root, {walk, next_gen: module.default_walk}
 
 do ()=>
   walk = (root, ctx)->
@@ -127,5 +176,6 @@ do ()=>
 
 
 @ligo_pack = (root)->
+  root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root

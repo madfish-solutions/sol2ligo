@@ -13,6 +13,7 @@ class @Fn_decl_multiret
   pos     : 0
   constructor:()->
     @arg_name_list = []
+    @scope = new ast.Scope
 
 class @Ret_multi
   t_list : []
@@ -51,3 +52,12 @@ class @New
 class @Type_cast
   target_type : null
   t : null
+
+class @For3
+  init : null
+  cond : null
+  iter : null
+  scope: null
+  constructor:()->
+    @scope = new ast.Scope
+  

@@ -30,10 +30,6 @@ config = require './config'
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
   
-  ASS_ADD : (a, b)-> "#{a} := #{a} + #{b}"
-  ASS_SUB : (a, b)-> "#{a} := #{a} - #{b}"
-  ASS_MUL : (a, b)-> "#{a} := #{a} * #{b}"
-  ASS_DIV : (a, b)-> "#{a} := #{a} / #{b}"
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
     ret = if ctx.lvalue
@@ -98,6 +94,7 @@ translate_type = (type, ctx)->
       if ctx.type_decl_hash[type.main]
         type.main
       else
+        ### !pragma coverage-skip-block ###
         puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
@@ -114,6 +111,7 @@ type2default_value = (type)->
     # when 't_string_memory_ptr'
       # '""'
     else
+      ### !pragma coverage-skip-block ###
       throw new Error("unknown solidity type '#{type}'")
 # ###################################################################################################
 #    translate_var_name
@@ -192,6 +190,13 @@ walk = (root, ctx)->
             end;
             
             """
+          else
+            aux_decl = """
+            type #{config.storage} is record
+              _empty_state: int;
+            end;
+            
+            """
           
           """
           #{aux_decl}#{join_list jl, ''}
@@ -205,24 +210,30 @@ walk = (root, ctx)->
               code += ";" if !/;$/.test code
               jl.push code
             
-            ret = jl.pop() or ''
+            ret = jl.pop() or ""
             if 0 != ret.indexOf 'with'
               jl.push ret
-              ret = ''
+              ret = ""
             
-            jl = jl.filter (t)-> t != ''
-            if jl.length
-              body = """
-              block {
-                #{join_list jl, '  '}
-              }
-              """
+            jl = jl.filter (t)-> t != ""
+            if root._phantom
+              if jl.length
+                body = join_list jl, ""
+              else
+                body = ""
             else
-              body = """
-              block {
-                skip
-              }
-              """
+              if jl.length
+                body = """
+                block {
+                  #{join_list jl, '  '}
+                }
+                """
+              else
+                body = """
+                block {
+                  skip
+                }
+                """
             ret = " #{ret}" if ret
             """
             #{body}#{ret}
@@ -328,6 +339,14 @@ walk = (root, ctx)->
       f    = walk root.f,     ctx
       """
       if #{cond} then #{t} else #{f};
+      """
+    
+    when "While"
+      cond = walk root.cond,  ctx
+      cond = "(#{cond})" if !last_bracket_state
+      scope= walk root.scope, ctx
+      """
+      while #{cond} #{scope};
       """
     
     when "Fn_decl_multiret"

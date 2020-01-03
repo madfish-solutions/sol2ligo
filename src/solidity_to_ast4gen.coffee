@@ -390,21 +390,14 @@ walk = (root, ctx)->
       ret
     
     when "ForStatement"
-      ret = new ast.Scope
-      ret._phantom = true # HACK
+      ret = new ast.For3
       if root.initializationExpression
-        ret.list.push walk root.initializationExpression, ctx
-      ret.list.push inner = new ast.While
-      inner.cond = walk root.condition, ctx
-      
-      loc = walk root.body, ctx
-      if loc.constructor.name == "Scope"
-        inner.scope = loc
-      else
-        inner.scope.list.push loc
-      
-      # т.к. у нас нет continue, то можно
-      inner.scope.list.push walk root.loopExpression, ctx
+        ret.init = walk root.initializationExpression, ctx
+      if root.condition
+        ret.cond = walk root.condition, ctx
+      if root.loopExpression
+        ret.iter = walk root.loopExpression, ctx
+      ret.scope= walk root.body, ctx
       ret
     
     # ###################################################################################################

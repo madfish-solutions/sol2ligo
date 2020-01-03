@@ -239,3 +239,159 @@ describe 'translate section', ()->
     
     """
     make_test text_i, text_o
+  
+  
+  it 'while', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Whiler {
+      function whiler(address owner) public returns (int) {
+        int i = 0;
+        while(i < 5) {
+          i += 1;
+        }
+        return i;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function whiler (const contractStorage : state; const owner : address) : (state * int) is
+      block {
+        const i : int = 0;
+        while (i < 5) block {
+          i := (i + 1);
+        };
+      } with (contractStorage, i);
+    """
+    make_test text_i, text_o
+  
+  # ###################################################################################################
+  #    for
+  # ###################################################################################################
+  it 'for', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Forer {
+      function forer(address owner) public returns (int) {
+        int i = 0;
+        for(i=2;i < 5;i+=10) {
+          i += 1;
+        }
+        return i;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function forer (const contractStorage : state; const owner : address) : (state * int) is
+      block {
+        const i : int = 0;
+        i := 2;
+        while (i < 5) block {
+          i := (i + 1);
+          i := (i + 10);
+        };
+      } with (contractStorage, i);
+    """
+    make_test text_i, text_o
+  
+  it 'for no init', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Forer {
+      function forer(address owner) public returns (int) {
+        int i = 0;
+        for(;i < 5;i+=10) {
+          i += 1;
+        }
+        return i;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function forer (const contractStorage : state; const owner : address) : (state * int) is
+      block {
+        const i : int = 0;
+        while (i < 5) block {
+          i := (i + 1);
+          i := (i + 10);
+        };
+      } with (contractStorage, i);
+    """
+    make_test text_i, text_o
+  
+  it 'for no cond', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Forer {
+      function forer(address owner) public returns (int) {
+        int i = 0;
+        for(i=2;;i+=10) {
+          i += 1;
+        }
+        return i;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function forer (const contractStorage : state; const owner : address) : (state * int) is
+      block {
+        const i : int = 0;
+        i := 2;
+        while (true) block {
+          i := (i + 1);
+          i := (i + 10);
+        };
+      } with (contractStorage, i);
+    """
+    make_test text_i, text_o
+  
+  it 'for no iter', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Forer {
+      function forer(address owner) public returns (int) {
+        int i = 0;
+        for(i=2;i < 5;) {
+          i += 1;
+        }
+        return i;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function forer (const contractStorage : state; const owner : address) : (state * int) is
+      block {
+        const i : int = 0;
+        i := 2;
+        while (i < 5) block {
+          i := (i + 1);
+        };
+      } with (contractStorage, i);
+    """
+    make_test text_i, text_o
+  
