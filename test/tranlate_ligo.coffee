@@ -438,4 +438,37 @@ describe 'translate section', ()->
       } with (contractStorage, i);
     """
     make_test text_i, text_o
+  # ###################################################################################################
+  #    fn call
+  # ###################################################################################################
   
+  it 'fn call', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Call {
+      function call_me(int a) public returns (int) {
+        return a;
+      }
+      function test(int a) public returns (int) {
+        return call_me(a);
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state: int;
+    end;
+    
+    function call_me (const contractStorage : state; const a : int) : (state * int) is
+      block {
+        skip
+      } with (contractStorage, a);
+    
+    function test (const contractStorage : state; const a : int) : (state * int) is
+      block {
+        const tmp_0 : (state * int) = call_me(contractStorage, a);
+        contractStorage := tmp_0.0;
+      } with (contractStorage, tmp_0.1);
+    """
+    make_test text_i, text_o

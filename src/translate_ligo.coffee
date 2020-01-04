@@ -137,9 +137,14 @@ class @Gen_context
   type_decl_hash    : {}
   contract_var_hash : {}
   
+  trim_expr         : ''
+  sink_list         : []
+  tmp_idx           : 0
+  
   constructor:()->
-    @type_decl_hash = {}
-    @contract_var_hash       = {}
+    @type_decl_hash   = {}
+    @contract_var_hash= {}
+    @sink_list        = []
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -208,6 +213,13 @@ walk = (root, ctx)->
             for v in root.list
               code = walk v, ctx
               code += ";" if !/;$/.test code
+              for loc_code in ctx.sink_list
+                loc_code += ";" if !/;$/.test loc_code
+                jl.push loc_code
+              # do not add e.g. tmp_XXX stmt which do nothing
+              if ctx.trim_expr == code
+                ctx.trim_expr = ''
+                continue
               jl.push code
             
             ret = jl.pop() or ""
@@ -292,7 +304,19 @@ walk = (root, ctx)->
       for v in root.arg_list
         arg_list.push walk v, ctx
       
-      "#{fn}(#{arg_list.join ', '})"
+      arg_list.unshift config.contract_storage
+      
+      type_jl = []
+      for v in root.fn.type.nest_list[1].nest_list
+        type_jl.push translate_type v
+      
+      if type_jl[0] != config.storage
+        "#{fn}(#{arg_list.join ', '})"
+      else
+        tmp_var = "tmp_#{ctx.tmp_idx++}"
+        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
+        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
+        ctx.trim_expr = "#{tmp_var}.1"
     
     when "Type_cast"
       xxx
