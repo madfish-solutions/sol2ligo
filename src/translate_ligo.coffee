@@ -59,10 +59,18 @@ translate_type = (type, ctx)->
     # ###################################################################################################
     #    scalar
     # ###################################################################################################
+    when 'bool'
+      'bool'
     when 'uint'
       'nat'
     when 'int'
       'int'
+    when 'int8'
+      'int'
+    when 'uint8'
+      'nat'
+    when 'string'
+      'string'
     when 'address'
       'address'
     # ###################################################################################################
@@ -78,14 +86,6 @@ translate_type = (type, ctx)->
     when config.storage
       config.storage
     
-    # when 't_bool'
-    #   'bool'
-    # when 't_uint256'
-    #   'nat'
-    # when 't_int256'
-    #   'int'
-    # when 't_string_memory_ptr'
-    #   'string'
     # when 't_bytes_memory_ptr'
     #   'bytes'
     # when config.storage

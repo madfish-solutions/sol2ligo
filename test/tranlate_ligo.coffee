@@ -21,11 +21,11 @@ describe 'translate section', ()->
   # ###################################################################################################
   #    basic
   # ###################################################################################################
-  it 'empty', ()->
+  it 'hello world', ()->
     text_i = """
     pragma solidity ^0.5.11;
     
-    contract Summator {
+    contract Hello_world {
       uint public value;
       
       function test() public {
@@ -45,6 +45,50 @@ describe 'translate section', ()->
     
     """
     make_test text_i, text_o
+  
+  it 'basic types', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Basic_types {
+      bool  public value_bool  ;
+      int   public value_int   ;
+      uint  public value_uint  ;
+      int8  public value_int8  ;
+      uint8 public value_uint8 ;
+      address public value_address;
+      string  public value_string;
+      
+      function test() public {}
+    }
+    """
+    text_o = """
+    type state is record
+      value_bool: bool;
+      value_int: int;
+      value_uint: nat;
+      value_int8: int;
+      value_uint8: nat;
+      value_address: address;
+      value_string: string;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        skip
+      } with (contractStorage);
+    
+    """
+    make_test text_i, text_o
+    # extended types for later...
+    ###
+    bytes1  public value_bytes1;
+    bytes2  public value_bytes2;
+    
+    function test(function (uint, uint) pure returns (uint) fn) public {
+      uint[] memory a = new uint[](7);
+    }
+    ###
   
   # ###################################################################################################
   #    expr

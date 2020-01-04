@@ -160,7 +160,7 @@ do ()=>
         root.type_o.nest_list.unshift new Type config.storage
         
         last = root.scope.list.last()
-        if last.constructor.name != "Ret_multi"
+        if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
           last = walk last, ctx
           root.scope.list.push last
