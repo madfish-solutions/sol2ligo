@@ -297,7 +297,17 @@ walk = (root, ctx)->
     
     when "Field_access"
       t = walk root.t, ctx
-      "#{t}.#{root.name}"
+      switch root.t.type.main
+        when "array"
+          switch root.name
+            when "length"
+              "size(#{t})"
+            
+            else
+              throw new Error "unknown array field #{root.name}"
+        
+        else
+          "#{t}.#{root.name}"
     
     when "Fn_call"
       fn = walk root.fn, ctx

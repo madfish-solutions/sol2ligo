@@ -20,9 +20,12 @@ module = @
     )()
   }
 
+array_field_hash =
+  "length" : "uint"
+
 @default_type_hash_gen = ()->
   {
-    
+    "array" : true
   }
 
 @bin_op_ret_type_hash_list = {}
@@ -162,11 +165,16 @@ is_not_a_type = (type)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        if root_type.main == 'struct'
-          field_hash = root_type.field_hash
-        else
-          class_decl = ctx.check_type root_type.main
-          field_hash = class_decl._prepared_field2type
+        switch root_type.main
+          when "array"
+            field_hash = array_field_hash
+          
+          when "struct"
+            field_hash = root_type.field_hash
+          
+          else
+            class_decl = ctx.check_type root_type.main
+            field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
@@ -252,6 +260,7 @@ is_not_a_type = (type)->
   # phase 2
   # iterable
   
+  # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
   change_count = 0
   walk = (root, ctx)->
     switch root.constructor.name
@@ -323,11 +332,17 @@ is_not_a_type = (type)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        if root_type.main == 'struct'
-          field_hash = root_type.field_hash
-        else
-          class_decl = ctx.check_type root_type.main
-          field_hash = class_decl._prepared_field2type
+        
+        switch root_type.main
+          when "array"
+            field_hash = array_field_hash
+          
+          when "struct"
+            field_hash = root_type.field_hash
+          
+          else
+            class_decl = ctx.check_type root_type.main
+            field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
