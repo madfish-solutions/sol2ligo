@@ -6,27 +6,14 @@ fs = require 'fs'
 
 describe 'ast_gen section', ()->
   it 'test contract 1', ()->
+    @timeout 10000
     ast_gen """
     pragma solidity ^0.5.11;
     
     contract Summator {
       uint public value;
       
-      function sum() public returns (uint yourMom) {
-        uint x = 5;
-        return value + x;
-      }
-    }
-    """, silent:true
-  
-  it 'test contract 1', ()->
-    ast_gen """
-    pragma solidity ^0.5.11;
-    
-    contract Summator {
-      uint public value;
-      
-      function sum() public returns (uint yourMom) {
+      function sum() public returns (uint) {
         uint x = 5;
         return value + x;
       }
@@ -41,27 +28,28 @@ describe 'ast_gen section', ()->
       contract Summator {
         uint public value;
         
-        function sum() public returns (uint yourMom) {
+        function sum() public returns (uint) {
           qwer
           return value + x;
         }
       }
       """, silent:true
   
-  describe 'solidity samples', ()->
-    global.solidity_source_to_ast_hash = {}
-    fs_tree.walk "solidity_samples", (path)->
-      global.solidity_source_to_ast_hash[path] = null
-      it path, ()->
-        # reasons for too long
-        # 10 sec foc compiler load
-        # 20 sec foc http(s) downloads
-        @timeout 30000
-        code = import_resolver path
-        ast = ast_gen code, {
-          silent : true
-          suggest_solc_version : '0.4.26'
-          debug : true
-        }
-        global.solidity_source_to_ast_hash[path] = ast
+  if !process.argv.has "--skip_solc"
+    describe 'solidity samples', ()->
+      global.solidity_source_to_ast_hash = {}
+      fs_tree.walk "solidity_samples", (path)->
+        global.solidity_source_to_ast_hash[path] = null
+        it path, ()->
+          # reasons for too long
+          # 10 sec foc compiler load
+          # 20 sec foc http(s) downloads
+          @timeout 30000
+          code = import_resolver path
+          ast = ast_gen code, {
+            silent : true
+            suggest_solc_version : '0.4.26'
+            debug : true
+          }
+          global.solidity_source_to_ast_hash[path] = ast
   
