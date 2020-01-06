@@ -78,7 +78,8 @@ translate_type = (type, ctx)->
     # ###################################################################################################
     when 'array'
       nest   = translate_type type.nest_list[0], ctx
-      "list(#{nest})"
+      # "list(#{nest})"
+      "map(nat, #{nest})"
     when 'map'
       key   = translate_type type.nest_list[0], ctx
       value = translate_type type.nest_list[1], ctx
