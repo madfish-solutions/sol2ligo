@@ -217,6 +217,7 @@ walk = (root, ctx)->
               for loc_code in ctx.sink_list
                 loc_code += ";" if !/;$/.test loc_code
                 jl.push loc_code
+              ctx.sink_list.clear()
               # do not add e.g. tmp_XXX stmt which do nothing
               if ctx.trim_expr == code
                 ctx.trim_expr = ''
@@ -310,10 +311,24 @@ walk = (root, ctx)->
           "#{t}.#{root.name}"
     
     when "Fn_call"
-      fn = walk root.fn, ctx
       arg_list = []
       for v in root.arg_list
         arg_list.push walk v, ctx
+      
+      if root.fn.constructor.name == "Field_access"
+        t = walk root.fn.t, ctx
+        switch root.fn.t.type.main
+          when "array"
+            switch root.fn.name
+              when "push"
+                tmp_var = "tmp_#{ctx.tmp_idx++}"
+                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type} = #{t};"
+                return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
+              
+              else
+                throw new Error "unknown array field function #{root.fn.name}"
+      
+      fn = walk root.fn, ctx
       
       arg_list.unshift config.contract_storage
       

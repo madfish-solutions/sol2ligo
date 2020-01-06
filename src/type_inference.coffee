@@ -12,6 +12,7 @@ module = @
       ret
     )()
     require : (()->
+      # TODO new Type "function2<function<bool>,function<>>"
       ret = new Type "function2"
       ret.nest_list.push type_i = new Type "function"
       ret.nest_list.push type_o = new Type "function"
@@ -21,7 +22,11 @@ module = @
   }
 
 array_field_hash =
-  "length" : "uint"
+  "length": new Type "uint"
+  "push"  : (type)->
+    ret = new Type "function2<function<>,function<>>"
+    ret.nest_list[0].nest_list.push type
+    ret
 
 @default_type_hash_gen = ()->
   {
@@ -181,6 +186,8 @@ is_not_a_type = (type)->
         
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
+        if typeof field_type == "function"
+          field_type = field_type root.t
         root.type = field_type
         root.type
       
@@ -349,6 +356,8 @@ is_not_a_type = (type)->
         
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
+        if typeof field_type == "function"
+          field_type = field_type root.t
         root.type = field_type
         root.type
       

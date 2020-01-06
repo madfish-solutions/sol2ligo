@@ -83,7 +83,6 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  
   it 'static length', ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -109,3 +108,29 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
+  it 'push element', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Array {
+      int[] public storageArray;
+      
+      function array() public returns (uint) {
+        storageArray.push(0);
+        return 0;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      storageArray: map(nat, int);
+    end;
+    
+    function array (const contractStorage : state) : (state * nat) is
+      block {
+        const tmp_0 : map(nat, int) = contractStorage.storageArray;
+        tmp_0[size(tmp_0)] := 0;
+      } with (contractStorage, 0);
+    
+    """
+    make_test text_i, text_o
