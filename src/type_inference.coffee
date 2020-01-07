@@ -110,8 +110,8 @@ is_not_a_type = (type)->
       
       when "Bin_op"
         list = module.bin_op_ret_type_hash_list[root.op]
-        a = (walk(root.a, ctx) or '').toString()
-        b = (walk(root.b, ctx) or '').toString()
+        a = (walk(root.a, ctx) or "").toString()
+        b = (walk(root.b, ctx) or "").toString()
         
         found = false
         if list
@@ -124,45 +124,55 @@ is_not_a_type = (type)->
         # extra cases
         if !found
           # may produce invalid result
-          if root.op == 'ASSIGN'
+          if root.op == "ASSIGN"
             root.type = root.a.type
             found = true
-          else if root.op in ['EQ', 'NE']
-            root.type = new Type 'bool'
+          else if root.op in ["EQ", "NE"]
+            root.type = new Type "bool"
             found = true
-          else if root.op == 'INDEX_ACCESS'
+          else if root.op == "INDEX_ACCESS"
             switch root.a.type.main
-              when 'string'
-                root.type = new Type 'string'
+              when "string"
+                root.type = new Type "string"
                 found = true
-              when 'map'
+              
+              when "map"
                 key = root.a.type.nest_list[0]
                 if !key.cmp root.b.type
                   throw new Error("bad index access to '#{root.a.type}' with index '#{root.b.type}'")
                 root.type = root.a.type.nest_list[1]
                 found = true
-              # when 'array'
+              
+              when "array"
+                root.type = root.a.type.nest_list[0]
+                found = true
+              
+              # when "hash"
                 # root.type = root.a.type.nest_list[0]
                 # found = true
-              # when 'hash'
+              # when "hash_int"
                 # root.type = root.a.type.nest_list[0]
                 # found = true
-              # when 'hash_int'
-                # root.type = root.a.type.nest_list[0]
-                # found = true
-        # if !found
+        if !found
+          perr "unknown bin_op=#{root.op} a=#{a} b=#{b}"
           # throw new Error "unknown bin_op=#{root.op} a=#{a} b=#{b}"
         root.type
       
       when "Un_op"
         list = module.un_op_ret_type_hash_list[root.op]
-        a = walk(root.a, ctx).toString()
+        a = (walk(root.a, ctx) or "").toString()
         found = false
         if list
           for tuple in list
             continue if tuple[0] != a
             found = true
             root.type = new Type tuple[1]
+        if !found
+          if root.op == "DELETE"
+            if root.a.constructor.name == "Bin_op"
+              if root.a.op == "INDEX_ACCESS"
+                if root.a.a.type?.main == "array"
+                  return
         if !found
           throw new Error "unknown un_op=#{root.op} a=#{a}"
         root.type
@@ -268,6 +278,8 @@ is_not_a_type = (type)->
   # iterable
   
   # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
+  # Прим. спорно. В этом случае надо будет как-то информировать что это phase 2 иначе будет непонятно что привело к этому
+  # возможно копипастить меньшее зло, чем потом дебажить непонятно как (т.к. сейчас p можно поставить на stage 1 и stage 2 раздельно)
   change_count = 0
   walk = (root, ctx)->
     switch root.constructor.name
@@ -283,50 +295,62 @@ is_not_a_type = (type)->
       when "Bin_op"
         bruteforce_a = is_not_a_type root.a.type
         bruteforce_b = is_not_a_type root.b.type
+        if bruteforce_a or bruteforce_b
+          list = module.bin_op_ret_type_hash_list[root.op]
+          can_bruteforce = root.type?
+          can_bruteforce and= bruteforce_a or bruteforce_b
+          can_bruteforce and= list?
           
-        list = module.bin_op_ret_type_hash_list[root.op]
-        can_bruteforce = root.type?
-        can_bruteforce and= bruteforce_a or bruteforce_b
-        can_bruteforce and= list?
-        
-        if root.op == 'ASSIGN'
-          if bruteforce_a and !bruteforce_b
-            change_count++
-            root.a.type = root.b.type
-          else if !bruteforce_a and bruteforce_b
-            change_count++
-            root.b.type = root.a.type
-        else
-          if !list?
-            perr "can't type inference bin_op=  '#{root.op}'"
-        
-        if can_bruteforce
-          a_type_list = if bruteforce_a then [] else [root.a.type.toString()]
-          b_type_list = if bruteforce_b then [] else [root.b.type.toString()]
+          switch root.op
+            when "ASSIGN"
+              if bruteforce_a and !bruteforce_b
+                change_count++
+                root.a.type = root.b.type
+              else if !bruteforce_a and bruteforce_b
+                change_count++
+                root.b.type = root.a.type
+            
+            when "INDEX_ACCESS"
+              # NOTE we can't infer type of a for now
+              if bruteforce_b and !bruteforce_a
+                switch root.a.type?.main
+                  when "array"
+                    root.b.type = new Type "uint"
+                  
+                  else
+                    perr "can't type inference INDEX_ACCESS for #{root.a.type}"
+            
+            else
+              if !list?
+                perr "can't type inference bin_op='#{root.op}'"
           
-          refined_list = []
-          cmp_ret_type = root.type.toString()
-          for v in list
-            continue if cmp_ret_type != v[2]
-            a_type_list.push v[0] if bruteforce_a
-            b_type_list.push v[1] if bruteforce_b
-            refined_list.push v
-          
-          candidate_list = []
-          for a_type in a_type_list
-            for b_type in b_type_list
-              for pair in refined_list
-                [cmp_a_type, cmp_b_type] = pair
-                continue if a_type != cmp_a_type
-                continue if b_type != cmp_b_type
-                candidate_list.push pair
-          if candidate_list.length == 1
-            change_count++
-            [a_type, b_type] = candidate_list[0]
-            root.a.type = new Type a_type
-            root.b.type = new Type b_type
-          else
-            p "candidate_list=#{candidate_list.length}"
+          if can_bruteforce
+            a_type_list = if bruteforce_a then [] else [root.a.type.toString()]
+            b_type_list = if bruteforce_b then [] else [root.b.type.toString()]
+            
+            refined_list = []
+            cmp_ret_type = root.type.toString()
+            for v in list
+              continue if cmp_ret_type != v[2]
+              a_type_list.push v[0] if bruteforce_a
+              b_type_list.push v[1] if bruteforce_b
+              refined_list.push v
+            
+            candidate_list = []
+            for a_type in a_type_list
+              for b_type in b_type_list
+                for pair in refined_list
+                  [cmp_a_type, cmp_b_type] = pair
+                  continue if a_type != cmp_a_type
+                  continue if b_type != cmp_b_type
+                  candidate_list.push pair
+            if candidate_list.length == 1
+              change_count++
+              [a_type, b_type] = candidate_list[0]
+              root.a.type = new Type a_type
+              root.b.type = new Type b_type
+            # else
+              # p "candidate_list=#{candidate_list.length}"
         
         walk(root.a, ctx)
         walk(root.b, ctx)

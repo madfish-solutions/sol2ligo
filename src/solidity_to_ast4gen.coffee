@@ -50,7 +50,7 @@ un_op_map =
   "+" : "PLUS"
   "~" : "BIT_NOT"
   "!" : "BOOL_NOT"
-  "delete" : "CUSTOM_DELETE"
+  "delete" : "DELETE"
 
 un_op_pre_map =
   "++": "INC_RET"

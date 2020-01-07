@@ -4,6 +4,7 @@ config = require './config'
 # ###################################################################################################
 #    *_op
 # ###################################################################################################
+walk = null
 
 @bin_op_name_map =
   ADD : '+'
@@ -49,6 +50,18 @@ config = require './config'
   MINUS   : (a)->"-(#{a})"
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a)->"not (#{a})"
+  
+  DELETE : (a, ctx, ast)->
+    if ast.a.constructor.name != "Bin_op"
+      throw new Error "can't compile DELETE operation for non 'delete a[b]' like construction. Reason not Bin_op"
+    if ast.a.op != "INDEX_ACCESS"
+      throw new Error "can't compile DELETE operation for non 'delete a[b]' like construction. Reason not INDEX_ACCESS"
+    # BUG WARNING!!! re-walk can be dangerous (sink_list can be re-emitted)
+    # экранируемся от повторгного inject'а в sink_list
+    nest_ctx = ctx.mk_nest()
+    bin_op_a = walk ast.a.a, nest_ctx
+    bin_op_b = walk ast.a.b, nest_ctx
+    "remove #{bin_op_b} from #{bin_op_a} array"
 
 # ###################################################################################################
 #    type trans
@@ -292,7 +305,7 @@ walk = (root, ctx)->
     when "Un_op"
       a = walk root.a, ctx
       if cb = module.un_op_name_cb_map[root.op]
-        cb a, ctx
+        cb a, ctx, root
       else
         throw new Error "Unknown/unimplemented un_op #{root.op}"
     

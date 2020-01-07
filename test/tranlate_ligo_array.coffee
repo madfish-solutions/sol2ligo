@@ -134,3 +134,31 @@ describe 'translate section', ()->
     
     """
     make_test text_i, text_o
+  
+  it 'delete element', ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Array {
+      int[] public storageArray;
+      
+      function array() public returns (uint) {
+        delete storageArray[0];
+        return 0;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      storageArray: map(nat, int);
+    end;
+    
+    function array (const contractStorage : state) : (state * nat) is
+      block {
+        remove 0n from contractStorage.storageArray array;
+      } with (contractStorage, 0);
+    
+    """
+    make_test text_i, text_o
+  
+  # TODO array<address> index access for default value test
