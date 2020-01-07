@@ -1,5 +1,5 @@
 module = @
-fs = require 'fs'
+fs = require "fs"
 
 @walk = (src_path, cb)->
   list = fs.readdirSync src_path

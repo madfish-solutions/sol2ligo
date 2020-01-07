@@ -1,14 +1,14 @@
 {
   translate_ligo_make_test : make_test
-} = require('./util')
+} = require("./util")
 
-describe 'translate section', ()->
+describe "translate section", ()->
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.ligo
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.sol
   # ###################################################################################################
   #    array
   # ###################################################################################################
-  it 'dynamic array', ()->
+  it "dynamic array", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -33,7 +33,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'static array', ()->
+  it "static array", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -58,7 +58,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'dynamic length', ()->
+  it "dynamic length", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -83,7 +83,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'static length', ()->
+  it "static length", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -108,7 +108,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'push element', ()->
+  it "push element", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -135,7 +135,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'delete element', ()->
+  it "delete element", ()->
     text_i = """
     pragma solidity ^0.5.11;
     

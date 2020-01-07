@@ -1,7 +1,7 @@
 module = @
-Type  = require 'type'
-config= require './config'
-ast   = require './ast'
+Type  = require "type"
+config= require "./config"
+ast   = require "./ast"
 
 do ()=>
   walk = (root, ctx)->
@@ -100,8 +100,8 @@ do ()=>
           while_inside.cond = root.cond
         else
           while_inside.cond = new ast.Const
-          while_inside.cond.val = 'true'
-          while_inside.cond.type = new Type 'bool'
+          while_inside.cond.val = "true"
+          while_inside.cond.type = new Type "bool"
         # clone scope
         while_inside.scope.list.append root.scope.list
         if root.iter

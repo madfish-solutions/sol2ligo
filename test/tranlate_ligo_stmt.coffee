@@ -1,13 +1,13 @@
 {
   translate_ligo_make_test : make_test
-} = require('./util')
+} = require("./util")
 
 
-describe 'translate section', ()->
+describe "translate section", ()->
   # ###################################################################################################
   #    stmt
   # ###################################################################################################
-  it 'if', ()->
+  it "if", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -47,7 +47,7 @@ describe 'translate section', ()->
     make_test text_i, text_o
   
   
-  it 'while', ()->
+  it "while", ()->
     text_i = """
     pragma solidity ^0.5.11;
 
@@ -79,7 +79,7 @@ describe 'translate section', ()->
   # ###################################################################################################
   #    for
   # ###################################################################################################
-  it 'for', ()->
+  it "for", ()->
     text_i = """
     pragma solidity ^0.5.11;
 
@@ -110,7 +110,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'for no init', ()->
+  it "for no init", ()->
     text_i = """
     pragma solidity ^0.5.11;
 
@@ -140,7 +140,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'for no cond', ()->
+  it "for no cond", ()->
     text_i = """
     pragma solidity ^0.5.11;
 
@@ -171,7 +171,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'for no iter', ()->
+  it "for no iter", ()->
     text_i = """
     pragma solidity ^0.5.11;
 
@@ -204,7 +204,7 @@ describe 'translate section', ()->
   #    fn call
   # ###################################################################################################
   
-  it 'fn call', ()->
+  it "fn call", ()->
     text_i = """
     pragma solidity ^0.5.11;
 

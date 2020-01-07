@@ -1,11 +1,11 @@
-m_path = require 'path'
-fs = require 'fs'
-{execSync} = require 'child_process'
+m_path = require "path"
+fs = require "fs"
+{execSync} = require "child_process"
 
 get_folder = (path)->
-  list = path.split('/')
+  list = path.split("/")
   list.pop()
-  folder = list.join('/')
+  folder = list.join("/")
 
 url_resolve = (url)->
   # FIX github url's
@@ -16,13 +16,13 @@ url_resolve = (url)->
   # Очень примитивная реализация, но ИМХО проживет очень долго
   if reg_ret = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)\/(.*)$/.exec url
     [_skip, user, repo, path] = reg_ret
-    path_list = path.split '/'
-    if path_list[0] == 'blob'
+    path_list = path.split "/"
+    if path_list[0] == "blob"
       path_list.shift()
     else
-      path_list.unshift 'master'
+      path_list.unshift "master"
     
-    path = path_list.join('/')
+    path = path_list.join("/")
     url = "https://raw.githubusercontent.com/#{user}/#{repo}/#{path}"
   
   [_skip, pseudo_path] = /^https?:\/\/(.*)/.exec url
@@ -33,7 +33,7 @@ url_resolve = (url)->
     execSync "mkdir -p #{folder}"
     execSync "curl #{url} > #{pseudo_path}"
   
-  code = fs.readFileSync pseudo_path, 'utf-8'
+  code = fs.readFileSync pseudo_path, "utf-8"
   if /^404: Not Found/.test code
     throw new Error "404. failed to load #{url}"
   return code
@@ -49,7 +49,7 @@ module.exports = (path, import_cache = {})->
   if is_url
     code = url_resolve path
   else
-    code = fs.readFileSync path, 'utf-8'
+    code = fs.readFileSync path, "utf-8"
   
   # HACK WAY
   mk_import = (orig_file)->
@@ -74,7 +74,7 @@ module.exports = (path, import_cache = {})->
       #{code}
       // IMPORT END
       """
-  line_list = code.split('\n')
+  line_list = code.split("\n")
   for line,idx in line_list
     line = line.trim()
     if reg_ret = /^import\s+\{.*\}\s+from\s+\"(.+)\";?$/.exec line
@@ -88,9 +88,9 @@ module.exports = (path, import_cache = {})->
       line_list[idx] = mk_import orig_file
   
   # split/join because we inserted multiline text
-  code = line_list.join('\n')
+  code = line_list.join("\n")
   # deduplicate pragma
-  line_list = code.split('\n')
+  line_list = code.split("\n")
   pragma_hash = {}
   filter_line_list = []
   for line in line_list
@@ -100,8 +100,8 @@ module.exports = (path, import_cache = {})->
       pragma_hash[key] = true
     filter_line_list.push line
   
-  code = filter_line_list.join('\n')
+  code = filter_line_list.join("\n")
   
-  # code = code.replace(/pragma experimental .*/g, '')
-  code = code.replace(/pragma experimental "v0.5.0";?/g, '')
+  # code = code.replace(/pragma experimental .*/g, "")
+  code = code.replace(/pragma experimental "v0.5.0";?/g, "")
   import_cache[path] = code

@@ -1,9 +1,9 @@
-assert = require 'assert'
-ast_gen             = require('../src/ast_gen')
-solidity_to_ast4gen = require('../src/solidity_to_ast4gen').gen
-ast_transform       = require('../src/ast_transform')
-type_inference      = require('../src/type_inference').gen
-translate           = require('../src/translate_ligo').gen
+assert              = require "assert"
+ast_gen             = require("../src/ast_gen")
+solidity_to_ast4gen = require("../src/solidity_to_ast4gen").gen
+ast_transform       = require("../src/ast_transform")
+type_inference      = require("../src/type_inference").gen
+translate           = require("../src/translate_ligo").gen
 
 @translate_ligo_make_test = (text_i, text_o_expected)->
   solidity_ast = ast_gen text_i, silent:true

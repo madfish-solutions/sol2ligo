@@ -1,10 +1,10 @@
-ast = require 'ast4gen'
+ast = require "ast4gen"
 for k,v of ast
   @[k] = v
 
 class @Fn_decl_multiret
   is_closure : false
-  name    : ''
+  name    : ""
   type_i  : null
   type_o  : null
   arg_name_list  : []
@@ -22,7 +22,7 @@ class @Ret_multi
     @t_list = []
 
 class @Comment
-  text : ''
+  text : ""
 
 class @Tuple
   list : []

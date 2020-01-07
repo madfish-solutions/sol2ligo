@@ -1,5 +1,5 @@
-config = require './config'
-Type = require 'type'
+config = require "./config"
+Type = require "type"
 module = @
 
 # Прим. Это система типов eth
@@ -8,7 +8,7 @@ module = @
   {
     msg : (()->
       ret = new Type "struct"
-      ret.field_hash['sender'] = new Type "t_address"
+      ret.field_hash["sender"] = new Type "t_address"
       ret
     )()
     require : (()->
@@ -36,7 +36,7 @@ array_field_hash =
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
   MINUS : [
-    ['int', 'int']
+    ["int", "int"]
   ]
 }
 # ###################################################################################################
@@ -44,12 +44,12 @@ array_field_hash =
 # ###################################################################################################
 for v in "ADD SUB MUL POW".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = [
-    ['uint', 'uint', 'uint']
+    ["uint", "uint", "uint"]
   ]
 for v in "EQ NE GT LT GTE LTE".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = [
-    ['int', 'int', 'bool']
-    ['uint', 'uint', 'bool']
+    ["int", "int", "bool"]
+    ["uint", "uint", "bool"]
   ]
 # ###################################################################################################
 
@@ -94,7 +94,7 @@ class_prepare = (ctx, root)->
   return
 
 is_not_a_type = (type)->
-  !type or type.main == 'number'
+  !type or type.main == "number"
 
 @gen = (ast_tree, opt)->
   # phase 1 bottom-to-top walk + type reference
@@ -246,7 +246,7 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type 'function2'
+        complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
@@ -358,6 +358,7 @@ is_not_a_type = (type)->
         walk(root.a, ctx)
         walk(root.b, ctx)
         root.type
+      
       when "Un_op"
         # TODO bruteforce
         walk(root.a, ctx)
@@ -435,7 +436,7 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type 'function2'
+        complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
