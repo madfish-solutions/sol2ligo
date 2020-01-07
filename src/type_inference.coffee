@@ -139,7 +139,9 @@ is_not_a_type = (type)->
               
               when "map"
                 key = root.a.type.nest_list[0]
-                if !key.cmp root.b.type
+                if is_not_a_type root.b.type
+                  root.b.type = key
+                else if !key.cmp root.b.type
                   throw new Error("bad index access to '#{root.a.type}' with index '#{root.b.type}'")
                 root.type = root.a.type.nest_list[1]
                 found = true
@@ -175,6 +177,8 @@ is_not_a_type = (type)->
             if root.a.constructor.name == "Bin_op"
               if root.a.op == "INDEX_ACCESS"
                 if root.a.a.type?.main == "array"
+                  return
+                if root.a.a.type?.main == "map"
                   return
         if !found
           throw new Error "unknown un_op=#{root.op} a=#{a}"
@@ -315,10 +319,13 @@ is_not_a_type = (type)->
             
             when "INDEX_ACCESS"
               # NOTE we can't infer type of a for now
-              if bruteforce_b and !bruteforce_a
+              if !bruteforce_a and bruteforce_b
                 switch root.a.type?.main
                   when "array"
                     root.b.type = new Type "uint"
+                  
+                  when "map"
+                    root.b.type = root.a.type.nest_list[0]
                   
                   else
                     perr "can't type inference INDEX_ACCESS for #{root.a.type}"

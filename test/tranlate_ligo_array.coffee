@@ -155,7 +155,7 @@ describe "translate section", ()->
     
     function array (const contractStorage : state) : (state * nat) is
       block {
-        remove 0n from contractStorage.storageArray array;
+        remove 0n from map contractStorage.storageArray;
       } with (contractStorage, 0);
     
     """

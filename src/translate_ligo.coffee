@@ -59,7 +59,7 @@ walk = null
     nest_ctx = ctx.mk_nest()
     bin_op_a = walk ast.a.a, nest_ctx
     bin_op_b = walk ast.a.b, nest_ctx
-    "remove #{bin_op_b} from #{bin_op_a} array"
+    "remove #{bin_op_b} from map #{bin_op_a}"
 
 # ###################################################################################################
 #    type trans
@@ -120,7 +120,7 @@ translate_type = (type, ctx)->
         throw new Error("unknown solidity type '#{type}'")
 
 type2default_value = (type)->
-  switch type.toString()
+  switch type.main
     when "bool"
       "False"
     
@@ -132,6 +132,9 @@ type2default_value = (type)->
     
     when "address"
       "0"
+    
+    when "map"
+      "map end : #{translate_type type}"
     
     # when "t_string_memory_ptr"
       # '""'
@@ -211,6 +214,9 @@ reserved_hash =
   "self_address"    : true
   "implicit_account": true
   "set_delegate"    : true
+  # note not reserved, but we don't want collide with types
+  
+  "map"             : true
 
 translate_var_name = (name)->
   if reserved_hash[name]
@@ -515,7 +521,7 @@ walk = (root, ctx)->
       body = walk root.scope, ctx
       """
       
-      function #{root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{translate_var_name root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
