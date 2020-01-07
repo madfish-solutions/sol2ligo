@@ -1,29 +1,29 @@
 module = @
-require 'fy/codegen'
-config = require './config'
+require "fy/codegen"
+config = require "./config"
 # ###################################################################################################
 #    *_op
 # ###################################################################################################
 walk = null
 
 @bin_op_name_map =
-  ADD : '+'
-  # SUB : '-'
-  MUL : '*'
-  DIV : '/'
-  MOD : 'mod'
+  ADD : "+"
+  # SUB : "-"
+  MUL : "*"
+  DIV : "/"
+  MOD : "mod"
   
   
-  EQ : '='
-  NE : '=/='
-  GT : '>'
-  LT : '<'
-  GTE: '>='
-  LTE: '<='
+  EQ : "="
+  NE : "=/="
+  GT : ">"
+  LT : "<"
+  GTE: ">="
+  LTE: "<="
   
   
-  BOOL_AND: 'and'
-  BOOL_OR : 'or'
+  BOOL_AND: "and"
+  BOOL_OR : "or"
 
 @bin_op_name_cb_map =
   ASSIGN  : (a, b)-> "#{a} := #{b}"
@@ -41,7 +41,7 @@ walk = null
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if ast.a.type.main == 'uint' and ast.b.type.main == 'uint'
+    if ast.a.type.main == "uint" and ast.b.type.main == "uint"
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -72,36 +72,36 @@ translate_type = (type, ctx)->
     # ###################################################################################################
     #    scalar
     # ###################################################################################################
-    when 'bool'
-      'bool'
-    when 'uint'
-      'nat'
-    when 'int'
-      'int'
-    when 'int8'
-      'int'
-    when 'uint8'
-      'nat'
-    when 'string'
-      'string'
-    when 'address'
-      'address'
+    when "bool"
+      "bool"
+    when "uint"
+      "nat"
+    when "int"
+      "int"
+    when "int8"
+      "int"
+    when "uint8"
+      "nat"
+    when "string"
+      "string"
+    when "address"
+      "address"
     # ###################################################################################################
     #    collections
     # ###################################################################################################
-    when 'array'
+    when "array"
       nest   = translate_type type.nest_list[0], ctx
       # "list(#{nest})"
       "map(nat, #{nest})"
-    when 'map'
+    when "map"
       key   = translate_type type.nest_list[0], ctx
       value = translate_type type.nest_list[1], ctx
       "map(#{key}, #{value})"
     when config.storage
       config.storage
     
-    # when 't_bytes_memory_ptr'
-    #   'bytes'
+    # when "t_bytes_memory_ptr"
+    #   "bytes"
     # when config.storage
     #   config.storage
     else
@@ -114,16 +114,21 @@ translate_type = (type, ctx)->
 
 type2default_value = (type)->
   switch type.toString()
-    # when 't_bool'
-      # 'false'
-    when 'uint'
-      '0n'
-    when 'int'
-      '0'
-    when 'address'
-      '0'
-    # when 't_string_memory_ptr'
+    when "bool"
+      "False"
+    
+    when "uint"
+      "0n"
+    
+    when "int"
+      "0"
+    
+    when "address"
+      "0"
+    
+    # when "t_string_memory_ptr"
       # '""'
+    
     else
       ### !pragma coverage-skip-block ###
       throw new Error("unknown solidity type '#{type}'")
@@ -151,7 +156,7 @@ class @Gen_context
   type_decl_hash    : {}
   contract_var_hash : {}
   
-  trim_expr         : ''
+  trim_expr         : ""
   sink_list         : []
   tmp_idx           : 0
   
@@ -176,7 +181,7 @@ walk = (root, ctx)->
           jl = []
           for v in root.list
             jl.push walk v, ctx
-          join_list jl, ''
+          join_list jl, ""
         
         when "ContractDefinition"
           ctx = ctx.mk_nest()
@@ -187,7 +192,7 @@ walk = (root, ctx)->
               when "Var_decl"
                 field_decl_jl.push walk v, ctx
               when "Fn_decl_multiret"
-                'skip'
+                "skip"
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
           
@@ -195,7 +200,7 @@ walk = (root, ctx)->
           for v in root.list
             switch v.constructor.name
               when "Var_decl"
-                'skip'
+                "skip"
               when "Fn_decl_multiret"
                 jl.push walk v, ctx
               else
@@ -233,12 +238,12 @@ walk = (root, ctx)->
               ctx.sink_list.clear()
               # do not add e.g. tmp_XXX stmt which do nothing
               if ctx.trim_expr == code
-                ctx.trim_expr = ''
+                ctx.trim_expr = ""
                 continue
               jl.push code
             
             ret = jl.pop() or ""
-            if 0 != ret.indexOf 'with'
+            if 0 != ret.indexOf "with"
               jl.push ret
               ret = ""
             
@@ -280,17 +285,28 @@ walk = (root, ctx)->
     
     when "Const"
       switch root.type.main
+        when "bool"
+          switch root.val
+            when "true"
+              "True"
+            when "false"
+              "False"
+            else
+              throw new Error "can't translate bool constant '#{root.val}'"
+        
         when "uint"
           "#{root.val}n"
-        when 'string'
+        
+        when "string"
           JSON.stringify root.val
+        
         else
           root.val
     
     when "Bin_op"
       # TODO lvalue ctx ???
       ctx_lvalue = ctx.mk_nest()
-      ctx_lvalue.lvalue = true if 0 == root.op.indexOf 'ASS'
+      ctx_lvalue.lvalue = true if 0 == root.op.indexOf "ASS"
       _a = walk root.a, ctx_lvalue
       _b = walk root.b, ctx
       

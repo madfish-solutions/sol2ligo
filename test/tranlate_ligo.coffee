@@ -1,12 +1,12 @@
 {
   translate_ligo_make_test : make_test
-} = require('./util')
+} = require("./util")
 
-describe 'translate section', ()->
+describe "translate section", ()->
   # ###################################################################################################
   #    basic
   # ###################################################################################################
-  it 'hello world', ()->
+  it "hello world", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -31,7 +31,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'basic types', ()->
+  it "basic types", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -78,7 +78,7 @@ describe 'translate section', ()->
   # ###################################################################################################
   #    expr
   # ###################################################################################################
-  it 'uint ops', ()->
+  it "uint ops", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -140,7 +140,7 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'int ops', ()->
+  it "int ops", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -204,7 +204,91 @@ describe 'translate section', ()->
     """
     make_test text_i, text_o
   
-  it 'a[b]', ()->
+  it "cmp uint", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (uint) {
+        uint a = 0;
+        uint b = 0;
+        bool c;
+        c = a <  b;
+        c = a <= b;
+        c = a >  b;
+        c = a >= b;
+        c = a == b;
+        c = a != b;
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+      type state is record
+        value: nat;
+      end;
+      
+      function expr (const contractStorage : state) : (state * nat) is
+        block {
+          const a : nat = 0n;
+          const b : nat = 0n;
+          const c : bool = False;
+          c := (a < b);
+          c := (a <= b);
+          c := (a > b);
+          c := (a >= b);
+          c := (a = b);
+          c := (a =/= b);
+        } with (contractStorage, 0);
+      
+    """
+    make_test text_i, text_o
+  
+  it "cmp int", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (uint) {
+        int a = 0;
+        int b = 0;
+        bool c;
+        c = a <  b;
+        c = a <= b;
+        c = a >  b;
+        c = a >= b;
+        c = a == b;
+        c = a != b;
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+      type state is record
+        value: nat;
+      end;
+      
+      function expr (const contractStorage : state) : (state * nat) is
+        block {
+          const a : int = 0;
+          const b : int = 0;
+          const c : bool = False;
+          c := (a < b);
+          c := (a <= b);
+          c := (a > b);
+          c := (a >= b);
+          c := (a = b);
+          c := (a =/= b);
+        } with (contractStorage, 0);
+      
+    """
+    make_test text_i, text_o
+  
+  it "a[b]", ()->
     text_i = """
     pragma solidity ^0.5.11;
     

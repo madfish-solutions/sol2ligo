@@ -48,6 +48,7 @@ for v in "ADD SUB MUL POW".split  /\s+/g
   ]
 for v in "EQ NE GT LT GTE LTE".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = [
+    ['int', 'int', 'bool']
     ['uint', 'uint', 'bool']
   ]
 # ###################################################################################################
@@ -153,8 +154,10 @@ is_not_a_type = (type)->
               # when "hash_int"
                 # root.type = root.a.type.nest_list[0]
                 # found = true
-        if !found
-          perr "unknown bin_op=#{root.op} a=#{a} b=#{b}"
+        
+        # NOTE only fire warning on bruteforce fail
+        # if !found
+          # perr "unknown bin_op=#{root.op} a=#{a} b=#{b}"
           # throw new Error "unknown bin_op=#{root.op} a=#{a} b=#{b}"
         root.type
       

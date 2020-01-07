@@ -163,7 +163,7 @@ describe 'translate section', ()->
       block {
         const i : int = 0;
         i := 2;
-        while (true) block {
+        while (True) block {
           i := (i + 1);
           i := (i + 10);
         };
