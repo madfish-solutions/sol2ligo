@@ -13,14 +13,12 @@ walk = null
   DIV : "/"
   MOD : "mod"
   
-  
-  EQ : "="
-  NE : "=/="
-  GT : ">"
-  LT : "<"
-  GTE: ">="
-  LTE: "<="
-  
+  EQ  : "="
+  NE  : "=/="
+  GT  : ">"
+  LT  : "<"
+  GTE : ">="
+  LTE : "<="
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -74,18 +72,25 @@ translate_type = (type, ctx)->
     # ###################################################################################################
     when "bool"
       "bool"
+    
     when "uint"
       "nat"
+    
     when "int"
       "int"
+    
     when "int8"
       "int"
+    
     when "uint8"
       "nat"
+    
     when "string"
       "string"
+    
     when "address"
       "address"
+    
     # ###################################################################################################
     #    collections
     # ###################################################################################################
@@ -93,10 +98,12 @@ translate_type = (type, ctx)->
       nest   = translate_type type.nest_list[0], ctx
       # "list(#{nest})"
       "map(nat, #{nest})"
+    
     when "map"
       key   = translate_type type.nest_list[0], ctx
       value = translate_type type.nest_list[1], ctx
       "map(#{key}, #{value})"
+    
     when config.storage
       config.storage
     
@@ -136,10 +143,74 @@ type2default_value = (type)->
 #    translate_var_name
 # ###################################################################################################
 reserved_hash =
-  sender : true
-  source : true
-  amount : true
-  now    : true
+  # https://gitlab.com/ligolang/ligo/blob/dev/src/passes/operators/operators.ml
+  "get_force"       : true
+  "get_chain_id"    : true
+  "transaction"     : true
+  "get_contract"    : true
+  "get_entrypoint"  : true
+  "size"            : true
+  "int"             : true
+  "abs"             : true
+  "is_nat"          : true
+  "amount"          : true
+  "balance"         : true
+  "now"             : true
+  "unit"            : true
+  "source"          : true
+  "sender"          : true
+  "failwith"        : true
+  "bitwise_or"      : true
+  "bitwise_and"     : true
+  "bitwise_xor"     : true
+  "string_concat"   : true
+  "string_slice"    : true
+  "crypto_check"    : true
+  "crypto_hash_key" : true
+  "bytes_concat"    : true
+  "bytes_slice"     : true
+  "bytes_pack"      : true
+  "bytes_unpack"    : true
+  "set_empty"       : true
+  "set_mem"         : true
+  "set_add"         : true
+  "set_remove"      : true
+  "set_iter"        : true
+  "set_fold"        : true
+  "list_iter"       : true
+  "list_fold"       : true
+  "list_map"        : true
+  "map_iter"        : true
+  "map_map"         : true
+  "map_fold"        : true
+  "map_remove"      : true
+  "map_update"      : true
+  "map_get"         : true
+  "map_mem"         : true
+  "sha_256"         : true
+  "sha_512"         : true
+  "blake2b"         : true
+  "cons"            : true
+  "EQ"              : true
+  "NEQ"             : true
+  "NEG"             : true
+  "ADD"             : true
+  "SUB"             : true
+  "TIMES"           : true
+  "DIV"             : true
+  "MOD"             : true
+  "NOT"             : true
+  "AND"             : true
+  "OR"              : true
+  "GT"              : true
+  "GE"              : true
+  "LT"              : true
+  "LE"              : true
+  "CONS"            : true
+  "address"         : true
+  "self_address"    : true
+  "implicit_account": true
+  "set_delegate"    : true
 
 translate_var_name = (name)->
   if reserved_hash[name]
