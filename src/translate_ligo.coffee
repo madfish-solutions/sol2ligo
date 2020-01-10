@@ -302,7 +302,7 @@ walk = (root, ctx)->
           else
             aux_decl = """
             type #{config.storage} is record
-              _empty_state: int;
+              _empty_state : int;
             end;
             
             """
@@ -477,7 +477,7 @@ walk = (root, ctx)->
       type = translate_type root.type, ctx
       if ctx.is_class_decl
         ctx.contract_var_hash[name] = true
-        "#{root.name}: #{type};"
+        "#{name} : #{type};"
       else
         if root.assign_value
           val = walk root.assign_value, ctx

@@ -22,7 +22,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is
@@ -47,7 +47,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is
@@ -72,7 +72,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is
@@ -97,7 +97,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is
@@ -123,7 +123,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is
@@ -150,7 +150,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      storageArray: map(nat, int);
+      storageArray : map(nat, int);
     end;
     
     function array (const contractStorage : state) : (state * nat) is

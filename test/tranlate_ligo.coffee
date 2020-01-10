@@ -20,7 +20,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      value: nat;
+      value : nat;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -49,13 +49,13 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      value_bool: bool;
-      value_int: int;
-      value_uint: nat;
-      value_int8: int;
-      value_uint8: nat;
-      value_address: address;
-      value_string: string;
+      value_bool : bool;
+      value_int : int;
+      value_uint : nat;
+      value_int8 : int;
+      value_uint8 : nat;
+      value_address : address;
+      value_string : string;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -91,19 +91,20 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state) is
       block {
-        value_bool: bool = False;
-        value_int: int = 0;
-        value_uint: nat = 0n;
-        value_address: address = ("tz1iTHHGZSFAEDmk4bt7EqgBjw5Hj7vQjL7b" : address);
-        value_string: string = "";
+        const value_bool : bool = False;
+        const value_int : int = 0;
+        const value_uint : nat = 0n;
+        const value_address : address = ("tz1iTHHGZSFAEDmk4bt7EqgBjw5Hj7vQjL7b" : address);
+        const value_string : string = "";
       } with (contractStorage);
     
     """#"
+    make_test text_i, text_o
   
   it "int8/uint8 default value"
   it "enum"
@@ -128,8 +129,8 @@ describe "translate section", ()->
     text_o = """
     type state is record
       reserved__sender : address;
-      value : uint;
-      time : timestamp;
+      value : nat;
+      time : nat;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -140,6 +141,7 @@ describe "translate section", ()->
       } with (contractStorage);
     
     """#"
+    make_test text_i, text_o
   
   it "address(this).balance"
   it "blockhash(block.number - 1)"
@@ -180,7 +182,7 @@ describe "translate section", ()->
     """#"
     text_o = """
       type state is record
-        value: nat;
+        value : nat;
       end;
       
       function expr (const contractStorage : state) : (state * nat) is
@@ -243,7 +245,7 @@ describe "translate section", ()->
     """#"
     text_o = """
       type state is record
-        value: int;
+        value : int;
       end;
       
       function expr (const contractStorage : state) : (state * int) is
@@ -296,7 +298,7 @@ describe "translate section", ()->
     """#"
     text_o = """
       type state is record
-        value: nat;
+        value : nat;
       end;
       
       function expr (const contractStorage : state) : (state * nat) is
@@ -338,7 +340,7 @@ describe "translate section", ()->
     """#"
     text_o = """
       type state is record
-        value: nat;
+        value : nat;
       end;
       
       function expr (const contractStorage : state) : (state * nat) is
@@ -371,7 +373,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      balances: map(address, nat);
+      balances : map(address, nat);
     end;
     
     function expr (const contractStorage : state; const owner : address) : (state * nat) is

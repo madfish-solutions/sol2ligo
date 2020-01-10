@@ -29,7 +29,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      value: nat;
+      value : nat;
     end;
     
     function ifer (const contractStorage : state) : (state * nat) is
@@ -63,7 +63,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function whiler (const contractStorage : state; const owner : address) : (state * int) is
@@ -95,7 +95,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -126,7 +126,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -156,7 +156,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -187,7 +187,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -219,7 +219,7 @@ describe "translate section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state: int;
+      _empty_state : int;
     end;
     
     function call_me (const contractStorage : state; const a : int) : (state * int) is

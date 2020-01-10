@@ -24,7 +24,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
-      allowedIntegers: map(nat, bool);
+      allowedIntegers : map(nat, bool);
     end;
     
     function reserved__map (const contractStorage : state) : (state * nat) is
@@ -58,7 +58,7 @@ describe "translate section", ()->
   #   """#"
   #   text_o = """
   #   type state is record
-  #     allowedIntegers: map(int, bool);
+  #     allowedIntegers : map(int, bool);
   #   end;
   #   
   #   function reserved__map (const contractStorage : state) : (state * nat) is
