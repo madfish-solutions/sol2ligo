@@ -131,13 +131,13 @@ type2default_value = (type)->
       "0"
     
     when "address"
-      "0"
+      "(#{JSON.stringify config.default_address} : address)"
     
     when "map"
       "map end : #{translate_type type}"
     
-    # when "t_string_memory_ptr"
-      # '""'
+    when "string"
+      '""'
     
     else
       ### !pragma coverage-skip-block ###

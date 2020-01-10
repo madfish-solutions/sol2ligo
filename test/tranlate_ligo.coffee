@@ -75,6 +75,38 @@ describe "translate section", ()->
     }
     ###
   
+  
+  it "default values", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Default_values {
+      function test() public {
+        bool    value_bool  ;
+        int     value_int   ;
+        uint    value_uint  ;
+        address value_address;
+        string  memory value_string;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        value_bool: bool = False;
+        value_int: int = 0;
+        value_uint: nat = 0n;
+        value_address: address = ("tz1iTHHGZSFAEDmk4bt7EqgBjw5Hj7vQjL7b" : address);
+        value_string: string = "";
+      } with (contractStorage);
+    
+    """#"
+  
+  it "int8/uint8 default value"
+  it "enum"
   # ###################################################################################################
   #    expr
   # ###################################################################################################
