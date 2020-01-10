@@ -8,9 +8,14 @@ module = @
   {
     msg : (()->
       ret = new Type "struct"
-      ret.field_hash["sender"] = new Type "t_address"
+      ret.field_hash["sender"] = new Type "address"
+      # отдельная специальная олимпиада после type_inference делать еще один ast transform
+      # найти всех использующих этот тип, и перевести каскадно на tez
+      # ret.field_hash["value"] = new Type "tez"
+      ret.field_hash["value"] = new Type "uint"
       ret
     )()
+    now : new Type "uint"
     require : (()->
       # TODO new Type "function2<function<bool>,function<>>"
       ret = new Type "function2"
@@ -30,7 +35,12 @@ array_field_hash =
 
 @default_type_hash_gen = ()->
   {
-    "array" : true
+    bool    : true
+    int     : true
+    uint    : true
+    array   : true
+    string  : true
+    address : true
   }
 
 @bin_op_ret_type_hash_list = {}

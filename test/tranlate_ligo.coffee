@@ -75,7 +75,6 @@ describe "translate section", ()->
     }
     ###
   
-  
   it "default values", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -92,6 +91,7 @@ describe "translate section", ()->
     """
     text_o = """
     type state is record
+      _empty_state: int;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -107,6 +107,43 @@ describe "translate section", ()->
   
   it "int8/uint8 default value"
   it "enum"
+  
+  it "globals", ()->
+    perr "NOTE BUG. value is tez type, but can't handle it for now"
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Globals {
+      address public sender;
+      uint public value;
+      uint public time;
+      
+      function test() public payable {
+        sender = msg.sender;
+        value = msg.value;
+        time = now;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__sender : address;
+      value : uint;
+      time : timestamp;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        contractStorage.reserved__sender := sender;
+        contractStorage.value := amount;
+        contractStorage.time := now;
+      } with (contractStorage);
+    
+    """#"
+  
+  it "address(this).balance"
+  it "blockhash(block.number - 1)"
+  
   # ###################################################################################################
   #    expr
   # ###################################################################################################

@@ -224,6 +224,14 @@ translate_var_name = (name)->
   else
     name
 # ###################################################################################################
+#    special id, field access
+# ###################################################################################################
+spec_id_trans_hash =
+  "now"       : "now"
+  "msg.sender": "sender"
+  "msg.value" : "amount"
+
+# ###################################################################################################
 
 class @Gen_context
   next_gen          : null
@@ -358,7 +366,7 @@ walk = (root, ctx)->
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
-        name
+        spec_id_trans_hash[root.name] or name
     
     when "Const"
       switch root.type.main
@@ -414,7 +422,8 @@ walk = (root, ctx)->
               throw new Error "unknown array field #{root.name}"
         
         else
-          "#{t}.#{root.name}"
+          ret = "#{t}.#{root.name}"
+          spec_id_trans_hash[ret] or ret
     
     when "Fn_call"
       arg_list = []

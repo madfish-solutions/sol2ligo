@@ -87,12 +87,22 @@ unpack_id_type = (root, ctx)->
   switch root.typeString
     when "bool"
       new Type "bool"
+    
     when "uint8"
       new Type "byte"
+    
     when "uint256"
       new Type "uint"
+    
     when "int256"
       new Type "int"
+    
+    when "address"
+      new Type "address"
+    
+    when "msg"
+      new Type "struct" # fields would be replaced in type inference
+    
     else
       # puts root # temp disable
       throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
