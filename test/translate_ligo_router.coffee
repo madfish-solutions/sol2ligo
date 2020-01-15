@@ -24,7 +24,7 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function test (const contractStorage : state) : (state ) is
+    function test (const contractStorage : state) : (state) is
       block {
         skip
       } with (contractStorage);
