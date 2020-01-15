@@ -180,9 +180,9 @@ do ()=>
       when "Scope"
         switch root.original_node_type
           when "ContractDefinition"
-            root.scope = new ast.Scope
+            root = new ast.Scope
 
-            root.scope.list.unshift _main = new ast.Fn_decl_multiret
+            root.list.unshift _main = new ast.Fn_decl_multiret
             _main.name = "main"
             
             _main.type_i = new Type "function2"
