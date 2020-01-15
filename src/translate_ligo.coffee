@@ -218,6 +218,7 @@ reserved_hash =
   
   "map"             : true
 
+reserved_hash[config.contract_storage] = true
 @translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
     "reserved__#{name}"
@@ -238,6 +239,7 @@ class @Gen_context
   
   is_class_decl     : false
   lvalue            : false
+  ignore_reserved   : false
   type_decl_hash    : {}
   contract_var_hash : {}
   
@@ -362,7 +364,8 @@ walk = (root, ctx)->
     #    expr
     # ###################################################################################################
     when "Var"
-      name = translate_var_name root.name
+      name = root.name
+      name = translate_var_name name if !ctx.ignore_reserved
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -498,8 +501,13 @@ walk = (root, ctx)->
     
     when "Ret_multi"
       jl = []
-      for v in root.t_list
-        jl.push walk v, ctx
+      for v,idx in root.t_list
+        if idx == 0
+          ctx_loc = ctx.mk_nest()
+          ctx_loc.ignore_reserved = true
+          jl.push walk v, ctx_loc
+        else
+          jl.push walk v, ctx
       """
       with (#{jl.join ', '})
       """
@@ -525,7 +533,7 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v
+        v = translate_var_name v unless idx == 0
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
