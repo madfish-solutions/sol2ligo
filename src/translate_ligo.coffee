@@ -377,7 +377,10 @@ walk = (root, ctx)->
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
-        spec_id_trans_hash[root.name] or name
+        if {}[root.name]? # constructor and other reserved JS stuff
+          name
+        else
+          spec_id_trans_hash[root.name] or name
     
     when "Const"
       switch root.type.main

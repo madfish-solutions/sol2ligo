@@ -230,7 +230,7 @@ do ()=>
             
             for func in ctx.router_func_list
               _switch.scope.list.push _case = new ast.PM_case
-              _case.struct_name = func.name[0].toUpperCase() + func.name.slice 1
+              _case.struct_name = func.name.capitalize()
               _case.var_decl.name = "match_action"
               _case.var_decl.type = new Type _case.struct_name
               _case.scope.list.push call = new ast.Fn_call
