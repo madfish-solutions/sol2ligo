@@ -3,6 +3,8 @@ Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
 
+router_funcs = []
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -173,6 +175,22 @@ do ()=>
   @contract_storage_fn_decl_fn_call_ret_inject = (root)->
     walk root, {walk, next_gen: module.default_walk}
     
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Fn_decl_multiret"
+        router_funcs.push(root)
+        root
+      else
+        ctx.next_gen root, ctx
+  
+  @router_collector = (root)->
+    walk root, {walk, next_gen: module.default_walk}
+    
+
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -207,15 +225,18 @@ do ()=>
             assign.b.val = "true"
             assign.b.type = new Type "bool"
             
-            _main.scope.list.push _switch = new ast.PM_switch
-            _switch.cond = new ast.Var_decl
+            _if.t.list.push _switch = new ast.PM_switch
+            _switch.cond = new ast.Var
             _switch.cond.name = "action"
             _switch.cond.type = new Type "string" # TODO proper type
-            
-            _switch.scope.list.push _case = new ast.PM_case
-            _case.struct_name = "Action_test"
-            _case.var_decl.name = "n"
-            _case.var_decl.type = new Type "Action_test"
+
+            for func in router_funcs
+                _switch.scope.list.push _case = new ast.PM_case
+                _case.struct_name = func.name[0].toUpperCase() + func.name.slice 1
+                # _case.scope.list.push _call = new ast.Fn_call
+                # _call.fn = func.name 
+                _case.var_decl.name = "n"
+                _case.var_decl.type = new Type "Action_test"
             
             root
           else
@@ -232,5 +253,6 @@ do ()=>
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
   if opt.router
+    root = module.router_collector root
     root = module.constructor_patch root
   root
