@@ -477,3 +477,22 @@ describe "translate ligo section", ()->
     
     """
     make_test text_i, text_o
+
+    
+  it "enums", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Enumeration {
+      enum SomeData {DEFAULT,ONE,TWO}
+    }
+    """#"
+    # please note that enum name should become lowercase!
+    text_o = """
+    type somedata is
+    | DEFAULT
+    | ONE
+    | TWO;
+
+    """
+    make_test text_i, text_o
