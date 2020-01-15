@@ -9,6 +9,7 @@ type_inference  = require('./src/type_inference').gen
 translate       = require('./src/translate_ligo').gen
 translate_ds    = require('./src/translate_ligo_default_state').gen
 argv = require('minimist')(process.argv.slice(2))
+argv.router ?= true
 
 process_file = (file)->
   code = import_resolver file
@@ -28,7 +29,7 @@ process_file = (file)->
       p "FLAG need_prevent_deploy"
   
   if argv.full
-    new_ast = ast_transform.ligo_pack new_ast
+    new_ast = ast_transform.ligo_pack new_ast, router: argv.router
     new_ast = type_inference new_ast
     code = translate new_ast
     if argv.print

@@ -13,8 +13,6 @@ translate           = require("../src/translate_ligo").gen
   ast = ast_transform.ligo_pack ast, opt
   ast = type_inference ast
   text_o_real     = translate ast, opt
-  ast = type_inference ast
-  text_o_real     = translate ast
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected
