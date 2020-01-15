@@ -65,7 +65,7 @@ walk = null
 #    type trans
 # ###################################################################################################
 
-translate_type = (type, ctx)->
+@translate_type = translate_type = (type, ctx)->
   switch type.main
     # ###################################################################################################
     #    scalar
@@ -119,7 +119,7 @@ translate_type = (type, ctx)->
         puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
-type2default_value = (type)->
+@type2default_value = type2default_value = (type)->
   switch type.main
     when "bool"
       "False"
@@ -218,7 +218,7 @@ reserved_hash =
   
   "map"             : true
 
-translate_var_name = (name)->
+@translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
     "reserved__#{name}"
   else

@@ -2,7 +2,7 @@
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate_real_contracts section", ()->
+describe "translate ligo real contracts section", ()->
   # ###################################################################################################
   #    simple coin
   # ###################################################################################################

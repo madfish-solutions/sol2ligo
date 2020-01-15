@@ -7,6 +7,7 @@ ast_gen         = require './src/ast_gen'
 ast_transform   = require('./src/ast_transform')
 type_inference  = require('./src/type_inference').gen
 translate       = require('./src/translate_ligo').gen
+translate_ds    = require('./src/translate_ligo_default_state').gen
 argv = require('minimist')(process.argv.slice(2))
 
 process_file = (file)->
@@ -18,6 +19,7 @@ process_file = (file)->
   ast = ast_gen code,
     suggest_solc_version : '0.4.26'
     silent: true
+  
   if argv.ast_trans or argv.full
     solidity_to_ast4gen = require('./src/solidity_to_ast4gen').gen
     new_ast = solidity_to_ast4gen ast
@@ -30,7 +32,13 @@ process_file = (file)->
     new_ast = type_inference new_ast
     code = translate new_ast
     if argv.print
-      p code
+      puts code
+    
+    if argv.ds or argv.default_state
+      code = translate_ds new_ast
+      if argv.print
+        puts "default state:"
+        puts code
   
   return
 

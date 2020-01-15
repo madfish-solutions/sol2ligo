@@ -2,7 +2,7 @@
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate section", ()->
+describe "translate ligo section", ()->
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.ligo
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.sol
   # ###################################################################################################
