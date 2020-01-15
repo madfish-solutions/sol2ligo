@@ -8,10 +8,10 @@ translate           = require("../src/translate_ligo").gen
 @translate_ligo_make_test = (text_i, text_o_expected)->
   solidity_ast = ast_gen text_i, silent:true
   ast = solidity_to_ast4gen solidity_ast
-  ast = ast_transform.ligo_pack ast
-  ast = type_inference ast
-  text_o_real     = translate ast,
+  ast = ast_transform.ligo_pack ast,
     router : false
+  ast = type_inference ast
+  text_o_real     = translate ast
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected

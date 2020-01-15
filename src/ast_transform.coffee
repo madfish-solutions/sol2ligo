@@ -180,28 +180,43 @@ do ()=>
       when "Scope"
         switch root.original_node_type
           when "ContractDefinition"
-            root.list.unshift _main = new ast.Fn_decl_multiret
+            root.list.push _initialized = new ast.Var_decl
+            _initialized.name = "_initialized"
+            _initialized.type = new Type "bool"
+            
+            
+            root.list.push _main = new ast.Fn_decl_multiret
             _main.name = "main"
             
             _main.type_i = new Type "function2"
             _main.type_o =  new Type "function2"
             
-            _main.arg_name_list.unshift config.contract_storage
-            _main.type_i.nest_list.unshift new Type config.storage
-            _main.type_o.nest_list.unshift new Type config.storage
+            _main.arg_name_list.push config.contract_storage
+            _main.type_i.nest_list.push new Type config.storage
+            _main.type_o.nest_list.push new Type config.storage
 
-            _main.scope.list.unshift _if = new ast.If
+            _main.scope.list.push _if = new ast.If
             _if.cond = new ast.Var
-            _if.cond.name = config.contract_storage #.concat ".initialized"
+            _if.cond.name = "_initialized"
             
             _if.f.list.push assign = new ast.Bin_op
             assign.op = "ASSIGN"
             assign.a = new ast.Var
-            assign.a.name = config.contract_storage # "._initialized"
+            assign.a.name = "_initialized"
             assign.b = new ast.Const
             assign.b.val = "true"
             assign.b.type = new Type "bool"
-
+            
+            _main.scope.list.push _switch = new ast.PM_switch
+            _switch.cond = new ast.Var_decl
+            _switch.cond.name = "action"
+            _switch.cond.type = new Type "string" # TODO proper type
+            
+            _switch.scope.list.push _case = new ast.PM_case
+            _case.struct_name = "Action_test"
+            _case.var_decl.name = "n"
+            _case.var_decl.type = new Type "Action_test"
+            
             root
           else
             ctx.next_gen root, ctx
@@ -211,8 +226,11 @@ do ()=>
   @constructor_patch = (root)->
     walk root, {walk, next_gen: module.default_walk}
 
-@ligo_pack = (root)->
-  root = module.constructor_patch root
+@ligo_pack = (root, opt={})->
+  opt.router ?= true
   root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
+  if opt.router
+    root = module.constructor_patch root
+  root
