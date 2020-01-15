@@ -527,6 +527,12 @@ walk = (root, ctx)->
         type = translate_type v, ctx
         ret_jl.push "#{type}"
       
+      root.scope.list = if root.name is "constructor"
+        constr = [JSON.stringify {"arg_list":[{"op":"EQ","a":{"name":"initialized","type":{"main":"bool","nest_list":[],"field_hash":{}}},"b":{"type":{"main":"bool","nest_list":[],"field_hash":{}},"val":"false"},"type":{"main":"bool","nest_list":[],"field_hash":{}}},{"type":{"main":"string","nest_list":[],"field_hash":{}},"val":"Is initialized"}],"fn":{"name":"require","type":{"main":"function2","nest_list":[{"main":"function","nest_list":["bool"],"field_hash":{}},{"main":"function","nest_list":[],"field_hash":{}}],"field_hash":{}}},"type":"bool"}, JSON.stringify {"op":"ASSIGN","a":{"name":"initialized","type":{"main":"bool","nest_list":[],"field_hash":{}}},"b":{"type":{"main":"bool","nest_list":[],"field_hash":{}},"val":"true"},"type":{"main":"bool","nest_list":[],"field_hash":{}}}]
+        puts JSON.stringify typeof root.scope.list[0].constructor.name
+        [constr..., root.scope.list...]
+      else
+         root.scope.list
       body = walk root.scope, ctx
       """
       
