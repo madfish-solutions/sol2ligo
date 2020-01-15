@@ -282,3 +282,28 @@ describe "translate section", ()->
     """#"
     make_test text_i, text_o
   
+  it "require 0.4", ()->
+    text_i = """
+    pragma solidity >=0.4.21;
+    
+    contract Require_test {
+      mapping (address => uint) balances;
+      
+      function test(address owner) public returns (uint) {
+        require(balances[owner] >= 0);
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      balances : map(address, nat);
+    end;
+    
+    function test (const contractStorage : state; const owner : address) : (state * nat) is
+      block {
+        if ((case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n) then {skip} else failwith("require fail");
+      } with (contractStorage, 0n);
+    """#"
+    make_test text_i, text_o
+  

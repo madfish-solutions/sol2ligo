@@ -447,7 +447,7 @@ walk = (root, ctx)->
         switch root.fn.name
           when "require"
             cond= arg_list[0]
-            str = arg_list[1]
+            str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
       
       fn = walk root.fn, ctx
