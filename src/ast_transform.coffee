@@ -185,8 +185,8 @@ do ()=>
         ctx.next_gen root, ctx
   
   @router_collector = (root)->
-    walk root, {walk, next_gen: module.default_walk, router_func_list: []}
-    
+    walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
+    ctx.router_func_list
 
 
 do ()=>
