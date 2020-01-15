@@ -530,13 +530,11 @@ walk = (root, ctx)->
       """
       
     when "PM_switch"
-      p root.cond
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
       for _case in root.scope.list
         # register
-        ctx.contract_var_hash[_case.var_decl.name] = true
         ctx.type_decl_hash[_case.var_decl.type.main] = true
         
         case_scope = walk _case.scope, ctx

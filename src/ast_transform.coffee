@@ -3,8 +3,6 @@ Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
 
-router_funcs = []
-
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -181,13 +179,13 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Fn_decl_multiret"
-        router_funcs.push(root)
+        ctx.router_func_list.push root
         root
       else
         ctx.next_gen root, ctx
   
   @router_collector = (root)->
-    walk root, {walk, next_gen: module.default_walk}
+    walk root, {walk, next_gen: module.default_walk, router_func_list: []}
     
 
 
@@ -229,22 +227,25 @@ do ()=>
             _switch.cond = new ast.Var
             _switch.cond.name = "action"
             _switch.cond.type = new Type "string" # TODO proper type
-
-            for func in router_funcs
-                _switch.scope.list.push _case = new ast.PM_case
-                _case.struct_name = func.name[0].toUpperCase() + func.name.slice 1
-                _case.scope.list.push _call = new ast.Fn_call
-                _call.fn = new ast.Var
-                _call.fn.name = func.name # TODO word "constructor" gets corruped here
-                _call.fn.type = func.type_o
-                for value,idx in func.arg_name_list
-                    type = func.type_i.nest_list[idx]
-                    _case.var_decl.name = value
-                    _case.var_decl.type = type
-
-                    _call.arg_list.push _arg = new ast.Var
-                    _arg.name = value
-                    _arg.type = type
+            
+            for func in ctx.router_func_list
+              _switch.scope.list.push _case = new ast.PM_case
+              _case.struct_name = func.name[0].toUpperCase() + func.name.slice 1
+              _case.var_decl.name = "match_action"
+              _case.var_decl.type = new Type _case.struct_name
+              _case.scope.list.push call = new ast.Fn_call
+              call.fn = new ast.Var
+              call.fn.name = func.name # TODO word "constructor" gets corruped here
+              # BUG. Type inference should resolve this fn properly
+              call.fn.type = new Type "function"
+              call.fn.type.nest_list[0] = func.type_i
+              call.fn.type.nest_list[1] = func.type_o
+              for arg_name,idx in func.arg_name_list
+                call.arg_list.push arg = new ast.Field_access
+                arg.t = new ast.Var
+                arg.t.name = _case.var_decl.name
+                arg.t.type = _case.var_decl.type
+                arg.name = arg_name
             
             root
           else
@@ -252,8 +253,8 @@ do ()=>
       else
         ctx.next_gen root, ctx
   
-  @constructor_patch = (root)->
-    walk root, {walk, next_gen: module.default_walk}
+  @constructor_patch = (root, ctx)->
+    walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
 @ligo_pack = (root, opt={})->
   opt.router ?= true
@@ -261,6 +262,6 @@ do ()=>
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
   if opt.router
-    root = module.router_collector root
-    root = module.constructor_patch root
+    router_func_list = module.router_collector root
+    root = module.constructor_patch root, {router_func_list}
   root

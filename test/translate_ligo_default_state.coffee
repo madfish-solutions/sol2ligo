@@ -9,7 +9,7 @@ translate           = require("../src/translate_ligo_default_state").gen
 make_test = (text_i, hash_o_expected, text_o_expected)->
   solidity_ast = ast_gen text_i, silent:true
   ast = solidity_to_ast4gen solidity_ast
-  ast = ast_transform.ligo_pack ast
+  ast = ast_transform.ligo_pack ast, router: false
   ast = type_inference ast
   hash_o_real     = translate ast, convert_to_string: false
   json_eq hash_o_real, hash_o_expected
