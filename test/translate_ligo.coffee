@@ -457,3 +457,20 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
+   it "structs", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Structure {
+      struct SampleStruct {
+        uint data;
+      }
+    }
+    """#"
+    text_o = """
+    type SampleStruct is record
+      data : nat;
+    end;
+    
+    """
+    make_test text_i, text_o
