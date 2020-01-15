@@ -192,26 +192,26 @@ do ()=>
 
             _main.scope.list.unshift _if = new ast.If
             _if.cond = new ast.Var
-            _if.cond.name = config.contract_storage # "._initialized"
+            _if.cond.name = config.contract_storage #.concat ".initialized"
 
             _if.t.scope = new ast.Scope
             _if.f.scope = new ast.Scope
                         
-            _if.t.scope.list.push fn_call = new ast.Fn_call
-            fn_call.t = new ast.Var
-            fn_call.t.name = "require"
-            fn_call.t.arg_list = []
-            fn_call.t.arg_list.push msg_str = new ast.Const
-            msg_str.val = "Is initialized"
-            msg_str.type = new Type "bool"
+            _if.t.scope.list.push fn_call = new ast.Fn_call            
+            # fn_call.t = new ast.Var
+            # fn_call.t.name = "require"
+            # fn_call.t.arg_list = []
+            # fn_call.t.arg_list.push msg_str = new ast.Const
+            # msg_str.val = "Is initialized"
+            # msg_str.type = new Type "bool"
             
-            _if.f.scope.list.push assign = new ast.Bin_op
-            assign.op = "ASSIGN"
-            assign.a = new ast.Var
-            assign.a.name = config.contract_storage # "._initialized"
-            assign.b = new ast.Const
-            assign.b.val = "true"
-            assign.b.type = new Type "bool"
+            # _if.f.scope.list.push assign = new ast.Bin_op
+            # assign.op = "ASSIGN"
+            # assign.a = new ast.Var
+            # assign.a.name = config.contract_storage # "._initialized"
+            # assign.b = new ast.Const
+            # assign.b.val = "true"
+            # assign.b.type = new Type "bool"
 
             root
           else
@@ -223,7 +223,7 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk}
 
 @ligo_pack = (root)->
+  root = module.constructor_patch root
   root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
-  root = module.constructor_patch root
