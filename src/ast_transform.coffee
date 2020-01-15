@@ -176,38 +176,24 @@ do ()=>
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
-    switch root.original_node_type
-      when "ContractDefinition"
-        root.scope = new ast.Scope
-        root.arg_name_list = []
-        root.type_i = {nest_list: []}
-        root.type_o = {nest_list: []}
-        root.arg_name_list.unshift config.contract_storage
-        root.type_i.nest_list.unshift new Type config.storage
-        root.type_o.nest_list.unshift new Type config.storage
-        
-        last = root.scope.list.last()
-        if !last or last.constructor.name != "Ret_multi"
-          last = new ast.Ret_multi
-          last = walk last, ctx
-          root.scope.list.push last
+    switch root.constructor.name
+      when "Scope"
+        switch root.original_node_type
+          when "ContractDefinition"
+            root.scope = new ast.Scope
 
-        root.scope.list.unshift _main = new ast.Fn_decl
-        _main.name = "main"
-        _main.arg_name_list = []
-        _main.type_i = {nest_list: []}
-        _main.type_o = {nest_list: []}
-        _main.arg_name_list.unshift config.contract_storage
-        _main.type_i.nest_list.unshift new Type config.storage
-        _main.type_o.nest_list.unshift new Type config.storage
-        
-        last = _main.scope.list.last()
-        if !last or last.constructor.name != "Ret_multi"
-          last = new ast.Ret_multi
-          last = walk last, ctx
-          _main.scope.list.push last
-        root
-      
+            root.scope.list.unshift _main = new ast.Fn_decl_multiret
+            _main.name = "main"
+            
+            _main.type_i = new Type "function2"
+            _main.type_o =  new Type "function2"
+
+            for v in _main.type_i.nest_list
+              _main.arg_name_list.push v._name
+
+            root
+          else
+            ctx.next_gen root, ctx
       else
         ctx.next_gen root, ctx
   
