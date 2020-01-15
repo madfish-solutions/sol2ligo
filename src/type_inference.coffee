@@ -65,6 +65,7 @@ for v in "EQ NE GT LT GTE LTE".split  /\s+/g
 
 class Ti_context
   parent    : null
+  parent_fn : null
   var_hash  : {}
   type_hash : {}
   
@@ -75,6 +76,7 @@ class Ti_context
   mk_nest : ()->
     ret = new Ti_context
     ret.parent = @
+    ret.parent_fn = @parent_fn
     ret
   
   check_id : (id)->
@@ -247,7 +249,15 @@ is_not_a_type = (type)->
         null
       
       when "Ret_multi"
-        for v in root.t_list
+        for v,idx in root.t_list
+          if is_not_a_type v.type
+            v.type = ctx.parent_fn.type_o.nest_list[idx]
+          else
+            expected = ctx.parent_fn.type_o.nest_list[idx]
+            real = v.type
+            if !expected.cmp real
+              throw new Error "Ret_multi type mismatch expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+          
           walk v, ctx
         null
       
@@ -265,6 +275,7 @@ is_not_a_type = (type)->
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
+        ctx_nest.parent_fn = root
         for name,k in root.arg_name_list
           type = root.type_i.nest_list[k]
           ctx_nest.var_hash[name] = type

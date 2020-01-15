@@ -12,3 +12,5 @@ curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.txt |
     echo downloading "$filename"
     curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/$filename --output $TARGET_DIR/$filename
   done
+
+curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/soljson-latest.js --output $TARGET_DIR/soljson-latest.js

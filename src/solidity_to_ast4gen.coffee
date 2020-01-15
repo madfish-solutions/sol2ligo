@@ -146,6 +146,7 @@ walk = (root, ctx)->
     when "SourceUnit", "ContractDefinition"
       ret = new ast.Scope
       ret.original_node_type = root.nodeType
+      ret.name = root.name # for ContractDefinition
       for node in root.nodes
         ret.list.push walk node, ctx
       ret

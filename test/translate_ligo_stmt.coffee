@@ -3,7 +3,7 @@
 } = require("./util")
 
 
-describe "translate section", ()->
+describe "translate ligo section", ()->
   # ###################################################################################################
   #    stmt
   # ###################################################################################################
@@ -50,7 +50,7 @@ describe "translate section", ()->
   it "while", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Whiler {
       function whiler(address owner) public returns (int) {
         int i = 0;
@@ -82,7 +82,7 @@ describe "translate section", ()->
   it "for", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Forer {
       function forer(address owner) public returns (int) {
         int i = 0;
@@ -113,7 +113,7 @@ describe "translate section", ()->
   it "for no init", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Forer {
       function forer(address owner) public returns (int) {
         int i = 0;
@@ -143,7 +143,7 @@ describe "translate section", ()->
   it "for no cond", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Forer {
       function forer(address owner) public returns (int) {
         int i = 0;
@@ -174,7 +174,7 @@ describe "translate section", ()->
   it "for no iter", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Forer {
       function forer(address owner) public returns (int) {
         int i = 0;
@@ -204,10 +204,32 @@ describe "translate section", ()->
   #    fn call
   # ###################################################################################################
   
+  it "fn decl, ret", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Call {
+      function test() public returns (uint) {
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      _empty_state : int;
+    end;
+    
+    function test (const contractStorage : state) : (state * nat) is
+      block {
+        skip
+      } with (contractStorage, 0n);
+    """
+    make_test text_i, text_o# special fn
+  
   it "fn call", ()->
     text_i = """
     pragma solidity ^0.5.11;
-
+    
     contract Call {
       function call_me(int a) public returns (int) {
         return a;
@@ -233,4 +255,55 @@ describe "translate section", ()->
         contractStorage := tmp_0.0;
       } with (contractStorage, tmp_0.1);
     """
+    make_test text_i, text_o# special fn
+  
+  it "require", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Require_test {
+      mapping (address => uint) balances;
+      
+      function test(address owner) public returns (uint) {
+        require(balances[owner] >= 0, "Overdrawn balance");
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      balances : map(address, nat);
+    end;
+    
+    function test (const contractStorage : state; const owner : address) : (state * nat) is
+      block {
+        if ((case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n) then {skip} else failwith("Overdrawn balance");
+      } with (contractStorage, 0n);
+    """#"
     make_test text_i, text_o
+  
+  it "require 0.4", ()->
+    text_i = """
+    pragma solidity >=0.4.21;
+    
+    contract Require_test {
+      mapping (address => uint) balances;
+      
+      function test(address owner) public returns (uint) {
+        require(balances[owner] >= 0);
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      balances : map(address, nat);
+    end;
+    
+    function test (const contractStorage : state; const owner : address) : (state * nat) is
+      block {
+        if ((case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n) then {skip} else failwith("require fail");
+      } with (contractStorage, 0n);
+    """#"
+    make_test text_i, text_o
+  

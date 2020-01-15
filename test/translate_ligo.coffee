@@ -1,8 +1,9 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate section", ()->
+describe "translate ligo section", ()->
   # ###################################################################################################
   #    basic
   # ###################################################################################################
@@ -108,9 +109,10 @@ describe "translate section", ()->
   
   it "int8/uint8 default value"
   it "enum"
+  it "true/false"
+  it "string escaping"
   
   it "globals", ()->
-    perr "NOTE BUG. value is tez type, but can't handle it for now"
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -136,8 +138,80 @@ describe "translate section", ()->
     function test (const contractStorage : state) : (state) is
       block {
         contractStorage.reserved__sender := sender;
-        contractStorage.value := amount;
+        contractStorage.value := nat(amount);
         contractStorage.time := now;
+      } with (contractStorage);
+    
+    """#"
+    make_test text_i, text_o
+  
+  it "contractStorage conflict local", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Globals {
+      function test() public payable {
+        uint #{config.contract_storage} = 1;
+        uint a = #{config.contract_storage};
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      _empty_state : int;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        const reserved__#{config.contract_storage} : nat = 1n;
+        const a : nat = reserved__#{config.contract_storage};
+      } with (contractStorage);
+    
+    """#"
+    make_test text_i, text_o
+  
+  it "contractStorage conflict arg", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Globals {
+      function test(uint #{config.contract_storage}) public payable {
+        uint a = #{config.contract_storage};
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      _empty_state : int;
+    end;
+    
+    function test (const contractStorage : state; const reserved__#{config.contract_storage} : nat) : (state) is
+      block {
+        const a : nat = reserved__#{config.contract_storage};
+      } with (contractStorage);
+    
+    """#"
+    make_test text_i, text_o
+  
+  it "contractStorage conflict state", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Globals {
+      uint #{config.contract_storage};
+      function test() public payable {
+        uint a = #{config.contract_storage};
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__#{config.contract_storage} : nat;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        const a : nat = contractStorage.reserved__#{config.contract_storage};
       } with (contractStorage);
     
     """#"
@@ -312,7 +386,7 @@ describe "translate section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0);
+        } with (contractStorage, 0n);
       
     """
     make_test text_i, text_o
@@ -354,7 +428,7 @@ describe "translate section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0);
+        } with (contractStorage, 0n);
       
     """
     make_test text_i, text_o

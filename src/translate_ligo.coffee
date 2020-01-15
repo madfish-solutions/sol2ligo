@@ -65,7 +65,7 @@ walk = null
 #    type trans
 # ###################################################################################################
 
-translate_type = (type, ctx)->
+@translate_type = translate_type = (type, ctx)->
   switch type.main
     # ###################################################################################################
     #    scalar
@@ -119,7 +119,7 @@ translate_type = (type, ctx)->
         puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
-type2default_value = (type)->
+@type2default_value = type2default_value = (type)->
   switch type.main
     when "bool"
       "False"
@@ -218,7 +218,8 @@ reserved_hash =
   
   "map"             : true
 
-translate_var_name = (name)->
+reserved_hash[config.contract_storage] = true
+@translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
     "reserved__#{name}"
   else
@@ -229,7 +230,7 @@ translate_var_name = (name)->
 spec_id_trans_hash =
   "now"       : "now"
   "msg.sender": "sender"
-  "msg.value" : "amount"
+  "msg.value" : "nat(amount)"
 
 # ###################################################################################################
 
@@ -238,6 +239,7 @@ class @Gen_context
   
   is_class_decl     : false
   lvalue            : false
+  ignore_reserved   : false
   type_decl_hash    : {}
   contract_var_hash : {}
   
@@ -362,7 +364,8 @@ walk = (root, ctx)->
     #    expr
     # ###################################################################################################
     when "Var"
-      name = translate_var_name root.name
+      name = root.name
+      name = translate_var_name name if !ctx.ignore_reserved
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -443,6 +446,13 @@ walk = (root, ctx)->
               else
                 throw new Error "unknown array field function #{root.fn.name}"
       
+      if root.fn.constructor.name == "Var"
+        switch root.fn.name
+          when "require"
+            cond= arg_list[0]
+            str = arg_list[1] or '"require fail"'
+            return "if #{cond} then {skip} else failwith(#{str})"
+      
       fn = walk root.fn, ctx
       
       arg_list.unshift config.contract_storage
@@ -491,8 +501,13 @@ walk = (root, ctx)->
     
     when "Ret_multi"
       jl = []
-      for v in root.t_list
-        jl.push walk v, ctx
+      for v,idx in root.t_list
+        if idx == 0
+          ctx_loc = ctx.mk_nest()
+          ctx_loc.ignore_reserved = true
+          jl.push walk v, ctx_loc
+        else
+          jl.push walk v, ctx
       """
       with (#{jl.join ', '})
       """
@@ -538,7 +553,7 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v
+        v = translate_var_name v unless idx == 0
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       

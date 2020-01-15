@@ -2,7 +2,7 @@
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate section", ()->
+describe "translate ligo section", ()->
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Mappings.ligo
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Mappings.sol
   # ###################################################################################################
@@ -31,7 +31,7 @@ describe "translate section", ()->
       block {
         contractStorage.allowedIntegers[0n] := True;
         remove 0n from map contractStorage.allowedIntegers;
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o
