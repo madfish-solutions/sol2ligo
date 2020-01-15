@@ -457,7 +457,7 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
-   it "structs", ()->
+  it "structs", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -468,6 +468,9 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
+    type state is record
+      _empty_state : int;
+    end;
     type SampleStruct is record
       data : nat;
     end;

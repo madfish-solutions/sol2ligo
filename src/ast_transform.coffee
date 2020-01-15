@@ -210,7 +210,7 @@ do ()=>
             _main.arg_name_list.push config.contract_storage
             _main.type_i.nest_list.push new Type config.storage
             _main.type_o.nest_list.push new Type config.storage
-
+            
             _main.scope.list.push _if = new ast.If
             _if.cond = new ast.Var
             _if.cond.name = "_initialized"

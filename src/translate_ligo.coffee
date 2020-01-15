@@ -589,7 +589,7 @@ walk = (root, ctx)->
       """
       type #{root.name} is record
         #{join_list jl}
-      end
+      end;
       """
     
     else

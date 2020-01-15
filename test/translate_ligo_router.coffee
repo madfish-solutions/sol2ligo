@@ -3,15 +3,8 @@
 } = require("./util")
 
 describe "translate ligo section", ()->
-  # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.ligo
-  # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.sol
-  # ###################################################################################################
-  #    array
-  # ###################################################################################################
-  it "dynamic array", ()->
+  it "router test", ()->
     text_i = """
-    pragma solidity ^0.5.11;
-    
     pragma solidity ^0.5.11;
     
     contract Router_test {
@@ -21,7 +14,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      storageArray : map(nat, int);
+      _initialized : bool;
     end;
     
     function test (const contractStorage : state) : (state) is
