@@ -233,10 +233,18 @@ do ()=>
             for func in router_funcs
                 _switch.scope.list.push _case = new ast.PM_case
                 _case.struct_name = func.name[0].toUpperCase() + func.name.slice 1
-                # _case.scope.list.push _call = new ast.Fn_call
-                # _call.fn = func.name 
-                _case.var_decl.name = "n"
-                _case.var_decl.type = new Type "Action_test"
+                _case.scope.list.push _call = new ast.Fn_call
+                _call.fn = new ast.Var
+                _call.fn.name = func.name # TODO word "constructor" gets corruped here
+                _call.fn.type = func.type_o
+                for value,idx in func.arg_name_list
+                    type = func.type_i.nest_list[idx]
+                    _case.var_decl.name = value
+                    _case.var_decl.type = type
+
+                    _call.arg_list.push _arg = new ast.Var
+                    _arg.name = value
+                    _arg.type = type
             
             root
           else
