@@ -173,9 +173,49 @@ do ()=>
   @contract_storage_fn_decl_fn_call_ret_inject = (root)->
     walk root, {walk, next_gen: module.default_walk}
     
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.original_node_type
+      when "ContractDefinition"
+        root.scope = new ast.Scope
+        root.arg_name_list = []
+        root.type_i = {nest_list: []}
+        root.type_o = {nest_list: []}
+        root.arg_name_list.unshift config.contract_storage
+        root.type_i.nest_list.unshift new Type config.storage
+        root.type_o.nest_list.unshift new Type config.storage
+        
+        last = root.scope.list.last()
+        if !last or last.constructor.name != "Ret_multi"
+          last = new ast.Ret_multi
+          last = walk last, ctx
+          root.scope.list.push last
 
+        root.scope.list.unshift _main = new ast.Fn_decl
+        _main.name = "main"
+        _main.arg_name_list = []
+        _main.type_i = {nest_list: []}
+        _main.type_o = {nest_list: []}
+        _main.arg_name_list.unshift config.contract_storage
+        _main.type_i.nest_list.unshift new Type config.storage
+        _main.type_o.nest_list.unshift new Type config.storage
+        
+        last = _main.scope.list.last()
+        if !last or last.constructor.name != "Ret_multi"
+          last = new ast.Ret_multi
+          last = walk last, ctx
+          _main.scope.list.push last
+        root
+      
+      else
+        ctx.next_gen root, ctx
+  
+  @constructor_patch = (root)->
+    walk root, {walk, next_gen: module.default_walk}
 
 @ligo_pack = (root)->
   root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
+  root = module.constructor_patch root
