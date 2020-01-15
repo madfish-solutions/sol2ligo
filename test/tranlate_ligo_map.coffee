@@ -31,7 +31,7 @@ describe "translate section", ()->
       block {
         contractStorage.allowedIntegers[0n] := True;
         remove 0n from map contractStorage.allowedIntegers;
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o

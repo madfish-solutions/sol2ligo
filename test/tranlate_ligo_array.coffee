@@ -28,7 +28,7 @@ describe "translate section", ()->
     function array (const contractStorage : state) : (state * nat) is
       block {
         skip
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -53,7 +53,7 @@ describe "translate section", ()->
     function array (const contractStorage : state) : (state * nat) is
       block {
         skip
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -130,7 +130,7 @@ describe "translate section", ()->
       block {
         const tmp_0 : map(nat, int) = contractStorage.storageArray;
         tmp_0[size(tmp_0)] := 0;
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -156,7 +156,7 @@ describe "translate section", ()->
     function array (const contractStorage : state) : (state * nat) is
       block {
         remove 0n from map contractStorage.storageArray;
-      } with (contractStorage, 0);
+      } with (contractStorage, 0n);
     
     """
     make_test text_i, text_o

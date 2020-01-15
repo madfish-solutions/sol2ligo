@@ -108,6 +108,8 @@ describe "translate section", ()->
   
   it "int8/uint8 default value"
   it "enum"
+  it "true/false"
+  it "string escaping"
   
   it "globals", ()->
     perr "NOTE BUG. value is tez type, but can't handle it for now"
@@ -136,7 +138,7 @@ describe "translate section", ()->
     function test (const contractStorage : state) : (state) is
       block {
         contractStorage.reserved__sender := sender;
-        contractStorage.value := amount;
+        contractStorage.value := nat(amount);
         contractStorage.time := now;
       } with (contractStorage);
     
@@ -312,7 +314,7 @@ describe "translate section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0);
+        } with (contractStorage, 0n);
       
     """
     make_test text_i, text_o
@@ -354,7 +356,7 @@ describe "translate section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0);
+        } with (contractStorage, 0n);
       
     """
     make_test text_i, text_o

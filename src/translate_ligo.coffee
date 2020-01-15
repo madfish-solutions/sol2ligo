@@ -229,7 +229,7 @@ translate_var_name = (name)->
 spec_id_trans_hash =
   "now"       : "now"
   "msg.sender": "sender"
-  "msg.value" : "amount"
+  "msg.value" : "nat(amount)"
 
 # ###################################################################################################
 
@@ -442,6 +442,13 @@ walk = (root, ctx)->
               
               else
                 throw new Error "unknown array field function #{root.fn.name}"
+      
+      if root.fn.constructor.name == "Var"
+        switch root.fn.name
+          when "require"
+            cond= arg_list[0]
+            str = arg_list[1]
+            return "if #{cond} then {skip} else failwith(#{str})"
       
       fn = walk root.fn, ctx
       
