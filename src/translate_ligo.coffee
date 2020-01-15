@@ -280,16 +280,24 @@ walk = (root, ctx)->
                 field_decl_jl.push walk v, ctx
               when "Fn_decl_multiret"
                 "skip"
+              when "Class_decl"
+                ctx.sink_list.push walk v, ctx
+                
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
           
           jl = []
+          jl.append ctx.sink_list
+          ctx.sink_list.clear()
+          
           for v in root.list
             switch v.constructor.name
               when "Var_decl"
                 "skip"
               when "Fn_decl_multiret"
                 jl.push walk v, ctx
+              when "Class_decl"
+                "skip"
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
           
@@ -571,7 +579,15 @@ walk = (root, ctx)->
       ctx.type_decl_hash[root.name] = true
       ctx = ctx.mk_nest()
       ctx.is_class_decl = true
-      walk root.scope, ctx
+      jl = []
+      for v in root.scope.list
+        jl.push walk v, ctx
+      
+      """
+      type #{root.name} is record
+        #{join_list jl}
+      end
+      """
     
     else
       if ctx.next_gen?
