@@ -228,6 +228,9 @@ do ()=>
             _switch.cond.name = "action"
             _switch.cond.type = new Type "string" # TODO proper type
             
+            records = form_records root, ctx
+            root.list.append records
+
             for func in ctx.router_func_list
               _switch.scope.list.push _case = new ast.PM_case
               _case.struct_name = func.name.capitalize()
@@ -253,6 +256,19 @@ do ()=>
       else
         ctx.next_gen root, ctx
   
+  form_records = (root, ctx)->
+    records = []
+    for func in ctx.router_func_list
+      records.push record = new ast.Class_decl
+      record.name = func.name + "_args"
+      for value,idx in func.arg_name_list
+        type = func.type_i.nest_list[idx]
+        record.scope.list.push arg = new ast.Var_decl
+        arg.name = value
+        arg.type = new Type "string"
+    
+    records
+
   @constructor_patch = (root, ctx)->
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
