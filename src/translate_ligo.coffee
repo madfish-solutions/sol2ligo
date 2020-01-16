@@ -602,7 +602,7 @@ walk = (root, ctx)->
         # not covered by tests yet
         aux = ""
         if v.type
-          aux = " is #{v.type}"
+          aux = " is #{translate_type v.type, ctx}"
         
         jl.push "| #{v.name}#{aux}"
         # jl.push "| #{v.name}"
