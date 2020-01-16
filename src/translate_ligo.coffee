@@ -214,6 +214,8 @@ reserved_hash =
   "self_address"    : true
   "implicit_account": true
   "set_delegate"    : true
+  "to"              : true
+  "args"            : true
   # note not reserved, but we don't want collide with types
   
   "map"             : true
