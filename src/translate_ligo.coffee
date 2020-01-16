@@ -91,6 +91,9 @@ walk = null
     when "address"
       "address"
     
+    when "built_in_op_list"
+      "list(operation)"
+    
     # ###################################################################################################
     #    collections
     # ###################################################################################################
@@ -132,6 +135,9 @@ walk = null
     
     when "address"
       "(#{JSON.stringify config.default_address} : address)"
+    
+    when "built_in_op_list"
+      "(nil: list(operation))"
     
     when "map"
       "map end : #{translate_type type}"
@@ -242,6 +248,7 @@ spec_id_trans_hash =
 class @Gen_context
   next_gen          : null
   
+  use_op_list       : true
   is_class_decl     : false
   lvalue            : false
   ignore_reserved   : false
@@ -259,6 +266,7 @@ class @Gen_context
   
   mk_nest : ()->
     t = new module.Gen_context
+    t.use_op_list = @use_op_list
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t
@@ -330,7 +338,6 @@ walk = (root, ctx)->
             jl = []
             for v in root.list
               code = walk v, ctx
-              code += ";" if !/;$/.test code
               for loc_code in ctx.sink_list
                 loc_code += ";" if !/;$/.test loc_code
                 jl.push loc_code
@@ -339,6 +346,7 @@ walk = (root, ctx)->
               if ctx.trim_expr == code
                 ctx.trim_expr = ""
                 continue
+              code += ";" if !/;$/.test code
               jl.push code
             
             ret = jl.pop() or ""
@@ -347,6 +355,7 @@ walk = (root, ctx)->
               ret = ""
             
             jl = jl.filter (t)-> t != ""
+            
             if root._phantom
               if jl.length
                 body = join_list jl, ""
@@ -440,8 +449,8 @@ walk = (root, ctx)->
               throw new Error "unknown array field #{root.name}"
         
         else
-          ret = "#{t}.#{root.name}"
-          spec_id_trans_hash[ret] or ret
+          chk_ret = "#{t}.#{root.name}"
+          spec_id_trans_hash[chk_ret] or "#{t}.#{translate_var_name root.name, ctx}"
     
     when "Fn_call"
       arg_list = []
@@ -471,16 +480,25 @@ walk = (root, ctx)->
       fn = walk root.fn, ctx
       
       arg_list.unshift config.contract_storage
+      if ctx.use_op_list
+        arg_list.unshift config.op_list
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
         type_jl.push translate_type v
       
-      if type_jl[0] != config.storage
-        "#{fn}(#{arg_list.join ', '})"
+      # temp disabled
+      # if type_jl[0] != config.storage
+      #   "#{fn}(#{arg_list.join ', '})"
+      
+      tmp_var = "tmp_#{ctx.tmp_idx++}"
+      ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
+      
+      if ctx.use_op_list
+        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
+        ctx.trim_expr = "#{tmp_var}.2"
       else
-        tmp_var = "tmp_#{ctx.tmp_idx++}"
-        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
         ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
         ctx.trim_expr = "#{tmp_var}.1"
     
@@ -517,12 +535,15 @@ walk = (root, ctx)->
     when "Ret_multi"
       jl = []
       for v,idx in root.t_list
+        ctx_loc = ctx
         if idx == 0
           ctx_loc = ctx.mk_nest()
           ctx_loc.ignore_reserved = true
-          jl.push walk v, ctx_loc
-        else
-          jl.push walk v, ctx
+        else if idx == 1 and ctx.use_op_list
+          ctx_loc = ctx.mk_nest()
+          ctx_loc.ignore_reserved = true
+        jl.push walk v, ctx_loc
+        
       """
       with (#{jl.join ', '})
       """
@@ -566,7 +587,10 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v unless idx == 0
+        if ctx.use_op_list
+          v = translate_var_name v unless idx <= 1
+        else
+          v = translate_var_name v unless idx == 0
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -591,8 +615,9 @@ walk = (root, ctx)->
         jl.push walk v, ctx
       
       """
+      
       type #{root.name} is record
-        #{join_list jl}
+        #{join_list jl, '  '}
       end;
       """
     
@@ -613,6 +638,7 @@ walk = (root, ctx)->
         # jl.push "| #{v.name}"
       
       """
+      
       type #{root.name} is
         #{join_list jl, '  '};
       """
@@ -626,6 +652,8 @@ walk = (root, ctx)->
         throw new Error "Unknown root.constructor.name #{root.constructor.name}"
 
 @gen = (root, opt = {})->
+  opt.op_list ?= true
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
+  ctx.use_op_list = opt.op_list
   walk root, ctx

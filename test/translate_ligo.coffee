@@ -485,6 +485,7 @@ describe "translate ligo section", ()->
     type state is record
       reserved__empty_state : int;
     end;
+    
     type SampleStruct is record
       data : nat;
     end;
@@ -506,6 +507,7 @@ describe "translate ligo section", ()->
     type state is record
       reserved__empty_state : int;
     end;
+    
     type SomeData is
       | DEFAULT
       | ONE
