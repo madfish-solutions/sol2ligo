@@ -278,11 +278,10 @@ walk = (root, ctx)->
             switch v.constructor.name
               when "Var_decl"
                 field_decl_jl.push walk v, ctx
-              when "Fn_decl_multiret"
+              when "Fn_decl_multiret", "Enum_decl"
                 "skip"
               when "Class_decl"
                 ctx.sink_list.push walk v, ctx
-                
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
           
@@ -294,7 +293,7 @@ walk = (root, ctx)->
             switch v.constructor.name
               when "Var_decl"
                 "skip"
-              when "Fn_decl_multiret"
+              when "Fn_decl_multiret", "Enum_decl"
                 jl.push walk v, ctx
               when "Class_decl"
                 "skip"
@@ -590,6 +589,21 @@ walk = (root, ctx)->
       type #{root.name} is record
         #{join_list jl}
       end;
+      """
+
+    when "Enum_decl"
+      jl = []
+      for v in root.vars
+        decl = """| #{v.name}"""
+        if v.type
+            type = walk v.type, ctx
+            decl += """ is #{type}"""
+        
+        jl.push decl
+
+      """
+      type #{root.name} is 
+        #{join_list jl};
       """
     
     else

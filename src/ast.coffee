@@ -80,3 +80,9 @@ class @PM_case
     @var_decl = new ast.Var_decl
     @scope    = new ast.Scope
   
+class @Enum_decl
+  name : ""
+  vars: []
+
+  constructor:()->
+    @vars = []

@@ -298,6 +298,9 @@ is_not_a_type = (type)->
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
         null
+
+      when "Enum_decl"
+        null
       
       else
         ### !pragma coverage-skip-block ###
@@ -493,6 +496,9 @@ is_not_a_type = (type)->
       when "While"
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
+        null
+
+      when "Enum_decl"
         null
       
       else

@@ -40,6 +40,9 @@ do ()=>
       # ###################################################################################################
       when "Var_decl", "Comment"
         root
+
+      when "Enum_decl"
+        root
       
       when "Ret_multi"
         for v,idx in root.t_list

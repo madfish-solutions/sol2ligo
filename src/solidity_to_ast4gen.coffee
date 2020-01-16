@@ -460,7 +460,15 @@ walk = (root, ctx)->
       else
         fn.scope = new ast.Scope
       fn
-    
+
+    when "EnumDefinition"
+      e = new ast.Enum_decl
+      e.name = root.name.toLowerCase()
+      for member in root.members
+        e.vars.push decl = new ast.Var_decl
+        decl.name = member.name
+        # skip type declaration since solidity enums aren't typed
+      e
     
     else
       puts root
