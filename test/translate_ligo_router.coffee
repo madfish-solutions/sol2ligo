@@ -68,37 +68,35 @@ describe "generate router", ()->
       reserved__amount : nat;
     end;
 
-    function oneArgFunction (const contractStorage : state; const args_ : oneArgFunction_args) : (list(operation) * state) is
+    function oneArgFunction (const contractStorage : state; const reserved__args : oneArgFunction_args) : (state) is
       block {
         skip
-      } with ((nil: list(operation)), contractStorage)
+      } with (contractStorage)
 
-    function twoArgsFunction (const contractStorage : state; const args_ : twoArgsFunction_args) : (list(operation) * state) is
+    function twoArgsFunction (const contractStorage : state; const reserved__args : twoArgsFunction_args) : (state) is
       block {
         skip
-      } with ((nil: list(operation)), contractStorage)
+      } with (contractStorage)
 
     type router_enum is
       | OneArgFunction of oneArgFunction_args
       | TwoArgsFunction of twoArgsFunction_args;
 
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contractStorage : state) : (state) is
       block {
         if (contractStorage.reserved__initialized) then block {
           case action of
           | OneArgFunction(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = oneArgFunction(contractStorage, match_action);
-            contractStorage := tmp_0.1;
+            contractStorage := oneArgFunction(contractStorage, match_action);
           }
           | TwoArgsFunction(match_action) -> block {
-            const tmp_1 : (list(operation) * state) = twoArgsFunction(contractStorage, match_action);
-            contractStorage := tmp_1.1;
+            contractStorage := twoArgsFunction(contractStorage, match_action);
           }
           end;
         } else block {
           contractStorage.reserved__initialized := True;
         };
-      } with ((nil: list(operation)), contractStorage)
-      """
+      } with (contractStorage)
+    """
 
     make_test text_i, text_o, router: true
