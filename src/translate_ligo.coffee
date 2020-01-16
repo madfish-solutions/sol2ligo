@@ -596,7 +596,7 @@ walk = (root, ctx)->
       for v in root.vars
         decl = """| #{v.name}"""
         if v.type
-            type = walk v.type, ctx
+            type = translate_type v.type, ctx
             decl += """ is #{type}"""
         
         jl.push decl
