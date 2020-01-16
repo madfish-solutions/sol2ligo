@@ -24,14 +24,14 @@ describe "translate ligo default state section", ()->
     """
     make_test text_i, {
       State : {
-        _empty_state : {
+        reserved__empty_state : {
           type : "nat"
           value: "0n"
         }
       }
     }, """
     record
-      _empty_state = 0n;
+      reserved__empty_state = 0n;
     end
     """
   

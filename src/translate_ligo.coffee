@@ -223,7 +223,10 @@ reserved_hash[config.contract_storage] = true
   if reserved_hash[name]
     "reserved__#{name}"
   else
-    name
+    if name[0] == "_"
+      "fix_underscore_"+name
+    else
+      name
 # ###################################################################################################
 #    special id, field access
 # ###################################################################################################
@@ -311,7 +314,7 @@ walk = (root, ctx)->
           else
             aux_decl = """
             type #{config.storage} is record
-              _empty_state : int;
+              #{config.empty_state} : int;
             end;
             
             """

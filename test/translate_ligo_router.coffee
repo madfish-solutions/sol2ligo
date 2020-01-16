@@ -14,7 +14,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      _initialized : bool;
+      reserved__initialized : bool;
     end;
     type test_args is record
       
@@ -29,7 +29,7 @@ describe "translate ligo section", ()->
     
     function main (const contractStorage : state; const action : Router_enum) : (state) is
       block {
-        if (contractStorage._initialized) then block {
+        if (contractStorage.reserved__initialized) then block {
           case action of
           | test_args(match_action) -> block {
             const tmp_0 : (state) = test(contractStorage);
@@ -38,7 +38,7 @@ describe "translate ligo section", ()->
           }
           end;
         } else block {
-          contractStorage._initialized := True;
+          contractStorage.reserved__initialized := True;
         };
       }
     """

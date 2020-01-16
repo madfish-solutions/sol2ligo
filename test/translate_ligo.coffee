@@ -92,7 +92,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      _empty_state : int;
+      reserved__empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -157,7 +157,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      _empty_state : int;
+      reserved__empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -181,7 +181,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      _empty_state : int;
+      reserved__empty_state : int;
     end;
     
     function test (const contractStorage : state; const reserved__#{config.contract_storage} : nat) : (state) is
@@ -213,6 +213,21 @@ describe "translate ligo section", ()->
         const a : nat = contractStorage.reserved__#{config.contract_storage};
       } with (contractStorage);
     
+    """#"
+    make_test text_i, text_o
+  
+  it "_ at start of id in solidity", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Globals {
+      uint _hi;
+    }
+    """
+    text_o = """
+    type state is record
+      fix_underscore__hi : nat;
+    end;
     """#"
     make_test text_i, text_o
   
@@ -468,7 +483,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      _empty_state : int;
+      reserved__empty_state : int;
     end;
     type SampleStruct is record
       data : nat;
@@ -489,7 +504,7 @@ describe "translate ligo section", ()->
     # please note that enum name should become lowercase!
     text_o = """
     type state is record
-      _empty_state : int;
+      reserved__empty_state : int;
     end;
     type SomeData is
       | DEFAULT

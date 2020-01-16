@@ -205,7 +205,7 @@ do ()=>
             #    patch state
             # ###################################################################################################
             root.list.push _initialized = new ast.Var_decl
-            _initialized.name = "_initialized"
+            _initialized.name = config.initialized
             _initialized.type = new Type "bool"
             
             # ###################################################################################################
@@ -245,12 +245,12 @@ do ()=>
             
             _main.scope.list.push _if = new ast.If
             _if.cond = new ast.Var
-            _if.cond.name = "_initialized"
+            _if.cond.name = config.initialized
             
             _if.f.list.push assign = new ast.Bin_op
             assign.op = "ASSIGN"
             assign.a = new ast.Var
-            assign.a.name = "_initialized"
+            assign.a.name = config.initialized
             assign.b = new ast.Const
             assign.b.val = "true"
             assign.b.type = new Type "bool"
