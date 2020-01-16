@@ -590,20 +590,26 @@ walk = (root, ctx)->
         #{join_list jl}
       end;
       """
-
+    
     when "Enum_decl"
       jl = []
-      for v in root.vars
-        decl = """| #{v.name}"""
-        if v.type
-            type = walk v.type, ctx
-            decl += """ is #{type}"""
+      # register global type
+      ctx.type_decl_hash[root.name] = true
+      for v in root.value_list
+        # register global value
+        ctx.contract_var_hash[v.name] = true
         
-        jl.push decl
-
+        # not covered by tests yet
+        aux = ""
+        if v.type
+          aux = " is #{v.type}"
+        
+        jl.push "| #{v.name}#{aux}"
+        # jl.push "| #{v.name}"
+      
       """
-      type #{root.name} is 
-        #{join_list jl};
+      type #{root.name} is
+        #{join_list jl, '  '};
       """
     
     else

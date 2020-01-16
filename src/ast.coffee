@@ -82,7 +82,7 @@ class @PM_case
   
 class @Enum_decl
   name : ""
-  vars: []
-
+  value_list: []
+  
   constructor:()->
-    @vars = []
+    @value_list = []

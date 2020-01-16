@@ -193,17 +193,43 @@ do ()=>
 
 
 do ()=>
+  func2args_struct = (name)->name+"_args"
+  
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
       when "Scope"
         switch root.original_node_type
           when "ContractDefinition"
+            # ###################################################################################################
+            #    patch state
+            # ###################################################################################################
             root.list.push _initialized = new ast.Var_decl
             _initialized.name = "_initialized"
             _initialized.type = new Type "bool"
             
+            # ###################################################################################################
+            #    add struct for each endpoint
+            # ###################################################################################################
+            for func in ctx.router_func_list
+              root.list.push record = new ast.Class_decl
+              record.name = func2args_struct func.name
+              for value,idx in func.arg_name_list
+                continue if idx == 0 # skip contract_storage
+                record.scope.list.push arg = new ast.Var_decl
+                arg.name = value
+                arg.type = func.type_i.nest_list[idx]
             
+            root.list.push _enum = new ast.Enum_decl
+            _enum.name = "Router_enum"
+            for func in ctx.router_func_list
+              _enum.value_list.push decl = new ast.Var_decl
+              decl.name = func2args_struct func.name
+              decl.type = new Type decl.name
+            
+            # ###################################################################################################
+            #    add router
+            # ###################################################################################################
             root.list.push _main = new ast.Fn_decl_multiret
             _main.name = "main"
             
@@ -212,6 +238,9 @@ do ()=>
             
             _main.arg_name_list.push config.contract_storage
             _main.type_i.nest_list.push new Type config.storage
+            _main.arg_name_list.push "action"
+            _main.type_i.nest_list.push new Type "Router_enum"
+            
             _main.type_o.nest_list.push new Type config.storage
             
             _main.scope.list.push _if = new ast.If
@@ -231,12 +260,9 @@ do ()=>
             _switch.cond.name = "action"
             _switch.cond.type = new Type "string" # TODO proper type
             
-            records = form_records root, ctx
-            root.list.append records
-
             for func in ctx.router_func_list
               _switch.scope.list.push _case = new ast.PM_case
-              _case.struct_name = func.name.capitalize()
+              _case.struct_name = func2args_struct func.name
               _case.var_decl.name = "match_action"
               _case.var_decl.type = new Type _case.struct_name
               _case.scope.list.push call = new ast.Fn_call
@@ -247,6 +273,7 @@ do ()=>
               call.fn.type.nest_list[0] = func.type_i
               call.fn.type.nest_list[1] = func.type_o
               for arg_name,idx in func.arg_name_list
+                continue if idx == 0 # skip contract_storage
                 call.arg_list.push arg = new ast.Field_access
                 arg.t = new ast.Var
                 arg.t.name = _case.var_decl.name
@@ -259,20 +286,7 @@ do ()=>
       else
         ctx.next_gen root, ctx
   
-  form_records = (root, ctx)->
-    records = []
-    for func in ctx.router_func_list
-      records.push record = new ast.Class_decl
-      record.name = func.name + "_args"
-      for value,idx in func.arg_name_list
-        type = func.type_i.nest_list[idx]
-        record.scope.list.push arg = new ast.Var_decl
-        arg.name = value
-        arg.type = new Type "string"
-    
-    records
-
-  @constructor_patch = (root, ctx)->
+  @add_router = (root, ctx)->
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
 @ligo_pack = (root, opt={})->
@@ -282,5 +296,5 @@ do ()=>
   root = module.contract_storage_fn_decl_fn_call_ret_inject root
   if opt.router
     router_func_list = module.router_collector root
-    root = module.constructor_patch root, {router_func_list}
+    root = module.add_router root, {router_func_list}
   root

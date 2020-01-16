@@ -16,18 +16,23 @@ describe "translate ligo section", ()->
     type state is record
       _initialized : bool;
     end;
+    type test_args is record
+      
+    end;
     
     function test (const contractStorage : state) : (state) is
       block {
         skip
       } with (contractStorage);
+    type Router_enum is
+      | test_args is test_args;
     
-    function main (const contractStorage : state) : (state) is
+    function main (const contractStorage : state; const action : Router_enum) : (state) is
       block {
         if (contractStorage._initialized) then block {
           case action of
-          | Test(match_action) -> block {
-            const tmp_0 : (state) = test(contractStorage, match_action.contractStorage);
+          | test_args(match_action) -> block {
+            const tmp_0 : (state) = test(contractStorage);
             contractStorage := tmp_0.0;
             tmp_0.1;
           }

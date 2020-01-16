@@ -108,7 +108,6 @@ describe "translate ligo section", ()->
     make_test text_i, text_o
   
   it "int8/uint8 default value"
-  it "enum"
   it "true/false"
   it "string escaping"
   
@@ -489,10 +488,12 @@ describe "translate ligo section", ()->
     """#"
     # please note that enum name should become lowercase!
     text_o = """
-    type somedata is
-    | DEFAULT
-    | ONE
-    | TWO;
-
+    type state is record
+      _empty_state : int;
+    end;
+    type SomeData is
+      | DEFAULT
+      | ONE
+      | TWO;
     """
     make_test text_i, text_o
