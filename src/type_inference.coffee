@@ -282,6 +282,9 @@ is_not_a_type = (type)->
         walk root.scope, ctx_nest
         root.type
       
+      when "PM_switch"
+        null
+      
       # ###################################################################################################
       #    control flow
       # ###################################################################################################
@@ -294,6 +297,9 @@ is_not_a_type = (type)->
       when "While"
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
+        null
+
+      when "Enum_decl"
         null
       
       else
@@ -474,6 +480,10 @@ is_not_a_type = (type)->
           ctx_nest.var_hash[name] = type
         walk root.scope, ctx_nest
         root.type
+      
+      when "PM_switch"
+        null
+      
       # ###################################################################################################
       #    control flow
       # ###################################################################################################
@@ -486,6 +496,9 @@ is_not_a_type = (type)->
       when "While"
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
+        null
+
+      when "Enum_decl"
         null
       
       else

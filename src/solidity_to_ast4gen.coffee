@@ -436,17 +436,17 @@ walk = (root, ctx)->
     #    Func
     # ###################################################################################################
     when "FunctionDefinition"
-      fn = ctx.current_function = new ast.Fn_decl_multiret
-      fn.name = root.name or "constructor"
+      ret = ctx.current_function = new ast.Fn_decl_multiret
+      ret.name = root.name or "constructor"
       
-      fn.type_i =  new Type "function"
-      fn.type_o =  new Type "function"
+      ret.type_i =  new Type "function"
+      ret.type_o =  new Type "function"
       
-      fn.type_i.nest_list = walk_param root.parameters, ctx
-      fn.type_o.nest_list = walk_param root.returnParameters, ctx
+      ret.type_i.nest_list = walk_param root.parameters, ctx
+      ret.type_o.nest_list = walk_param root.returnParameters, ctx
       
-      for v in fn.type_i.nest_list
-        fn.arg_name_list.push v._name
+      for v in ret.type_i.nest_list
+        ret.arg_name_list.push v._name
       # ctx.stateMutability
       if root.modifiers.length
         puts "WARNING root.modifiers not implemented and will be ignored"
@@ -456,11 +456,20 @@ walk = (root, ctx)->
         # throw new "root.modifiers not implemented"
       
       if root.body
-        fn.scope = walk root.body, ctx
+        ret.scope = walk root.body, ctx
       else
-        fn.scope = new ast.Scope
-      fn
-    
+        ret.scope = new ast.Scope
+      ret
+
+    when "EnumDefinition"
+      ret = new ast.Enum_decl
+      ret.name = root.name
+      for member in root.members
+        ret.value_list.push decl = new ast.Var_decl
+        decl.name = member.name
+        # decl.type = new Type ret.name
+        # skip type declaration since solidity enums aren't typed
+      ret
     
     else
       puts root

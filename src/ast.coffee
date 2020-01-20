@@ -61,3 +61,28 @@ class @For3
   constructor:()->
     @scope = new ast.Scope
   
+# PM = Pattern matching
+class @PM_switch
+  cond    : null
+  scope   : null
+  # default : null
+  constructor: ()->
+    @scope   = new ast.Scope
+    # @default = new ast.Scope
+  
+# note only 1 level allowed yet
+class @PM_case
+  struct_name : ""
+  var_decl    : null
+  scope       : null
+  
+  constructor:()->
+    @var_decl = new ast.Var_decl
+    @scope    = new ast.Scope
+  
+class @Enum_decl
+  name : ""
+  value_list: []
+  
+  constructor:()->
+    @value_list = []

@@ -1,5 +1,6 @@
 module = @
 require "fy/codegen"
+config = require "./config"
 Type = require "type"
 {
   translate_type
@@ -46,7 +47,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     #    stmt
     # ###################################################################################################
-    when "Comment", "Fn_decl_multiret"
+    when "Comment", "Fn_decl_multiret", "Enum_decl"
       "nothing"
     
     when "Var_decl"
@@ -71,11 +72,11 @@ walk = (root, ctx)->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
   walk root, ctx
-  # fix _empty_state
+  
   for k,v of ctx.contract_hash
     if 0 == h_count v
       type = new Type "uint"
-      v["_empty_state"] = {
+      v[config.empty_state] = {
         type  : translate_type type
         value : type2default_value type
       }

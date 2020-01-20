@@ -35,11 +35,11 @@ describe "translate ligo real contracts section", ()->
         contractStorage.balances[sender] := 1000000n;
       } with (contractStorage);
     
-    function transfer (const contractStorage : state; const to : address; const reserved__amount : nat) : (state) is
+    function transfer (const contractStorage : state; const reserved__to : address; const reserved__amount : nat) : (state) is
       block {
         if ((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) >= reserved__amount) then {skip} else failwith("Overdrawn balance");
         contractStorage.balances[sender] := abs((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) - reserved__amount);
-        contractStorage.balances[to] := ((case contractStorage.balances[to] of | None -> 0n | Some(x) -> x end) + reserved__amount);
+        contractStorage.balances[reserved__to] := ((case contractStorage.balances[reserved__to] of | None -> 0n | Some(x) -> x end) + reserved__amount);
       } with (contractStorage);
     """#"
     make_test text_i, text_o
