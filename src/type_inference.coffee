@@ -301,6 +301,9 @@ is_not_a_type = (type)->
 
       when "Enum_decl"
         null
+
+      when "Type_cast"
+        root.type
       
       else
         ### !pragma coverage-skip-block ###
@@ -500,6 +503,9 @@ is_not_a_type = (type)->
 
       when "Enum_decl"
         null
+
+      when "Type_cast"
+        root.type
       
       else
         ### !pragma coverage-skip-block ###

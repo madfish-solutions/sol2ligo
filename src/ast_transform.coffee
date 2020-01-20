@@ -41,7 +41,7 @@ do ()=>
       when "Var_decl", "Comment"
         root
 
-      when "Enum_decl"
+      when "Enum_decl", "Type_cast", "Tuple"
         root
       
       when "Ret_multi"
