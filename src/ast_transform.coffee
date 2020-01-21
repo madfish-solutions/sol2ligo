@@ -194,7 +194,8 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Fn_decl_multiret"
-        ctx.router_func_list.push root
+        unless root.visibility in ["private", "internal"]
+          ctx.router_func_list.push root
         root
       else
         ctx.next_gen root, ctx
