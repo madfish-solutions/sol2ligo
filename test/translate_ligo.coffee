@@ -138,7 +138,7 @@ describe "translate ligo section", ()->
       block {
         contractStorage.reserved__sender := sender;
         contractStorage.value := nat(amount);
-        contractStorage.time := now;
+        contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (contractStorage);
     
     """#"
