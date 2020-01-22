@@ -240,7 +240,7 @@ reserved_hash[config.contract_storage] = true
 #    special id, field access
 # ###################################################################################################
 spec_id_trans_hash =
-  "now"       : "now"
+  "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.sender": "sender"
   "msg.value" : "(amount / 1tz)"
 
