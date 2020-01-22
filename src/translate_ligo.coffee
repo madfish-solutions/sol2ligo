@@ -643,6 +643,14 @@ walk = (root, ctx)->
         #{join_list jl, '  '};
       """
     
+    when "Ternary"
+      cond = walk root.cond,  ctx
+      t    = walk root.t,     ctx
+      f    = walk root.f,     ctx
+      """
+      (case #{cond} of | True -> #{t} | False -> #{f} end)
+      """
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx
