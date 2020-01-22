@@ -301,7 +301,10 @@ is_not_a_type = (type)->
 
       when "Enum_decl"
         null
-      
+
+      when "Ternary"
+        root.type
+        
       else
         ### !pragma coverage-skip-block ###
         puts root
@@ -500,6 +503,10 @@ is_not_a_type = (type)->
 
       when "Enum_decl"
         null
+
+      when "Ternary"
+        root.type
+
       
       else
         ### !pragma coverage-skip-block ###

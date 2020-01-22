@@ -49,7 +49,7 @@ do ()=>
           root.t_list[idx] = walk v, ctx
         root
       
-      when "If"
+      when "If", "Ternary"
         root.cond = walk root.cond, ctx
         root.t    = walk root.t,    ctx
         root.f    = walk root.f,    ctx
@@ -79,7 +79,10 @@ do ()=>
       when "Fn_decl_multiret"
         root.scope = walk root.scope, ctx
         root
-      
+
+      when "Tuple"
+        root
+
       else
         ### !pragma coverage-skip-block ###
         puts root
