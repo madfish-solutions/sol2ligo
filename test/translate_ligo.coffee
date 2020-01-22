@@ -514,3 +514,28 @@ describe "translate ligo section", ()->
       | TWO;
     """
     make_test text_i, text_o
+
+  it "ternary", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+
+    contract Ternary {
+      function ternary() public returns (int) {
+        int i = 5;
+        return i < 5 ? 7 : i;
+      }
+    }
+    """#"
+    # please note that enum name should become lowercase!
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function ternary (const contractStorage : state) : (state * int) is
+      block {
+        const i : int = 5;
+      } with (contractStorage, (case (i < 5) of | True -> 7 | False -> i end));
+    """
+    make_test text_i, text_o
+    
