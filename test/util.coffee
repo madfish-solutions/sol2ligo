@@ -19,7 +19,7 @@ fs                  = require "fs"
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected
-  if process.argv.has "--docker"
+  if process.argv.has "--ext_compiler"
     if opt.router
       fs.writeFileSync "test.ligo", text_o_real
     else
