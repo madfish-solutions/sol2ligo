@@ -589,3 +589,28 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
     
+  it "typecasts", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract TypeCast {
+      function castType() public {
+        uint u = uint(-1);
+        int i = int(255);
+        address addr = address(0);
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+
+    function castType (const contractStorage : state) : (state) is
+      block {
+        const u : nat = abs(-(1));
+        const i : int = int(255);
+        const addr : address = (0 : address);
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
