@@ -257,6 +257,7 @@ is_not_a_type = (type)->
             real = v.type
             if !expected.cmp real
               throw new Error "Ret_multi type mismatch expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+
           walk v, ctx
         null
       
