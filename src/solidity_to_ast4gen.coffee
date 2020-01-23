@@ -192,15 +192,9 @@ walk = (root, ctx)->
       ret.text = "EmitStatement"
       ret
     
-    when "ModifierDefinition"
-      puts "WARNING skip ModifierDefinition #{root.name}"
-      puts "WARNING this can lead to security issue. DON'T deploy it or you will be fired!"
-      ctx.need_prevent_deploy = true
-      walk root.body, ctx
-    
     when "PlaceholderStatement"
       ret = new ast.Comment
-      ret.text = "PlaceholderStatement"
+      ret.text = "COMPILER MSG PlaceholderStatement"
       ret
     
     # ###################################################################################################
@@ -435,25 +429,29 @@ walk = (root, ctx)->
     # ###################################################################################################
     #    Func
     # ###################################################################################################
-    when "FunctionDefinition"
+    when "FunctionDefinition", "ModifierDefinition"
+      walk root.body, ctx
       ret = ctx.current_function = new ast.Fn_decl_multiret
+      ret.is_modifier = root.nodeType == "ModifierDefinition"
       ret.name = root.name or "constructor"
       
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
-      ret.type_o.nest_list = walk_param root.returnParameters, ctx
+      unless ret.is_modifier
+        ret.type_o.nest_list = walk_param root.returnParameters, ctx
       
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
       # ctx.stateMutability
-      if root.modifiers.length
-        puts "WARNING root.modifiers not implemented and will be ignored"
-        puts root.modifiers
-        puts "WARNING this can lead to security issue. DON'T deploy it or you will be fired!"
-        ctx.need_prevent_deploy = true
-        # throw new "root.modifiers not implemented"
+      if !ret.is_modifier
+        for modifier in root.modifiers
+          ast_mod = new ast.Fn_call
+          if modifier.arguments
+            throw new Error "unimplemented"
+          ast_mod.fn = walk modifier.modifierName, ctx
+          ret.modifier_list.push ast_mod
       
       if root.body
         ret.scope = walk root.body, ctx
@@ -462,7 +460,7 @@ walk = (root, ctx)->
       
       ret.visibility = root.visibility
       ret
-
+    
     when "EnumDefinition"
       ret = new ast.Enum_decl
       ret.name = root.name

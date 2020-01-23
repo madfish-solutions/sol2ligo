@@ -96,7 +96,7 @@ do ()=>
     switch root.constructor.name
       when "For3"
         ret = new ast.Scope
-        ret._phantom = true
+        ret.need_nest = false
         
         if root.init
           ret.list.push root.init
@@ -238,6 +238,10 @@ do ()=>
                 record.scope.list.push arg = new ast.Var_decl
                 arg.name = value
                 arg.type = func.type_i.nest_list[idx]
+              if record.scope.list.length == 0
+                record.scope.list.push arg = new ast.Var_decl
+                arg.name = config.empty_state
+                arg.type = new Type "int"
             
             root.list.push _enum = new ast.Enum_decl
             _enum.name = "router_enum"
@@ -325,11 +329,81 @@ do ()=>
   @add_router = (root, ctx)->
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Comment"
+        return root if root.text != "COMPILER MSG PlaceholderStatement"
+        ctx.target_ast.clone()
+      else
+        ctx.next_gen root, ctx
+  
+  @placeholder_replace = (root, target_ast)->
+    walk root, {walk, next_gen: module.default_walk, target_ast}
+  
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Var"
+        return root if root.name != ctx.var_name
+        ctx.target_ast.clone()
+      else
+        ctx.next_gen root, ctx
+  
+  @var_replace = (root, var_name, target_ast)->
+    walk root, {walk, next_gen: module.default_walk, var_name, target_ast}
+  
+do ()=>
+  
+  fn_apply_modifier = (fn, mod, ctx)->
+    if mod.arg_list.length != 0
+      throw new Error "unimplemented"
+    if mod.fn.constructor.name != "Var"
+      throw new Error "unimplemented"
+    if !mod_decl = ctx.modifier_hash[mod.fn.name]
+      throw new Error "unknown modifier #{mod.fn.name}"
+    ret = mod_decl.scope.clone()
+    ret = module.placeholder_replace ret, fn
+    ret
+  
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Fn_decl_multiret"
+        if root.is_modifier
+          ctx.modifier_hash[root.name] = root
+          
+          # remove node
+          ret = new ast.Comment
+          ret.text = "modifier #{root.name} removed"
+          ret
+        else
+          return root if root.modifier_list.length == 0
+          inner = root.scope.clone()
+          inner.need_nest = false
+          # TODO уточнить порядок применения modifier'ов
+          for mod in root.modifier_list
+            inner = fn_apply_modifier inner, mod, ctx
+          ret = root.clone()
+          ret.modifier_list.clear()
+          ret.scope = inner
+          p ret
+          ret
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @modifier_unpack = (root)->
+    walk root, {walk, next_gen: module.default_walk, modifier_hash: {}}
+
 @ligo_pack = (root, opt={})->
   opt.router ?= true
   opt.op_list ?= true
   root = module.for3_unpack root
   root = module.ass_op_unpack root
+  root = module.modifier_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
   if opt.router
     router_func_list = module.router_collector root

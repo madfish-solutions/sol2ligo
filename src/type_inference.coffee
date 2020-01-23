@@ -45,6 +45,9 @@ array_field_hash =
 
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
+  BOOL_NOT : [
+    ["bool", "bool"]
+  ]
   MINUS : [
     ["int", "int"]
   ]
