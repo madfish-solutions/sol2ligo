@@ -307,4 +307,3 @@ describe "translate ligo section", ()->
       } with (contractStorage, 0n);
     """#"
     make_test text_i, text_o
-  
