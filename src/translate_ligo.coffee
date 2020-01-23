@@ -476,10 +476,10 @@ walk = (root, ctx)->
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
-      
       fn = walk root.fn, ctx
       
-      arg_list.unshift config.contract_storage
+      if root.fn.stateMutability != 'pure'
+        arg_list.unshift config.contract_storage
       if ctx.use_op_list
         arg_list.unshift config.op_list
       
@@ -493,15 +493,19 @@ walk = (root, ctx)->
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
-      
-      if ctx.use_op_list
+
+
+      if ctx.use_op_list and root.fn.stateMutability != 'pure'
         ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
         ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
         ctx.trim_expr = "#{tmp_var}.2"
-      else
+      else if root.fn.stateMutability != 'pure' and !ctx.use_op_list
         ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
         ctx.trim_expr = "#{tmp_var}.1"
-    
+      else if ctx.use_op_list and root.fn.stateMutability == 'pure'
+        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+        ctx.trim_expr = "#{tmp_var}.1"
+
     when "Type_cast"
       xxx
     
@@ -536,7 +540,10 @@ walk = (root, ctx)->
       jl = []
       for v,idx in root.t_list
         ctx_loc = ctx
-        if idx == 0
+        if idx == 0 and root.stateMutability != 'pure'
+          ctx_loc = ctx.mk_nest()
+          ctx_loc.ignore_reserved = true
+        else if idx == 0 and ctx.use_op_list
           ctx_loc = ctx.mk_nest()
           ctx_loc.ignore_reserved = true
         else if idx == 1 and ctx.use_op_list

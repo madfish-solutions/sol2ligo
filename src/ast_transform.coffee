@@ -156,8 +156,9 @@ do ()=>
       when "Ret_multi"
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
-        root.t_list.unshift inject = new ast.Var
-        inject.name = config.contract_storage
+        if ctx.stateMutability != 'pure'
+          root.t_list.unshift inject = new ast.Var
+          inject.name = config.contract_storage
         
         if ctx.op_list
           root.t_list.unshift inject = new ast.Var
@@ -165,24 +166,21 @@ do ()=>
         root
       
       when "Fn_decl_multiret"
+        ctx.stateMutability = root.stateMutability 
         root.scope = walk root.scope, ctx
-        root.arg_name_list.unshift config.contract_storage
+        if root.stateMutability != 'pure'
+          root.arg_name_list.unshift config.contract_storage
+          root.type_i.nest_list.unshift new Type config.storage
+          root.type_o.nest_list.unshift new Type config.storage
         if ctx.op_list
           root.arg_name_list.unshift config.op_list
-        root.type_i.nest_list.unshift new Type config.storage
-        if ctx.op_list
           root.type_i.nest_list.unshift new Type "built_in_op_list"
-        
-        root.type_o.nest_list.unshift new Type config.storage
-        if ctx.op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
-        
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
           last = walk last, ctx
           root.scope.list.push last
-        
         root
       
       else
@@ -232,8 +230,9 @@ do ()=>
               root.list.push record = new ast.Class_decl
               record.name = func2args_struct func.name
               for value,idx in func.arg_name_list
-                continue if idx == 0 # skip contract_storage
-                if ctx.op_list
+                if root.stateMutability != 'pure' or ctx.op_list
+                  continue if idx == 0 # skip contract_storage
+                if root.stateMutability != 'pure' and ctx.op_list
                   continue if idx == 1 # skip op_list
                 record.scope.list.push arg = new ast.Var_decl
                 arg.name = value
@@ -299,9 +298,13 @@ do ()=>
               call.fn.type = new Type "function"
               call.fn.type.nest_list[0] = func.type_i
               call.fn.type.nest_list[1] = func.type_o
+              call.fn.stateMutability = func.stateMutability
               for arg_name,idx in func.arg_name_list
-                continue if idx == 0 # skip contract_storage
-                if ctx.op_list
+                if root.stateMutability != 'pure'
+                  continue if idx == 0 # skip contract_storage
+                else if ctx.op_list
+                  continue if idx == 0 # skip op_list
+                if ctx.op_list and root.stateMutability != 'pure'
                   continue if idx == 1 # skip op_list
                 call.arg_list.push arg = new ast.Field_access
                 arg.t = new ast.Var
