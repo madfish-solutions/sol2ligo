@@ -305,6 +305,9 @@ is_not_a_type = (type)->
       when "Type_cast"
         root.type
       
+      when "Ternary"
+        root.type
+        
       else
         ### !pragma coverage-skip-block ###
         puts root
@@ -506,6 +509,9 @@ is_not_a_type = (type)->
 
       when "Type_cast"
         root.type
+      when "Ternary"
+        root.type
+
       
       else
         ### !pragma coverage-skip-block ###

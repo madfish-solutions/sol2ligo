@@ -234,14 +234,15 @@ reserved_hash[config.contract_storage] = true
     if name[0] == "_"
       "fix_underscore_"+name
     else
-      name
+      # first letter should be lowercase
+      name.substr(0,1).toLowerCase() + name.substr 1
 # ###################################################################################################
 #    special id, field access
 # ###################################################################################################
 spec_id_trans_hash =
-  "now"       : "now"
+  "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.sender": "sender"
-  "msg.value" : "nat(amount)"
+  "msg.value" : "(amount / 1tz)"
 
 # ###################################################################################################
 
@@ -625,7 +626,7 @@ walk = (root, ctx)->
       
       """
       
-      type #{root.name} is record
+      type #{translate_var_name root.name} is record
         #{join_list jl, '  '}
       end;
       """
@@ -648,10 +649,18 @@ walk = (root, ctx)->
       
       """
       
-      type #{root.name} is
+      type #{translate_var_name root.name} is
         #{join_list jl, '  '};
       """
     
+    when "Ternary"
+      cond = walk root.cond,  ctx
+      t    = walk root.t,     ctx
+      f    = walk root.f,     ctx
+      """
+      (case #{cond} of | True -> #{t} | False -> #{f} end)
+      """
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx

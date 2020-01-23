@@ -462,6 +462,8 @@ walk = (root, ctx)->
         ret.scope = walk root.body, ctx
       else
         ret.scope = new ast.Scope
+      
+      ret.visibility = root.visibility
       ret
 
     when "EnumDefinition"
