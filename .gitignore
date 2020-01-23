@@ -4,3 +4,6 @@ lib
 npm-debug.log
 solc-bin
 test.sol
+test.ligo
+test.pp.ligo
+ligo_tmp_log

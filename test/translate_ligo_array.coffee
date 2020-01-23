@@ -3,6 +3,7 @@
 } = require("./util")
 
 describe "translate ligo section", ()->
+  @timeout 10000
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.ligo
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Arrays.sol
   # ###################################################################################################

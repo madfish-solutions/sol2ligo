@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
-    "test-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc && istanbul report"
+    "test-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc && istanbul report",
+    "test-ext-compiler": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --ext_compiler && istanbul report",
+    "test-ext-compiler-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc --ext_compiler && istanbul report"
   },
   "repository": {
     "type": "git",

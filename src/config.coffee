@@ -5,7 +5,7 @@ TODO rename
 ###
 @storage = "state" # type
 @contract_storage = "contractStorage" # var name
-@default_address = "tz1iTHHGZSFAEDmk4bt7EqgBjw5Hj7vQjL7b"
+@default_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg"
 @empty_state = "reserved__empty_state"
 @initialized = "reserved__initialized"
 @op_list = "opList"
