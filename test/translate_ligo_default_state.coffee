@@ -17,6 +17,7 @@ make_test = (text_i, hash_o_expected, text_o_expected)->
   assert.strictEqual text_o_real, text_o_expected
 
 describe "translate ligo default state section", ()->
+  @timeout 10000
   it "no state", ()->
     text_i = """
     contract State {

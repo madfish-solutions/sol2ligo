@@ -3,6 +3,7 @@
 } = require("./util")
 
 describe "generate router", ()->
+  @timeout 10000
   it "router with args", ()->
     text_i = """
     pragma solidity >=0.5.0 <0.6.0;
