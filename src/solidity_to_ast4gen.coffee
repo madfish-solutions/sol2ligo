@@ -448,9 +448,10 @@ walk = (root, ctx)->
       if !ret.is_modifier
         for modifier in root.modifiers
           ast_mod = new ast.Fn_call
-          if modifier.arguments
-            throw new Error "unimplemented"
           ast_mod.fn = walk modifier.modifierName, ctx
+          if modifier.arguments
+            for v in modifier.arguments
+              ast_mod.arg_list.push walk v, ctx
           ret.modifier_list.push ast_mod
       
       if root.body

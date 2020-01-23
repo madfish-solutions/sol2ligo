@@ -536,6 +536,13 @@ walk = (root, ctx)->
           const #{name} : #{type} = #{type2default_value root.type}
           """
     
+    when "Throw"
+      if root.t
+        t = walk root.t, ctx
+        "failwith(#{t})"
+      else
+        'failwith("throw")'
+    
     when "Ret_multi"
       jl = []
       for v,idx in root.t_list

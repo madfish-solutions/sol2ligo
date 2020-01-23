@@ -40,7 +40,12 @@ do ()=>
       # ###################################################################################################
       when "Var_decl", "Comment"
         root
-
+      
+      when "Throw"
+        if root.t
+          walk root.t, ctx
+        root
+      
       when "Enum_decl"
         root
       
@@ -358,14 +363,27 @@ do ()=>
 do ()=>
   
   fn_apply_modifier = (fn, mod, ctx)->
-    if mod.arg_list.length != 0
-      throw new Error "unimplemented"
+    ###
+    Possible intersections
+      1. Var_decl
+      2. Var_decl in arg_list
+      3. Multiple placeholders = multiple cloned Var_decl
+    ###
     if mod.fn.constructor.name != "Var"
       throw new Error "unimplemented"
     if !mod_decl = ctx.modifier_hash[mod.fn.name]
       throw new Error "unknown modifier #{mod.fn.name}"
     ret = mod_decl.scope.clone()
+    prepend_list = []
+    for arg, idx in mod.arg_list
+      prepend_list.push var_decl = new ast.Var_decl
+      # TODO search **fn** for this_var name and replace in **ret** with tmp
+      var_decl.name = mod_decl.arg_name_list[idx]
+      var_decl.assign_value = arg.clone()
+      var_decl.type = mod_decl.type_i.nest_list[idx]
+    
     ret = module.placeholder_replace ret, fn
+    ret.list = arr_merge prepend_list, ret.list
     ret
   
   walk = (root, ctx)->
@@ -389,7 +407,6 @@ do ()=>
           ret = root.clone()
           ret.modifier_list.clear()
           ret.scope = inner
-          p ret
           ret
       else
         ctx.next_gen root, ctx

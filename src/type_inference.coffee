@@ -241,6 +241,11 @@ is_not_a_type = (type)->
         ctx.var_hash[root.name] = root.type
         null
       
+      when "Throw"
+        if root.t
+          walk root.t, ctx
+        null
+      
       when "Scope"
         ctx_nest = ctx.mk_nest()
         for v in root.list
@@ -452,6 +457,11 @@ is_not_a_type = (type)->
             root.assign_value.type = root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
+        null
+      
+      when "Throw"
+        if root.t
+          walk root.t, ctx
         null
       
       when "Scope"
