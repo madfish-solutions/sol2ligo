@@ -507,7 +507,16 @@ walk = (root, ctx)->
         ctx.trim_expr = "#{tmp_var}.1"
     
     when "Type_cast"
-      xxx
+      # TODO detect 'address(0)' here
+      # should we use 'target_type' instead of 'type' here?
+      target_type = translate_type root.type, ctx
+      t = walk root.t
+      if target_type == "int"
+        "int(#{t})"
+      else if target_type == "nat"
+        "abs(#{t})"
+      else
+        "(#{t} : #{target_type})"
     
     # ###################################################################################################
     #    stmt

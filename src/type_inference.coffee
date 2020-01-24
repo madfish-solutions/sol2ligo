@@ -310,6 +310,9 @@ is_not_a_type = (type)->
       when "Enum_decl"
         null
 
+      when "Type_cast"
+        root.type
+      
       when "Ternary"
         root.type
         
@@ -517,6 +520,8 @@ is_not_a_type = (type)->
       when "Enum_decl"
         null
 
+      when "Type_cast"
+        root.type
       when "Ternary"
         root.type
 

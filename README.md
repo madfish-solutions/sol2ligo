@@ -29,7 +29,12 @@ npm test
 
 For quick test run
 ```sh
-npm test-ext-compiler-fast
+npm run test-ext-compiler-fast
+```
+
+To run specific test case
+```sh
+npm run test-specific <test-name>
 ```
 
 

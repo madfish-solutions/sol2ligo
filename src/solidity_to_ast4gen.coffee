@@ -103,6 +103,9 @@ unpack_id_type = (root, ctx)->
     when "msg"
       new Type "struct" # fields would be replaced in type inference
     
+    when "bytes", "bytes32"
+      new Type "bytes"
+
     else
       # puts root # temp disable
       throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
