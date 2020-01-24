@@ -375,6 +375,7 @@ walk = (root, ctx)->
       ctx_lvalue = ctx.mk_nest()
       ctx_lvalue.lvalue = true if 0 == root.op.indexOf "ASS"
       _a = walk root.a, ctx_lvalue
+      ctx.sink_list.append ctx_lvalue.sink_list
       _b = walk root.b, ctx
       
       ret = if op = module.bin_op_name_map[root.op]

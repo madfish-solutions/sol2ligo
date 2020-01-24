@@ -7,13 +7,13 @@ describe "translate ligo real contracts section", ()->
   # ###################################################################################################
   #    simple coin
   # ###################################################################################################
-  it "hello world", ()->
+  it "simple coin", ()->
     text_i = """
     pragma solidity >=0.5.0 <0.6.0;
     
     contract SimpleCoin {
         mapping(address => uint) public balances;
-
+        
         constructor() public {
             balances[msg.sender] = 1000000;
         }
@@ -29,19 +29,288 @@ describe "translate ligo real contracts section", ()->
     text_o = """
     type state is record
       balances : map(address, nat);
+      reserved__initialized : bool;
     end;
     
-    function reserved__constructor (const contractStorage : state) : (state) is
+    type constructor_args is record
+      reserved__empty_state : int;
+    end;
+    
+    type transfer_args is record
+      reserved__to : address;
+      reserved__amount : nat;
+    end;
+    
+    function reserved__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.balances[sender] := 1000000n;
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
-    function transfer (const contractStorage : state; const reserved__to : address; const reserved__amount : nat) : (state) is
+    function transfer (const opList : list(operation); const contractStorage : state; const reserved__to : address; const reserved__amount : nat) : (list(operation) * state) is
       block {
         if ((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) >= reserved__amount) then {skip} else failwith("Overdrawn balance");
         contractStorage.balances[sender] := abs((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) - reserved__amount);
         contractStorage.balances[reserved__to] := ((case contractStorage.balances[reserved__to] of | None -> 0n | Some(x) -> x end) + reserved__amount);
-      } with (contractStorage);
+      } with (opList, contractStorage);
+    
+    type router_enum is
+      | Constructor of constructor_args
+      | Transfer of transfer_args;
+    
+    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+      block {
+        const opList : list(operation) = (nil: list(operation));
+        if (contractStorage.reserved__initialized) then block {
+          case action of
+          | Constructor(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = reserved__constructor(opList, contractStorage);
+            opList := tmp_0.0;
+            contractStorage := tmp_0.1;
+          }
+          | Transfer(match_action) -> block {
+            const tmp_1 : (list(operation) * state) = transfer(opList, contractStorage, match_action.reserved__to, match_action.reserved__amount);
+            opList := tmp_1.0;
+            contractStorage := tmp_1.1;
+          }
+          end;
+        } else block {
+          contractStorage.reserved__initialized := True;
+        };
+      } with (opList, contractStorage);
     """#"
-    make_test text_i, text_o
+    make_test text_i, text_o, {
+      router: true
+      op_list: true
+    }
+  
+  # ###################################################################################################
+  #    ownable
+  # ###################################################################################################
+  ###
+    fixes:
+      this removed
+      decl order swapped for transferOwnership, _transferOwnership
+      msg.data removed
+  ###
+  it "ownable", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract Context {
+        // Empty internal constructor, to prevent people from mistakenly deploying
+        // an instance of this contract, which should be used via inheritance.
+        constructor () internal { }
+        // solhint-disable-previous-line no-empty-blocks
+    
+        function _msgSender() internal view returns (address payable) {
+            return msg.sender;
+        }
+    }
+    /**
+    * @dev Contract module which provides a basic access control mechanism, where
+    * there is an account (an owner) that can be granted exclusive access to
+    * specific functions.
+    *
+    * This module is used through inheritance. It will make available the modifier
+    * `onlyOwner`, which can be applied to your functions to restrict their use to
+    * the owner.
+    */
+    contract Ownable is Context {
+        address private _owner;
+    
+        event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    
+        /**
+        * @dev Initializes the contract setting the deployer as the initial owner.
+        */
+        constructor () internal {
+            address msgSender = _msgSender();
+            _owner = msgSender;
+            emit OwnershipTransferred(address(0), msgSender);
+        }
+    
+        /**
+        * @dev Returns the address of the current owner.
+        */
+        function owner() public view returns (address) {
+            return _owner;
+        }
+    
+        /**
+        * @dev Throws if called by any account other than the owner.
+        */
+        modifier onlyOwner() {
+            require(isOwner(), "Ownable: caller is not the owner");
+            _;
+        }
+    
+        /**
+        * @dev Returns true if the caller is the current owner.
+        */
+        function isOwner() public view returns (bool) {
+            return _msgSender() == _owner;
+        }
+    
+        /**
+        * @dev Leaves the contract without owner. It will not be possible to call
+        * `onlyOwner` functions anymore. Can only be called by the current owner.
+        *
+        * NOTE: Renouncing ownership will leave the contract without an owner,
+        * thereby removing any functionality that is only available to the owner.
+        */
+        function renounceOwnership() public onlyOwner {
+            emit OwnershipTransferred(_owner, address(0));
+            _owner = address(0);
+        }
+    
+        /**
+        * @dev Transfers ownership of the contract to a new account (`newOwner`).
+        */
+        function _transferOwnership(address newOwner) internal {
+            require(newOwner != address(0), "Ownable: new owner is the zero address");
+            emit OwnershipTransferred(_owner, newOwner);
+            _owner = newOwner;
+        }
+    
+        /**
+        * @dev Transfers ownership of the contract to a new account (`newOwner`).
+        * Can only be called by the current owner.
+        */
+        function transferOwnership(address newOwner) public onlyOwner {
+            _transferOwnership(newOwner);
+        }
+    }
+    """#"
+    
+    text_o = """
+    type state is record
+      fix_underscore__owner : address;
+      reserved__initialized : bool;
+    end;
+    
+    (* EventDefinition OwnershipTransferred *)
+    
+    (* modifier onlyOwner removed *)
+    
+    type owner_args is record
+      reserved__empty_state : int;
+    end;
+    
+    type isOwner_args is record
+      reserved__empty_state : int;
+    end;
+    
+    type renounceOwnership_args is record
+      reserved__empty_state : int;
+    end;
+    
+    type transferOwnership_args is record
+      newOwner : address;
+    end;
+    
+    function fix_underscore__msgSender (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
+      block {
+        skip
+      } with (opList, contractStorage, sender);
+    
+    function context_constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        skip
+      } with (opList, contractStorage);
+    
+    function reserved__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const tmp_0 : (list(operation) * state) = context_constructor(opList, contractStorage);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+        const tmp_1 : (list(operation) * state * address) = fix_underscore__msgSender(opList, contractStorage);
+        opList := tmp_1.0;
+        contractStorage := tmp_1.1;
+        const msgSender : address = tmp_1.2;
+        contractStorage.fix_underscore__owner := msgSender;
+        (* EmitStatement *);
+      } with (opList, contractStorage);
+    
+    function owner (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
+      block {
+        skip
+      } with (opList, contractStorage, contractStorage.fix_underscore__owner);
+    
+    function isOwner (const opList : list(operation); const contractStorage : state) : (list(operation) * state * bool) is
+      block {
+        const tmp_0 : (list(operation) * state * address) = fix_underscore__msgSender(opList, contractStorage);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+      } with (opList, contractStorage, (tmp_0.2 = contractStorage.fix_underscore__owner));
+    
+    function renounceOwnership (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const tmp_0 : (list(operation) * state * bool) = isOwner(opList, contractStorage);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+        if tmp_0.2 then {skip} else failwith("Ownable: caller is not the owner");
+        (* EmitStatement *);
+        contractStorage.fix_underscore__owner := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+      } with (opList, contractStorage);
+    
+    function fix_underscore__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        if (newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then {skip} else failwith("Ownable: new owner is the zero address");
+        (* EmitStatement *);
+        contractStorage.fix_underscore__owner := newOwner;
+      } with (opList, contractStorage);
+    
+    function transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        const tmp_0 : (list(operation) * state * bool) = isOwner(opList, contractStorage);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+        if tmp_0.2 then {skip} else failwith("Ownable: caller is not the owner");
+        const tmp_1 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, newOwner);
+        opList := tmp_1.0;
+        contractStorage := tmp_1.1;
+      } with (opList, contractStorage);
+    
+    type router_enum is
+      | Owner of owner_args
+      | IsOwner of isOwner_args
+      | RenounceOwnership of renounceOwnership_args
+      | TransferOwnership of transferOwnership_args;
+    
+    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+      block {
+        const opList : list(operation) = (nil: list(operation));
+        if (contractStorage.reserved__initialized) then block {
+          case action of
+          | Owner(match_action) -> block {
+            const tmp_0 : (list(operation) * state * address) = owner(opList, contractStorage);
+            opList := tmp_0.0;
+            contractStorage := tmp_0.1;
+          }
+          | IsOwner(match_action) -> block {
+            const tmp_1 : (list(operation) * state * bool) = isOwner(opList, contractStorage);
+            opList := tmp_1.0;
+            contractStorage := tmp_1.1;
+          }
+          | RenounceOwnership(match_action) -> block {
+            const tmp_2 : (list(operation) * state) = renounceOwnership(opList, contractStorage);
+            opList := tmp_2.0;
+            contractStorage := tmp_2.1;
+          }
+          | TransferOwnership(match_action) -> block {
+            const tmp_3 : (list(operation) * state) = transferOwnership(opList, contractStorage, match_action.newOwner);
+            opList := tmp_3.0;
+            contractStorage := tmp_3.1;
+          }
+          end;
+        } else block {
+          contractStorage.reserved__initialized := True;
+        };
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o, {
+      router: true
+      op_list: true
+    }
+  
   

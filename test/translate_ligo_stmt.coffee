@@ -225,7 +225,7 @@ describe "translate ligo section", ()->
         skip
       } with (contractStorage, 0n);
     """
-    make_test text_i, text_o# special fn
+    make_test text_i, text_o
   
   it "fn call", ()->
     text_i = """
@@ -256,38 +256,71 @@ describe "translate ligo section", ()->
         contractStorage := tmp_0.0;
       } with (contractStorage, tmp_0.1);
     """
-    make_test text_i, text_o# special fn
+    make_test text_i, text_o
   
-  it "fn call and after decl", ()->
+  it "fn call in expr", ()->
     text_i = """
-    pragma solidity ^0.5.11;
+    pragma solidity ^0.5.0;
     
-    contract Call {
-      function test(int a) public returns (int) {
-        return call_me(a);
-      }
-      function call_me(int a) public returns (int) {
-        return a;
-      }
+    contract Ownable {
+        function _msgSender() internal view returns (address payable) {
+            return msg.sender;
+        }
+        address private _owner;
+        
+        function isOwner() public view returns (bool) {
+            return _msgSender() == _owner;
+        }
     }
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      fix_underscore__owner : address;
     end;
     
-    function test (const contractStorage : state; const a : int) : (state * int) is
-      block {
-        const tmp_0 : (state * int) = call_me(contractStorage, a);
-        contractStorage := tmp_0.0;
-      } with (contractStorage, tmp_0.1);
-    
-    function call_me (const contractStorage : state; const a : int) : (state * int) is
+    function fix_underscore__msgSender (const contractStorage : state) : (state * address) is
       block {
         skip
-      } with (contractStorage, a);
+      } with (contractStorage, sender);
+    
+    function isOwner (const contractStorage : state) : (state * bool) is
+      block {
+        const tmp_0 : (state * address) = fix_underscore__msgSender(contractStorage);
+        contractStorage := tmp_0.0;
+      } with (contractStorage, (tmp_0.1 = contractStorage.fix_underscore__owner));
     """
-    make_test text_i, text_o# special fn
+    make_test text_i, text_o
+  
+  # it "fn call and after decl", ()->
+  #   text_i = """
+  #   pragma solidity ^0.5.11;
+  #   
+  #   contract Call {
+  #     function test(int a) public returns (int) {
+  #       return call_me(a);
+  #     }
+  #     function call_me(int a) public returns (int) {
+  #       return a;
+  #     }
+  #   }
+  #   """#"
+  #   text_o = """
+  #   type state is record
+  #     reserved__empty_state : int;
+  #   end;
+  #   
+  #   function test (const contractStorage : state; const a : int) : (state * int) is
+  #     block {
+  #       const tmp_0 : (state * int) = call_me(contractStorage, a);
+  #       contractStorage := tmp_0.0;
+  #     } with (contractStorage, tmp_0.1);
+  #   
+  #   function call_me (const contractStorage : state; const a : int) : (state * int) is
+  #     block {
+  #       skip
+  #     } with (contractStorage, a);
+  #   """
+  #   make_test text_i, text_o
   
   it "require", ()->
     text_i = """

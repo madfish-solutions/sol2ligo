@@ -20,6 +20,9 @@ fs                  = require "fs"
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected
   if process.argv.has "--ext_compiler"
+    # strip known non-working code
+    text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, ""
+    
     if opt.router
       fs.writeFileSync "test.ligo", text_o_real
     else

@@ -4,7 +4,7 @@ config= require "./config"
 ast   = require "./ast"
 
 do ()=>
-  walk = (root, ctx)->
+  out_walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
       when "Scope"
@@ -31,6 +31,7 @@ do ()=>
         root
       
       when "Fn_call"
+        root.fn = walk root.fn, ctx
         for v,idx in root.arg_list
           root.arg_list[idx] = walk v, ctx
         root
@@ -84,16 +85,16 @@ do ()=>
       when "Fn_decl_multiret"
         root.scope = walk root.scope, ctx
         root
-
+      
       when "Tuple"
         root
-
+      
       else
         ### !pragma coverage-skip-block ###
         puts root
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
-  module.default_walk = walk
+  module.default_walk = out_walk
 
 do ()=>
   walk = (root, ctx)->
@@ -449,7 +450,6 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk, class_hash: {}}
   
 do ()=>
-  
   fn_apply_modifier = (fn, mod, ctx)->
     ###
     Possible intersections
@@ -492,6 +492,7 @@ do ()=>
           # TODO уточнить порядок применения modifier'ов
           for mod in root.modifier_list
             inner = fn_apply_modifier inner, mod, ctx
+          
           ret = root.clone()
           ret.modifier_list.clear()
           ret.scope = inner
