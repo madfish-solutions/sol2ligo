@@ -519,7 +519,7 @@ walk = (root, ctx)->
       else if target_type == "nat"
         "abs(#{t})"
       else if target_type == "address" and t == "0"
-        type2default_value root.type
+        type2default_value root.target_type
       else
         "(#{t} : #{target_type})"
     
