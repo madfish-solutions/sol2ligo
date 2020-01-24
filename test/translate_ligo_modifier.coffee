@@ -31,6 +31,7 @@ describe "translate ligo section", ()->
       locked : bool;
       a : bool;
     end;
+    
     (* modifier lock removed *)
     
     function test (const contractStorage : state) : (state) is
@@ -68,6 +69,7 @@ describe "translate ligo section", ()->
     type state is record
       val : bool;
     end;
+    
     (* modifier greaterThan removed *)
     
     function test (const contractStorage : state; const a : nat) : (state) is
