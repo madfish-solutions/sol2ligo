@@ -86,6 +86,9 @@ walk = null
     when "uint8"
       "nat"
     
+    when "bytes"
+      "bytes"
+    
     when "string"
       "string"
     
@@ -508,16 +511,15 @@ walk = (root, ctx)->
     
     when "Type_cast"
       # TODO detect 'address(0)' here
-      # should we use 'target_type' instead of 'type' here?
-      target_type = translate_type root.type, ctx
-      t = walk root.t
-
+      target_type = translate_type root.target_type, ctx
+      t = walk root.t, ctx
+      
       if target_type == "int"
         "int(abs(#{t}))"
       else if target_type == "nat"
         "abs(#{t})"
       else if target_type == "address" and t == "0"
-        type2default_value root.type
+        type2default_value root.target_type
       else
         "(#{t} : #{target_type})"
     

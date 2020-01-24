@@ -61,6 +61,8 @@ un_op_post_map =
   "--": "RET_DEC"
 
 walk_type = (root, ctx)->
+  if typeof root == "string" # surprise from ElementaryTypeNameExpression
+    return new Type root
   switch root.nodeType
     when "ElementaryTypeName"
       new Type root.name
@@ -318,8 +320,7 @@ walk = (root, ctx)->
     
     when "ElementaryTypeNameExpression"
       ret = new ast.Type_cast
-      # ret.target_type = walk_type root.typeName, ctx
-      ret.target_type = root.typeName
+      ret.target_type = walk_type root.typeName, ctx
       ret
     
     when "Conditional"

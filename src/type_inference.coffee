@@ -13,6 +13,7 @@ module = @
       # найти всех использующих этот тип, и перевести каскадно на tez
       # ret.field_hash["value"] = new Type "tez"
       ret.field_hash["value"] = new Type "uint"
+      ret.field_hash["data"] = new Type "bytes"
       ret
     )()
     now : new Type "uint"
