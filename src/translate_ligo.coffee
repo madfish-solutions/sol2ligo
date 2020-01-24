@@ -513,10 +513,13 @@ walk = (root, ctx)->
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
       t = walk root.t, ctx
+      
       if target_type == "int"
-        "int(#{t})"
+        "int(abs(#{t}))"
       else if target_type == "nat"
         "abs(#{t})"
+      else if target_type == "address" and t == "0"
+        type2default_value root.type
       else
         "(#{t} : #{target_type})"
     

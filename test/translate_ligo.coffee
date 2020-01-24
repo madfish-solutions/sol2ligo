@@ -609,8 +609,8 @@ describe "translate ligo section", ()->
     function castType (const contractStorage : state) : (state) is
       block {
         const u : nat = abs(-(1));
-        const i : int = int(255);
-        const addr : address = (0 : address);
+        const i : int = int(abs(255));
+        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
       } with (contractStorage);
     """#"
     make_test text_i, text_o
