@@ -45,6 +45,7 @@ walk = (root, ctx)->
       "nothing"
     
     when "Class_decl"
+      return if root.need_skip
       if root.is_contract
         ctx = ctx.mk_nest_contract(root.name)
       walk root.scope, ctx

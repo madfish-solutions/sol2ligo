@@ -2,7 +2,42 @@ module = @
 ast = require "ast4gen"
 for k,v of ast
   @[k] = v
+# ###################################################################################################
+#    redefine
+# ###################################################################################################
+class @Class_decl
+  name  : ""
+  is_contract : false
+  need_skip   : false # if class was used for inheritance
+  scope : null
+  _prepared_field2type : {}
+  inheritance_list : []
+  line  : 0
+  pos   : 0
+  constructor:()->
+    @scope = new module.Scope
+    @_prepared_field2type = {}
+  
+  # skip validate
+  
+  clone : ()->
+    ret = new module.Class_decl
+    ret.name  = @name
+    ret.is_contract = @is_contract
+    ret.need_skip   = @need_skip
+    ret.scope = @scope.clone()
+    for k,v of @_prepared_field2type
+      ret._prepared_field2type[k] = v.clone()
+    
+    ret.inheritance_list = deep_clone @inheritance_list
+    
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
 
+# ###################################################################################################
+#    New nodes
+# ###################################################################################################
 class @Fn_decl_multiret
   is_closure : false
   name    : ""

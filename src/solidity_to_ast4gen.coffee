@@ -158,6 +158,14 @@ walk = (root, ctx)->
     when "ContractDefinition"
       ret = new ast.Class_decl
       ret.is_contract = true
+      ret.inheritance_list = []
+      for v in root.baseContracts
+        if v.arguments
+          throw new Error "arguments not supported for inheritance for now"
+        ret.inheritance_list.push {
+          name : v.baseName.name
+          # TODO arg_list
+        }
       ret.name = root.name
       for node in root.nodes
         ret.scope.list.push walk node, ctx

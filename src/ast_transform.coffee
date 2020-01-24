@@ -201,10 +201,15 @@ do ()=>
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
+      when "Class_decl"
+        return root if root.need_skip
+        ctx.next_gen root, ctx
+      
       when "Fn_decl_multiret"
         unless root.visibility in ["private", "internal"]
           ctx.router_func_list.push root
         root
+      
       else
         ctx.next_gen root, ctx
   
@@ -261,8 +266,8 @@ do ()=>
           root.scope.list.push _main = new ast.Fn_decl_multiret
           _main.name = "main"
           
-          _main.type_i = new Type "function2"
-          _main.type_o =  new Type "function2"
+          _main.type_i = new Type "function"
+          _main.type_o =  new Type "function"
           
           _main.arg_name_list.push "action"
           _main.type_i.nest_list.push new Type "router_enum"
@@ -304,7 +309,7 @@ do ()=>
             call.fn = new ast.Var
             call.fn.name = func.name # TODO word "constructor" gets corruped here
             # BUG. Type inference should resolve this fn properly
-            call.fn.type = new Type "function"
+            call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
@@ -358,6 +363,90 @@ do ()=>
   
   @var_replace = (root, var_name, target_ast)->
     walk root, {walk, next_gen: module.default_walk, var_name, target_ast}
+  
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Class_decl"
+        root = ctx.next_gen root, ctx
+        ctx.class_hash[root.name] = root # store unmodified
+        return root if !root.inheritance_list.length # for coverage purposes
+        
+        # reverse order
+        # near first
+        # https://habr.com/ru/company/dsec/blog/347110/
+        inheritance_apply_list = []
+        inheritance_list = root.inheritance_list
+        while inheritance_list.length
+          need_lookup_list = []
+          for i in [inheritance_list.length-1 .. 0] by -1
+            v = inheritance_list[i]
+            if !class_decl = ctx.class_hash[v.name]
+              throw new Error "can't find parent class #{parent.name}"
+            
+            class_decl.need_skip = true
+            inheritance_apply_list.push v
+            
+            need_lookup_list.append class_decl.inheritance_list
+          
+          inheritance_list = need_lookup_list
+        
+        # keep unmodified stored in ctx.class_decl
+        root = root.clone()
+        
+        for parent in inheritance_apply_list
+          if !class_decl = ctx.class_hash[parent.name]
+            throw new Error "can't find parent class #{parent.name}"
+          look_list = class_decl.scope.list
+          
+          need_constuctor = null
+          # import all fn except constructor (rename constructor)
+          for v in look_list
+            continue if v.constructor.name != "Fn_decl_multiret"
+            v = v.clone()
+            if v.name == "constructor"
+              v.name = "#{parent.name}_constructor"
+              v.visibility = "internal"
+              need_constuctor = v
+            
+            root.scope.list.unshift v
+          
+          # import all vars (on top of fn)
+          for v in look_list
+            continue if v.constructor.name != "Var_decl"
+            root.scope.list.unshift v.clone()
+          
+          # inject constructor call on top of my constructor (create my constructor if not exists)
+          continue if !need_constuctor
+          
+          found_constructor = null
+          for v in root.scope.list
+            continue if v.constructor.name != "Fn_decl_multiret"
+            continue if v.name != "constructor"
+            found_constructor = v
+            break
+          
+          # inject constructor call on top of my constructor (create my constructor if not exists)
+          
+          if !found_constructor
+            root.list.push found_constructor = new ast.Fn_decl_multiret
+            found_constructor.name = "constructor"
+            found_constructor.type_i = new Type "function"
+            found_constructor.type_o = new Type "function"
+          
+          found_constructor.scope.list.unshift fn_call = new ast.Fn_call
+          fn_call.fn = new ast.Var
+          fn_call.fn.name = need_constuctor.name
+          # TODO LATER use arg_list for calling parent constructor
+          
+        root
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @inheritance_unpack = (root)->
+    walk root, {walk, next_gen: module.default_walk, class_hash: {}}
   
 do ()=>
   
@@ -420,6 +509,7 @@ do ()=>
   root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.modifier_unpack root
+  root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
   if opt.router
     router_func_list = module.router_collector root

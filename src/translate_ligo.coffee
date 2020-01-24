@@ -586,6 +586,7 @@ walk = (root, ctx)->
       """
     
     when "Class_decl"
+      return "" if root.need_skip
       ctx.type_decl_hash[root.name] = true
       ctx = ctx.mk_nest()
       ctx.is_class_decl = true
