@@ -278,6 +278,10 @@ is_not_a_type = (type)->
         class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        
+        for k,v of root._prepared_field2type
+          ctx_nest.var_hash[k] = v
+        
         # ctx_nest.var_hash["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type
@@ -489,6 +493,10 @@ is_not_a_type = (type)->
         class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        
+        for k,v of root._prepared_field2type
+          ctx_nest.var_hash[k] = v
+        
         # ctx_nest.var_hash["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type
