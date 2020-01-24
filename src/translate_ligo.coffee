@@ -48,6 +48,7 @@ walk = null
   MINUS   : (a)->"-(#{a})"
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a)->"not (#{a})"
+  BOOL_NOT: (a)->"not (#{a})"
   
   DELETE : (a, ctx, ast)->
     if ast.a.constructor.name != "Bin_op"
@@ -296,6 +297,8 @@ walk = (root, ctx)->
                 "skip"
               when "Class_decl"
                 ctx.sink_list.push walk v, ctx
+              when "Comment"
+                ctx.sink_list.push walk v, ctx
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
           
@@ -309,7 +312,7 @@ walk = (root, ctx)->
                 "skip"
               when "Fn_decl_multiret", "Enum_decl"
                 jl.push walk v, ctx
-              when "Class_decl"
+              when "Class_decl", "Comment"
                 "skip"
               else
                 throw new Error "unknown v.constructor.name #{v.constructor.name}"
@@ -357,7 +360,7 @@ walk = (root, ctx)->
             
             jl = jl.filter (t)-> t != ""
             
-            if root._phantom
+            if !root.need_nest
               if jl.length
                 body = join_list jl, ""
               else
@@ -541,6 +544,13 @@ walk = (root, ctx)->
           """
           const #{name} : #{type} = #{type2default_value root.type}
           """
+    
+    when "Throw"
+      if root.t
+        t = walk root.t, ctx
+        "failwith(#{t})"
+      else
+        'failwith("throw")'
     
     when "Ret_multi"
       jl = []

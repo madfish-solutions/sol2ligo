@@ -45,6 +45,9 @@ array_field_hash =
 
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
+  BOOL_NOT : [
+    ["bool", "bool"]
+  ]
   MINUS : [
     ["int", "int"]
   ]
@@ -236,6 +239,11 @@ is_not_a_type = (type)->
         if root.assign_value
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
+        null
+      
+      when "Throw"
+        if root.t
+          walk root.t, ctx
         null
       
       when "Scope"
@@ -452,6 +460,11 @@ is_not_a_type = (type)->
             root.assign_value.type = root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
+        null
+      
+      when "Throw"
+        if root.t
+          walk root.t, ctx
         null
       
       when "Scope"
