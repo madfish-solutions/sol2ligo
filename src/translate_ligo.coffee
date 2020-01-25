@@ -285,7 +285,8 @@ walk = (root, ctx)->
         when "SourceUnit"
           jl = []
           for v in root.list
-            jl.push walk v, ctx
+            code = walk v, ctx
+            jl.push code if code
           join_list jl, ""
         
         else
@@ -341,6 +342,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Var"
       name = root.name
+      return "" if name == "this"
       name = translate_var_name name if !ctx.ignore_reserved
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
@@ -405,6 +407,8 @@ walk = (root, ctx)->
               throw new Error "unknown array field #{root.name}"
         
         else
+          if t == "" # this case
+            return translate_var_name root.name, ctx
           chk_ret = "#{t}.#{root.name}"
           spec_id_trans_hash[chk_ret] or "#{t}.#{translate_var_name root.name, ctx}"
     
@@ -469,6 +473,8 @@ walk = (root, ctx)->
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
       t = walk root.t, ctx
+      if t == "" and target_type == "address"
+        return "self_address"
       
       if target_type == "int"
         "int(abs(#{t}))"

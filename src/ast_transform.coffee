@@ -220,8 +220,19 @@ do ()=>
 
 
 do ()=>
-  func2args_struct = (name)->name+"_args"
-  func2struct = (name)->name.capitalize()
+  func2args_struct = (name)->
+    name = "fix_underscore_#{name}" if name[0] == "_"
+    name = name+"_args"
+    name
+  
+  func2struct = (name)->
+    name = "fix_underscore_#{name}" if name[0] == "_"
+    name = name.capitalize()
+    if name.length > 31
+      new_name = name.substr 0, 31
+      perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}"
+      name = new_name
+    name
   
   walk = (root, ctx)->
     {walk} = ctx

@@ -542,8 +542,7 @@ describe "translate ligo section", ()->
     
     """
     make_test text_i, text_o
-
-    
+  
   it "enums", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -564,11 +563,11 @@ describe "translate ligo section", ()->
       | TWO;
     """
     make_test text_i, text_o
-
+  
   it "ternary", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract Ternary {
       function ternary() public returns (int) {
         int i = 5;
@@ -605,7 +604,7 @@ describe "translate ligo section", ()->
     type state is record
       reserved__empty_state : int;
     end;
-
+    
     function castType (const contractStorage : state) : (state) is
       block {
         const u : nat = abs(-(1));
@@ -614,3 +613,81 @@ describe "translate ligo section", ()->
       } with (contractStorage);
     """#"
     make_test text_i, text_o
+  
+  it "this", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract This_test {
+      address owner;
+      
+      function _transferOwnership(address newOwner) public {
+        owner = newOwner;
+        this;
+      }
+      
+      function transferOwnership(address newOwner) public {
+        this._transferOwnership(newOwner);
+        owner = address(this);
+      }
+    }
+    
+    """#"
+    text_o = """
+    type state is record
+      owner : address;
+      reserved__initialized : bool;
+    end;
+    
+    type fix_underscore__transferOwnership_args is record
+      newOwner : address;
+    end;
+    
+    type transferOwnership_args is record
+      newOwner : address;
+    end;
+    
+    function fix_underscore__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        contractStorage.owner := newOwner;
+      } with (opList, contractStorage);
+    
+    function transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        const tmp_0 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, newOwner);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+        contractStorage.owner := self_address;
+      } with (opList, contractStorage);
+    
+    type router_enum is
+      | Fix_underscore__transferOwnersh of fix_underscore__transferOwnership_args
+      | TransferOwnership of transferOwnership_args;
+    
+    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+      block {
+        const opList : list(operation) = (nil: list(operation));
+        if (contractStorage.reserved__initialized) then block {
+          case action of
+          | Fix_underscore__transferOwnersh(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, match_action.newOwner);
+            opList := tmp_0.0;
+            contractStorage := tmp_0.1;
+          }
+          | TransferOwnership(match_action) -> block {
+            const tmp_1 : (list(operation) * state) = transferOwnership(opList, contractStorage, match_action.newOwner);
+            opList := tmp_1.0;
+            contractStorage := tmp_1.1;
+          }
+          end;
+        } else block {
+          contractStorage.reserved__initialized := True;
+        };
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o, {
+      router : true
+      op_list: true
+    }
+    # NOTE without router self_address will not work
+    
