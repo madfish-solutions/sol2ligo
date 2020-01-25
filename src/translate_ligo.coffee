@@ -674,6 +674,18 @@ walk = (root, ctx)->
       (case #{cond} of | True -> #{t} | False -> #{f} end)
       """
 
+    when "New"
+      # TODO: should we translate type here?
+      type = translate_type root.cls
+      arg_list = []
+      for v in root.arg_list
+        arg_list.push walk v, ctx
+
+      """
+      #{type}(#{join_list arg_list, ', '})
+      """
+
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx
