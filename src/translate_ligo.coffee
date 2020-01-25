@@ -288,58 +288,6 @@ walk = (root, ctx)->
             jl.push walk v, ctx
           join_list jl, ""
         
-        when "ContractDefinition"
-          ctx = ctx.mk_nest()
-          ctx.is_class_decl = true
-          field_decl_jl = []
-          for v in root.list
-            switch v.constructor.name
-              when "Var_decl"
-                field_decl_jl.push walk v, ctx
-              when "Fn_decl_multiret", "Enum_decl"
-                "skip"
-              when "Class_decl"
-                ctx.sink_list.push walk v, ctx
-              when "Comment"
-                ctx.sink_list.push walk v, ctx
-              else
-                throw new Error "unknown v.constructor.name #{v.constructor.name}"
-          
-          jl = []
-          jl.append ctx.sink_list
-          ctx.sink_list.clear()
-          
-          for v in root.list
-            switch v.constructor.name
-              when "Var_decl"
-                "skip"
-              when "Fn_decl_multiret", "Enum_decl"
-                jl.push walk v, ctx
-              when "Class_decl", "Comment"
-                "skip"
-              else
-                throw new Error "unknown v.constructor.name #{v.constructor.name}"
-          
-          aux_decl = ""
-          if field_decl_jl.length
-            aux_decl = """
-            type #{config.storage} is record
-              #{join_list field_decl_jl, '  '}
-            end;
-            
-            """
-          else
-            aux_decl = """
-            type #{config.storage} is record
-              #{config.empty_state} : int;
-            end;
-            
-            """
-          
-          """
-          #{aux_decl}#{join_list jl, ''}
-          """
-        
         else
           if !root.original_node_type
             jl = []
@@ -427,6 +375,7 @@ walk = (root, ctx)->
       ctx_lvalue = ctx.mk_nest()
       ctx_lvalue.lvalue = true if 0 == root.op.indexOf "ASS"
       _a = walk root.a, ctx_lvalue
+      ctx.sink_list.append ctx_lvalue.sink_list
       _b = walk root.b, ctx
       
       ret = if op = module.bin_op_name_map[root.op]
@@ -483,8 +432,15 @@ walk = (root, ctx)->
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
-      
-      fn = walk root.fn, ctx
+          else
+            name = translate_var_name root.fn.name
+            # COPYPASTED (TEMP SOLUTION)
+            fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
+              name
+            else
+              spec_id_trans_hash[root.fn.name] or name
+      else
+        fn = walk root.fn, ctx
       
       arg_list.unshift config.contract_storage
       if ctx.use_op_list
@@ -626,25 +582,68 @@ walk = (root, ctx)->
       
       body = walk root.scope, ctx
       """
-      
       function #{translate_var_name root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
     when "Class_decl"
+      return "" if root.need_skip
       ctx.type_decl_hash[root.name] = true
       ctx = ctx.mk_nest()
       ctx.is_class_decl = true
-      jl = []
+      
+      # stage 1 collect declarations
+      field_decl_jl = []
       for v in root.scope.list
-        jl.push walk v, ctx
+        switch v.constructor.name
+          when "Var_decl"
+            field_decl_jl.push walk v, ctx
+          when "Fn_decl_multiret"
+            ctx.contract_var_hash[v.name] = true
+          when "Enum_decl"
+            "skip"
+          when "Class_decl"
+            ctx.sink_list.push walk v, ctx
+          when "Comment"
+            ctx.sink_list.push walk v, ctx
+          else
+            throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
-      """
+      jl = []
+      jl.append ctx.sink_list
+      ctx.sink_list.clear()
       
-      type #{translate_var_name root.name} is record
-        #{join_list jl, '  '}
-      end;
-      """
+      # stage 2 collect fn implementations
+      for v in root.scope.list
+        switch v.constructor.name
+          when "Var_decl"
+            "skip"
+          when "Fn_decl_multiret", "Enum_decl"
+            jl.push walk v, ctx
+          when "Class_decl", "Comment"
+            "skip"
+          else
+            throw new Error "unknown v.constructor.name #{v.constructor.name}"
+      
+      if root.is_contract
+        name = config.storage
+      else
+        name = translate_var_name root.name
+      
+      if field_decl_jl.length
+        jl.unshift """
+        type #{name} is record
+          #{join_list field_decl_jl, '  '}
+        end;
+        """
+      else
+        jl.unshift """
+        type #{name} is record
+          #{config.empty_state} : int;
+        end;
+        """
+      
+      jl.join "\n\n"
     
     when "Enum_decl"
       jl = []
@@ -663,7 +662,6 @@ walk = (root, ctx)->
         # jl.push "| #{v.name}"
       
       """
-      
       type #{translate_var_name root.name} is
         #{join_list jl, '  '};
       """

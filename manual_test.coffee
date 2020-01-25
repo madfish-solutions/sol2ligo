@@ -48,7 +48,8 @@ process_file = (file)->
         puts ds_code
     
     if argv.ligo
-      fs.writeFileSync "test.ligo", code+"WTF"
+      code = code.replace /\(\* EmitStatement \*\);/g, ""
+      fs.writeFileSync "test.ligo", code
       if fs.existsSync "ligo_tmp_log"
         fs.unlinkSync "ligo_tmp_log"
       try

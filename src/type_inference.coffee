@@ -98,15 +98,19 @@ class Ti_context
       return @parent.check_type _type
     throw new Error "can't find type '#{_type}'"
 
-class_prepare = (ctx, root)->
+class_prepare = (root, ctx)->
   ctx.type_hash[root.name] = root
   for v in root.scope.list
     switch v.constructor.name
       when "Var_decl"
         root._prepared_field2type[v.name] = v.type
-      when "Fn_decl"
+      
+      when "Fn_decl_multiret"
         # BUG внутри scope уже есть this и ему нужен тип...
-        root._prepared_field2type[v.name] = v.type
+        type = new Type "function2<function,function>"
+        type.nest_list[0] = v.type_i
+        type.nest_list[1] = v.type_o
+        root._prepared_field2type[v.name] = type
   return
 
 is_not_a_type = (type)->
@@ -251,7 +255,7 @@ is_not_a_type = (type)->
         ctx_nest = ctx.mk_nest()
         for v in root.list
           if v.constructor.name == "Class_decl"
-            class_prepare ctx, v
+            class_prepare v, ctx
         for v in root.list
           walk v, ctx_nest
         
@@ -271,9 +275,13 @@ is_not_a_type = (type)->
         null
       
       when "Class_decl"
-        class_prepare ctx, root
+        class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        
+        for k,v of root._prepared_field2type
+          ctx_nest.var_hash[k] = v
+        
         # ctx_nest.var_hash["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type
@@ -482,9 +490,13 @@ is_not_a_type = (type)->
         null
       
       when "Class_decl"
-        class_prepare ctx, root
+        class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        
+        for k,v of root._prepared_field2type
+          ctx_nest.var_hash[k] = v
+        
         # ctx_nest.var_hash["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type

@@ -148,12 +148,28 @@ walk = (root, ctx)->
     # ###################################################################################################
     #    high level scope
     # ###################################################################################################
-    when "SourceUnit", "ContractDefinition"
+    when "SourceUnit"
       ret = new ast.Scope
       ret.original_node_type = root.nodeType
-      ret.name = root.name # for ContractDefinition
       for node in root.nodes
         ret.list.push walk node, ctx
+      ret
+    
+    when "ContractDefinition"
+      ret = new ast.Class_decl
+      ret.is_contract = true
+      ret.inheritance_list = []
+      for v in root.baseContracts
+        if v.arguments
+          throw new Error "arguments not supported for inheritance for now"
+        ret.inheritance_list.push {
+          name : v.baseName.name
+          # TODO arg_list
+        }
+      ret.name = root.name
+      for node in root.nodes
+        ret.scope.list.push walk node, ctx
+      
       ret
     
     # ###################################################################################################

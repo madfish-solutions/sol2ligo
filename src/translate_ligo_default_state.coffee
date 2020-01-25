@@ -28,22 +28,9 @@ walk = (root, ctx)->
   last_bracket_state = false
   switch root.constructor.name
     when "Scope"
-      switch root.original_node_type
-        when "SourceUnit"
-          for v in root.list
-            walk v, ctx
-        
-        when "ContractDefinition"
-          ctx = ctx.mk_nest_contract(root.name)
-          for v in root.list
-            walk v, ctx
-        
-        else
-          if !root.original_node_type
-            "DO NOT PASS"
-          else
-            puts root
-            throw new Error "Unknown root.original_node_type #{root.original_node_type}"
+      for v in root.list
+        walk v, ctx
+      "nothing"
     # ###################################################################################################
     #    stmt
     # ###################################################################################################
@@ -55,8 +42,12 @@ walk = (root, ctx)->
         type  : translate_type root.type
         value : type2default_value root.type
       }
+      "nothing"
     
     when "Class_decl"
+      return if root.need_skip
+      if root.is_contract
+        ctx = ctx.mk_nest_contract(root.name)
       walk root.scope, ctx
     
     else
