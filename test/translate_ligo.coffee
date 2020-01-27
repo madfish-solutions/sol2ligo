@@ -615,6 +615,9 @@ describe "translate ligo section", ()->
     make_test text_i, text_o
   
   it "this", ()->
+    translate = (name)->
+      (config.fix_underscore.capitalize()+"_"+name).substr(0, 31)
+    
     text_i = """
     pragma solidity ^0.5.0;
     
@@ -661,7 +664,7 @@ describe "translate ligo section", ()->
       } with (opList, contractStorage);
     
     type router_enum is
-      | #{(config.fix_underscore.capitalize()+'__transferOwnership').substr(0, 31)} of #{config.fix_underscore}__transferOwnership_args
+      | #{translate '_transferOwnership'} of #{config.fix_underscore}__transferOwnership_args
       | TransferOwnership of transferOwnership_args;
     
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
@@ -669,7 +672,7 @@ describe "translate ligo section", ()->
         const opList : list(operation) = (nil: list(operation));
         if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
-          | #{(config.fix_underscore.capitalize()+'__transferOwnership').substr(0, 31)}(match_action) -> block {
+          | #{translate '_transferOwnership'}(match_action) -> block {
             const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, match_action.newOwner);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
