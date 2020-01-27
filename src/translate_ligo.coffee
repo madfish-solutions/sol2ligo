@@ -688,11 +688,23 @@ walk = (root, ctx)->
       else if translated_type == "bytes"
         """bytes_pack(unit) (* args: #{args} *)"""
       else
-
         """
         #{translated_type}(#{args})
         """
 
+    when "Tuple"
+      arg_list = []
+      for v in root.list
+        arg_list.push walk v, ctx
+      
+      decls = ["#{i}n -> #{arg}" for arg, i in arg_list]
+      """
+      map
+        #{join_list decls, '; '}
+      end
+      """
+
+        
 
     else
       if ctx.next_gen?
