@@ -236,7 +236,7 @@ reserved_hash[config.contract_storage] = true
     "reserved__#{name}"
   else
     if name[0] == "_"
-      "fix_underscore_"+name
+      "#{config.fix_underscore}_"+name
     else
       # first letter should be lowercase
       name.substr(0,1).toLowerCase() + name.substr 1

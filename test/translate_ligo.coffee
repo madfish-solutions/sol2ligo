@@ -227,7 +227,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      fix_underscore__hi : nat;
+      #{config.fix_underscore}__hi : nat;
     end;
     """#"
     make_test text_i, text_o
@@ -639,7 +639,7 @@ describe "translate ligo section", ()->
       reserved__initialized : bool;
     end;
     
-    type fix_underscore__transferOwnership_args is record
+    type #{config.fix_underscore}__transferOwnership_args is record
       newOwner : address;
     end;
     
@@ -647,21 +647,21 @@ describe "translate ligo section", ()->
       newOwner : address;
     end;
     
-    function fix_underscore__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+    function #{config.fix_underscore}__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
       block {
         contractStorage.owner := newOwner;
       } with (opList, contractStorage);
     
     function transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
       block {
-        const tmp_0 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, newOwner);
+        const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, newOwner);
         opList := tmp_0.0;
         contractStorage := tmp_0.1;
         contractStorage.owner := self_address;
       } with (opList, contractStorage);
     
     type router_enum is
-      | Fix_underscore__transferOwnersh of fix_underscore__transferOwnership_args
+      | #{(config.fix_underscore.capitalize()+'__transferOwnership').substr(0, 31)} of #{config.fix_underscore}__transferOwnership_args
       | TransferOwnership of transferOwnership_args;
     
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
@@ -669,8 +669,8 @@ describe "translate ligo section", ()->
         const opList : list(operation) = (nil: list(operation));
         if (contractStorage.reserved__initialized) then block {
           case action of
-          | Fix_underscore__transferOwnersh(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, match_action.newOwner);
+          | #{(config.fix_underscore.capitalize()+'__transferOwnership').substr(0, 31)}(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, match_action.newOwner);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }

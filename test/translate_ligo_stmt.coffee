@@ -1,3 +1,4 @@
+config = require("../src/config")
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -275,19 +276,19 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      fix_underscore__owner : address;
+      #{config.fix_underscore}__owner : address;
     end;
     
-    function fix_underscore__msgSender (const contractStorage : state) : (state * address) is
+    function #{config.fix_underscore}__msgSender (const contractStorage : state) : (state * address) is
       block {
         skip
       } with (contractStorage, sender);
     
     function isOwner (const contractStorage : state) : (state * bool) is
       block {
-        const tmp_0 : (state * address) = fix_underscore__msgSender(contractStorage);
+        const tmp_0 : (state * address) = #{config.fix_underscore}__msgSender(contractStorage);
         contractStorage := tmp_0.0;
-      } with (contractStorage, (tmp_0.1 = contractStorage.fix_underscore__owner));
+      } with (contractStorage, (tmp_0.1 = contractStorage.#{config.fix_underscore}__owner));
     """
     make_test text_i, text_o
   

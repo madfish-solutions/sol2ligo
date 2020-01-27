@@ -221,12 +221,12 @@ do ()=>
 
 do ()=>
   func2args_struct = (name)->
-    name = "fix_underscore_#{name}" if name[0] == "_"
+    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
     name = name+"_args"
     name
   
   func2struct = (name)->
-    name = "fix_underscore_#{name}" if name[0] == "_"
+    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
     name = name.capitalize()
     if name.length > 31
       new_name = name.substr 0, 31

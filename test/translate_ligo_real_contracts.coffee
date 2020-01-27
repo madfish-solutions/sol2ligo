@@ -1,3 +1,4 @@
+config = require("../src/config")
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -184,7 +185,7 @@ describe "translate ligo real contracts section", ()->
     
     text_o = """
     type state is record
-      fix_underscore__owner : address;
+      #{config.fix_underscore}__owner : address;
       reserved__initialized : bool;
     end;
     
@@ -208,7 +209,7 @@ describe "translate ligo real contracts section", ()->
       newOwner : address;
     end;
     
-    function fix_underscore__msgSender (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
+    function #{config.fix_underscore}__msgSender (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
       block {
         skip
       } with (opList, contractStorage, sender);
@@ -223,25 +224,25 @@ describe "translate ligo real contracts section", ()->
         const tmp_0 : (list(operation) * state) = context_constructor(opList, contractStorage);
         opList := tmp_0.0;
         contractStorage := tmp_0.1;
-        const tmp_1 : (list(operation) * state * address) = fix_underscore__msgSender(opList, contractStorage);
+        const tmp_1 : (list(operation) * state * address) = #{config.fix_underscore}__msgSender(opList, contractStorage);
         opList := tmp_1.0;
         contractStorage := tmp_1.1;
         const msgSender : address = tmp_1.2;
-        contractStorage.fix_underscore__owner := msgSender;
+        contractStorage.#{config.fix_underscore}__owner := msgSender;
         (* EmitStatement *);
       } with (opList, contractStorage);
     
     function owner (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
       block {
         skip
-      } with (opList, contractStorage, contractStorage.fix_underscore__owner);
+      } with (opList, contractStorage, contractStorage.#{config.fix_underscore}__owner);
     
     function isOwner (const opList : list(operation); const contractStorage : state) : (list(operation) * state * bool) is
       block {
-        const tmp_0 : (list(operation) * state * address) = fix_underscore__msgSender(opList, contractStorage);
+        const tmp_0 : (list(operation) * state * address) = #{config.fix_underscore}__msgSender(opList, contractStorage);
         opList := tmp_0.0;
         contractStorage := tmp_0.1;
-      } with (opList, contractStorage, (tmp_0.2 = contractStorage.fix_underscore__owner));
+      } with (opList, contractStorage, (tmp_0.2 = contractStorage.#{config.fix_underscore}__owner));
     
     function renounceOwnership (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
@@ -250,14 +251,14 @@ describe "translate ligo real contracts section", ()->
         contractStorage := tmp_0.1;
         if tmp_0.2 then {skip} else failwith("Ownable: caller is not the owner");
         (* EmitStatement *);
-        contractStorage.fix_underscore__owner := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        contractStorage.#{config.fix_underscore}__owner := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
       } with (opList, contractStorage);
     
-    function fix_underscore__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+    function #{config.fix_underscore}__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
       block {
         if (newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then {skip} else failwith("Ownable: new owner is the zero address");
         (* EmitStatement *);
-        contractStorage.fix_underscore__owner := newOwner;
+        contractStorage.#{config.fix_underscore}__owner := newOwner;
       } with (opList, contractStorage);
     
     function transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
@@ -266,7 +267,7 @@ describe "translate ligo real contracts section", ()->
         opList := tmp_0.0;
         contractStorage := tmp_0.1;
         if tmp_0.2 then {skip} else failwith("Ownable: caller is not the owner");
-        const tmp_1 : (list(operation) * state) = fix_underscore__transferOwnership(opList, contractStorage, newOwner);
+        const tmp_1 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, newOwner);
         opList := tmp_1.0;
         contractStorage := tmp_1.1;
       } with (opList, contractStorage);
