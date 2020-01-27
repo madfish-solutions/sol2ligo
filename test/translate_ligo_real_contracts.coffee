@@ -30,28 +30,28 @@ describe "translate ligo real contracts section", ()->
     text_o = """
     type state is record
       balances : map(address, nat);
-      reserved__initialized : bool;
+      #{config.reserved}__initialized : bool;
     end;
     
     type constructor_args is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type transfer_args is record
-      reserved__to : address;
-      reserved__amount : nat;
+      #{config.reserved}__to : address;
+      #{config.reserved}__amount : nat;
     end;
     
-    function reserved__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function #{config.reserved}__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.balances[sender] := 1000000n;
       } with (opList, contractStorage);
     
-    function transfer (const opList : list(operation); const contractStorage : state; const reserved__to : address; const reserved__amount : nat) : (list(operation) * state) is
+    function transfer (const opList : list(operation); const contractStorage : state; const #{config.reserved}__to : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
-        if ((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) >= reserved__amount) then {skip} else failwith("Overdrawn balance");
-        contractStorage.balances[sender] := abs((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) - reserved__amount);
-        contractStorage.balances[reserved__to] := ((case contractStorage.balances[reserved__to] of | None -> 0n | Some(x) -> x end) + reserved__amount);
+        if ((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) >= #{config.reserved}__amount) then {skip} else failwith("Overdrawn balance");
+        contractStorage.balances[sender] := abs((case contractStorage.balances[sender] of | None -> 0n | Some(x) -> x end) - #{config.reserved}__amount);
+        contractStorage.balances[#{config.reserved}__to] := ((case contractStorage.balances[#{config.reserved}__to] of | None -> 0n | Some(x) -> x end) + #{config.reserved}__amount);
       } with (opList, contractStorage);
     
     type router_enum is
@@ -61,21 +61,21 @@ describe "translate ligo real contracts section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | Constructor(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = reserved__constructor(opList, contractStorage);
+            const tmp_0 : (list(operation) * state) = #{config.reserved}__constructor(opList, contractStorage);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }
           | Transfer(match_action) -> block {
-            const tmp_1 : (list(operation) * state) = transfer(opList, contractStorage, match_action.reserved__to, match_action.reserved__amount);
+            const tmp_1 : (list(operation) * state) = transfer(opList, contractStorage, match_action.#{config.reserved}__to, match_action.#{config.reserved}__amount);
             opList := tmp_1.0;
             contractStorage := tmp_1.1;
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.reserved}__initialized := True;
         };
       } with (opList, contractStorage);
     """#"
@@ -186,7 +186,7 @@ describe "translate ligo real contracts section", ()->
     text_o = """
     type state is record
       #{config.fix_underscore}__owner : address;
-      reserved__initialized : bool;
+      #{config.reserved}__initialized : bool;
     end;
     
     (* EventDefinition OwnershipTransferred *)
@@ -194,15 +194,15 @@ describe "translate ligo real contracts section", ()->
     (* modifier onlyOwner removed *)
     
     type owner_args is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type isOwner_args is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type renounceOwnership_args is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type transferOwnership_args is record
@@ -219,7 +219,7 @@ describe "translate ligo real contracts section", ()->
         skip
       } with (opList, contractStorage);
     
-    function reserved__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function #{config.reserved}__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const tmp_0 : (list(operation) * state) = context_constructor(opList, contractStorage);
         opList := tmp_0.0;
@@ -281,7 +281,7 @@ describe "translate ligo real contracts section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | Owner(match_action) -> block {
             const tmp_0 : (list(operation) * state * address) = owner(opList, contractStorage);
@@ -305,7 +305,7 @@ describe "translate ligo real contracts section", ()->
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.reserved}__initialized := True;
         };
       } with (opList, contractStorage);
     """#"

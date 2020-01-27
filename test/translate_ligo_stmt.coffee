@@ -65,7 +65,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function whiler (const contractStorage : state; const owner : address) : (state * int) is
@@ -97,7 +97,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -128,7 +128,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -158,7 +158,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -189,7 +189,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function forer (const contractStorage : state; const owner : address) : (state * int) is
@@ -218,7 +218,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state * nat) is
@@ -243,7 +243,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function call_me (const contractStorage : state; const a : int) : (state * int) is
@@ -307,7 +307,7 @@ describe "translate ligo section", ()->
   #   """#"
   #   text_o = """
   #   type state is record
-  #     reserved__empty_state : int;
+  #     #{config.reserved}__empty_state : int;
   #   end;
   #   
   #   function test (const contractStorage : state; const a : int) : (state * int) is

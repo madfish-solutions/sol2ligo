@@ -233,7 +233,7 @@ reserved_hash =
 reserved_hash[config.contract_storage] = true
 @translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
-    "reserved__#{name}"
+    "#{config.reserved}__#{name}"
   else
     if name[0] == "_"
       "#{config.fix_underscore}_"+name
