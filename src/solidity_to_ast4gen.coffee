@@ -480,6 +480,7 @@ walk = (root, ctx)->
         ret.scope = new ast.Scope
       
       ret.visibility = root.visibility
+      ret.stateMutability = root.stateMutability
       ret
     
     when "EnumDefinition"

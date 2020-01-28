@@ -416,6 +416,7 @@ walk = (root, ctx)->
       arg_list = []
       for v in root.arg_list
         arg_list.push walk v, ctx
+      puts root
       
       if root.fn.constructor.name == "Field_access"
         t = walk root.fn.t, ctx
@@ -430,6 +431,7 @@ walk = (root, ctx)->
               else
                 throw new Error "unknown array field function #{root.fn.name}"
       
+      is_pure = false
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require"
@@ -437,6 +439,8 @@ walk = (root, ctx)->
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
           else
+            is_pure =  ctx.contract_var_hash[root.fn.name].stateMutability == 'pure'
+            puts is_pure
             name = translate_var_name root.fn.name
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
@@ -446,7 +450,8 @@ walk = (root, ctx)->
       else
         fn = walk root.fn, ctx
       
-      arg_list.unshift config.contract_storage
+      if !is_pure
+        arg_list.unshift config.contract_storage
       if ctx.use_op_list
         arg_list.unshift config.op_list
       
@@ -461,14 +466,17 @@ walk = (root, ctx)->
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
       
-      if ctx.use_op_list
+      if ctx.use_op_list and !is_pure
         ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
         ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
         ctx.trim_expr = "#{tmp_var}.2"
-      else
+      else if !is_pure and !ctx.use_op_list
         ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
         ctx.trim_expr = "#{tmp_var}.1"
-    
+      else if ctx.use_op_list and is_pure
+        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+        ctx.trim_expr = "#{tmp_var}.1"
+
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
@@ -499,7 +507,7 @@ walk = (root, ctx)->
       name = translate_var_name root.name
       type = translate_type root.type, ctx
       if ctx.is_class_decl
-        ctx.contract_var_hash[name] = true
+        ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
@@ -523,7 +531,10 @@ walk = (root, ctx)->
       jl = []
       for v,idx in root.t_list
         ctx_loc = ctx
-        if idx == 0
+        if idx == 0 and root.stateMutability != 'pure'
+          ctx_loc = ctx.mk_nest()
+          ctx_loc.ignore_reserved = true
+        else if idx == 0 and ctx.use_op_list
           ctx_loc = ctx.mk_nest()
           ctx_loc.ignore_reserved = true
         else if idx == 1 and ctx.use_op_list
@@ -605,7 +616,7 @@ walk = (root, ctx)->
           when "Var_decl"
             field_decl_jl.push walk v, ctx
           when "Fn_decl_multiret"
-            ctx.contract_var_hash[v.name] = true
+            ctx.contract_var_hash[v.name] = v
           when "Enum_decl"
             "skip"
           when "Class_decl"
@@ -657,7 +668,7 @@ walk = (root, ctx)->
       ctx.type_decl_hash[root.name] = true
       for v in root.value_list
         # register global value
-        ctx.contract_var_hash[v.name] = true
+        ctx.contract_var_hash[v.name] = v
         
         # not covered by tests yet
         aux = ""
