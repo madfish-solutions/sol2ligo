@@ -1,5 +1,6 @@
 assert              = require "assert"
 {json_eq}           = require "fy/test_util"
+config              = require("../src/config")
 ast_gen             = require("../src/ast_gen")
 solidity_to_ast4gen = require("../src/solidity_to_ast4gen").gen
 ast_transform       = require("../src/ast_transform")
@@ -23,16 +24,16 @@ describe "translate ligo default state section", ()->
     contract State {
     }
     """
+    State = {}
+    State[config.reserved+"__empty_state"] = {
+      type : "nat"
+      value: "0n"
+    }
     make_test text_i, {
-      State : {
-        reserved__empty_state : {
-          type : "nat"
-          value: "0n"
-        }
-      }
+      State
     }, """
     record
-      reserved__empty_state = 0n;
+      #{config.reserved}__empty_state = 0n;
     end
     """
   

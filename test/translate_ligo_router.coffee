@@ -1,3 +1,4 @@
+config = require("../src/config")
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -15,24 +16,24 @@ describe "generate router", ()->
     """#"
     text_o = """
     type state is record
-      reserved__initialized : bool;
+      #{config.reserved}__initialized : bool;
     end;
     
     type oneArgFunction_args is record
-      reserved__amount : nat;
+      #{config.reserved}__amount : nat;
     end;
     
     type twoArgsFunction_args is record
       dest : address;
-      reserved__amount : nat;
+      #{config.reserved}__amount : nat;
     end;
     
-    function oneArgFunction (const opList : list(operation); const contractStorage : state; const reserved__amount : nat) : (list(operation) * state) is
+    function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
     
-    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const reserved__amount : nat) : (list(operation) * state) is
+    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
@@ -44,21 +45,21 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | OneArgFunction(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = oneArgFunction(opList, contractStorage, match_action.reserved__amount);
+            const tmp_0 : (list(operation) * state) = oneArgFunction(opList, contractStorage, match_action.#{config.reserved}__amount);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }
           | TwoArgsFunction(match_action) -> block {
-            const tmp_1 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.reserved__amount);
+            const tmp_1 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.#{config.reserved}__amount);
             opList := tmp_1.0;
             contractStorage := tmp_1.1;
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.reserved}__initialized := True;
         };
       } with (opList, contractStorage);
     """
@@ -78,20 +79,20 @@ describe "generate router", ()->
     """#"
     text_o = """
     type state is record
-      reserved__initialized : bool;
+      #{config.reserved}__initialized : bool;
     end;
     
     type twoArgsFunction_args is record
       dest : address;
-      reserved__amount : nat;
+      #{config.reserved}__amount : nat;
     end;
     
-    function oneArgFunction (const opList : list(operation); const contractStorage : state; const reserved__amount : nat) : (list(operation) * state) is
+    function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
     
-    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const reserved__amount : nat) : (list(operation) * state) is
+    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
@@ -102,16 +103,16 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | TwoArgsFunction(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.reserved__amount);
+            const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.#{config.reserved}__amount);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.reserved}__initialized := True;
         };
       } with (opList, contractStorage);
     """
@@ -131,20 +132,20 @@ describe "generate router", ()->
     """#"
     text_o = """
     type state is record
-      reserved__initialized : bool;
+      #{config.reserved}__initialized : bool;
     end;
     
     type twoArgsFunction_args is record
       dest : address;
-      reserved__amount : nat;
+      #{config.reserved}__amount : nat;
     end;
     
-    function oneArgFunction (const opList : list(operation); const contractStorage : state; const reserved__amount : nat) : (list(operation) * state) is
+    function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
     
-    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const reserved__amount : nat) : (list(operation) * state) is
+    function twoArgsFunction (const opList : list(operation); const contractStorage : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
@@ -155,16 +156,16 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | TwoArgsFunction(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.reserved__amount);
+            const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.#{config.reserved}__amount);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.reserved}__initialized := True;
         };
       } with (opList, contractStorage);
     """
