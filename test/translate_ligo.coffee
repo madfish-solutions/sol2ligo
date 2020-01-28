@@ -613,6 +613,32 @@ describe "translate ligo section", ()->
       } with (contractStorage);
     """#"
     make_test text_i, text_o
+
+  it "new-keyword", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract NewKeyword {
+      function newKeyword() public {
+        uint tokenCount = 4;
+        bytes memory emptyBytes = new bytes(0);
+        uint[] memory newArray = new uint[](tokenCount);
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+
+    function newKeyword (const contractStorage : state) : (state) is
+      block {
+        const tokenCount : nat = 4n;
+        const emptyBytes : bytes = bytes_pack(unit) (* args: 0 *);
+        const newArray : map(nat, nat) = map end (* args: tokenCount *);
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
   
   it "this", ()->
     translate = (name)->

@@ -333,6 +333,9 @@ is_not_a_type = (type)->
       
       when "Ternary"
         root.type
+
+      when "New"
+        root.type
         
       else
         ### !pragma coverage-skip-block ###
@@ -547,7 +550,8 @@ is_not_a_type = (type)->
         root.type
       when "Ternary"
         root.type
-
+      when "New"
+        root.type
       
       else
         ### !pragma coverage-skip-block ###

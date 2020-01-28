@@ -680,6 +680,26 @@ walk = (root, ctx)->
       (case #{cond} of | True -> #{t} | False -> #{f} end)
       """
 
+    when "New"
+      # TODO: should we translate type here?
+      arg_list = []
+      for v in root.arg_list
+        arg_list.push walk v, ctx
+
+      args = """#{join_list arg_list, ', '}"""
+      translated_type = translate_type root.cls, ctx
+
+      if root.cls.main == "array"
+        """map end (* args: #{args} *)"""
+      else if translated_type == "bytes"
+        """bytes_pack(unit) (* args: #{args} *)"""
+      else
+
+        """
+        #{translated_type}(#{args})
+        """
+
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx
