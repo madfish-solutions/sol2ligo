@@ -2,6 +2,15 @@ config = require "./config"
 Type = require "type"
 module = @
 
+create_assert_func = ()->
+  # TODO new Type "function2<function<bool>,function<>>"
+  ret = new Type "function2"
+  ret.nest_list.push type_i = new Type "function"
+  ret.nest_list.push type_o = new Type "function"
+  type_i.nest_list.push "bool"
+  ret
+
+
 # Прим. Это система типов eth
 # каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
 @default_var_hash_gen = ()->
@@ -17,23 +26,8 @@ module = @
       ret
     )()
     now : new Type "uint"
-    require : (()->
-      # TODO new Type "function2<function<bool>,function<>>"
-      ret = new Type "function2"
-      ret.nest_list.push type_i = new Type "function"
-      ret.nest_list.push type_o = new Type "function"
-      type_i.nest_list.push "bool"
-      ret
-    )()
-    assert : (()->
-      # TODO new Type "function2<function<bool>,function<>>"
-      ret = new Type "function"
-      ret.nest_list.push type_i = new Type "function"
-      ret.nest_list.push type_o = new Type "function"
-      type_i.nest_list.push "bool"
-      ret
-      ret
-    )()
+    require :  create_assert_func()
+    assert : create_assert_func()
   }
 
 array_field_hash =
