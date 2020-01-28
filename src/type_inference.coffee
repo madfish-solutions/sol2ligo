@@ -70,6 +70,7 @@ for v in "EQ NE GT LT GTE LTE".split  /\s+/g
 class Ti_context
   parent    : null
   parent_fn : null
+  current_class : null
   var_hash  : {}
   type_hash : {}
   
@@ -81,9 +82,16 @@ class Ti_context
     ret = new Ti_context
     ret.parent = @
     ret.parent_fn = @parent_fn
+    ret.current_class = @current_class
     ret
   
   check_id : (id)->
+    if id == "this"
+      ret = new Type "struct"
+      for k,v of @current_class._prepared_field2type
+        continue if v.main != "function2"
+        ret.field_hash[k] = v
+      return ret
     return ret if ret = @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
@@ -278,6 +286,7 @@ is_not_a_type = (type)->
         class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        ctx_nest.current_class = root
         
         for k,v of root._prepared_field2type
           ctx_nest.var_hash[k] = v
@@ -496,6 +505,7 @@ is_not_a_type = (type)->
         class_prepare root, ctx
         
         ctx_nest = ctx.mk_nest()
+        ctx_nest.current_class = root
         
         for k,v of root._prepared_field2type
           ctx_nest.var_hash[k] = v
