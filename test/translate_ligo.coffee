@@ -640,3 +640,29 @@ describe "translate ligo section", ()->
       } with (contractStorage);
     """#"
     make_test text_i, text_o
+     
+  it "asserts", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Asserts {
+      function asserts() public {
+        uint tokenCount = 4;
+        require(tokenCount < 5, "Sample text");
+        assert(tokenCount == 4);
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+
+    function asserts (const contractStorage : state) : (state) is
+      block {
+        const tokenCount : nat = 4n;
+        if (tokenCount < 5n) then {skip} else failwith("Sample text");
+        if (tokenCount = 4n) then {skip} else failwith("require fail");
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
