@@ -428,7 +428,7 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require"
+          when "require", "assert"
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"

@@ -25,6 +25,15 @@ module = @
       type_i.nest_list.push "bool"
       ret
     )()
+    assert : (()->
+      # TODO new Type "function2<function<bool>,function<>>"
+      ret = new Type "function"
+      ret.nest_list.push type_i = new Type "function"
+      ret.nest_list.push type_o = new Type "function"
+      type_i.nest_list.push "bool"
+      ret
+      ret
+    )()
   }
 
 array_field_hash =
