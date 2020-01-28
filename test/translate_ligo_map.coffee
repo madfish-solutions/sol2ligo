@@ -1,3 +1,4 @@
+config = require("../src/config")
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -28,7 +29,7 @@ describe "translate ligo section", ()->
       allowedIntegers : map(nat, bool);
     end;
     
-    function reserved__map (const contractStorage : state) : (state * nat) is
+    function #{config.reserved}__map (const contractStorage : state) : (state * nat) is
       block {
         contractStorage.allowedIntegers[0n] := True;
         remove 0n from map contractStorage.allowedIntegers;
@@ -62,7 +63,7 @@ describe "translate ligo section", ()->
   #     allowedIntegers : map(int, bool);
   #   end;
   #   
-  #   function reserved__map (const contractStorage : state) : (state * nat) is
+  #   function #{config.reserved}__map (const contractStorage : state) : (state * nat) is
   #     block {
   #       contractStorage.allowedIntegers[0][0n] := 0n;
   #     } with (contractStorage, 0);

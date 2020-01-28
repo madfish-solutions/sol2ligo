@@ -93,7 +93,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state) is
@@ -130,14 +130,14 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__sender : address;
+      #{config.reserved}__sender : address;
       value : nat;
       time : nat;
     end;
     
     function test (const contractStorage : state) : (state) is
       block {
-        contractStorage.reserved__sender := sender;
+        contractStorage.#{config.reserved}__sender := sender;
         contractStorage.value := (amount / 1tz);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (contractStorage);
@@ -158,13 +158,13 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function test (const contractStorage : state) : (state) is
       block {
-        const reserved__#{config.contract_storage} : nat = 1n;
-        const a : nat = reserved__#{config.contract_storage};
+        const #{config.reserved}__#{config.contract_storage} : nat = 1n;
+        const a : nat = #{config.reserved}__#{config.contract_storage};
       } with (contractStorage);
     
     """#"
@@ -182,12 +182,12 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
-    function test (const contractStorage : state; const reserved__#{config.contract_storage} : nat) : (state) is
+    function test (const contractStorage : state; const #{config.reserved}__#{config.contract_storage} : nat) : (state) is
       block {
-        const a : nat = reserved__#{config.contract_storage};
+        const a : nat = #{config.reserved}__#{config.contract_storage};
       } with (contractStorage);
     
     """#"
@@ -206,12 +206,12 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__#{config.contract_storage} : nat;
+      #{config.reserved}__#{config.contract_storage} : nat;
     end;
     
     function test (const contractStorage : state) : (state) is
       block {
-        const a : nat = contractStorage.reserved__#{config.contract_storage};
+        const a : nat = contractStorage.#{config.reserved}__#{config.contract_storage};
       } with (contractStorage);
     
     """#"
@@ -227,7 +227,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      fix_underscore__hi : nat;
+      #{config.fix_underscore}__hi : nat;
     end;
     """#"
     make_test text_i, text_o
@@ -533,7 +533,7 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type sampleStruct is record
@@ -542,8 +542,7 @@ describe "translate ligo section", ()->
     
     """
     make_test text_i, text_o
-
-    
+  
   it "enums", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -555,7 +554,7 @@ describe "translate ligo section", ()->
     # please note that enum name should become lowercase!
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     type someData is
@@ -564,11 +563,11 @@ describe "translate ligo section", ()->
       | TWO;
     """
     make_test text_i, text_o
-
+  
   it "ternary", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract Ternary {
       function ternary() public returns (int) {
         int i = 5;
@@ -579,7 +578,7 @@ describe "translate ligo section", ()->
     # please note that enum name should become lowercase!
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     function ternary (const contractStorage : state) : (state * int) is
@@ -603,9 +602,9 @@ describe "translate ligo section", ()->
     """#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
-
+    
     function castType (const contractStorage : state) : (state) is
       block {
         const u : nat = abs(-(1));
@@ -666,3 +665,84 @@ describe "translate ligo section", ()->
       } with (contractStorage);
     """#"
     make_test text_i, text_o
+  
+  it "this", ()->
+    translate = (name)->
+      (config.fix_underscore.capitalize()+"_"+name).substr(0, 31)
+    
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract This_test {
+      address owner;
+      
+      function _transferOwnership(address newOwner) public {
+        owner = newOwner;
+        this;
+      }
+      
+      function transferOwnership(address newOwner) public {
+        this._transferOwnership(newOwner);
+        owner = address(this);
+      }
+    }
+    
+    """#"
+    text_o = """
+    type state is record
+      owner : address;
+      #{config.reserved}__initialized : bool;
+    end;
+    
+    type #{config.fix_underscore}__transferOwnership_args is record
+      newOwner : address;
+    end;
+    
+    type transferOwnership_args is record
+      newOwner : address;
+    end;
+    
+    function #{config.fix_underscore}__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        contractStorage.owner := newOwner;
+      } with (opList, contractStorage);
+    
+    function transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
+      block {
+        const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, newOwner);
+        opList := tmp_0.0;
+        contractStorage := tmp_0.1;
+        contractStorage.owner := self_address;
+      } with (opList, contractStorage);
+    
+    type router_enum is
+      | #{translate '_transferOwnership'} of #{config.fix_underscore}__transferOwnership_args
+      | TransferOwnership of transferOwnership_args;
+    
+    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+      block {
+        const opList : list(operation) = (nil: list(operation));
+        if (contractStorage.#{config.reserved}__initialized) then block {
+          case action of
+          | #{translate '_transferOwnership'}(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, match_action.newOwner);
+            opList := tmp_0.0;
+            contractStorage := tmp_0.1;
+          }
+          | TransferOwnership(match_action) -> block {
+            const tmp_1 : (list(operation) * state) = transferOwnership(opList, contractStorage, match_action.newOwner);
+            opList := tmp_1.0;
+            contractStorage := tmp_1.1;
+          }
+          end;
+        } else block {
+          contractStorage.#{config.reserved}__initialized := True;
+        };
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o, {
+      router : true
+      op_list: true
+    }
+    # NOTE without router self_address will not work
+    
