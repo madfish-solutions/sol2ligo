@@ -681,7 +681,7 @@ walk = (root, ctx)->
         arg_list.push walk v, ctx
 
       args = """#{join_list arg_list, ', '}"""
-      translated_type = translate_type root.cls
+      translated_type = translate_type root.cls, ctx
 
       if root.cls.main == "array"
         """map end (* args: #{args} *)"""
