@@ -200,6 +200,37 @@ is_not_a_type = (type)->
             continue if tuple[0] != a
             found = true
             root.type = new Type tuple[1]
+            break
+          
+          if !found and !is_not_a_type a
+            can_be_uint = false
+            for tuple in list
+              continue if tuple[0] != "uint"
+              can_be_uint = true
+              break
+            
+            can_be_int = false
+            for tuple in list
+              continue if tuple[0] != "int"
+              can_be_int = true
+              break
+            
+            if can_be_int and can_be_uint
+              p "NOTE can_be_int and can_be_uint"
+            else if can_be_int and !can_be_uint
+              for tuple in list
+                continue if tuple[0] != "int"
+                found = true
+                root.type = new Type tuple[1]
+                break
+            else if !can_be_int and can_be_uint
+              
+              for tuple in list
+                continue if tuple[0] != "uint"
+                found = true
+                root.type = new Type tuple[1]
+                break
+        
         if !found
           if root.op == "DELETE"
             if root.a.constructor.name == "Bin_op"
