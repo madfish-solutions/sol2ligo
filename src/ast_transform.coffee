@@ -164,10 +164,12 @@ do ()=>
           root.t_list[idx] = walk v, ctx
         root.t_list.unshift inject = new ast.Var
         inject.name = config.contract_storage
+        inject.name_translate = false
         
         if ctx.op_list
           root.t_list.unshift inject = new ast.Var
           inject.name = config.op_list
+          inject.name_translate = false
         root
       
       when "Fn_decl_multiret"
@@ -245,6 +247,7 @@ do ()=>
           root.scope.list.push initialized = new ast.Var_decl
           initialized.name = config.initialized
           initialized.type = new Type "bool"
+          initialized.name_translate = false
           
           # ###################################################################################################
           #    add struct for each endpoint
@@ -294,15 +297,18 @@ do ()=>
             _main.scope.list.push op_list_decl = new ast.Var_decl
             op_list_decl.name = config.op_list
             op_list_decl.type = new Type "built_in_op_list"
+            op_list_decl.name_translate = false
           
           _main.scope.list.push _if = new ast.If
           _if.cond = new ast.Var
           _if.cond.name = config.initialized
+          _if.name_translate = false
           
           _if.f.list.push assign = new ast.Bin_op
           assign.op = "ASSIGN"
           assign.a = new ast.Var
           assign.a.name = config.initialized
+          assign.a.name_translate = false
           assign.b = new ast.Const
           assign.b.val = "true"
           assign.b.type = new Type "bool"
@@ -338,8 +344,10 @@ do ()=>
           if ctx.op_list
             ret.t_list.push _var = new ast.Var
             _var.name = config.op_list
+            _var.name_translate = false
           ret.t_list.push _var = new ast.Var
           _var.name = config.contract_storage
+          _var.name_translate = false
           
           root
         else

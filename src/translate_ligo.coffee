@@ -237,6 +237,8 @@ reserved_hash =
   "map"             : true
 
 reserved_hash[config.contract_storage] = true
+reserved_hash[config.op_list] = true
+
 @translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
     "#{config.reserved}__#{name}"
@@ -262,7 +264,6 @@ class @Gen_context
   use_op_list       : true
   is_class_decl     : false
   lvalue            : false
-  ignore_reserved   : false
   type_decl_hash    : {}
   contract_var_hash : {}
   
@@ -349,7 +350,7 @@ walk = (root, ctx)->
     when "Var"
       name = root.name
       return "" if name == "this"
-      name = translate_var_name name if !ctx.ignore_reserved
+      name = translate_var_name name if root.name_translate
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -446,7 +447,8 @@ walk = (root, ctx)->
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
           else
-            name = translate_var_name root.fn.name
+            name = root.fn.name
+            name = translate_var_name name if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -505,7 +507,8 @@ walk = (root, ctx)->
         "(* #{root.text} *)"
     
     when "Var_decl"
-      name = translate_var_name root.name
+      name = root.name
+      name = translate_var_name name if root.name_translate
       type = translate_type root.type, ctx
       if ctx.is_class_decl
         ctx.contract_var_hash[name] = true
@@ -531,14 +534,7 @@ walk = (root, ctx)->
     when "Ret_multi"
       jl = []
       for v,idx in root.t_list
-        ctx_loc = ctx
-        if idx == 0
-          ctx_loc = ctx.mk_nest()
-          ctx_loc.ignore_reserved = true
-        else if idx == 1 and ctx.use_op_list
-          ctx_loc = ctx.mk_nest()
-          ctx_loc.ignore_reserved = true
-        jl.push walk v, ctx_loc
+        jl.push walk v, ctx
         
       """
       with (#{jl.join ', '})
