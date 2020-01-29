@@ -34,7 +34,7 @@ describe "translate ligo section", ()->
     
     (* modifier lock removed *)
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         if (not (contractStorage.locked)) then block {
           contractStorage.locked := True;
@@ -43,7 +43,7 @@ describe "translate ligo section", ()->
         } else block {
           skip
         };
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """
     make_test text_i, text_o
   
@@ -72,7 +72,7 @@ describe "translate ligo section", ()->
     
     (* modifier greaterThan removed *)
     
-    function test (const contractStorage : state; const a : nat) : (state) is
+    function test (const opList : list(operation); const contractStorage : state; const a : nat) : (list(operation) * state) is
       block {
         const value : nat = a;
         const limit : nat = 10n;
@@ -82,7 +82,7 @@ describe "translate ligo section", ()->
           skip
         };
         contractStorage.val := True;
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
   

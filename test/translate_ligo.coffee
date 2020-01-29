@@ -25,10 +25,10 @@ describe "translate ligo section", ()->
       value : nat;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.value := 1n;
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """
     make_test text_i, text_o
@@ -60,10 +60,10 @@ describe "translate ligo section", ()->
       value_string : string;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         skip
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """
     make_test text_i, text_o
@@ -96,14 +96,14 @@ describe "translate ligo section", ()->
       #{config.reserved}__empty_state : int;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const value_bool : bool = False;
         const value_int : int = 0;
         const value_uint : nat = 0n;
         const value_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const value_string : string = "";
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """#"
     make_test text_i, text_o
@@ -129,10 +129,10 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const n : nat = 1n;
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
   
@@ -151,10 +151,10 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const n : int = -(1);
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
   
@@ -173,10 +173,10 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const n : string = "1";
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
   
@@ -205,12 +205,12 @@ describe "translate ligo section", ()->
       time : nat;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.#{config.reserved}__sender := sender;
         contractStorage.value := (amount / 1tz);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """#"
     make_test text_i, text_o
@@ -231,11 +231,11 @@ describe "translate ligo section", ()->
       #{config.reserved}__empty_state : int;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const #{config.reserved}__#{config.contract_storage} : nat = 1n;
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """#"
     make_test text_i, text_o
@@ -255,10 +255,10 @@ describe "translate ligo section", ()->
       #{config.reserved}__empty_state : int;
     end;
     
-    function test (const contractStorage : state; const #{config.reserved}__#{config.contract_storage} : nat) : (state) is
+    function test (const opList : list(operation); const contractStorage : state; const #{config.reserved}__#{config.contract_storage} : nat) : (list(operation) * state) is
       block {
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """#"
     make_test text_i, text_o
@@ -279,10 +279,10 @@ describe "translate ligo section", ()->
       #{config.reserved}__#{config.contract_storage} : nat;
     end;
     
-    function test (const contractStorage : state) : (state) is
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const a : nat = contractStorage.#{config.reserved}__#{config.contract_storage};
-      } with (contractStorage);
+      } with (opList, contractStorage);
     
     """#"
     make_test text_i, text_o
@@ -329,13 +329,13 @@ describe "translate ligo section", ()->
         value : nat;
       end;
       
-      function expr (const contractStorage : state) : (state * nat) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
         block {
           const a : nat = 0n;
           const c : nat = 0n;
           c := abs(not (a));
           c := abs(not (0));
-        } with (contractStorage, c);
+        } with (opList, contractStorage, c);
     """
     make_test text_i, text_o
   
@@ -375,7 +375,7 @@ describe "translate ligo section", ()->
         value : nat;
       end;
       
-      function expr (const contractStorage : state) : (state * nat) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
         block {
           const a : nat = 0n;
           const b : nat = 0n;
@@ -396,7 +396,7 @@ describe "translate ligo section", ()->
           c := bitwise_and(c, b);
           c := bitwise_or(c, b);
           c := bitwise_xor(c, b);
-        } with (contractStorage, c);
+        } with (opList, contractStorage, c);
       
     """
     make_test text_i, text_o
@@ -422,13 +422,13 @@ describe "translate ligo section", ()->
         value : nat;
       end;
       
-      function expr (const contractStorage : state) : (state * int) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
         block {
           const a : int = 0;
           const c : int = 0;
           c := not (a);
           c := int(abs(not (0)));
-        } with (contractStorage, c);
+        } with (opList, contractStorage, c);
     """
     make_test text_i, text_o
   # TODO support mod & | ^ LATER
@@ -469,7 +469,7 @@ describe "translate ligo section", ()->
   #       value : int;
   #     end;
   #     
-  #     function expr (const contractStorage : state) : (state * int) is
+  #     function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
   #       block {
   #         const a : int = 0;
   #         const b : int = 0;
@@ -491,7 +491,7 @@ describe "translate ligo section", ()->
   #         c := bitwise_and(c, b);
   #         c := bitwise_or(c, b);
   #         c := bitwise_xor(c, b);
-  #       } with (contractStorage, c);
+  #       } with (opList, contractStorage, c);
   #     
   #   """
   #   make_test text_i, text_o
@@ -525,7 +525,7 @@ describe "translate ligo section", ()->
         value : int;
       end;
       
-      function expr (const contractStorage : state) : (state * int) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
         block {
           const a : int = 0;
           const b : int = 0;
@@ -539,7 +539,7 @@ describe "translate ligo section", ()->
           c := (c - b);
           c := (c * b);
           c := (c / b);
-        } with (contractStorage, c);
+        } with (opList, contractStorage, c);
       
     """
     make_test text_i, text_o
@@ -570,7 +570,7 @@ describe "translate ligo section", ()->
         value : nat;
       end;
       
-      function expr (const contractStorage : state) : (state * nat) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
         block {
           const a : nat = 0n;
           const b : nat = 0n;
@@ -581,7 +581,7 @@ describe "translate ligo section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0n);
+        } with (opList, contractStorage, 0n);
       
     """
     make_test text_i, text_o
@@ -612,7 +612,7 @@ describe "translate ligo section", ()->
         value : nat;
       end;
       
-      function expr (const contractStorage : state) : (state * nat) is
+      function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
         block {
           const a : int = 0;
           const b : int = 0;
@@ -623,7 +623,7 @@ describe "translate ligo section", ()->
           c := (a >= b);
           c := (a = b);
           c := (a =/= b);
-        } with (contractStorage, 0n);
+        } with (opList, contractStorage, 0n);
       
     """
     make_test text_i, text_o
@@ -645,10 +645,10 @@ describe "translate ligo section", ()->
       balances : map(address, nat);
     end;
     
-    function expr (const contractStorage : state; const owner : address) : (state * nat) is
+    function expr (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * nat) is
       block {
         skip
-      } with (contractStorage, (case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end));
+      } with (opList, contractStorage, (case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end));
     """
     make_test text_i, text_o
   # ###################################################################################################
@@ -673,12 +673,12 @@ describe "translate ligo section", ()->
       value : nat;
     end;
     
-    function expr (const contractStorage : state) : (state * int) is
+    function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
       block {
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with (contractStorage, c);
+      } with (opList, contractStorage, c);
     """
     make_test text_i, text_o
   
@@ -700,12 +700,12 @@ describe "translate ligo section", ()->
       value : nat;
     end;
     
-    function expr (const contractStorage : state) : (state * int) is
+    function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
       block {
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with (contractStorage, c);
+      } with (opList, contractStorage, c);
     """
     make_test text_i, text_o
   
@@ -771,10 +771,10 @@ describe "translate ligo section", ()->
       #{config.reserved}__empty_state : int;
     end;
     
-    function ternary (const contractStorage : state) : (state * int) is
+    function ternary (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
       block {
         const i : int = 5;
-      } with (contractStorage, (case (i < 5) of | True -> 7 | False -> i end));
+      } with (opList, contractStorage, (case (i < 5) of | True -> 7 | False -> i end));
     """
     make_test text_i, text_o
     
@@ -795,12 +795,12 @@ describe "translate ligo section", ()->
       #{config.reserved}__empty_state : int;
     end;
     
-    function castType (const contractStorage : state) : (state) is
+    function castType (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
         const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
 
@@ -821,12 +821,12 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
 
-    function newKeyword (const contractStorage : state) : (state) is
+    function newKeyword (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const tokenCount : nat = 4n;
         const emptyBytes : bytes = bytes_pack(unit) (* args: 0 *);
         const newArray : map(nat, nat) = map end (* args: tokenCount *);
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
      
@@ -847,12 +847,12 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
 
-    function asserts (const contractStorage : state) : (state) is
+    function asserts (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const tokenCount : nat = 4n;
         if (tokenCount < 5n) then {skip} else failwith("Sample text");
         if (tokenCount = 4n) then {skip} else failwith("require fail");
-      } with (contractStorage);
+      } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
   
@@ -932,7 +932,6 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o, {
       router : true
-      op_list: true
     }
     # NOTE without router self_address will not work
     
