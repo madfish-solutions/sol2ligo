@@ -81,7 +81,6 @@ describe "translate ligo real contracts section", ()->
     """#"
     make_test text_i, text_o, {
       router: true
-      op_list: true
     }
   
   # ###################################################################################################
@@ -311,7 +310,6 @@ describe "translate ligo real contracts section", ()->
     """#"
     make_test text_i, text_o, {
       router: true
-      op_list: true
     }
   
   

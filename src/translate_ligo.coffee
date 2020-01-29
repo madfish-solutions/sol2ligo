@@ -261,7 +261,6 @@ spec_id_trans_hash =
 class @Gen_context
   next_gen          : null
   
-  use_op_list       : true
   is_class_decl     : false
   lvalue            : false
   type_decl_hash    : {}
@@ -278,7 +277,6 @@ class @Gen_context
   
   mk_nest : ()->
     t = new module.Gen_context
-    t.use_op_list = @use_op_list
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t
@@ -458,27 +456,18 @@ walk = (root, ctx)->
         fn = walk root.fn, ctx
       
       arg_list.unshift config.contract_storage
-      if ctx.use_op_list
-        arg_list.unshift config.op_list
+      arg_list.unshift config.op_list
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
         type_jl.push translate_type v
       
-      # temp disabled
-      # if type_jl[0] != config.storage
-      #   "#{fn}(#{arg_list.join ', '})"
-      
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
       
-      if ctx.use_op_list
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-        ctx.trim_expr = "#{tmp_var}.2"
-      else
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
-        ctx.trim_expr = "#{tmp_var}.1"
+      ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+      ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
+      ctx.trim_expr = "#{tmp_var}.2"
     
     when "Type_cast"
       # TODO detect 'address(0)' here
@@ -579,10 +568,7 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        if ctx.use_op_list
-          v = translate_var_name v unless idx <= 1
-        else
-          v = translate_var_name v unless idx == 0
+        v = translate_var_name v unless idx <= 1 # storage, op_list
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -713,8 +699,6 @@ walk = (root, ctx)->
         throw new Error "Unknown root.constructor.name #{root.constructor.name}"
 
 @gen = (root, opt = {})->
-  opt.op_list ?= true
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  ctx.use_op_list = opt.op_list
   walk root, ctx

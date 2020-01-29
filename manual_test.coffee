@@ -32,12 +32,9 @@ process_file = (file)->
   if argv.full
     new_ast = ast_transform.ligo_pack new_ast, {
       router  : argv.router
-      op_list : argv.router
     }
     new_ast = type_inference new_ast
-    code = translate new_ast, {
-      op_list : argv.router
-    }
+    code = translate new_ast
     if argv.print
       puts code
     
