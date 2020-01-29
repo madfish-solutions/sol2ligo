@@ -111,6 +111,76 @@ describe "translate ligo section", ()->
   it "int8/uint8 default value"
   it "true/false"
   it "string escaping"
+  # ###################################################################################################
+  #    var
+  # ###################################################################################################
+  it "var uint", ()->
+    text_i = """
+    pragma solidity ^0.4.22;
+    
+    contract Math_example {
+      function test() public {
+        var n = 1;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        const n : nat = 1n;
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
+  
+  it "var int", ()->
+    text_i = """
+    pragma solidity ^0.4.22;
+    
+    contract Math_example {
+      function test() public {
+        var n = -1;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        const n : int = -(1);
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
+  
+  it "var string", ()->
+    text_i = """
+    pragma solidity ^0.4.22;
+    
+    contract Math_example {
+      function test() public {
+        var n = "1";
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test (const contractStorage : state) : (state) is
+      block {
+        const n : string = "1";
+      } with (contractStorage);
+    """#"
+    make_test text_i, text_o
+  
+  # ###################################################################################################
   
   it "globals", ()->
     text_i = """

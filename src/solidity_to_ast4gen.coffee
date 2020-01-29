@@ -90,8 +90,11 @@ unpack_id_type = (root, ctx)->
     when "bool"
       new Type "bool"
     
+    when "int8"
+      new Type "int8"
+    
     when "uint8"
-      new Type "byte"
+      new Type "uint8"
     
     when "uint256"
       new Type "uint"
@@ -101,6 +104,9 @@ unpack_id_type = (root, ctx)->
     
     when "address"
       new Type "address"
+    
+    when "string"
+      new Type "string"
     
     when "msg"
       new Type "struct" # fields would be replaced in type inference
@@ -388,8 +394,8 @@ walk = (root, ctx)->
         ret.name = decl.name
         if decl.typeName
           ret.type = walk_type decl.typeName, ctx
-        # else
-        #   ret.type =
+        else
+          ret.type = unpack_id_type decl.typeDescriptions, ctx
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         ret
