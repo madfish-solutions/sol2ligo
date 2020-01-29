@@ -29,11 +29,11 @@ describe "translate ligo section", ()->
       allowedIntegers : map(nat, bool);
     end;
     
-    function #{config.reserved}__map (const contractStorage : state) : (state * nat) is
+    function #{config.reserved}__map (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         contractStorage.allowedIntegers[0n] := True;
         remove 0n from map contractStorage.allowedIntegers;
-      } with (contractStorage, 0n);
+      } with (opList, contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -63,10 +63,10 @@ describe "translate ligo section", ()->
   #     allowedIntegers : map(int, bool);
   #   end;
   #   
-  #   function #{config.reserved}__map (const contractStorage : state) : (state * nat) is
+  #   function #{config.reserved}__map (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
   #     block {
   #       contractStorage.allowedIntegers[0][0n] := 0n;
-  #     } with (contractStorage, 0);
+  #     } with (opList, contractStorage, 0);
   #   
   #   """ #"
   #   make_test text_i, text_o

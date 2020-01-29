@@ -36,10 +36,20 @@ do ()=>
           root.arg_list[idx] = walk v, ctx
         root
       
+      when "New"
+        for v,idx in root.arg_list
+          root.arg_list[idx] = walk v, ctx
+        root
+      
       # ###################################################################################################
       #    stmt
       # ###################################################################################################
-      when "Var_decl", "Comment"
+      when "Comment"
+        root
+      
+      when "Var_decl"
+        if root.assign_value
+          root.assign_value = walk root.assign_value, ctx
         root
       
       when "Throw"
@@ -152,7 +162,6 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk}
 
 do ()=>
-  # TODO remove ctx.op_list and make it mandatory and fix all tests
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
@@ -166,24 +175,20 @@ do ()=>
         inject.name = config.contract_storage
         inject.name_translate = false
         
-        if ctx.op_list
-          root.t_list.unshift inject = new ast.Var
-          inject.name = config.op_list
-          inject.name_translate = false
+        root.t_list.unshift inject = new ast.Var
+        inject.name = config.op_list
+        inject.name_translate = false
         root
       
       when "Fn_decl_multiret"
         root.scope = walk root.scope, ctx
         root.arg_name_list.unshift config.contract_storage
-        if ctx.op_list
-          root.arg_name_list.unshift config.op_list
+        root.arg_name_list.unshift config.op_list
         root.type_i.nest_list.unshift new Type config.storage
-        if ctx.op_list
-          root.type_i.nest_list.unshift new Type "built_in_op_list"
+        root.type_i.nest_list.unshift new Type "built_in_op_list"
         
         root.type_o.nest_list.unshift new Type config.storage
-        if ctx.op_list
-          root.type_o.nest_list.unshift new Type "built_in_op_list"
+        root.type_o.nest_list.unshift new Type "built_in_op_list"
         
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
@@ -256,9 +261,7 @@ do ()=>
             root.scope.list.push record = new ast.Class_decl
             record.name = func2args_struct func.name
             for value,idx in func.arg_name_list
-              continue if idx == 0 # skip contract_storage
-              if ctx.op_list
-                continue if idx == 1 # skip op_list
+              continue if idx <= 1 # skip contract_storage, op_list
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
@@ -289,15 +292,13 @@ do ()=>
           _main.arg_name_list.push config.contract_storage
           _main.type_i.nest_list.push new Type config.storage
           
-          if ctx.op_list
-            _main.type_o.nest_list.push new Type "built_in_op_list"
+          _main.type_o.nest_list.push new Type "built_in_op_list"
           _main.type_o.nest_list.push new Type config.storage
           
-          if ctx.op_list
-            _main.scope.list.push op_list_decl = new ast.Var_decl
-            op_list_decl.name = config.op_list
-            op_list_decl.type = new Type "built_in_op_list"
-            op_list_decl.name_translate = false
+          _main.scope.list.push op_list_decl = new ast.Var_decl
+          op_list_decl.name = config.op_list
+          op_list_decl.type = new Type "built_in_op_list"
+          op_list_decl.name_translate = false
           
           _main.scope.list.push _if = new ast.If
           _if.cond = new ast.Var
@@ -331,9 +332,7 @@ do ()=>
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
-              continue if idx == 0 # skip contract_storage
-              if ctx.op_list
-                continue if idx == 1 # skip op_list
+              continue if idx <= 1 # skip contract_storage, op_list
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
@@ -341,10 +340,11 @@ do ()=>
               arg.name = arg_name
           
           _main.scope.list.push ret = new ast.Ret_multi
-          if ctx.op_list
-            ret.t_list.push _var = new ast.Var
-            _var.name = config.op_list
-            _var.name_translate = false
+          
+          ret.t_list.push _var = new ast.Var
+          _var.name = config.op_list
+          _var.name_translate = false
+          
           ret.t_list.push _var = new ast.Var
           _var.name = config.contract_storage
           _var.name_translate = false
@@ -525,7 +525,6 @@ do ()=>
 
 @ligo_pack = (root, opt={})->
   opt.router ?= true
-  opt.op_list ?= true
   root = module.for3_unpack root
   root = module.ass_op_unpack root
   root = module.modifier_unpack root
