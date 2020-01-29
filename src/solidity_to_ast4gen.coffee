@@ -462,6 +462,14 @@ walk = (root, ctx)->
       unless ret.is_modifier
         ret.type_o.nest_list = walk_param root.returnParameters, ctx
       
+      scope_prepend_list = []
+      if root.returnParameters
+        for parameter in root.returnParameters.parameters
+          continue if !parameter.name
+          scope_prepend_list.push var_decl = new ast.Var_decl
+          var_decl.name = parameter.name
+          var_decl.type = walk_type parameter.typeName, ctx
+      
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
       # ctx.stateMutability
@@ -478,6 +486,14 @@ walk = (root, ctx)->
         ret.scope = walk root.body, ctx
       else
         ret.scope = new ast.Scope
+      
+      if scope_prepend_list.length
+        ret.scope.list = arr_merge scope_prepend_list, ret.scope.list
+        if ret.scope.list.last().constructor.name != "Ret_multi"
+          ret.scope.list.push ret_multi = new ast.Ret_multi
+          for v in scope_prepend_list
+            ret_multi.t_list.push _var = new ast.Var
+            _var.name = v.name
       
       ret.visibility = root.visibility
       ret

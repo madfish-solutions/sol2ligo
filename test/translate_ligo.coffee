@@ -581,6 +581,65 @@ describe "translate ligo section", ()->
       } with (contractStorage, (case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end));
     """
     make_test text_i, text_o
+  # ###################################################################################################
+  #    fn decl special abilities
+  # ###################################################################################################
+  it "named ret val", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (int c) {
+        int a = 0;
+        c = a;
+        return c;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      value : nat;
+    end;
+    
+    function expr (const contractStorage : state) : (state * int) is
+      block {
+        const c : int = 0;
+        const a : int = 0;
+        c := a;
+      } with (contractStorage, c);
+    """
+    make_test text_i, text_o
+  
+  it "named ret val no return", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (int c) {
+        int a = 0;
+        c = a;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      value : nat;
+    end;
+    
+    function expr (const contractStorage : state) : (state * int) is
+      block {
+        const c : int = 0;
+        const a : int = 0;
+        c := a;
+      } with (contractStorage, c);
+    """
+    make_test text_i, text_o
+  
+  # ###################################################################################################
   
   it "structs", ()->
     text_i = """
