@@ -238,7 +238,38 @@ describe "translate ligo section", ()->
   # ###################################################################################################
   #    expr
   # ###################################################################################################
-  it "uint ops", ()->
+  it "uint un_ops", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (uint) {
+        uint a = 0;
+        uint c = 0;
+        c = ~a;
+        c = uint(~0);
+        return c;
+      }
+    }
+    """#"
+    text_o = """
+      type state is record
+        value : nat;
+      end;
+      
+      function expr (const contractStorage : state) : (state * nat) is
+        block {
+          const a : nat = 0n;
+          const c : nat = 0n;
+          c := abs(not (a));
+          c := abs(not (0));
+        } with (contractStorage, c);
+    """
+    make_test text_i, text_o
+  
+  it "uint bin_ops", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -300,8 +331,38 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
+  it "int un_ops", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public value;
+      
+      function expr() public returns (int) {
+        int a = 0;
+        int c = 0;
+        c = ~a;
+        c = int(~0);
+        return c;
+      }
+    }
+    """#"
+    text_o = """
+      type state is record
+        value : nat;
+      end;
+      
+      function expr (const contractStorage : state) : (state * int) is
+        block {
+          const a : int = 0;
+          const c : int = 0;
+          c := not (a);
+          c := int(abs(not (0)));
+        } with (contractStorage, c);
+    """
+    make_test text_i, text_o
   # TODO support mod & | ^ LATER
-  # it "int ops", ()->
+  # it "int bin_ops", ()->
   #   text_i = """
   #   pragma solidity ^0.5.11;
   #   
@@ -365,7 +426,7 @@ describe "translate ligo section", ()->
   #   """
   #   make_test text_i, text_o
   # 
-  it "int ops", ()->
+  it "int bin_ops", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
