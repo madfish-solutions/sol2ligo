@@ -26,10 +26,10 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         skip
-      } with (contractStorage, 0n);
+      } with (opList, contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -51,10 +51,10 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         skip
-      } with (contractStorage, 0n);
+      } with (opList, contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -76,10 +76,10 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         skip
-      } with (contractStorage, size(contractStorage.storageArray));
+      } with (opList, contractStorage, size(contractStorage.storageArray));
     
     """
     make_test text_i, text_o
@@ -101,10 +101,10 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         skip
-      } with (contractStorage, size(contractStorage.storageArray));
+      } with (opList, contractStorage, size(contractStorage.storageArray));
     
     """
     make_test text_i, text_o
@@ -127,11 +127,11 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         const tmp_0 : map(nat, int) = contractStorage.storageArray;
         tmp_0[size(tmp_0)] := 0;
-      } with (contractStorage, 0n);
+      } with (opList, contractStorage, 0n);
     
     """
     make_test text_i, text_o
@@ -154,10 +154,10 @@ describe "translate ligo section", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const contractStorage : state) : (state * nat) is
+    function array (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
       block {
         remove 0n from map contractStorage.storageArray;
-      } with (contractStorage, 0n);
+      } with (opList, contractStorage, 0n);
     
     """
     make_test text_i, text_o
