@@ -28,6 +28,7 @@ create_assert_func = ()->
     now : new Type "uint"
     require :  create_assert_func()
     assert : create_assert_func()
+    revert : create_assert_func()
   }
 
 array_field_hash =
