@@ -48,6 +48,7 @@ class @Fn_decl_multiret
   line    : 0
   pos     : 0
   visibility : ""
+  state_mutability : ""
   is_modifier: false
   modifier_list : [] # array<Fn_call>
   
@@ -66,7 +67,8 @@ class @Fn_decl_multiret
     ret.scope = @scope.clone()
     ret.line  = @line
     ret.pos   = @pos
-    ret.visibility   = @visibility
+    ret.visibility      = @visibility
+    ret.state_mutability= @state_mutability
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret

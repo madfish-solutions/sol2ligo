@@ -416,7 +416,6 @@ walk = (root, ctx)->
       arg_list = []
       for v in root.arg_list
         arg_list.push walk v, ctx
-      puts root
       
       if root.fn.constructor.name == "Field_access"
         t = walk root.fn.t, ctx
@@ -439,8 +438,7 @@ walk = (root, ctx)->
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
           else
-            is_pure =  ctx.contract_var_hash[root.fn.name].stateMutability == 'pure'
-            puts is_pure
+            is_pure =  ctx.contract_var_hash[root.fn.name].state_mutability == "pure"
             name = translate_var_name root.fn.name
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
@@ -452,8 +450,8 @@ walk = (root, ctx)->
       
       if !is_pure
         arg_list.unshift config.contract_storage
-      if ctx.use_op_list
-        arg_list.unshift config.op_list
+        if ctx.use_op_list
+          arg_list.unshift config.op_list
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
@@ -464,18 +462,24 @@ walk = (root, ctx)->
       #   "#{fn}(#{arg_list.join ', '})"
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
-      ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
+      call_expr = "#{fn}(#{arg_list.join ', '})";
+      if type_jl.length == 0
+        throw new Error "Bad call of pure function that returns nothing"
+      if type_jl.length == 1
+        ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+      else
+        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
       
-      if ctx.use_op_list and !is_pure
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-        ctx.trim_expr = "#{tmp_var}.2"
-      else if !is_pure and !ctx.use_op_list
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
-        ctx.trim_expr = "#{tmp_var}.1"
-      else if ctx.use_op_list and is_pure
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.trim_expr = "#{tmp_var}.1"
+      if !is_pure
+        if ctx.use_op_list
+          ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+          ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
+          ctx.trim_expr = "#{tmp_var}.2"
+        else
+          ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
+          ctx.trim_expr = "#{tmp_var}.1"
+      else
+        ctx.trim_expr = "#{tmp_var}"
 
     when "Type_cast"
       # TODO detect 'address(0)' here

@@ -162,28 +162,28 @@ do ()=>
       when "Ret_multi"
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
-        if ctx.stateMutability != 'pure'
+        if ctx.state_mutability != "pure"
           root.t_list.unshift inject = new ast.Var
           inject.name = config.contract_storage
-
-        if ctx.op_list
-          root.t_list.unshift inject = new ast.Var
-          inject.name = config.op_list
+          
+          if ctx.op_list
+            root.t_list.unshift inject = new ast.Var
+            inject.name = config.op_list
         root
       
       when "Fn_decl_multiret"
-        ctx.stateMutability = root.stateMutability 
+        ctx.state_mutability = root.state_mutability
         root.scope = walk root.scope, ctx
-        if root.stateMutability != 'pure'
+        if root.state_mutability != "pure"
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type config.storage
           root.type_o.nest_list.unshift new Type config.storage
-
-        if ctx.op_list
-          root.arg_name_list.unshift config.op_list
-          root.type_i.nest_list.unshift new Type "built_in_op_list"
-          root.type_o.nest_list.unshift new Type "built_in_op_list"
-
+          
+          if ctx.op_list
+            root.arg_name_list.unshift config.op_list
+            root.type_i.nest_list.unshift new Type "built_in_op_list"
+            root.type_o.nest_list.unshift new Type "built_in_op_list"
+        
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
@@ -325,11 +325,11 @@ do ()=>
             call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
-            call.fn.stateMutability = func.stateMutability
             for arg_name,idx in func.arg_name_list
-              continue if idx == 0 # skip contract_storage
-              if ctx.op_list
-                continue if idx == 1 # skip op_list
+              if func.state_mutability != "pure"
+                continue if idx == 0 # skip contract_storage
+                if ctx.op_list
+                  continue if idx == 1 # skip op_list
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
