@@ -36,10 +36,20 @@ do ()=>
           root.arg_list[idx] = walk v, ctx
         root
       
+      when "New"
+        for v,idx in root.arg_list
+          root.arg_list[idx] = walk v, ctx
+        root
+      
       # ###################################################################################################
       #    stmt
       # ###################################################################################################
-      when "Var_decl", "Comment"
+      when "Comment"
+        root
+      
+      when "Var_decl"
+        if root.assign_value
+          root.assign_value = walk root.assign_value, ctx
         root
       
       when "Throw"

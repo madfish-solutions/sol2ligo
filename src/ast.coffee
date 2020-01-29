@@ -200,7 +200,7 @@ class @New
     ret = new module.New
     ret.cls   = @cls
     for v in @arg_list
-      ret.arg_list.push v
+      ret.arg_list.push v.clone()
     ret.line  = @line
     ret.pos   = @pos
     ret
