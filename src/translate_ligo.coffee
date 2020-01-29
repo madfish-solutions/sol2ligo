@@ -47,7 +47,13 @@ walk = null
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
   PLUS    : (a)->"+(#{a})"
-  BIT_NOT : (a)->"not (#{a})"
+  BIT_NOT : (a, ctx, ast)->
+    if !ast.type
+      perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
+    if ast.type and ast.type.main == "uint"
+      "abs(not (#{a}))"
+    else
+      "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   
   DELETE : (a, ctx, ast)->

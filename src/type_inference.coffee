@@ -52,6 +52,10 @@ array_field_hash =
   BOOL_NOT : [
     ["bool", "bool"]
   ]
+  BIT_NOT : [
+    ["uint", "uint"]
+    ["int", "int"]
+  ]
   MINUS : [
     ["int", "int"]
   ]
