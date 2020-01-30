@@ -456,7 +456,6 @@ walk = (root, ctx)->
     #    Func
     # ###################################################################################################
     when "FunctionDefinition", "ModifierDefinition"
-      walk root.body, ctx
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
       ret.name = root.name or "constructor"
