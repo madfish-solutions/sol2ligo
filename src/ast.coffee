@@ -2,12 +2,14 @@ module = @
 ast = require "ast4gen"
 for k,v of ast
   @[k] = v
+
 # ###################################################################################################
 #    redefine
 # ###################################################################################################
 class @Class_decl
   name  : ""
   is_contract : false
+  is_library  : false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -24,6 +26,7 @@ class @Class_decl
     ret = new module.Class_decl
     ret.name  = @name
     ret.is_contract = @is_contract
+    ret.is_library  = @is_library
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type

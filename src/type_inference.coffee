@@ -4,7 +4,7 @@ module = @
 
 create_assert_func = ()->
   # TODO new Type "function2<function<bool>,function<>>"
-  ret = new Type "function2"
+  ret = new Type "function2_pure"
   ret.nest_list.push type_i = new Type "function"
   ret.nest_list.push type_o = new Type "function"
   type_i.nest_list.push "bool"
@@ -34,7 +34,7 @@ create_assert_func = ()->
 array_field_hash =
   "length": new Type "uint"
   "push"  : (type)->
-    ret = new Type "function2<function<>,function<>>"
+    ret = new Type "function2_pure<function<>,function<>>"
     ret.nest_list[0].nest_list.push type
     ret
 
@@ -93,13 +93,18 @@ class Ti_context
     ret.current_class = @current_class
     ret
   
+  type_proxy : (cls)->
+    ret = new Type "struct"
+    for k,v of cls._prepared_field2type
+      continue if v.main != "function2"
+      ret.field_hash[k] = v
+    ret
+  
   check_id : (id)->
     if id == "this"
-      ret = new Type "struct"
-      for k,v of @current_class._prepared_field2type
-        continue if v.main != "function2"
-        ret.field_hash[k] = v
-      return ret
+      return @type_proxy @current_class
+    if type_decl = @type_hash[id]
+      return @type_proxy type_decl
     return ret if ret = @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
@@ -271,7 +276,8 @@ is_not_a_type = (type)->
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
-          field_type = field_type root.t
+          field_type = field_type root.t.type
+        
         root.type = field_type
         root.type
       
@@ -475,7 +481,6 @@ is_not_a_type = (type)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        
         switch root_type.main
           when "array"
             field_hash = array_field_hash
@@ -493,19 +498,25 @@ is_not_a_type = (type)->
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
-          field_type = field_type root.t
+          field_type = field_type root.t.type
         root.type = field_type
         root.type
       
       when "Fn_call"
         root_type = walk root.fn, ctx
+        
+        if root_type.main == "function2_pure"
+          offset = 0
+        else
+          offset = 2
+        
         for arg,i in root.arg_list
           walk arg, ctx
-          expected_type = root.fn.type.nest_list[0].nest_list[i]
+          expected_type = root_type.nest_list[0].nest_list[i+offset]
           if is_not_a_type arg.type
             change_count++
             arg.type = expected_type
-        root.type = root_type.nest_list[0].nest_list[0]
+        root.type = root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt

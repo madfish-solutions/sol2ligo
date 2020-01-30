@@ -261,18 +261,20 @@ spec_id_trans_hash =
 class @Gen_context
   next_gen          : null
   
-  is_class_decl     : false
+  current_class     : null
   lvalue            : false
   type_decl_hash    : {}
   contract_var_hash : {}
   
   trim_expr         : ""
+  storage_sink_list : []
   sink_list         : []
   tmp_idx           : 0
   
   constructor:()->
     @type_decl_hash   = {}
     @contract_var_hash= {}
+    @storage_sink_list= []
     @sink_list        = []
   
   mk_nest : ()->
@@ -292,6 +294,23 @@ walk = (root, ctx)->
           for v in root.list
             code = walk v, ctx
             jl.push code if code
+          
+          name = config.storage
+          jl.unshift ""
+          if ctx.storage_sink_list.length
+            jl.unshift """
+            type #{name} is record
+              #{join_list ctx.storage_sink_list, '  '}
+            end;
+            """
+          else
+            jl.unshift """
+            type #{name} is record
+              #{config.empty_state} : int;
+            end;
+            """
+          ctx.storage_sink_list.clear()
+          
           join_list jl, ""
         
         else
@@ -409,16 +428,21 @@ walk = (root, ctx)->
         when "array"
           switch root.name
             when "length"
-              "size(#{t})"
+              return "size(#{t})"
             
             else
               throw new Error "unknown array field #{root.name}"
-        
-        else
-          if t == "" # this case
-            return translate_var_name root.name, ctx
-          chk_ret = "#{t}.#{root.name}"
-          spec_id_trans_hash[chk_ret] or "#{t}.#{translate_var_name root.name, ctx}"
+      # else
+      if t == "" # this case
+        return translate_var_name root.name, ctx
+      
+      chk_ret = "#{t}.#{root.name}"
+      ret = "#{t}.#{translate_var_name root.name, ctx}"
+      if root.t.constructor.name == "Var"
+        if ctx.type_decl_hash[root.t.name]?.is_library
+          ret = translate_var_name "#{t}_#{root.name}", ctx
+      
+      spec_id_trans_hash[chk_ret] or ret
     
     when "Fn_call"
       arg_list = []
@@ -502,7 +526,7 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name if root.name_translate
       type = translate_type root.type, ctx
-      if ctx.is_class_decl
+      if ctx.current_class
         ctx.contract_var_hash[name] = true
         "#{name} : #{type};"
       else
@@ -555,7 +579,7 @@ walk = (root, ctx)->
       jl = []
       for _case in root.scope.list
         # register
-        ctx.type_decl_hash[_case.var_decl.type.main] = true
+        ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl # at least it's better than true
         
         case_scope = walk _case.scope, ctx
         
@@ -568,6 +592,7 @@ walk = (root, ctx)->
       """
     
     when "Fn_decl_multiret"
+      orig_ctx = ctx
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
@@ -580,17 +605,22 @@ walk = (root, ctx)->
         type = translate_type v, ctx
         ret_jl.push "#{type}"
       
+      name = root.name
+      # current_class is missing for router
+      if orig_ctx.current_class?.is_library
+        name = "#{orig_ctx.current_class.name}_#{name}"
       body = walk root.scope, ctx
       """
-      function #{translate_var_name root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{translate_var_name name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
     when "Class_decl"
       return "" if root.need_skip
-      ctx.type_decl_hash[root.name] = true
+      orig_ctx = ctx
+      ctx.type_decl_hash[root.name] = root
       ctx = ctx.mk_nest()
-      ctx.is_class_decl = true
+      ctx.current_class = root
       
       # stage 1 collect declarations
       field_decl_jl = []
@@ -625,30 +655,29 @@ walk = (root, ctx)->
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
-      if root.is_contract
-        name = config.storage
+      if root.is_contract or root.is_library
+        orig_ctx.storage_sink_list.append field_decl_jl
       else
         name = translate_var_name root.name
-      
-      if field_decl_jl.length
-        jl.unshift """
-        type #{name} is record
-          #{join_list field_decl_jl, '  '}
-        end;
-        """
-      else
-        jl.unshift """
-        type #{name} is record
-          #{config.empty_state} : int;
-        end;
-        """
+        if field_decl_jl.length
+          jl.unshift """
+          type #{name} is record
+            #{join_list field_decl_jl, '  '}
+          end;
+          """
+        else
+          jl.unshift """
+          type #{name} is record
+            #{config.empty_state} : int;
+          end;
+          """
       
       jl.join "\n\n"
     
     when "Enum_decl"
       jl = []
       # register global type
-      ctx.type_decl_hash[root.name] = true
+      ctx.type_decl_hash[root.name] = root
       for v in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = true
