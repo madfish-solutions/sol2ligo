@@ -227,6 +227,8 @@ describe "translate ligo section", ()->
         uint tokenCount = 4;
         require(tokenCount < 5, "Sample text");
         assert(tokenCount == 4);
+        revert();
+        revert("Should fail");
       }
     }
     """#"
@@ -240,6 +242,8 @@ describe "translate ligo section", ()->
         const tokenCount : nat = 4n;
         if (tokenCount < 5n) then {skip} else failwith("Sample text");
         if (tokenCount = 4n) then {skip} else failwith("require fail");
+        failwith("revert");
+        failwith("Should fail");
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o

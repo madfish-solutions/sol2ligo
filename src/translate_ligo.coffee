@@ -444,6 +444,9 @@ walk = (root, ctx)->
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
+          when "revert"
+            str = arg_list[0] or '"revert"'
+            return "failwith(#{str})"
           else
             name = root.fn.name
             name = translate_var_name name if root.fn.name_translate
