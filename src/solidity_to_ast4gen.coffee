@@ -163,7 +163,17 @@ walk = (root, ctx)->
     
     when "ContractDefinition"
       ret = new ast.Class_decl
-      ret.is_contract = true
+      
+      switch root.contractKind
+        when "contract"
+          ret.is_contract = true
+        
+        when "library"
+          ret.is_library = true
+        
+        else
+          throw new Error "unknown contractKind #{root.contractKind}"
+      
       ret.inheritance_list = []
       for v in root.baseContracts
         if v.arguments
