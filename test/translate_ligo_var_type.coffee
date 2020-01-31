@@ -183,7 +183,7 @@ describe "translate ligo section", ()->
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.#{config.reserved}__sender := sender;
-        contractStorage.value := (amount / 1tz);
+        contractStorage.value := (amount / 1mutez);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (opList, contractStorage);
     
