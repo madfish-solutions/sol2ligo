@@ -469,6 +469,47 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk, class_hash: {}}
   
 do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Fn_call"
+        switch root.fn.name
+          when "addmod"
+            add = new ast.Bin_op
+            add.op = "ADD"
+            add.a = root.arg_list[0]
+            add.b = root.arg_list[1]
+
+            addmod = new ast.Bin_op
+            addmod.op = "MOD"
+            addmod.b = root.arg_list[2]
+            addmod.a = add
+
+            return addmod
+          
+          when "mulmod"
+            mul = new ast.Bin_op
+            mul.op = "MUL"
+            mul.a = root.arg_list[0]
+            mul.b = root.arg_list[1]
+
+            mulmod = new ast.Bin_op
+            mulmod.op = "MOD"
+            mulmod.b = root.arg_list[2]
+            mulmod.a = mul
+
+            return mulmod
+        root
+      else
+        ctx.next_gen root, ctx
+  
+  @math_funcs_convert = (root, ctx)->
+    walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
+
+    
+
+
+do ()=>
   fn_apply_modifier = (fn, mod, ctx)->
     ###
     Possible intersections
@@ -526,6 +567,7 @@ do ()=>
 @ligo_pack = (root, opt={})->
   opt.router ?= true
   root = module.for3_unpack root
+  root = module.math_funcs_convert root
   root = module.ass_op_unpack root
   root = module.modifier_unpack root
   root = module.inheritance_unpack root
