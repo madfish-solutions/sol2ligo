@@ -176,7 +176,7 @@ walk = (root, ctx)->
       
       ret.inheritance_list = []
       for v in root.baseContracts
-        if v.arguments
+        if v.arguments?.length > 0
           throw new Error "arguments not supported for inheritance for now"
         ret.inheritance_list.push {
           name : v.baseName.name
