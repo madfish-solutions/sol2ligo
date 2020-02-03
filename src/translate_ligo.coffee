@@ -47,7 +47,13 @@ walk = null
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
   PLUS    : (a)->"+(#{a})"
-  BIT_NOT : (a)->"not (#{a})"
+  BIT_NOT : (a, ctx, ast)->
+    if !ast.type
+      perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
+    if ast.type and ast.type.main == "uint"
+      "abs(not (#{a}))"
+    else
+      "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   
   DELETE : (a, ctx, ast)->
@@ -231,6 +237,8 @@ reserved_hash =
   "map"             : true
 
 reserved_hash[config.contract_storage] = true
+reserved_hash[config.op_list] = true
+
 @translate_var_name = translate_var_name = (name)->
   if reserved_hash[name]
     "#{config.reserved}__#{name}"
@@ -253,25 +261,24 @@ spec_id_trans_hash =
 class @Gen_context
   next_gen          : null
   
-  use_op_list       : true
-  is_class_decl     : false
+  current_class     : null
   lvalue            : false
-  ignore_reserved   : false
   type_decl_hash    : {}
   contract_var_hash : {}
   
   trim_expr         : ""
+  storage_sink_list : []
   sink_list         : []
   tmp_idx           : 0
   
   constructor:()->
     @type_decl_hash   = {}
     @contract_var_hash= {}
+    @storage_sink_list= []
     @sink_list        = []
   
   mk_nest : ()->
     t = new module.Gen_context
-    t.use_op_list = @use_op_list
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t
@@ -287,6 +294,23 @@ walk = (root, ctx)->
           for v in root.list
             code = walk v, ctx
             jl.push code if code
+          
+          name = config.storage
+          jl.unshift ""
+          if ctx.storage_sink_list.length
+            jl.unshift """
+            type #{name} is record
+              #{join_list ctx.storage_sink_list, '  '}
+            end;
+            """
+          else
+            jl.unshift """
+            type #{name} is record
+              #{config.empty_state} : int;
+            end;
+            """
+          ctx.storage_sink_list.clear()
+          
           join_list jl, ""
         
         else
@@ -343,7 +367,7 @@ walk = (root, ctx)->
     when "Var"
       name = root.name
       return "" if name == "this"
-      name = translate_var_name name if !ctx.ignore_reserved
+      name = translate_var_name name if root.name_translate
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -353,6 +377,9 @@ walk = (root, ctx)->
           spec_id_trans_hash[root.name] or name
     
     when "Const"
+      if !root.type
+        p root
+        throw new Error "Can't type inference"
       switch root.type.main
         when "bool"
           switch root.val
@@ -364,6 +391,9 @@ walk = (root, ctx)->
               throw new Error "can't translate bool constant '#{root.val}'"
         
         when "uint"
+          "#{root.val}n"
+        
+        when "uint8"
           "#{root.val}n"
         
         when "string"
@@ -401,16 +431,21 @@ walk = (root, ctx)->
         when "array"
           switch root.name
             when "length"
-              "size(#{t})"
+              return "size(#{t})"
             
             else
               throw new Error "unknown array field #{root.name}"
-        
-        else
-          if t == "" # this case
-            return translate_var_name root.name, ctx
-          chk_ret = "#{t}.#{root.name}"
-          spec_id_trans_hash[chk_ret] or "#{t}.#{translate_var_name root.name, ctx}"
+      # else
+      if t == "" # this case
+        return translate_var_name root.name, ctx
+      
+      chk_ret = "#{t}.#{root.name}"
+      ret = "#{t}.#{translate_var_name root.name, ctx}"
+      if root.t.constructor.name == "Var"
+        if ctx.type_decl_hash[root.t.name]?.is_library
+          ret = translate_var_name "#{t}_#{root.name}", ctx
+      
+      spec_id_trans_hash[chk_ret] or ret
     
     when "Fn_call"
       arg_list = []
@@ -433,13 +468,19 @@ walk = (root, ctx)->
       is_pure = false
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require"
+          when "require", "assert"
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
+          
+          when "revert"
+            str = arg_list[0] or '"revert"'
+            return "failwith(#{str})"
+          
           else
             is_pure =  ctx.contract_var_hash[root.fn.name].state_mutability == "pure"
-            name = translate_var_name root.fn.name
+            name = root.fn.name
+            name = translate_var_name name if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -450,20 +491,16 @@ walk = (root, ctx)->
       
       if !is_pure
         arg_list.unshift config.contract_storage
-        if ctx.use_op_list
-          arg_list.unshift config.op_list
+        arg_list.unshift config.op_list
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
         type_jl.push translate_type v
       
-      # temp disabled
-      # if type_jl[0] != config.storage
-      #   "#{fn}(#{arg_list.join ', '})"
-      
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
       if type_jl.length == 0
+        p root
         throw new Error "Bad call of pure function that returns nothing"
       if type_jl.length == 1
         ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
@@ -471,16 +508,12 @@ walk = (root, ctx)->
         ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
       
       if !is_pure
-        if ctx.use_op_list
-          ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-          ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-          ctx.trim_expr = "#{tmp_var}.2"
-        else
-          ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.0"
-          ctx.trim_expr = "#{tmp_var}.1"
+        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
+        ctx.trim_expr = "#{tmp_var}.2"
       else
         ctx.trim_expr = "#{tmp_var}"
-
+    
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
@@ -508,9 +541,10 @@ walk = (root, ctx)->
         "(* #{root.text} *)"
     
     when "Var_decl"
-      name = translate_var_name root.name
+      name = root.name
+      name = translate_var_name name if root.name_translate
       type = translate_type root.type, ctx
-      if ctx.is_class_decl
+      if ctx.current_class
         ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
@@ -534,17 +568,7 @@ walk = (root, ctx)->
     when "Ret_multi"
       jl = []
       for v,idx in root.t_list
-        ctx_loc = ctx
-        if idx == 0 and root.stateMutability != 'pure'
-          ctx_loc = ctx.mk_nest()
-          ctx_loc.ignore_reserved = true
-        else if idx == 0 and ctx.use_op_list
-          ctx_loc = ctx.mk_nest()
-          ctx_loc.ignore_reserved = true
-        else if idx == 1 and ctx.use_op_list
-          ctx_loc = ctx.mk_nest()
-          ctx_loc.ignore_reserved = true
-        jl.push walk v, ctx_loc
+        jl.push walk v, ctx
         
       """
       with (#{jl.join ', '})
@@ -573,7 +597,7 @@ walk = (root, ctx)->
       jl = []
       for _case in root.scope.list
         # register
-        ctx.type_decl_hash[_case.var_decl.type.main] = true
+        ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl # at least it's better than true
         
         case_scope = walk _case.scope, ctx
         
@@ -586,13 +610,11 @@ walk = (root, ctx)->
       """
     
     when "Fn_decl_multiret"
+      orig_ctx = ctx
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        if ctx.use_op_list
-          v = translate_var_name v unless idx <= 1
-        else
-          v = translate_var_name v unless idx == 0
+        v = translate_var_name v unless idx <= 1 # storage, op_list
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -601,17 +623,22 @@ walk = (root, ctx)->
         type = translate_type v, ctx
         ret_jl.push "#{type}"
       
+      name = root.name
+      # current_class is missing for router
+      if orig_ctx.current_class?.is_library
+        name = "#{orig_ctx.current_class.name}_#{name}"
       body = walk root.scope, ctx
       """
-      function #{translate_var_name root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{translate_var_name name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
     when "Class_decl"
       return "" if root.need_skip
-      ctx.type_decl_hash[root.name] = true
+      orig_ctx = ctx
+      ctx.type_decl_hash[root.name] = root
       ctx = ctx.mk_nest()
-      ctx.is_class_decl = true
+      ctx.current_class = root
       
       # stage 1 collect declarations
       field_decl_jl = []
@@ -646,30 +673,29 @@ walk = (root, ctx)->
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
-      if root.is_contract
-        name = config.storage
+      if root.is_contract or root.is_library
+        orig_ctx.storage_sink_list.append field_decl_jl
       else
         name = translate_var_name root.name
-      
-      if field_decl_jl.length
-        jl.unshift """
-        type #{name} is record
-          #{join_list field_decl_jl, '  '}
-        end;
-        """
-      else
-        jl.unshift """
-        type #{name} is record
-          #{config.empty_state} : int;
-        end;
-        """
+        if field_decl_jl.length
+          jl.unshift """
+          type #{name} is record
+            #{join_list field_decl_jl, '  '}
+          end;
+          """
+        else
+          jl.unshift """
+          type #{name} is record
+            #{config.empty_state} : int;
+          end;
+          """
       
       jl.join "\n\n"
     
     when "Enum_decl"
       jl = []
       # register global type
-      ctx.type_decl_hash[root.name] = true
+      ctx.type_decl_hash[root.name] = root
       for v in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
@@ -694,22 +720,21 @@ walk = (root, ctx)->
       """
       (case #{cond} of | True -> #{t} | False -> #{f} end)
       """
-
+    
     when "New"
       # TODO: should we translate type here?
       arg_list = []
       for v in root.arg_list
         arg_list.push walk v, ctx
-
+      
       args = """#{join_list arg_list, ', '}"""
       translated_type = translate_type root.cls, ctx
-
+      
       if root.cls.main == "array"
         """map end (* args: #{args} *)"""
       else if translated_type == "bytes"
         """bytes_pack(unit) (* args: #{args} *)"""
       else
-
         """
         #{translated_type}(#{args})
         """
@@ -724,8 +749,6 @@ walk = (root, ctx)->
         throw new Error "Unknown root.constructor.name #{root.constructor.name}"
 
 @gen = (root, opt = {})->
-  opt.op_list ?= true
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  ctx.use_op_list = opt.op_list
   walk root, ctx

@@ -2,12 +2,14 @@ module = @
 ast = require "ast4gen"
 for k,v of ast
   @[k] = v
+
 # ###################################################################################################
 #    redefine
 # ###################################################################################################
 class @Class_decl
   name  : ""
   is_contract : false
+  is_library  : false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -24,6 +26,7 @@ class @Class_decl
     ret = new module.Class_decl
     ret.name  = @name
     ret.is_contract = @is_contract
+    ret.is_library  = @is_library
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type
@@ -35,6 +38,45 @@ class @Class_decl
     ret.pos   = @pos
     ret
 
+class @Var
+  name  : ""
+  name_translate: true
+  type  : null
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    ret = new module.Var
+    ret.name  = @name
+    ret.type  = @type.clone() if @type
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Var_decl
+  name  : ""
+  name_translate: true
+  type  : null
+  size  : null
+  assign_value      : null
+  assign_value_list : null
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    ret = new module.Var_decl
+    ret.name  = @name
+    ret.name_translate = @name_translate
+    ret.type  = @type.clone() if @type
+    ret.size  = @size
+    ret.assign_value  = @assign_value.clone() if @assign_value
+    if @assign_value_list
+      ret.assign_value_list = []
+      for v in @assign_value_list
+        ret.assign_value_list.push v.clone()
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
 # ###################################################################################################
 #    New nodes
 # ###################################################################################################
@@ -163,7 +205,7 @@ class @New
     ret = new module.New
     ret.cls   = @cls
     for v in @arg_list
-      ret.arg_list.push v
+      ret.arg_list.push v.clone()
     ret.line  = @line
     ret.pos   = @pos
     ret

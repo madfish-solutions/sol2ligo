@@ -2,6 +2,15 @@ config = require "./config"
 Type = require "type"
 module = @
 
+create_assert_func = ()->
+  # TODO new Type "function2<function<bool>,function<>>"
+  ret = new Type "function2_pure"
+  ret.nest_list.push type_i = new Type "function"
+  ret.nest_list.push type_o = new Type "function"
+  type_i.nest_list.push "bool"
+  ret
+
+
 # Прим. Это система типов eth
 # каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
 @default_var_hash_gen = ()->
@@ -17,20 +26,15 @@ module = @
       ret
     )()
     now : new Type "uint"
-    require : (()->
-      # TODO new Type "function2<function<bool>,function<>>"
-      ret = new Type "function2"
-      ret.nest_list.push type_i = new Type "function"
-      ret.nest_list.push type_o = new Type "function"
-      type_i.nest_list.push "bool"
-      ret
-    )()
+    require :  create_assert_func()
+    assert : create_assert_func()
+    revert : create_assert_func()
   }
 
 array_field_hash =
   "length": new Type "uint"
   "push"  : (type)->
-    ret = new Type "function2<function<>,function<>>"
+    ret = new Type "function2_pure<function<>,function<>>"
     ret.nest_list[0].nest_list.push type
     ret
 
@@ -48,6 +52,10 @@ array_field_hash =
 @un_op_ret_type_hash_list = {
   BOOL_NOT : [
     ["bool", "bool"]
+  ]
+  BIT_NOT : [
+    ["uint", "uint"]
+    ["int", "int"]
   ]
   MINUS : [
     ["int", "int"]
@@ -85,13 +93,18 @@ class Ti_context
     ret.current_class = @current_class
     ret
   
+  type_proxy : (cls)->
+    ret = new Type "struct"
+    for k,v of cls._prepared_field2type
+      continue unless v.main in ["function2", "function2_pure"]
+      ret.field_hash[k] = v
+    ret
+  
   check_id : (id)->
     if id == "this"
-      ret = new Type "struct"
-      for k,v of @current_class._prepared_field2type
-        continue if v.main != "function2"
-        ret.field_hash[k] = v
-      return ret
+      return @type_proxy @current_class
+    if type_decl = @type_hash[id]
+      return @type_proxy type_decl
     return ret if ret = @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
@@ -115,10 +128,14 @@ class_prepare = (root, ctx)->
       
       when "Fn_decl_multiret"
         # BUG внутри scope уже есть this и ему нужен тип...
-        type = new Type "function2<function,function>"
+        if v.state_mutability == "pure"
+          type = new Type "function2_pure<function,function>"
+        else
+          type = new Type "function2<function,function>"
         type.nest_list[0] = v.type_i
         type.nest_list[1] = v.type_o
         root._prepared_field2type[v.name] = type
+  
   return
 
 is_not_a_type = (type)->
@@ -200,6 +217,37 @@ is_not_a_type = (type)->
             continue if tuple[0] != a
             found = true
             root.type = new Type tuple[1]
+            break
+          
+          if !found and !is_not_a_type a
+            can_be_uint = false
+            for tuple in list
+              continue if tuple[0] != "uint"
+              can_be_uint = true
+              break
+            
+            can_be_int = false
+            for tuple in list
+              continue if tuple[0] != "int"
+              can_be_int = true
+              break
+            
+            if can_be_int and can_be_uint
+              p "NOTE can_be_int and can_be_uint"
+            else if can_be_int and !can_be_uint
+              for tuple in list
+                continue if tuple[0] != "int"
+                found = true
+                root.type = new Type tuple[1]
+                break
+            else if !can_be_int and can_be_uint
+              
+              for tuple in list
+                continue if tuple[0] != "uint"
+                found = true
+                root.type = new Type tuple[1]
+                break
+        
         if !found
           if root.op == "DELETE"
             if root.a.constructor.name == "Bin_op"
@@ -227,12 +275,14 @@ is_not_a_type = (type)->
             field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
+          p field_hash
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
-          field_type = field_type root.t
+          field_type = field_type root.t.type
+        
         root.type = field_type
         root.type
       
@@ -436,7 +486,6 @@ is_not_a_type = (type)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        
         switch root_type.main
           when "array"
             field_hash = array_field_hash
@@ -454,19 +503,25 @@ is_not_a_type = (type)->
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
-          field_type = field_type root.t
+          field_type = field_type root.t.type
         root.type = field_type
         root.type
       
       when "Fn_call"
         root_type = walk root.fn, ctx
+        
+        if root_type.main == "function2_pure"
+          offset = 0
+        else
+          offset = 2
+        
         for arg,i in root.arg_list
           walk arg, ctx
-          expected_type = root.fn.type.nest_list[0].nest_list[i]
+          expected_type = root_type.nest_list[0].nest_list[i+offset]
           if is_not_a_type arg.type
             change_count++
             arg.type = expected_type
-        root.type = root_type.nest_list[0].nest_list[0]
+        root.type = root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt

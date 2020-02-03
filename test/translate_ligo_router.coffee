@@ -65,7 +65,6 @@ describe "generate router", ()->
     """
     make_test text_i, text_o, {
       router: true
-      op_list: true
     }
   
   it "router private method", ()->
@@ -118,7 +117,6 @@ describe "generate router", ()->
     """
     make_test text_i, text_o, {
       router: true
-      op_list: true
     }
   
   it "router internal method", ()->
@@ -171,5 +169,4 @@ describe "generate router", ()->
     """
     make_test text_i, text_o, {
       router: true
-      op_list: true
     }
