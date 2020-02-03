@@ -10,15 +10,14 @@ The project is in _EXPERIMENTAL_: it may crash or silently skip some statements,
 # Installation
 
 ```sh
-npm i
+npm i -g iced-coffee-script
+npm i -g madfish-solutions/sol2ligo
 ```
 
 # Usage
 
-For now no CLI tool is available. Use the following if you want single file transpiled to stdout
-
 ```sh
-./manual_test.coffee <filename> --full --print
+sol2ligo <filename>
 ```
 
 # Tests
