@@ -38,6 +38,10 @@ array_field_hash =
     ret.nest_list[0].nest_list.push type
     ret
 
+address_field_hash =
+  "send": new Type "function2_pure<function2<uint>,function2<bool>>"
+  "transfer": new Type "function2_pure<function2<uint>,function2<>>" # throws on false
+
 @default_type_hash_gen = ()->
   {
     bool    : true
@@ -268,6 +272,9 @@ is_not_a_type = (type)->
           when "array"
             field_hash = array_field_hash
           
+          when "address"
+            field_hash = address_field_hash
+          
           when "struct"
             field_hash = root_type.field_hash
           
@@ -490,6 +497,9 @@ is_not_a_type = (type)->
         switch root_type.main
           when "array"
             field_hash = array_field_hash
+          
+          when "address"
+            field_hash = address_field_hash
           
           when "struct"
             field_hash = root_type.field_hash

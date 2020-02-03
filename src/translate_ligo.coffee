@@ -254,7 +254,7 @@ reserved_hash[config.op_list] = true
 spec_id_trans_hash =
   "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.sender": "sender"
-  "msg.value" : "(amount / 1tz)"
+  "msg.value" : "(amount / 1mutez)"
 
 # ###################################################################################################
 
@@ -435,6 +435,7 @@ walk = (root, ctx)->
             
             else
               throw new Error "unknown array field #{root.name}"
+        
       # else
       if t == "" # this case
         return translate_var_name root.name, ctx
@@ -466,6 +467,19 @@ walk = (root, ctx)->
               
               else
                 throw new Error "unknown array field function #{root.fn.name}"
+          
+          when "address"
+            switch root.fn.name
+              when "send"
+                # TODO check balance
+                op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
+                return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+              
+              when "transfer"
+                throw new Error "not implemented"
+              
+              else
+                throw new Error "unknown address field #{root.fn.name}"
       
       is_pure = false
       if root.fn.constructor.name == "Var"
