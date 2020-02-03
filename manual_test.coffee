@@ -47,13 +47,13 @@ process_file = (file)->
     if argv.ligo
       code = code.replace /\(\* EmitStatement \*\);/g, ""
       fs.writeFileSync "test.ligo", code
-      if fs.existsSync "ligo_tmp_log"
-        fs.unlinkSync "ligo_tmp_log"
+      if fs.existsSync "ligo_tmp.log"
+        fs.unlinkSync "ligo_tmp.log"
       try
-        execSync "ligo compile-contract test.ligo main > ./ligo_tmp_log", {stdio: "inherit"}
+        execSync "ligo compile-contract test.ligo main > ./ligo_tmp.log", {stdio: "inherit"}
       catch err
         puts "ERROR"
-        puts fs.readFileSync "./ligo_tmp_log", "utf-8"
+        puts fs.readFileSync "./ligo_tmp.log", "utf-8"
   
   return
 

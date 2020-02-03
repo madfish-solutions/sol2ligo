@@ -1,7 +1,7 @@
 {
   "name": "sol2ligo",
   "version": "1.0.0",
-  "description": "",
+  "description": "Transpiler from Solidity to PascalLIGO language",
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
@@ -9,6 +9,9 @@
     "test-ext-compiler": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --ext_compiler && istanbul report",
     "test-ext-compiler-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc --ext_compiler && istanbul report",
     "test-specific": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -g"
+  },
+  "bin": {
+    "sol2ligo": "bin/sol2ligo"
   },
   "repository": {
     "type": "git",
@@ -30,7 +33,7 @@
   },
   "devDependencies": {
     "iced-coffee-coverage": "^1.0.21",
-    "iced-coffee-script": "^108.0.11",
+    "iced-coffee-script": "^108.0.14",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0"
   }
