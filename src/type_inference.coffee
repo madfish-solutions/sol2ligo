@@ -91,6 +91,7 @@ class Ti_context
     ret.parent = @
     ret.parent_fn = @parent_fn
     ret.current_class = @current_class
+    obj_set ret.type_hash, @type_hash
     ret
   
   type_proxy : (cls)->
@@ -108,7 +109,7 @@ class Ti_context
     return ret if ret = @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
-      
+    
     if @parent
       return @parent.check_id id
     throw new Error "can't find decl for id '#{id}'"
@@ -275,7 +276,7 @@ is_not_a_type = (type)->
             field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
-          p field_hash
+          puts field_hash
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
@@ -374,16 +375,16 @@ is_not_a_type = (type)->
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
         null
-
+      
       when "Enum_decl"
         null
-
+      
       when "Type_cast"
         root.type
       
       when "Ternary"
         root.type
-
+      
       when "New"
         root.type
         
@@ -597,14 +598,16 @@ is_not_a_type = (type)->
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
         null
-
+      
       when "Enum_decl"
         null
-
+      
       when "Type_cast"
         root.type
+      
       when "Ternary"
         root.type
+      
       when "New"
         root.type
       

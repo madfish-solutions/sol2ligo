@@ -271,6 +271,12 @@ do ()=>
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
+            
+            if func.state_mutability == "pure"
+              record.scope.list.push arg = new ast.Var_decl
+              arg.name = config.callback_address
+              arg.type = new Type "address"
+            
             if record.scope.list.length == 0
               record.scope.list.push arg = new ast.Var_decl
               arg.name = config.empty_state
@@ -330,12 +336,18 @@ do ()=>
             _case.struct_name = func2struct func.name
             _case.var_decl.name = "match_action"
             _case.var_decl.type = new Type _case.struct_name
-            _case.scope.list.push call = new ast.Fn_call
+            
+            call = new ast.Fn_call
             call.fn = new ast.Var
             call.fn.name = func.name # TODO word "constructor" gets corruped here
+            # NOTE that PM_switch is ignored by type inference
             # BUG. Type inference should resolve this fn properly
+            
+            # Прим. Все-равно затрется type inference'ом
             if func.state_mutability == "pure"
               call.fn.type = new Type "function2_pure"
+              # BUG only 1 ret value supported
+              call.type = func.type_o.nest_list[0]
             else
               call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
@@ -348,6 +360,28 @@ do ()=>
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
+            
+            if func.state_mutability == "pure"
+              transfer_call = new ast.Fn_call
+              transfer_call.fn = fn = new ast.Field_access
+              
+              callback_address = new ast.Field_access
+              callback_address.t = new ast.Var
+              callback_address.t.name = _case.var_decl.name
+              callback_address.t.type = _case.var_decl.type
+              callback_address.name = config.callback_address
+              callback_address.type = new Type "address"
+              
+              fn.t = callback_address
+              fn.name = "built_in_pure_callback"
+              
+              fn.type = new Type "function2<function<>,#{func.type_o}>"
+              
+              transfer_call.arg_list.push call
+              
+              _case.scope.list.push transfer_call
+            else
+              _case.scope.list.push call
           _main.scope.list.push ret = new ast.Ret_multi
           
           ret.t_list.push _var = new ast.Var

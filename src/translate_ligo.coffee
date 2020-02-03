@@ -378,7 +378,7 @@ walk = (root, ctx)->
     
     when "Const"
       if !root.type
-        p root
+        puts root
         throw new Error "Can't type inference"
       switch root.type.main
         when "bool"
@@ -454,6 +454,8 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Field_access"
         t = walk root.fn.t, ctx
+        p "Fn_call", root
+        p "Fn_call root.fn.t", root.fn.t
         switch root.fn.t.type.main
           when "array"
             switch root.fn.name
