@@ -7,3 +7,6 @@ test.sol
 test.ligo
 test.pp.ligo
 ligo_tmp.log
+
+solidity_samples
+import_url_cache

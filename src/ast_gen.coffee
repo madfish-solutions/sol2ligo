@@ -1,9 +1,9 @@
-require 'fy'
-setupMethods = require 'solc/wrapper'
-release_hash = require("../solc-bin/bin/list.js").releases
+require "fy"
+fs = require "fs"
+setupMethods = require "solc/wrapper"
+{execSync} = require "child_process"
 
 solc_hash = {}
-
 
 module.exports = (code, opt={})->
   {
@@ -11,7 +11,17 @@ module.exports = (code, opt={})->
     suggest_solc_version
     auto_version
     debug
+    allow_download
   } = opt
+  allow_download ?= true
+  
+  target_dir = "#{__dirname}/../solc-bin/bin"
+  if allow_download and !fs.existsSync "#{target_dir}/list.js"
+    puts "download solc catalog"
+    execSync "mkdir -p #{target_dir}"
+    execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js --output #{target_dir}/list.js"
+  
+  release_hash = require("../solc-bin/bin/list.js").releases
   
   solc_full_name = null
   auto_version ?= true
@@ -26,7 +36,7 @@ module.exports = (code, opt={})->
   
   if auto_version and !solc_version?
     # HACKY WAY
-    header = code.trim().split('\n')[0].trim()
+    header = code.trim().split("\n")[0].trim()
     if reg_ret = /^pragma solidity \^?([.0-9]+);/.exec header
       pick_version reg_ret[1]
     else if reg_ret = /^pragma solidity >=([.0-9]+)/.exec header
@@ -40,34 +50,39 @@ module.exports = (code, opt={})->
   solc_full_name ?= "soljson-latest.js"
   
   if !(solc = solc_hash[solc_full_name])?
+    path = "#{target_dir}/#{solc_full_name}"
+    if allow_download and !fs.existsSync path
+      puts "download #{solc_full_name}"
+      execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/#{solc_full_name} --output #{target_dir}/#{solc_full_name}"
+      
     puts "loading solc #{solc_full_name}"
-    solc_hash[solc_full_name] = solc = setupMethods(require("../solc-bin/bin/#{solc_full_name}"))
+    solc_hash[solc_full_name] = solc = setupMethods require path
   
   if debug
     p "use #{solc_full_name}" # DEBUG
   input = {
-      language: 'Solidity',
-      sources: {
-          'test.sol': {
-              content: code
-          }
-      },
-      settings: {
-          
-          outputSelection: {
-              '*': {
-                  '*': [ '*' ]
-                  '' : ['ast']
-              }
-          }
+    language: "Solidity",
+    sources: {
+      "test.sol": {
+        content: code
       }
+    },
+    settings: {
+      
+      outputSelection: {
+        "*": {
+          "*": [ "*" ]
+          "" : ["ast"]
+        }
+      }
+    }
   }
   
   output = JSON.parse(solc.compile(JSON.stringify(input)))
   
   is_ok = true
   for error in output.errors or []
-    if error.type == 'Warning'
+    if error.type == "Warning"
       unless opt.silent
         p "WARNING", error
       continue
@@ -79,7 +94,7 @@ module.exports = (code, opt={})->
     err.__inject_error_list = output.errors
     throw err
 
-  res = output.sources['test.sol'].ast
+  res = output.sources["test.sol"].ast
   if !res
     ### !pragma coverage-skip-block ###
     throw new Error "!res"
