@@ -377,6 +377,9 @@ walk = (root, ctx)->
           spec_id_trans_hash[root.name] or name
     
     when "Const"
+      if !root.type
+        puts root
+        throw new Error "Can't type inference"
       switch root.type.main
         when "bool"
           switch root.val
@@ -473,6 +476,13 @@ walk = (root, ctx)->
               when "transfer"
                 throw new Error "not implemented"
               
+              when "built_in_pure_callback"
+                # TODO check balance
+                ret_type = translate_type root.arg_list[0].type
+                ret = arg_list[0]
+                op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
+                return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+              
               else
                 throw new Error "unknown address field #{root.fn.name}"
       
@@ -482,9 +492,11 @@ walk = (root, ctx)->
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
+          
           when "revert"
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
+          
           else
             name = root.fn.name
             name = translate_var_name name if root.fn.name_translate
@@ -496,19 +508,34 @@ walk = (root, ctx)->
       else
         fn = walk root.fn, ctx
       
-      arg_list.unshift config.contract_storage
-      arg_list.unshift config.op_list
+      is_pure = root.fn.type.main == "function2_pure"
+      if !is_pure
+        arg_list.unshift config.contract_storage
+        arg_list.unshift config.op_list
+      
+      if arg_list.length == 0
+        arg_list.push "unit"
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
         type_jl.push translate_type v
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
-      ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{fn}(#{arg_list.join ', '})"
+      call_expr = "#{fn}(#{arg_list.join ', '})";
+      if type_jl.length == 0
+        p root
+        throw new Error "Bad call of pure function that returns nothing"
+      if type_jl.length == 1
+        ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+      else
+        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
       
-      ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-      ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-      ctx.trim_expr = "#{tmp_var}.2"
+      if !is_pure
+        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
+        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
+        ctx.trim_expr = "#{tmp_var}.2"
+      else
+        ctx.trim_expr = "#{tmp_var}"
     
     when "Type_cast"
       # TODO detect 'address(0)' here
@@ -541,7 +568,7 @@ walk = (root, ctx)->
       name = translate_var_name name if root.name_translate
       type = translate_type root.type, ctx
       if ctx.current_class
-        ctx.contract_var_hash[name] = true
+        ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
@@ -614,6 +641,9 @@ walk = (root, ctx)->
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
+      if arg_jl.length == 0
+        arg_jl.push "const #{config.reserved}__unit : unit"
+      
       ret_jl = []
       for v in root.type_o.nest_list
         type = translate_type v, ctx
@@ -643,7 +673,7 @@ walk = (root, ctx)->
           when "Var_decl"
             field_decl_jl.push walk v, ctx
           when "Fn_decl_multiret"
-            ctx.contract_var_hash[v.name] = true
+            ctx.contract_var_hash[v.name] = v
           when "Enum_decl"
             "skip"
           when "Class_decl"
@@ -694,7 +724,7 @@ walk = (root, ctx)->
       ctx.type_decl_hash[root.name] = root
       for v in root.value_list
         # register global value
-        ctx.contract_var_hash[v.name] = true
+        ctx.contract_var_hash[v.name] = v
         
         # not covered by tests yet
         aux = ""

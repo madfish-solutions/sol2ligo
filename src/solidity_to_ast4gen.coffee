@@ -487,7 +487,7 @@ walk = (root, ctx)->
       
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
-      # ctx.stateMutability
+      
       if !ret.is_modifier
         for modifier in root.modifiers
           ast_mod = new ast.Fn_call
@@ -511,6 +511,7 @@ walk = (root, ctx)->
             _var.name = v.name
       
       ret.visibility = root.visibility
+      ret.state_mutability = root.stateMutability
       ret
     
     when "EnumDefinition"

@@ -95,12 +95,13 @@ class Ti_context
     ret.parent = @
     ret.parent_fn = @parent_fn
     ret.current_class = @current_class
+    obj_set ret.type_hash, @type_hash
     ret
   
   type_proxy : (cls)->
     ret = new Type "struct"
     for k,v of cls._prepared_field2type
-      continue if v.main != "function2"
+      continue unless v.main in ["function2", "function2_pure"]
       ret.field_hash[k] = v
     ret
   
@@ -112,7 +113,7 @@ class Ti_context
     return ret if ret = @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
-      
+    
     if @parent
       return @parent.check_id id
     throw new Error "can't find decl for id '#{id}'"
@@ -132,10 +133,14 @@ class_prepare = (root, ctx)->
       
       when "Fn_decl_multiret"
         # BUG внутри scope уже есть this и ему нужен тип...
-        type = new Type "function2<function,function>"
+        if v.state_mutability == "pure"
+          type = new Type "function2_pure<function,function>"
+        else
+          type = new Type "function2<function,function>"
         type.nest_list[0] = v.type_i
         type.nest_list[1] = v.type_o
         root._prepared_field2type[v.name] = type
+  
   return
 
 is_not_a_type = (type)->
@@ -278,6 +283,7 @@ is_not_a_type = (type)->
             field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
+          puts field_hash
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
@@ -348,7 +354,10 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type "function2"
+        if root.state_mutability == "pure"
+          complex_type = new Type "function2_pure"
+        else
+          complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
@@ -376,16 +385,16 @@ is_not_a_type = (type)->
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
         null
-
+      
       when "Enum_decl"
         null
-
+      
       when "Type_cast"
         root.type
       
       when "Ternary"
         root.type
-
+      
       when "New"
         root.type
         
@@ -575,7 +584,10 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type "function2"
+        if root.state_mutability == "pure"
+          complex_type = new Type "function2_pure"
+        else
+          complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
@@ -602,14 +614,16 @@ is_not_a_type = (type)->
         walk root.cond, ctx.mk_nest()
         walk root.scope, ctx.mk_nest()
         null
-
+      
       when "Enum_decl"
         null
-
+      
       when "Type_cast"
         root.type
+      
       when "Ternary"
         root.type
+      
       when "New"
         root.type
       
