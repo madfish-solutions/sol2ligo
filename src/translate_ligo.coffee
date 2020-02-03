@@ -455,8 +455,6 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Field_access"
         t = walk root.fn.t, ctx
-        p "Fn_call", root
-        p "Fn_call root.fn.t", root.fn.t
         switch root.fn.t.type.main
           when "array"
             switch root.fn.name
@@ -478,10 +476,16 @@ walk = (root, ctx)->
               when "transfer"
                 throw new Error "not implemented"
               
+              when "built_in_pure_callback"
+                # TODO check balance
+                ret_type = translate_type root.arg_list[0].type
+                ret = arg_list[0]
+                op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
+                return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+              
               else
                 throw new Error "unknown address field #{root.fn.name}"
       
-      is_pure = false
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "assert"
@@ -494,7 +498,6 @@ walk = (root, ctx)->
             return "failwith(#{str})"
           
           else
-            is_pure =  ctx.contract_var_hash[root.fn.name].state_mutability == "pure"
             name = root.fn.name
             name = translate_var_name name if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
@@ -505,9 +508,13 @@ walk = (root, ctx)->
       else
         fn = walk root.fn, ctx
       
+      is_pure = root.fn.type.main == "function2_pure"
       if !is_pure
         arg_list.unshift config.contract_storage
         arg_list.unshift config.op_list
+      
+      if arg_list.length == 0
+        arg_list.push "unit"
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
@@ -633,6 +640,9 @@ walk = (root, ctx)->
         v = translate_var_name v unless idx <= 1 # storage, op_list
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
+      
+      if arg_jl.length == 0
+        arg_jl.push "const #{config.reserved}__unit : unit"
       
       ret_jl = []
       for v in root.type_o.nest_list

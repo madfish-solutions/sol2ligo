@@ -354,7 +354,10 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type "function2"
+        if root.state_mutability == "pure"
+          complex_type = new Type "function2_pure"
+        else
+          complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
@@ -581,7 +584,10 @@ is_not_a_type = (type)->
         root.type
       
       when "Fn_decl_multiret"
-        complex_type = new Type "function2"
+        if root.state_mutability == "pure"
+          complex_type = new Type "function2_pure"
+        else
+          complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
