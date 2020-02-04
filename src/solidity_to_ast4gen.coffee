@@ -337,7 +337,11 @@ walk = (root, ctx)->
       ret
     
     when "TupleExpression"
-      ret = new ast.Tuple
+      if root.isInlineArray 
+        ret = new ast.Array_init
+      else
+        ret = new ast.Tuple
+
       for v in root.components
         if v?
           ret.list.push walk v, ctx

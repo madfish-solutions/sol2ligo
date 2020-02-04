@@ -397,6 +397,9 @@ is_not_a_type = (type)->
       
       when "New"
         root.type
+
+      when "Tuple", "Array_init"
+        root.list
         
       else
         ### !pragma coverage-skip-block ###
@@ -626,6 +629,9 @@ is_not_a_type = (type)->
       
       when "New"
         root.type
+
+      when "Tuple", "Array_init"
+        root.list
       
       else
         ### !pragma coverage-skip-block ###
