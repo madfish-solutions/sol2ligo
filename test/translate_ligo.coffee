@@ -135,6 +135,7 @@ describe "translate ligo section", ()->
       }
     }
     """#"
+    # TODO following return value has space newline, but I can't figure what causes it
     text_o = """
     type state is record
       reserved__empty_state : int;
@@ -143,7 +144,8 @@ describe "translate ligo section", ()->
     function tupleRet (const reserved__unit : unit) : (nat * bool) is
       block {
         skip
-      } with ((7, True));
+      } with ((7
+      , True));
     """#"
     make_test text_i, text_o
   

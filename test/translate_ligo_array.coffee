@@ -174,15 +174,15 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__initialized : bool;
+      reserved__empty_state : int;
     end;
     
     function inlineArray (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const temp : map(nat, nat) = map
-          0n -> abs(1),
-          1n -> 2,
-          2n -> 3
+          0n -> abs(1);
+          1n -> 2;
+          2n -> 3;
         end;
       } with (opList, contractStorage);
     """
