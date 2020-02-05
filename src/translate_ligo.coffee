@@ -110,11 +110,11 @@ walk = null
     # when config.storage
     #   config.storage
     else
-      if type.main.match /byte[s]?\d{0,2}/
+      if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if type.main.match /uint\d{0,3}/
+      else if type.main.match /^uint\d{0,3}$/
         "nat"
-      else if type.main.match /int\d{0,3}/
+      else if type.main.match /^int\d{0,3}$/
         "int"
       else if ctx.type_decl_hash[type.main]
         type.main
