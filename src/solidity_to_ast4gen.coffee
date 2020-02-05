@@ -89,19 +89,7 @@ unpack_id_type = (root, ctx)->
   switch root.typeString
     when "bool"
       new Type "bool"
-    
-    when "int8"
-      new Type "int8"
-    
-    when "uint8"
-      new Type "uint8"
-    
-    when "uint256"
-      new Type "uint"
-    
-    when "int256"
-      new Type "int"
-    
+        
     when "address"
       new Type "address"
     
@@ -111,12 +99,15 @@ unpack_id_type = (root, ctx)->
     when "msg"
       new Type "struct" # fields would be replaced in type inference
     
-    when "bytes"
-      new Type "bytes"
-
     else
-      # puts root # temp disable
-      throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
+      if root.typeString.match /^byte[s]?\d{0,2}$/
+        new Type "bytes"
+      else if root.typeString.match /^uint\d{0,3}$/
+        new Type "uint"
+      else if root.typeString.match /^int\d{0,3}$/
+        new Type "int"
+      else
+        throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 
 walk_param = (root, ctx)->
   switch root.nodeType
