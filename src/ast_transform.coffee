@@ -96,7 +96,7 @@ do ()=>
         root.scope = walk root.scope, ctx
         root
       
-      when "Tuple"
+      when "Tuple", "Array_init"
         root
       
       else
