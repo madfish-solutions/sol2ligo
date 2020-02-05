@@ -473,32 +473,33 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Fn_call"
-        switch root.fn.name
-          when "addmod"
-            add = new ast.Bin_op
-            add.op = "ADD"
-            add.a = root.arg_list[0]
-            add.b = root.arg_list[1]
+        if root.fn.constructor.name == "Var"
+          switch root.fn.name
+            when "addmod"
+              add = new ast.Bin_op
+              add.op = "ADD"
+              add.a = root.arg_list[0]
+              add.b = root.arg_list[1]
 
-            addmod = new ast.Bin_op
-            addmod.op = "MOD"
-            addmod.b = root.arg_list[2]
-            addmod.a = add
+              addmod = new ast.Bin_op
+              addmod.op = "MOD"
+              addmod.b = root.arg_list[2]
+              addmod.a = add
 
-            return addmod
-          
-          when "mulmod"
-            mul = new ast.Bin_op
-            mul.op = "MUL"
-            mul.a = root.arg_list[0]
-            mul.b = root.arg_list[1]
+              return addmod
+            
+            when "mulmod"
+              mul = new ast.Bin_op
+              mul.op = "MUL"
+              mul.a = root.arg_list[0]
+              mul.b = root.arg_list[1]
 
-            mulmod = new ast.Bin_op
-            mulmod.op = "MOD"
-            mulmod.b = root.arg_list[2]
-            mulmod.a = mul
+              mulmod = new ast.Bin_op
+              mulmod.op = "MOD"
+              mulmod.b = root.arg_list[2]
+              mulmod.a = mul
 
-            return mulmod
+              return mulmod
         root
       else
         ctx.next_gen root, ctx
