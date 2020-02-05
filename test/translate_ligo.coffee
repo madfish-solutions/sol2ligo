@@ -141,7 +141,7 @@ describe "translate ligo section", ()->
       reserved__empty_state : int;
     end;
     
-    function tupleRet (const reserved__unit : unit) : (nat * bool) is
+    function tupleRet (const reserved__unit : unit) : ((nat * bool)) is
       block {
         skip
       } with ((7n, True));

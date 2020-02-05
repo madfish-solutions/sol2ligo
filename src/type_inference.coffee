@@ -2,15 +2,6 @@ config = require "./config"
 Type = require "type"
 module = @
 
-create_assert_func = ()->
-  # TODO new Type "function2<function<bool>,function<>>"
-  ret = new Type "function2_pure"
-  ret.nest_list.push type_i = new Type "function"
-  ret.nest_list.push type_o = new Type "function"
-  type_i.nest_list.push new Type "bool"
-  ret
-
-
 # Прим. Это система типов eth
 # каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
 @default_var_hash_gen = ()->
@@ -22,17 +13,18 @@ create_assert_func = ()->
       ret.field_hash.data   = new Type "bytes"
       ret
     )()
-    now : new Type "uint"
-    require : create_assert_func()
-    assert  : create_assert_func()
-    revert  : create_assert_func()
+    now     : new Type "uint"
+    require : new Type "function2_pure<function<bool>,function<>>"
+    require2: new Type "function2_pure<function<bool, string>,function<>>"
+    assert  : new Type "function2_pure<function<bool>,function<>>"
+    revert  : new Type "function2_pure<function<string>,function<>>"
   }
 
 array_field_hash =
   "length": new Type "uint"
   "push"  : (type)->
     ret = new Type "function2_pure<function<>,function<>>"
-    ret.nest_list[0].nest_list.push type
+    ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
 address_field_hash =
@@ -40,40 +32,47 @@ address_field_hash =
   "transfer": new Type "function2_pure<function2<uint>,function2<>>" # throws on false
 
 @default_type_hash_gen = ()->
-  {
+  ret = {
     bool    : true
-    int     : true
-    uint    : true
     array   : true
     string  : true
     address : true
   }
+  
+  for type in config.any_int_type_list
+    ret[type] = true
+  
+  ret
 
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
   BOOL_NOT : [
     ["bool", "bool"]
   ]
-  BIT_NOT : [
-    ["uint", "uint"]
-    ["int", "int"]
-  ]
-  MINUS : [
-    ["int", "int"]
-  ]
+  BIT_NOT : []
+  MINUS   : []
 }
+
 # ###################################################################################################
 #    type table
 # ###################################################################################################
-for v in "ADD SUB MUL POW".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = [
-    ["uint", "uint", "uint"]
-  ]
-for v in "EQ NE GT LT GTE LTE".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = [
-    ["int", "int", "bool"]
-    ["uint", "uint", "bool"]
-  ]
+do ()=>
+  for type in config.any_int_type_list
+    @un_op_ret_type_hash_list.BIT_NOT.push [type, type]
+  
+  for type in config.int_type_list
+    @un_op_ret_type_hash_list.MINUS.push [type, type]
+    
+  for v in "ADD SUB MUL POW".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type in config.uint_type_list
+      list.push [type, type, type]
+  
+  for v in "EQ NE GT LT GTE LTE".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type in config.any_int_type_list
+      list.push [type, type, "bool"]
+
 # ###################################################################################################
 
 class Ti_context
@@ -145,22 +144,33 @@ is_not_a_type = (type)->
 
 is_composite_type = (type)->
   type.main in ["array", "tuple", "map", "struct"]
+
+is_defined_number_type = (type)->
+  # TODO better check
+  /^u?int\d{0,3}$/.test type.main
   
+
 @gen = (ast_tree, opt)->
   change_count = 0
-  type_spread_left = (a_type, b_type)->
+  type_spread_left = (a_type, b_type, touch_counter=true)->
+    return a_type if !b_type
     if !a_type and b_type
       a_type = b_type.clone()
-      change_count++
+      change_count++ if touch_counter
     else if is_not_a_type(a_type) and !is_not_a_type(b_type)
       if a_type.main == "number"
-        # TODO all other numeric types
-        unless b_type.main in ["int", "uint"]
+        unless is_defined_number_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
       else
         throw new Error "unknown is_not_a_type spread case"
       a_type = b_type.clone()
-      change_count++
+      change_count++ if touch_counter
+    else if !is_not_a_type(a_type) and is_not_a_type(b_type)
+      # will check, but not spread
+      if b_type.main == "number"
+        unless is_defined_number_type a_type
+          throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
+      # p "NOTE Reverse spread collision detected", new Error "..."
     else
       return a_type if a_type.cmp b_type
       
@@ -177,7 +187,7 @@ is_composite_type = (type)->
         for idx in [0 ... a_type.nest_list.length]
           inner_a = a_type.nest_list[idx]
           inner_b = b_type.nest_list[idx]
-          new_inner_a = type_spread_left inner_a, inner_b
+          new_inner_a = type_spread_left inner_a, inner_b, touch_counter
           a_type.nest_list[idx] = new_inner_a
         
         # TODO struct? but we don't need it? (field_hash)
@@ -189,12 +199,13 @@ is_composite_type = (type)->
     
     return a_type
   
-  type_spread_right = (a_type, b_type)->
-    type_spread_left b_type, a_type
-    
-  type_spread_both = (a, b)->
-    type_spread_left a_type, b_type
-    type_spread_left b_type, a_type
+  # type_spread_right = (a_type, b_type, touch_counter=true)->
+  #   type_spread_left b_type, a_type, touch_counter
+  # 
+  # type_spread_both = (a, b, touch_counter=true)->
+  #   type_spread_left a_type, b_type, touch_counter
+  #   type_spread_left b_type, a_type, touch_counter
+  
   
   
   # phase 1 bottom-to-top walk + type reference
@@ -207,6 +218,7 @@ is_composite_type = (type)->
         root.type = type_spread_left root.type, ctx.check_id root.name
       
       when "Const"
+        p "Const #{root.type}"
         root.type
       
       when "Bin_op"
@@ -342,7 +354,7 @@ is_composite_type = (type)->
         if typeof field_type == "function"
           field_type = field_type root.t.type
         
-        root.type = field_type
+        root.type = type_spread_left root.type, field_type
         root.type
       
       when "Fn_call"
@@ -355,7 +367,7 @@ is_composite_type = (type)->
         
         for arg in root.arg_list
           walk arg, ctx
-        root.type = root_type.nest_list[1].nest_list[offset]
+        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
@@ -364,8 +376,13 @@ is_composite_type = (type)->
         null
       
       when "Var_decl"
+        p "Var_decl #{root.type}"
         if root.assign_value
+          p "root.assign_value.type = #{root.assign_value.type}"
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          p "root.assign_value.type = #{root.assign_value.type}"
           walk root.assign_value, ctx
+          p "root.assign_value.type = #{root.assign_value.type}"
         ctx.var_hash[root.name] = root.type
         null
       
@@ -387,7 +404,7 @@ is_composite_type = (type)->
       when "Ret_multi"
         for v,idx in root.t_list
           if is_not_a_type v.type
-            v.type = ctx.parent_fn.type_o.nest_list[idx]
+            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
           else
             expected = ctx.parent_fn.type_o.nest_list[idx]
             real = v.type
@@ -467,27 +484,29 @@ is_composite_type = (type)->
           for v in root.list
             nest_list.push v.type
           
-          if !nest_list.has null
-            root.type = new Type "tuple<>"
-            root.type.nest_list = nest_list
+          type = new Type "tuple<>"
+          type.nest_list = nest_list
+          root.type = type_spread_left root.type, type
         root.type
       
       when "Array_init"
         for v in root.list
           walk v, ctx
         
-        if !root.type
-          nest_type = null
-          for v in root.list
-            continue if !v.type
-            if is_not_a_type v.type
-              nest_type = v.type
-            else
-              # real type
-              nest_type = v.type
-              break
-          
-          root.type = new Type "array<#{nest_type}>"
+        nest_type = null
+        if root.type
+          if root.type.main != "array"
+            throw new Error "Array_init can have only array type"
+          nest_type = root.type.nest_list[0]
+        
+        for v in root.list
+          nest_type = type_spread_left nest_type, v.type
+        
+        for v in root.list
+          v.type = type_spread_left v.type, nest_type
+        
+        type = new Type "array<#{nest_type}>"
+        root.type = type_spread_left root.type, type
         root.type
       
       else
@@ -502,19 +521,19 @@ is_composite_type = (type)->
   # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
   # Прим. спорно. В этом случае надо будет как-то информировать что это phase 2 иначе будет непонятно что привело к этому
   # возможно копипастить меньшее зло, чем потом дебажить непонятно как (т.к. сейчас p можно поставить на stage 1 и stage 2 раздельно)
-  change_count = 0
   walk = (root, ctx)->
     switch root.constructor.name
       # ###################################################################################################
       #    expr
       # ###################################################################################################
       when "Var"
-        root.type = ctx.check_id root.name
+        root.type = type_spread_left root.type, ctx.check_id root.name
       
       when "Const"
         root.type
       
       when "Bin_op"
+        p "Bin_op", root
         bruteforce_a = is_not_a_type root.a.type
         bruteforce_b = is_not_a_type root.b.type
         if bruteforce_a or bruteforce_b
@@ -526,21 +545,21 @@ is_composite_type = (type)->
           switch root.op
             when "ASSIGN"
               if bruteforce_a and !bruteforce_b
-                change_count++
-                root.a.type = root.b.type
+                change_count++ # TODO REMOVE
+                root.a.type = type_spread_left root.a.type, root.b.type
               else if !bruteforce_a and bruteforce_b
-                change_count++
-                root.b.type = root.a.type
+                change_count++ # TODO REMOVE
+                root.b.type = type_spread_left root.b.type, root.a.type
             
             when "INDEX_ACCESS"
               # NOTE we can't infer type of a for now
               if !bruteforce_a and bruteforce_b
                 switch root.a.type?.main
                   when "array"
-                    root.b.type = new Type "uint"
+                    root.b.type = type_spread_left root.b.type, new Type "uint"
                   
                   when "map"
-                    root.b.type = root.a.type.nest_list[0]
+                    root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]
                   
                   else
                     perr "can't type inference INDEX_ACCESS for #{root.a.type}"
@@ -553,13 +572,22 @@ is_composite_type = (type)->
             a_type_list = if bruteforce_a then [] else [root.a.type.toString()]
             b_type_list = if bruteforce_b then [] else [root.b.type.toString()]
             
+            p "bruteforce_a", bruteforce_a
+            p "bruteforce_b", bruteforce_b
+            p "a_type_list", a_type_list
+            p "b_type_list", b_type_list
+            p "list", list
+            
             refined_list = []
             cmp_ret_type = root.type.toString()
+            p "cmp_ret_type = #{cmp_ret_type}"
             for v in list
               continue if cmp_ret_type != v[2]
               a_type_list.push v[0] if bruteforce_a
               b_type_list.push v[1] if bruteforce_b
               refined_list.push v
+            
+            p "refined_list", refined_list
             
             candidate_list = []
             for a_type in a_type_list
@@ -569,11 +597,12 @@ is_composite_type = (type)->
                   continue if a_type != cmp_a_type
                   continue if b_type != cmp_b_type
                   candidate_list.push pair
+            
             if candidate_list.length == 1
-              change_count++
+              change_count++ # TODO REMOVE
               [a_type, b_type] = candidate_list[0]
-              root.a.type = new Type a_type
-              root.b.type = new Type b_type
+              root.a.type = type_spread_left root.a.type, new Type a_type
+              root.b.type = type_spread_left root.b.type, new Type b_type
             # else
               # p "candidate_list=#{candidate_list.length}"
         
@@ -610,7 +639,7 @@ is_composite_type = (type)->
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
-        root.type = field_type
+        root.type = type_spread_left root.type, field_type
         root.type
       
       when "Fn_call"
@@ -624,10 +653,8 @@ is_composite_type = (type)->
         for arg,i in root.arg_list
           walk arg, ctx
           expected_type = root_type.nest_list[0].nest_list[i+offset]
-          if is_not_a_type arg.type
-            change_count++
-            arg.type = expected_type
-        root.type = root_type.nest_list[1].nest_list[offset]
+          arg.type = type_spread_left arg.type, expected_type
+        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
@@ -637,9 +664,7 @@ is_composite_type = (type)->
       
       when "Var_decl"
         if root.assign_value
-          if is_not_a_type root.assign_value.type
-            change_count++
-            root.assign_value.type = root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
         null
@@ -659,7 +684,7 @@ is_composite_type = (type)->
       when "Ret_multi"
         for v,idx in root.t_list
           if is_not_a_type v.type
-            v.type = ctx.parent_fn.type_o.nest_list[idx]
+            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
           else
             expected = ctx.parent_fn.type_o.nest_list[idx]
             real = v.type
@@ -739,27 +764,30 @@ is_composite_type = (type)->
           for v in root.list
             nest_list.push v.type
           
-          if !nest_list.has null
-            root.type = new Type "tuple<>"
-            root.type.nest_list = nest_list
+          type = new Type "tuple<>"
+          type.nest_list = nest_list
+          root.type = type_spread_left root.type, type
+          
         root.type
       
       when "Array_init"
         for v in root.list
           walk v, ctx
         
-        if !root.type
-          nest_type = null
-          for v in root.list
-            continue if !v.type
-            if is_not_a_type v.type
-              nest_type = v.type
-            else
-              # real type
-              nest_type = v.type
-              break
-          
-          root.type = new Type "array<#{nest_type}>"
+        nest_type = null
+        if root.type
+          if root.type.main != "array"
+            throw new Error "Array_init can have only array type"
+          nest_type = root.type.nest_list[0]
+        
+        for v in root.list
+          nest_type = type_spread_left nest_type, v.type
+        
+        for v in root.list
+          v.type = type_spread_left v.type, nest_type
+        
+        type = new Type "array<#{nest_type}>"
+        root.type = type_spread_left root.type, type
         root.type
       
       else
@@ -767,6 +795,7 @@ is_composite_type = (type)->
         perr root
         throw new Error "ti phase 2 unknown node '#{root.constructor.name}'"
   
+  change_count = 0  
   for i in [0 ... 100] # prevent infinite
     walk ast_tree, new Ti_context
     # p "phase 2 ti change_count=#{change_count}" # DEBUG

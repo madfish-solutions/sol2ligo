@@ -1,3 +1,4 @@
+require "fy"
 ###
 TODO rename
   storage           -> storage_type_str
@@ -12,3 +13,15 @@ TODO rename
 @op_list = "opList" # var name
 @fix_underscore = "fx" # prefix var name
 @reserved = "reserved" # prefix var name
+
+@int_type_list = ["int"]
+for i in [8 .. 256] by 8
+  @int_type_list.push "int#{i}"
+
+@uint_type_list = ["uint"]
+for i in [8 .. 256] by 8
+  @uint_type_list.push "uint#{i}"
+
+@any_int_type_list = []
+@any_int_type_list.append @int_type_list
+@any_int_type_list.append @uint_type_list

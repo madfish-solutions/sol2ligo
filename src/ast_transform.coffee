@@ -148,6 +148,25 @@ do ()=>
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
+      when "Fn_call"
+        if root.fn.constructor.name == "Var"
+          if root.fn.name == "require"
+            if root.arg_list.length == 2
+              root.fn.name = "require2"
+        ctx.next_gen root, ctx
+      
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @require_distinguish = (root)->
+    walk root, {walk, next_gen: module.default_walk}
+# ###################################################################################################
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
       when "For3"
         ret = new ast.Scope
         ret.need_nest = false
@@ -669,6 +688,7 @@ do ()=>
 @ligo_pack = (root, opt={})->
   opt.router ?= true
   root = module.var_translate root
+  root = module.require_distinguish root
   root = module.for3_unpack root
   root = module.math_funcs_convert root
   root = module.ass_op_unpack root
