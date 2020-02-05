@@ -34,7 +34,7 @@ walk = null
     ret = if ctx.lvalue
       "#{a}[#{b}]"
     else
-      val = type2default_value ast.type
+      val = type2default_value ast.type, ctx
       "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
@@ -129,7 +129,7 @@ walk = null
         puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
-@type2default_value = type2default_value = (type)->
+@type2default_value = type2default_value = (type, ctx)->
   switch type.main
     when "bool"
       "False"
@@ -147,7 +147,7 @@ walk = null
       "(nil: list(operation))"
     
     when "map"
-      "map end : #{translate_type type}"
+      "map end : #{translate_type type, ctx}"
     
     when "string"
       '""'
@@ -369,7 +369,7 @@ walk = (root, ctx)->
             switch root.fn.name
               when "push"
                 tmp_var = "tmp_#{ctx.tmp_idx++}"
-                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type} = #{t};"
+                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
                 return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
               
               else
@@ -387,7 +387,7 @@ walk = (root, ctx)->
               
               when "built_in_pure_callback"
                 # TODO check balance
-                ret_type = translate_type root.arg_list[0].type
+                ret_type = translate_type root.arg_list[0].type, ctx
                 ret = arg_list[0]
                 op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
                 return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
@@ -427,7 +427,7 @@ walk = (root, ctx)->
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
-        type_jl.push translate_type v
+        type_jl.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
@@ -458,7 +458,7 @@ walk = (root, ctx)->
       else if target_type == "nat"
         "abs(#{t})"
       else if target_type == "address" and t == "0"
-        type2default_value root.target_type
+        type2default_value root.target_type, ctx
       else
         "(#{t} : #{target_type})"
     
@@ -487,7 +487,7 @@ walk = (root, ctx)->
           """
         else
           """
-          const #{name} : #{type} = #{type2default_value root.type}
+          const #{name} : #{type} = #{type2default_value root.type, ctx}
           """
     
     when "Throw"
