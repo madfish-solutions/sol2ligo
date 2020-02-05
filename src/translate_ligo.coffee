@@ -79,22 +79,7 @@ walk = null
     # ###################################################################################################
     when "bool"
       "bool"
-    
-    when "uint"
-      "nat"
-    
-    when "int"
-      "int"
-    
-    when "int8"
-      "int"
-    
-    when "uint8"
-      "nat"
-    
-    when "bytes"
-      "bytes"
-    
+        
     when "string"
       "string"
     
@@ -125,7 +110,13 @@ walk = null
     # when config.storage
     #   config.storage
     else
-      if ctx.type_decl_hash[type.main]
+      if type.main.match /byte[s]?\d{0,2}/
+        "bytes"
+      else if type.main.match /int\d{0,3}/
+        "int"
+      else if type.main.match /nat\d{0,3}/
+        "nat"
+      else if ctx.type_decl_hash[type.main]
         type.main
       else
         ### !pragma coverage-skip-block ###
