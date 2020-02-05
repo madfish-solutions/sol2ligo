@@ -2,6 +2,7 @@ module = @
 Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
+{translate_var_name} = require "./translate_var_name"
 
 # ###################################################################################################
 
@@ -107,7 +108,6 @@ do ()=>
   module.default_walk = out_walk
 
 # ###################################################################################################
-{translate_var_name} = require "./translate_var_name"
 # do not use full version. we need only replace contractStorage
 tweak_translate_var_name = (name)->
   if name == config.contract_storage
@@ -298,12 +298,12 @@ do ()=>
 
 do ()=>
   func2args_struct = (name)->
-    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
     name = name+"_args"
+    name = translate_var_name name, null
     name
   
   func2struct = (name)->
-    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
+    name = translate_var_name name, null
     name = name.capitalize()
     if name.length > 31
       new_name = name.substr 0, 31

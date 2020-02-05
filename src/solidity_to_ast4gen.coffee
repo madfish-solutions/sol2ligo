@@ -167,11 +167,14 @@ walk = (root, ctx)->
       
       ret.inheritance_list = []
       for v in root.baseContracts
+        arg_list = []
         if v.arguments
-          throw new Error "arguments not supported for inheritance for now"
+          for arg in v.arguments
+            arg_list.push walk arg, ctx
+        
         ret.inheritance_list.push {
           name : v.baseName.name
-          # TODO arg_list
+          arg_list
         }
       ret.name = root.name
       for node in root.nodes

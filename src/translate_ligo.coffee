@@ -276,7 +276,7 @@ walk = (root, ctx)->
     when "Var"
       name = root.name
       return "" if name == "this"
-      name = translate_var_name name if root.name_translate
+      name = translate_var_name name, ctx if root.name_translate
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -408,7 +408,7 @@ walk = (root, ctx)->
           
           else
             name = root.fn.name
-            name = translate_var_name name if root.fn.name_translate
+            name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -474,7 +474,7 @@ walk = (root, ctx)->
     
     when "Var_decl"
       name = root.name
-      name = translate_var_name name if root.name_translate
+      name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
       if ctx.current_class
         ctx.contract_var_hash[name] = root
@@ -546,7 +546,7 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v unless idx <= 1 # storage, op_list
+        v = translate_var_name v, ctx unless idx <= 1 # storage, op_list
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -564,7 +564,7 @@ walk = (root, ctx)->
         name = "#{orig_ctx.current_class.name}_#{name}"
       body = walk root.scope, ctx
       """
-      function #{translate_var_name name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{translate_var_name name, ctx} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
@@ -611,7 +611,7 @@ walk = (root, ctx)->
       if root.is_contract or root.is_library
         orig_ctx.storage_sink_list.append field_decl_jl
       else
-        name = translate_var_name root.name
+        name = translate_var_name root.name, ctx
         if field_decl_jl.length
           jl.unshift """
           type #{name} is record
@@ -638,13 +638,14 @@ walk = (root, ctx)->
         # not covered by tests yet
         aux = ""
         if v.type
-          aux = " of #{translate_type v.type, ctx}"
+          type = translate_type v.type, ctx
+          aux = " of #{translate_var_name type, ctx}"
         
         jl.push "| #{v.name}#{aux}"
         # jl.push "| #{v.name}"
       
       """
-      type #{translate_var_name root.name} is
+      type #{translate_var_name root.name, ctx} is
         #{join_list jl, '  '};
       """
     

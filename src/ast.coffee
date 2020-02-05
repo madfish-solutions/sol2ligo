@@ -32,7 +32,15 @@ class @Class_decl
     for k,v of @_prepared_field2type
       ret._prepared_field2type[k] = v.clone()
     
-    ret.inheritance_list = deep_clone @inheritance_list
+    for v in @inheritance_list
+      arg_list = []
+      for arg in v.arg_list
+        arg_list.push arg.clone()
+      
+      ret.inheritance_list.push {
+        name : v.name
+        arg_list
+      }
     
     ret.line  = @line
     ret.pos   = @pos
