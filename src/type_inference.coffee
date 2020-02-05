@@ -538,10 +538,8 @@ is_defined_number_type = (type)->
           switch root.op
             when "ASSIGN"
               if bruteforce_a and !bruteforce_b
-                change_count++ # TODO REMOVE
                 root.a.type = type_spread_left root.a.type, root.b.type
               else if !bruteforce_a and bruteforce_b
-                change_count++ # TODO REMOVE
                 root.b.type = type_spread_left root.b.type, root.a.type
             
             when "INDEX_ACCESS"
@@ -583,7 +581,6 @@ is_defined_number_type = (type)->
                   candidate_list.push pair
             
             if candidate_list.length == 1
-              change_count++ # TODO REMOVE
               [a_type, b_type] = candidate_list[0]
               root.a.type = type_spread_left root.a.type, new Type a_type
               root.b.type = type_spread_left root.b.type, new Type b_type
@@ -785,7 +782,7 @@ is_defined_number_type = (type)->
         perr root
         throw new Error "ti phase 2 unknown node '#{root.constructor.name}'"
   
-  change_count = 0  
+  change_count = 0
   for i in [0 ... 100] # prevent infinite
     walk ast_tree, new Ti_context
     # p "phase 2 ti change_count=#{change_count}" # DEBUG
