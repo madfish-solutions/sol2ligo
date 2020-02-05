@@ -485,6 +485,8 @@ do ()=>
               addmod.op = "MOD"
               addmod.b = root.arg_list[2]
               addmod.a = add
+              
+              perr "WARNING `addmod` translation may compute incorrectly due to possible overflow"
 
               return addmod
             
@@ -498,6 +500,8 @@ do ()=>
               mulmod.op = "MOD"
               mulmod.b = root.arg_list[2]
               mulmod.a = mul
+
+              perr "WARNING `mulmod` translation may compute incorrectly due to possible overflow"
 
               return mulmod
         root
