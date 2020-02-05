@@ -109,11 +109,11 @@ unpack_id_type = (root, ctx)->
       new Type "string"
     
     when "msg"
-      new Type "struct" # fields would be replaced in type inference
+      null # fields would be replaced in type inference
     
     when "bytes", "bytes32"
       new Type "bytes"
-
+    
     else
       # puts root # temp disable
       throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
@@ -479,7 +479,13 @@ walk = (root, ctx)->
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
       unless ret.is_modifier
-        ret.type_o.nest_list = walk_param root.returnParameters, ctx
+        list = walk_param root.returnParameters, ctx
+        if list.length <= 1
+          ret.type_o.nest_list = list
+        else
+          tuple = new Type "tuple<>"
+          tuple.nest_list = list
+          ret.type_o.nest_list.push tuple
       
       scope_prepend_list = []
       if root.returnParameters

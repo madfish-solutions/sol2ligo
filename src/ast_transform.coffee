@@ -3,6 +3,8 @@ Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
 
+# ###################################################################################################
+
 do ()=>
   out_walk = (root, ctx)->
     {walk} = ctx
@@ -76,17 +78,15 @@ do ()=>
         root.scope= walk root.scope,ctx
         root
       
-      # when "For3"
-      #   ### !pragma coverage-skip-block ###
-      #   # NOTE will be wiped in first ligo_pack preprocessor. So will be not covered
-      #   if root.init
-      #     root.init = walk root.init, ctx
-      #   if root.cond
-      #     root.cond = walk root.cond, ctx
-      #   if root.iter
-      #     root.iter = walk root.iter, ctx
-      #   root.scope= walk root.scope, ctx
-      #   root
+      when "For3"
+        if root.init
+          root.init = walk root.init, ctx
+        if root.cond
+          root.cond = walk root.cond, ctx
+        if root.iter
+          root.iter = walk root.iter, ctx
+        root.scope= walk root.scope, ctx
+        root
       
       when "Class_decl"
         root.scope = walk root.scope, ctx
@@ -105,6 +105,44 @@ do ()=>
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
   module.default_walk = out_walk
+
+# ###################################################################################################
+{translate_var_name} = require "./translate_var_name"
+# do not use full version. we need only replace contractStorage
+tweak_translate_var_name = (name)->
+  if name == config.contract_storage
+    translate_var_name name
+  else
+    name
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Var"
+        root.name = tweak_translate_var_name root.name
+        root
+      
+      when "Var_decl"
+        if root.assign_value
+          root.assign_value = walk root.assign_value, ctx
+        root.name = tweak_translate_var_name root.name
+        root
+      
+      when "Fn_decl_multiret"
+        root.scope = walk root.scope, ctx
+        for name,idx in root.arg_name_list
+          root.arg_name_list[idx] = tweak_translate_var_name name
+        root
+      
+      
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @var_translate = (root)->
+    walk root, {walk, next_gen: module.default_walk}
+# ###################################################################################################
 
 do ()=>
   walk = (root, ctx)->
@@ -138,6 +176,8 @@ do ()=>
   @for3_unpack = (root)->
     walk root, {walk, next_gen: module.default_walk}
 
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -160,6 +200,8 @@ do ()=>
   
   @ass_op_unpack = (root)->
     walk root, {walk, next_gen: module.default_walk}
+
+# ###################################################################################################
 
 do ()=>
   walk = (root, ctx)->
@@ -211,6 +253,8 @@ do ()=>
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
     
 
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -231,6 +275,7 @@ do ()=>
     walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
     ctx.router_func_list
 
+# ###################################################################################################
 
 do ()=>
   func2args_struct = (name)->
@@ -401,6 +446,8 @@ do ()=>
   @add_router = (root, ctx)->
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -413,7 +460,9 @@ do ()=>
   
   @placeholder_replace = (root, target_ast)->
     walk root, {walk, next_gen: module.default_walk, target_ast}
-  
+
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -426,7 +475,9 @@ do ()=>
   
   @var_replace = (root, var_name, target_ast)->
     walk root, {walk, next_gen: module.default_walk, var_name, target_ast}
-  
+
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -510,7 +561,9 @@ do ()=>
   
   @inheritance_unpack = (root)->
     walk root, {walk, next_gen: module.default_walk, class_hash: {}}
-  
+
+# ###################################################################################################
+
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -523,14 +576,14 @@ do ()=>
               add.op = "ADD"
               add.a = root.arg_list[0]
               add.b = root.arg_list[1]
-
+              
               addmod = new ast.Bin_op
               addmod.op = "MOD"
               addmod.b = root.arg_list[2]
               addmod.a = add
               
               perr "WARNING `addmod` translation may compute incorrectly due to possible overflow"
-
+              
               return addmod
             
             when "mulmod"
@@ -538,14 +591,14 @@ do ()=>
               mul.op = "MUL"
               mul.a = root.arg_list[0]
               mul.b = root.arg_list[1]
-
+              
               mulmod = new ast.Bin_op
               mulmod.op = "MOD"
               mulmod.b = root.arg_list[2]
               mulmod.a = mul
-
+              
               perr "WARNING `mulmod` translation may compute incorrectly due to possible overflow"
-
+              
               return mulmod
         root
       else
@@ -554,8 +607,7 @@ do ()=>
   @math_funcs_convert = (root, ctx)->
     walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
 
-    
-
+# ###################################################################################################
 
 do ()=>
   fn_apply_modifier = (fn, mod, ctx)->
@@ -612,8 +664,11 @@ do ()=>
   @modifier_unpack = (root)->
     walk root, {walk, next_gen: module.default_walk, modifier_hash: {}}
 
+# ###################################################################################################
+
 @ligo_pack = (root, opt={})->
   opt.router ?= true
+  root = module.var_translate root
   root = module.for3_unpack root
   root = module.math_funcs_convert root
   root = module.ass_op_unpack root

@@ -5,7 +5,6 @@ Type = require "type"
 {
   translate_type
   type2default_value
-  translate_var_name
 } = require "./translate_ligo"
 # ###################################################################################################
 

@@ -115,7 +115,7 @@ describe "translate ligo section", ()->
     type state is record
       reserved__empty_state : int;
     end;
-
+    
     function newKeyword (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const tokenCount : nat = 4n;
@@ -124,7 +124,7 @@ describe "translate ligo section", ()->
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
-
+  
   it "return-tuple", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -140,12 +140,11 @@ describe "translate ligo section", ()->
     type state is record
       reserved__empty_state : int;
     end;
-
+    
     function tupleRet (const reserved__unit : unit) : (nat * bool) is
       block {
         skip
-      } with ((7
-      , True));
+      } with ((7n, True));
     """#"
     make_test text_i, text_o
   
