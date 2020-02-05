@@ -352,3 +352,30 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
+  it "addmulmod", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    contract AddMulMod {
+      function addmulmod() public {
+        uint x = 1;
+        uint y = 2;
+        uint z = 3;
+        uint a = addmod(x,y,z);
+        uint m = mulmod(x,y,z);
+      }
+    }"""#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function addmulmod (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const x : nat = 1n;
+        const y : nat = 2n;
+        const z : nat = 3n;
+        const a : nat = ((x + y) mod z);
+        const m : nat = ((x * y) mod z);
+      } with (opList, contractStorage);
+    """
+    make_test text_i, text_o
