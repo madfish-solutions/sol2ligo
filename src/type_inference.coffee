@@ -199,15 +199,6 @@ is_defined_number_type = (type)->
     
     return a_type
   
-  # type_spread_right = (a_type, b_type, touch_counter=true)->
-  #   type_spread_left b_type, a_type, touch_counter
-  # 
-  # type_spread_both = (a, b, touch_counter=true)->
-  #   type_spread_left a_type, b_type, touch_counter
-  #   type_spread_left b_type, a_type, touch_counter
-  
-  
-  
   # phase 1 bottom-to-top walk + type reference
   walk = (root, ctx)->
     switch root.constructor.name
@@ -218,7 +209,6 @@ is_defined_number_type = (type)->
         root.type = type_spread_left root.type, ctx.check_id root.name
       
       when "Const"
-        p "Const #{root.type}"
         root.type
       
       when "Bin_op"
@@ -287,33 +277,34 @@ is_defined_number_type = (type)->
             break
           
           if !found and !is_not_a_type a
-            can_be_uint = false
+            uint_candidate_list = []
             for tuple in list
-              continue if tuple[0] != "uint"
-              can_be_uint = true
-              break
+              continue if !config.uint_type_list.has tuple[0]
+              uint_candidate_list.push tuple[1]
             
-            can_be_int = false
+            int_candidate_list = []
             for tuple in list
-              continue if tuple[0] != "int"
-              can_be_int = true
-              break
+              continue if !config.int_type_list.has tuple[0]
+              int_candidate_list.push tuple[1]
+            
+            can_be_int  = int_candidate_list.length > 0
+            can_be_uint = uint_candidate_list.length > 0
             
             if can_be_int and can_be_uint
-              perr "NOTE can_be_int and can_be_uint"
+              "skip"
+              # p "NOTE can_be_int and can_be_uint"
             else if can_be_int and !can_be_uint
-              for tuple in list
-                continue if tuple[0] != "int"
-                found = true
-                root.type = type_spread_left root.type, new Type tuple[1]
-                break
+              found = true
+              if int_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type int_candidate_list[0]
+              # else
+                # p "NOTE multiple int_candidate_list"
             else if !can_be_int and can_be_uint
-              
-              for tuple in list
-                continue if tuple[0] != "uint"
-                found = true
-                root.type = type_spread_left root.type, new Type tuple[1]
-                break
+              found = true
+              if uint_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type uint_candidate_list[0]
+              # else
+                # p "NOTE multiple uint_candidate_list"
         
         if !found
           if root.op == "DELETE"
@@ -376,13 +367,9 @@ is_defined_number_type = (type)->
         null
       
       when "Var_decl"
-        p "Var_decl #{root.type}"
         if root.assign_value
-          p "root.assign_value.type = #{root.assign_value.type}"
           root.assign_value.type = type_spread_left root.assign_value.type, root.type
-          p "root.assign_value.type = #{root.assign_value.type}"
           walk root.assign_value, ctx
-          p "root.assign_value.type = #{root.assign_value.type}"
         ctx.var_hash[root.name] = root.type
         null
       
@@ -479,14 +466,21 @@ is_defined_number_type = (type)->
         for v in root.list
           walk v, ctx
         
-        if !root.type
-          nest_list = []
-          for v in root.list
-            nest_list.push v.type
-          
-          type = new Type "tuple<>"
-          type.nest_list = nest_list
-          root.type = type_spread_left root.type, type
+        # -> ret
+        nest_list = []
+        for v in root.list
+          nest_list.push v.type
+        
+        type = new Type "tuple<>"
+        type.nest_list = nest_list
+        root.type = type_spread_left root.type, type
+        
+        # <- ret
+        
+        for v,idx in root.type.nest_list
+          tuple_value = root.list[idx]
+          tuple_value.type = type_spread_left tuple_value.type, v
+        
         root.type
       
       when "Array_init"
@@ -533,7 +527,6 @@ is_defined_number_type = (type)->
         root.type
       
       when "Bin_op"
-        p "Bin_op", root
         bruteforce_a = is_not_a_type root.a.type
         bruteforce_b = is_not_a_type root.b.type
         if bruteforce_a or bruteforce_b
@@ -572,22 +565,13 @@ is_defined_number_type = (type)->
             a_type_list = if bruteforce_a then [] else [root.a.type.toString()]
             b_type_list = if bruteforce_b then [] else [root.b.type.toString()]
             
-            p "bruteforce_a", bruteforce_a
-            p "bruteforce_b", bruteforce_b
-            p "a_type_list", a_type_list
-            p "b_type_list", b_type_list
-            p "list", list
-            
             refined_list = []
             cmp_ret_type = root.type.toString()
-            p "cmp_ret_type = #{cmp_ret_type}"
             for v in list
               continue if cmp_ret_type != v[2]
               a_type_list.push v[0] if bruteforce_a
               b_type_list.push v[1] if bruteforce_b
               refined_list.push v
-            
-            p "refined_list", refined_list
             
             candidate_list = []
             for a_type in a_type_list
@@ -759,15 +743,21 @@ is_defined_number_type = (type)->
         for v in root.list
           walk v, ctx
         
-        if !root.type
-          nest_list = []
-          for v in root.list
-            nest_list.push v.type
-          
-          type = new Type "tuple<>"
-          type.nest_list = nest_list
-          root.type = type_spread_left root.type, type
-          
+        # -> ret
+        nest_list = []
+        for v in root.list
+          nest_list.push v.type
+        
+        type = new Type "tuple<>"
+        type.nest_list = nest_list
+        root.type = type_spread_left root.type, type
+        
+        # <- ret
+        
+        for v,idx in root.type.nest_list
+          tuple_value = root.list[idx]
+          tuple_value.type = type_spread_left tuple_value.type, v
+        
         root.type
       
       when "Array_init"
