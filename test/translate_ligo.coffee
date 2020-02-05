@@ -135,7 +135,6 @@ describe "translate ligo section", ()->
       }
     }
     """#"
-    # TODO following return value has space newline, but I can't figure what causes it
     text_o = """
     type state is record
       reserved__empty_state : int;
