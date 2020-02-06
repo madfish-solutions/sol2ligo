@@ -1,5 +1,6 @@
 config = require "./config"
 Type = require "type"
+require "./type_safe"
 module = @
 
 # Прим. Это система типов eth
@@ -54,7 +55,10 @@ address_field_hash =
   
   ret
 
-@bin_op_ret_type_hash_list = {}
+@bin_op_ret_type_hash_list = {
+  BOOL_AND : [["bool", "bool", "bool"]]
+  BOOL_OR  : [["bool", "bool", "bool"]]
+}
 @un_op_ret_type_hash_list = {
   BOOL_NOT : [
     ["bool", "bool"]
@@ -77,11 +81,25 @@ do ()=>
     @bin_op_ret_type_hash_list[v] = list = []
     for type in config.uint_type_list
       list.push [type, type, type]
+    
+  for v in "BIT_AND BIT_OR".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type in config.uint_type_list
+      list.push [type, type, type]
   
   for v in "EQ NE GT LT GTE LTE".split  /\s+/g
     @bin_op_ret_type_hash_list[v] = list = []
     for type in config.any_int_type_list
       list.push [type, type, "bool"]
+  
+  # special
+  for v in "SHL SHR".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type_main in config.uint_type_list
+      for type_index in config.uint_type_list
+        list.push [type_main, type_index, type_main]
+  
+  return
 
 # ###################################################################################################
 
@@ -277,16 +295,19 @@ is_defined_number_type = (type)->
       
       when "Un_op"
         list = module.un_op_ret_type_hash_list[root.op]
-        a = (walk(root.a, ctx) or "").toString()
+        a = walk(root.a, ctx)
+        
         found = false
         if list
+          a_main = a?.main
           for tuple in list
-            continue if tuple[0] != a
+            if a
+              continue if tuple[0] != a_main
             found = true
             root.type = type_spread_left root.type, new Type tuple[1]
             break
           
-          if !found and !is_not_a_type a
+          if !found and is_not_a_type a
             uint_candidate_list = []
             for tuple in list
               continue if !config.uint_type_list.has tuple[0]
@@ -324,7 +345,7 @@ is_defined_number_type = (type)->
                   return
                 if root.a.a.type?.main == "map"
                   return
-        if !found
+        if !found and a
           throw new Error "unknown un_op=#{root.op} a=#{a}"
         root.type
       
@@ -602,8 +623,59 @@ is_defined_number_type = (type)->
         root.type
       
       when "Un_op"
-        # TODO bruteforce
-        walk(root.a, ctx)
+        list = module.un_op_ret_type_hash_list[root.op]
+        a = walk(root.a, ctx)
+        
+        found = false
+        if list
+          a_main = a?.main
+          for tuple in list
+            if a
+              continue if tuple[0] != a_main
+            found = true
+            root.type = type_spread_left root.type, new Type tuple[1]
+            break
+          
+          if !found and is_not_a_type a
+            uint_candidate_list = []
+            for tuple in list
+              continue if !config.uint_type_list.has tuple[0]
+              uint_candidate_list.push tuple[1]
+            
+            int_candidate_list = []
+            for tuple in list
+              continue if !config.int_type_list.has tuple[0]
+              int_candidate_list.push tuple[1]
+            
+            can_be_int  = int_candidate_list.length > 0
+            can_be_uint = uint_candidate_list.length > 0
+            
+            if can_be_int and can_be_uint
+              "skip"
+              # p "NOTE can_be_int and can_be_uint"
+            else if can_be_int and !can_be_uint
+              found = true
+              if int_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type int_candidate_list[0]
+              # else
+                # p "NOTE multiple int_candidate_list"
+            else if !can_be_int and can_be_uint
+              found = true
+              if uint_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type uint_candidate_list[0]
+              # else
+                # p "NOTE multiple uint_candidate_list"
+        
+        if !found
+          if root.op == "DELETE"
+            if root.a.constructor.name == "Bin_op"
+              if root.a.op == "INDEX_ACCESS"
+                if root.a.a.type?.main == "array"
+                  return
+                if root.a.a.type?.main == "map"
+                  return
+        if !found and a
+          throw new Error "unknown un_op=#{root.op} a=#{a}"
         root.type
       
       when "Field_access"

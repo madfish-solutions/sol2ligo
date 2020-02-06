@@ -355,16 +355,21 @@ walk = (root, ctx)->
       ret
     
     when "TupleExpression"
-      if root.isInlineArray 
+      if root.isInlineArray
         ret = new ast.Array_init
       else
         ret = new ast.Tuple
-
+      
       for v in root.components
         if v?
           ret.list.push walk v, ctx
         else
           ret.list.push null
+      
+      if ret.constructor.name == "Tuple"
+        if ret.list.length == 1
+          ret = ret.list[0]
+      
       ret
     
     when "NewExpression"
