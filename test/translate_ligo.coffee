@@ -108,12 +108,18 @@ describe "translate ligo section", ()->
         uint public time_hours;
         uint public time_weeks;
         uint public time_days;
+        uint public amount_szabo;
+        uint public amount_finney;
+        uint public amount_ether;
 
         function test() public returns (uint) {
             time_minutes = 12 minutes;
             time_hours = 3 weeks;
             time_weeks = 11 hours;
             time_days = 1 days;
+            amount_szabo = 12 szabo;
+            amount_finney = 3 finney;
+            amount_ether = 11 ether;
             return 100 seconds;
         }
     }
@@ -124,6 +130,9 @@ describe "translate ligo section", ()->
       time_hours : nat;
       time_weeks : nat;
       time_days : nat;
+      amount_szabo : nat;
+      amount_finney : nat;
+      amount_ether : nat;
     end;
 
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
@@ -132,6 +141,9 @@ describe "translate ligo section", ()->
         contractStorage.time_hours := 3n * 604800n;
         contractStorage.time_weeks := 11n * 3600n;
         contractStorage.time_days := 1n * 86400n;
+        contractStorage.amount_szabo := 12n;
+        contractStorage.amount_finney := 3n * 1000n;
+        contractStorage.amount_ether := 11n * 1000000n;
       } with (opList, contractStorage, 100n);
 
     """#"

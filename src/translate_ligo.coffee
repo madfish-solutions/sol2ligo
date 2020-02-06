@@ -313,6 +313,12 @@ walk = (root, ctx)->
               "#{root.val}n * 86400n"
             when "weeks"
               "#{root.val}n * 604800n"
+            when "szabo"
+              "#{root.val}n"
+            when "finney"
+              "#{root.val}n * 1000n"
+            when "ether"
+              "#{root.val}n * 1000000n"
             else
               "#{root.val}n"
         
