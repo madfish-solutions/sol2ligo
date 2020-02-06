@@ -19,8 +19,6 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
-  SHR : "LIGO_IMPLEMENT_ME_PLEASE_SHR"
-  SHL : "LIGO_IMPLEMENT_ME_PLEASE_SHL"
   POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
@@ -31,6 +29,8 @@ walk = null
   BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
+  SHR : (a, b)-> "bitwise_lsr(#{a}, #{b})"
+  SHL : (a, b)-> "bitwise_lsl(#{a}, #{b})"
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
