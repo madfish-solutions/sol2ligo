@@ -352,6 +352,14 @@ walk = (root, ctx)->
             else
               throw new Error "unknown array field #{root.name}"
         
+        when "bytes"
+          switch root.name
+            when "length"
+              return "size(#{t})"
+            
+            else
+              throw new Error "unknown array field #{root.name}"
+        
       # else
       if t == "" # this case
         return translate_var_name root.name, ctx
