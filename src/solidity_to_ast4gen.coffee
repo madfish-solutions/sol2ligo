@@ -110,7 +110,13 @@ unpack_id_type = (root, ctx)->
     
     when "msg"
       new Type "struct" # fields would be replaced in type inference
-    
+
+    when "block"
+      new Type "struct" # fields would be replaced in type inference
+
+    when "tx"
+      new Type "struct" # fields would be replaced in type inference
+
     when "bytes", "bytes32"
       new Type "bytes"
 

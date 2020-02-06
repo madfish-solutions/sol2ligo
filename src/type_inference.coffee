@@ -25,6 +25,16 @@ create_assert_func = ()->
       ret.field_hash["data"] = new Type "bytes"
       ret
     )()
+    tx : (()->
+      ret = new Type "struct"
+      ret.field_hash["origin"] = new Type "address"
+      ret
+    )()
+    block : (()->
+      ret = new Type "struct"
+      ret.field_hash["timestamp"] = new Type "uint"
+      ret
+    )()
     now : new Type "uint"
     require :  create_assert_func()
     assert : create_assert_func()
