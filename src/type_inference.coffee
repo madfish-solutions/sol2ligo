@@ -9,7 +9,7 @@ module = @
     msg : (()->
       ret = new Type "struct"
       ret.field_hash.sender = new Type "address"
-      ret.field_hash.value  = new Type "uint"
+      ret.field_hash.value  = new Type "uint256"
       ret.field_hash.data   = new Type "bytes"
       ret
     )()
@@ -20,10 +20,10 @@ module = @
     )()
     block : (()->
       ret = new Type "struct"
-      ret.field_hash["timestamp"] = new Type "uint"
+      ret.field_hash["timestamp"] = new Type "uint256"
       ret
     )()
-    now     : new Type "uint"
+    now     : new Type "uint256"
     require : new Type "function2_pure<function<bool>,function<>>"
     require2: new Type "function2_pure<function<bool, string>,function<>>"
     assert  : new Type "function2_pure<function<bool>,function<>>"
@@ -31,15 +31,15 @@ module = @
   }
 
 array_field_hash =
-  "length": new Type "uint"
+  "length": new Type "uint256"
   "push"  : (type)->
     ret = new Type "function2_pure<function<>,function<>>"
     ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
 address_field_hash =
-  "send"    : new Type "function2_pure<function2<uint>,function2<bool>>"
-  "transfer": new Type "function2_pure<function2<uint>,function2<>>" # throws on false
+  "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
+  "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
 
 @default_type_hash_gen = ()->
   ret = {
@@ -557,7 +557,7 @@ is_defined_number_type = (type)->
               if !bruteforce_a and bruteforce_b
                 switch root.a.type?.main
                   when "array"
-                    root.b.type = type_spread_left root.b.type, new Type "uint"
+                    root.b.type = type_spread_left root.b.type, new Type "uint256"
                   
                   when "map"
                     root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]

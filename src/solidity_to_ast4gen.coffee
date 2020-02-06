@@ -1,5 +1,6 @@
-Type = require "type"
-ast = require "./ast"
+config= require "./config"
+Type  = require "type"
+ast   = require "./ast"
 
 bin_op_map =
   "+"   : "ADD"
@@ -65,7 +66,15 @@ walk_type = (root, ctx)->
     return new Type root
   switch root.nodeType
     when "ElementaryTypeName"
-      new Type root.name
+      switch root.name
+        when "uint"
+          new Type "uint256"
+        
+        when "int"
+          new Type "int256"
+        
+        else
+          new Type root.name
     
     when "UserDefinedTypeName"
       new Type root.name
@@ -89,7 +98,16 @@ unpack_id_type = (root, ctx)->
   switch root.typeString
     when "bool"
       new Type "bool"
-        
+    
+    when "uint"
+      new Type "uint256"
+    
+    when "int"
+      new Type "int256"
+    
+    when "byte", "bytes"
+      new Type "bytes1"
+    
     when "address"
       new Type "address"
     
@@ -106,12 +124,12 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if root.typeString.match /^(byte|bytes\d{0,2})$/
-        new Type "bytes"
-      else if root.typeString.match /^uint\d{0,3}$/
-        new Type "uint"
-      else if root.typeString.match /^int\d{0,3}$/
-        new Type "int"
+      if root.typeString.match /^bytes\d{1,2}$/
+        new Type root.typeString
+      else if config.uint_type_list.has root.typeString
+        new Type root.typeString
+      else if config.int_type_list.has root.typeString
+        new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 

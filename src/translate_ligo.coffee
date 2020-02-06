@@ -39,7 +39,7 @@ walk = null
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if ast.a.type.main == "uint" and ast.b.type.main == "uint"
+    if config.uint_type_list.has(ast.a.type.main) and config.uint_type_list.has(ast.b.type.main)
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -50,7 +50,7 @@ walk = null
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
-    if ast.type and ast.type.main == "uint"
+    if ast.type and config.uint_type_list.has ast.type.main
       "abs(not (#{a}))"
     else
       "not (#{a})"
@@ -120,9 +120,9 @@ walk = null
         type.main
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if type.main.match /^uint\d{0,3}$/
+      else if config.uint_type_list.has type.main
         "nat"
-      else if type.main.match /^int\d{0,3}$/
+      else if config.int_type_list.has type.main
         "int"
       else
         ### !pragma coverage-skip-block ###
@@ -130,15 +130,15 @@ walk = null
         throw new Error("unknown solidity type '#{type}'")
 
 @type2default_value = type2default_value = (type, ctx)->
+  if config.uint_type_list.has type.main
+    return "0n"
+  
+  if config.int_type_list.has type.main
+    return "0"
+  
   switch type.main
     when "bool"
       "False"
-    
-    when "uint"
-      "0n"
-    
-    when "int"
-      "0"
     
     when "address"
       "(#{JSON.stringify config.default_address} : address)"
@@ -291,6 +291,10 @@ walk = (root, ctx)->
       if !root.type
         puts root
         throw new Error "Can't type inference"
+      
+      if config.uint_type_list.has root.type.main
+        return "#{root.val}n"
+      
       switch root.type.main
         when "bool"
           switch root.val
@@ -300,12 +304,6 @@ walk = (root, ctx)->
               "False"
             else
               throw new Error "can't translate bool constant '#{root.val}'"
-        
-        when "uint"
-          "#{root.val}n"
-        
-        when "uint8"
-          "#{root.val}n"
         
         when "string"
           JSON.stringify root.val
