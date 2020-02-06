@@ -25,3 +25,7 @@ for i in [8 .. 256] by 8
 @any_int_type_list = []
 @any_int_type_list.append @int_type_list
 @any_int_type_list.append @uint_type_list
+
+@bytes_type_list = []
+for i in [1 .. 32]
+  @bytes_type_list.push "bytes#{i}"

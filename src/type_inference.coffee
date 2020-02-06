@@ -38,6 +38,9 @@ array_field_hash =
     ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
+bytes_field_hash =
+  "length": new Type "uint256"
+
 address_field_hash =
   "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
   "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
@@ -45,12 +48,16 @@ address_field_hash =
 @default_type_hash_gen = ()->
   ret = {
     bool    : true
+    bytes   : true
     array   : true
     string  : true
     address : true
   }
   
   for type in config.any_int_type_list
+    ret[type] = true
+  
+  for type in config.bytes_type_list
     ret[type] = true
   
   ret
@@ -359,6 +366,9 @@ is_defined_number_type = (type)->
         switch root_type.main
           when "array"
             field_hash = array_field_hash
+          
+          when "bytes"
+            field_hash = bytes_field_hash
           
           when "address"
             field_hash = address_field_hash
@@ -688,6 +698,9 @@ is_defined_number_type = (type)->
         switch root_type.main
           when "array"
             field_hash = array_field_hash
+          
+          when "bytes"
+            field_hash = bytes_field_hash
           
           when "address"
             field_hash = address_field_hash
