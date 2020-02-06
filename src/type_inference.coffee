@@ -2,81 +2,77 @@ config = require "./config"
 Type = require "type"
 module = @
 
-create_assert_func = ()->
-  # TODO new Type "function2<function<bool>,function<>>"
-  ret = new Type "function2_pure"
-  ret.nest_list.push type_i = new Type "function"
-  ret.nest_list.push type_o = new Type "function"
-  type_i.nest_list.push "bool"
-  ret
-
-
 # Прим. Это система типов eth
 # каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
 @default_var_hash_gen = ()->
   {
     msg : (()->
       ret = new Type "struct"
-      ret.field_hash["sender"] = new Type "address"
-      # отдельная специальная олимпиада после type_inference делать еще один ast transform
-      # найти всех использующих этот тип, и перевести каскадно на tez
-      # ret.field_hash["value"] = new Type "tez"
-      ret.field_hash["value"] = new Type "uint"
-      ret.field_hash["data"] = new Type "bytes"
+      ret.field_hash.sender = new Type "address"
+      ret.field_hash.value  = new Type "uint"
+      ret.field_hash.data   = new Type "bytes"
       ret
     )()
-    now : new Type "uint"
-    require :  create_assert_func()
-    assert : create_assert_func()
-    revert : create_assert_func()
+    now     : new Type "uint"
+    require : new Type "function2_pure<function<bool>,function<>>"
+    require2: new Type "function2_pure<function<bool, string>,function<>>"
+    assert  : new Type "function2_pure<function<bool>,function<>>"
+    revert  : new Type "function2_pure<function<string>,function<>>"
   }
 
 array_field_hash =
   "length": new Type "uint"
   "push"  : (type)->
     ret = new Type "function2_pure<function<>,function<>>"
-    ret.nest_list[0].nest_list.push type
+    ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
 address_field_hash =
-  "send": new Type "function2_pure<function2<uint>,function2<bool>>"
+  "send"    : new Type "function2_pure<function2<uint>,function2<bool>>"
   "transfer": new Type "function2_pure<function2<uint>,function2<>>" # throws on false
 
 @default_type_hash_gen = ()->
-  {
+  ret = {
     bool    : true
-    int     : true
-    uint    : true
     array   : true
     string  : true
     address : true
   }
+  
+  for type in config.any_int_type_list
+    ret[type] = true
+  
+  ret
 
 @bin_op_ret_type_hash_list = {}
 @un_op_ret_type_hash_list = {
   BOOL_NOT : [
     ["bool", "bool"]
   ]
-  BIT_NOT : [
-    ["uint", "uint"]
-    ["int", "int"]
-  ]
-  MINUS : [
-    ["int", "int"]
-  ]
+  BIT_NOT : []
+  MINUS   : []
 }
+
 # ###################################################################################################
 #    type table
 # ###################################################################################################
-for v in "ADD SUB MUL POW".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = [
-    ["uint", "uint", "uint"]
-  ]
-for v in "EQ NE GT LT GTE LTE".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = [
-    ["int", "int", "bool"]
-    ["uint", "uint", "bool"]
-  ]
+do ()=>
+  for type in config.any_int_type_list
+    @un_op_ret_type_hash_list.BIT_NOT.push [type, type]
+  
+  for type in config.int_type_list
+    @un_op_ret_type_hash_list.MINUS.push [type, type]
+    
+  for v in "ADD SUB MUL POW".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type in config.uint_type_list
+      list.push [type, type, type]
+  
+  for v in "EQ NE GT LT GTE LTE".split  /\s+/g
+    @bin_op_ret_type_hash_list[v] = list = []
+    for type in config.any_int_type_list
+      list.push [type, type, "bool"]
+
 # ###################################################################################################
 
 class Ti_context
@@ -146,7 +142,63 @@ class_prepare = (root, ctx)->
 is_not_a_type = (type)->
   !type or type.main == "number"
 
+is_composite_type = (type)->
+  type.main in ["array", "tuple", "map", "struct"]
+
+is_defined_number_type = (type)->
+  # TODO better check
+  /^u?int\d{0,3}$/.test type.main
+  
+
 @gen = (ast_tree, opt)->
+  change_count = 0
+  type_spread_left = (a_type, b_type, touch_counter=true)->
+    return a_type if !b_type
+    if !a_type and b_type
+      a_type = b_type.clone()
+      change_count++ if touch_counter
+    else if is_not_a_type(a_type) and !is_not_a_type(b_type)
+      if a_type.main == "number"
+        unless is_defined_number_type b_type
+          throw new Error "can't spread '#{b_type}' to '#{a_type}'"
+      else
+        throw new Error "unknown is_not_a_type spread case"
+      a_type = b_type.clone()
+      change_count++ if touch_counter
+    else if !is_not_a_type(a_type) and is_not_a_type(b_type)
+      # will check, but not spread
+      if b_type.main == "number"
+        unless is_defined_number_type a_type
+          throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
+      # p "NOTE Reverse spread collision detected", new Error "..."
+    else
+      return a_type if a_type.cmp b_type
+      
+      if is_composite_type a_type
+        if !is_composite_type b_type
+          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+        # composite
+        if a_type.main != b_type.main
+          throw new Error "spread composite collision '#{a_type}' '#{b_type}'. Reason: composite container mismatch"
+        
+        if a_type.nest_list.length != b_type.nest_list.length
+          throw new Error "spread composite collision '#{a_type}' '#{b_type}'. Reason: nest_list length mismatch"
+        
+        for idx in [0 ... a_type.nest_list.length]
+          inner_a = a_type.nest_list[idx]
+          inner_b = b_type.nest_list[idx]
+          new_inner_a = type_spread_left inner_a, inner_b, touch_counter
+          a_type.nest_list[idx] = new_inner_a
+        
+        # TODO struct? but we don't need it? (field_hash)
+      else
+        if is_composite_type b_type
+          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+        # scalar
+        throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
+    
+    return a_type
+  
   # phase 1 bottom-to-top walk + type reference
   walk = (root, ctx)->
     switch root.constructor.name
@@ -154,7 +206,7 @@ is_not_a_type = (type)->
       #    expr
       # ###################################################################################################
       when "Var"
-        root.type = ctx.check_id root.name
+        root.type = type_spread_left root.type, ctx.check_id root.name
       
       when "Const"
         root.type
@@ -170,41 +222,41 @@ is_not_a_type = (type)->
             continue if tuple[0] != a
             continue if tuple[1] != b
             found = true
-            root.type = new Type tuple[2]
+            root.type = type_spread_left root.type, new Type tuple[2]
         
         # extra cases
         if !found
           # may produce invalid result
           if root.op == "ASSIGN"
-            root.type = root.a.type
+            root.type = type_spread_left root.type, root.a.type
             found = true
           else if root.op in ["EQ", "NE"]
-            root.type = new Type "bool"
+            root.type = type_spread_left root.type, new Type "bool"
             found = true
           else if root.op == "INDEX_ACCESS"
             switch root.a.type.main
               when "string"
-                root.type = new Type "string"
+                root.type = type_spread_left root.type, new Type "string"
                 found = true
               
               when "map"
                 key = root.a.type.nest_list[0]
                 if is_not_a_type root.b.type
-                  root.b.type = key
+                  root.b.type = type_spread_left root.b.type, key
                 else if !key.cmp root.b.type
                   throw new Error("bad index access to '#{root.a.type}' with index '#{root.b.type}'")
-                root.type = root.a.type.nest_list[1]
+                root.type = type_spread_left root.type, root.a.type.nest_list[1]
                 found = true
               
               when "array"
-                root.type = root.a.type.nest_list[0]
+                root.type = type_spread_left root.type, root.a.type.nest_list[0]
                 found = true
               
               # when "hash"
-                # root.type = root.a.type.nest_list[0]
+                # root.type = type_spread_left root.type, root.a.type.nest_list[0]
                 # found = true
               # when "hash_int"
-                # root.type = root.a.type.nest_list[0]
+                # root.type = type_spread_left root.type, root.a.type.nest_list[0]
                 # found = true
         
         # NOTE only fire warning on bruteforce fail
@@ -221,37 +273,38 @@ is_not_a_type = (type)->
           for tuple in list
             continue if tuple[0] != a
             found = true
-            root.type = new Type tuple[1]
+            root.type = type_spread_left root.type, new Type tuple[1]
             break
           
           if !found and !is_not_a_type a
-            can_be_uint = false
+            uint_candidate_list = []
             for tuple in list
-              continue if tuple[0] != "uint"
-              can_be_uint = true
-              break
+              continue if !config.uint_type_list.has tuple[0]
+              uint_candidate_list.push tuple[1]
             
-            can_be_int = false
+            int_candidate_list = []
             for tuple in list
-              continue if tuple[0] != "int"
-              can_be_int = true
-              break
+              continue if !config.int_type_list.has tuple[0]
+              int_candidate_list.push tuple[1]
+            
+            can_be_int  = int_candidate_list.length > 0
+            can_be_uint = uint_candidate_list.length > 0
             
             if can_be_int and can_be_uint
-              p "NOTE can_be_int and can_be_uint"
+              "skip"
+              # p "NOTE can_be_int and can_be_uint"
             else if can_be_int and !can_be_uint
-              for tuple in list
-                continue if tuple[0] != "int"
-                found = true
-                root.type = new Type tuple[1]
-                break
+              found = true
+              if int_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type int_candidate_list[0]
+              # else
+                # p "NOTE multiple int_candidate_list"
             else if !can_be_int and can_be_uint
-              
-              for tuple in list
-                continue if tuple[0] != "uint"
-                found = true
-                root.type = new Type tuple[1]
-                break
+              found = true
+              if uint_candidate_list.length == 1
+                root.type = type_spread_left root.type, new Type uint_candidate_list[0]
+              # else
+                # p "NOTE multiple uint_candidate_list"
         
         if !found
           if root.op == "DELETE"
@@ -283,7 +336,8 @@ is_not_a_type = (type)->
             field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
-          puts field_hash
+          perr root.t
+          perr field_hash
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         
         # Я не понял зачем это
@@ -291,14 +345,20 @@ is_not_a_type = (type)->
         if typeof field_type == "function"
           field_type = field_type root.t.type
         
-        root.type = field_type
+        root.type = type_spread_left root.type, field_type
         root.type
       
       when "Fn_call"
         root_type = walk root.fn, ctx
+        
+        if root_type.main == "function2_pure"
+          offset = 0
+        else
+          offset = 2
+        
         for arg in root.arg_list
           walk arg, ctx
-        root.type = root_type.nest_list[0].nest_list[0]
+        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
@@ -308,6 +368,7 @@ is_not_a_type = (type)->
       
       when "Var_decl"
         if root.assign_value
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
         null
@@ -330,12 +391,15 @@ is_not_a_type = (type)->
       when "Ret_multi"
         for v,idx in root.t_list
           if is_not_a_type v.type
-            v.type = ctx.parent_fn.type_o.nest_list[idx]
+            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
           else
             expected = ctx.parent_fn.type_o.nest_list[idx]
             real = v.type
             if !expected.cmp real
-              throw new Error "Ret_multi type mismatch expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+              perr root
+              perr "fn_type=#{ctx.parent_fn.type_o}"
+              perr v
+              throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
           
           walk v, ctx
         null
@@ -397,13 +461,51 @@ is_not_a_type = (type)->
       
       when "New"
         root.type
-
-      when "Tuple", "Array_init"
-        root.list
+      
+      when "Tuple"
+        for v in root.list
+          walk v, ctx
         
+        # -> ret
+        nest_list = []
+        for v in root.list
+          nest_list.push v.type
+        
+        type = new Type "tuple<>"
+        type.nest_list = nest_list
+        root.type = type_spread_left root.type, type
+        
+        # <- ret
+        
+        for v,idx in root.type.nest_list
+          tuple_value = root.list[idx]
+          tuple_value.type = type_spread_left tuple_value.type, v
+        
+        root.type
+      
+      when "Array_init"
+        for v in root.list
+          walk v, ctx
+        
+        nest_type = null
+        if root.type
+          if root.type.main != "array"
+            throw new Error "Array_init can have only array type"
+          nest_type = root.type.nest_list[0]
+        
+        for v in root.list
+          nest_type = type_spread_left nest_type, v.type
+        
+        for v in root.list
+          v.type = type_spread_left v.type, nest_type
+        
+        type = new Type "array<#{nest_type}>"
+        root.type = type_spread_left root.type, type
+        root.type
+      
       else
         ### !pragma coverage-skip-block ###
-        puts root
+        perr root
         throw new Error "ti phase 1 unknown node '#{root.constructor.name}'"
   walk ast_tree, new Ti_context
   
@@ -413,14 +515,13 @@ is_not_a_type = (type)->
   # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
   # Прим. спорно. В этом случае надо будет как-то информировать что это phase 2 иначе будет непонятно что привело к этому
   # возможно копипастить меньшее зло, чем потом дебажить непонятно как (т.к. сейчас p можно поставить на stage 1 и stage 2 раздельно)
-  change_count = 0
   walk = (root, ctx)->
     switch root.constructor.name
       # ###################################################################################################
       #    expr
       # ###################################################################################################
       when "Var"
-        root.type = ctx.check_id root.name
+        root.type = type_spread_left root.type, ctx.check_id root.name
       
       when "Const"
         root.type
@@ -437,21 +538,19 @@ is_not_a_type = (type)->
           switch root.op
             when "ASSIGN"
               if bruteforce_a and !bruteforce_b
-                change_count++
-                root.a.type = root.b.type
+                root.a.type = type_spread_left root.a.type, root.b.type
               else if !bruteforce_a and bruteforce_b
-                change_count++
-                root.b.type = root.a.type
+                root.b.type = type_spread_left root.b.type, root.a.type
             
             when "INDEX_ACCESS"
               # NOTE we can't infer type of a for now
               if !bruteforce_a and bruteforce_b
                 switch root.a.type?.main
                   when "array"
-                    root.b.type = new Type "uint"
+                    root.b.type = type_spread_left root.b.type, new Type "uint"
                   
                   when "map"
-                    root.b.type = root.a.type.nest_list[0]
+                    root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]
                   
                   else
                     perr "can't type inference INDEX_ACCESS for #{root.a.type}"
@@ -480,11 +579,11 @@ is_not_a_type = (type)->
                   continue if a_type != cmp_a_type
                   continue if b_type != cmp_b_type
                   candidate_list.push pair
+            
             if candidate_list.length == 1
-              change_count++
               [a_type, b_type] = candidate_list[0]
-              root.a.type = new Type a_type
-              root.b.type = new Type b_type
+              root.a.type = type_spread_left root.a.type, new Type a_type
+              root.b.type = type_spread_left root.b.type, new Type b_type
             # else
               # p "candidate_list=#{candidate_list.length}"
         
@@ -521,7 +620,7 @@ is_not_a_type = (type)->
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
-        root.type = field_type
+        root.type = type_spread_left root.type, field_type
         root.type
       
       when "Fn_call"
@@ -535,10 +634,8 @@ is_not_a_type = (type)->
         for arg,i in root.arg_list
           walk arg, ctx
           expected_type = root_type.nest_list[0].nest_list[i+offset]
-          if is_not_a_type arg.type
-            change_count++
-            arg.type = expected_type
-        root.type = root_type.nest_list[1].nest_list[offset]
+          arg.type = type_spread_left arg.type, expected_type
+        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
@@ -548,9 +645,7 @@ is_not_a_type = (type)->
       
       when "Var_decl"
         if root.assign_value
-          if is_not_a_type root.assign_value.type
-            change_count++
-            root.assign_value.type = root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
         null
@@ -568,8 +663,18 @@ is_not_a_type = (type)->
         null
       
       when "Ret_multi"
-        # TODO match return type
-        for v in root.t_list
+        for v,idx in root.t_list
+          if is_not_a_type v.type
+            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
+          else
+            expected = ctx.parent_fn.type_o.nest_list[idx]
+            real = v.type
+            if !expected.cmp real
+              perr root
+              perr "fn_type=#{ctx.parent_fn.type_o}"
+              perr v
+              throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+          
           walk v, ctx
         null
       
@@ -595,6 +700,7 @@ is_not_a_type = (type)->
         complex_type.nest_list.push root.type_o
         ctx.var_hash[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
+        ctx_nest.parent_fn = root
         for name,k in root.arg_name_list
           type = root.type_i.nest_list[k]
           ctx_nest.var_hash[name] = type
@@ -629,15 +735,54 @@ is_not_a_type = (type)->
       
       when "New"
         root.type
-
-      when "Tuple", "Array_init"
-        root.list
+      
+      when "Tuple"
+        for v in root.list
+          walk v, ctx
+        
+        # -> ret
+        nest_list = []
+        for v in root.list
+          nest_list.push v.type
+        
+        type = new Type "tuple<>"
+        type.nest_list = nest_list
+        root.type = type_spread_left root.type, type
+        
+        # <- ret
+        
+        for v,idx in root.type.nest_list
+          tuple_value = root.list[idx]
+          tuple_value.type = type_spread_left tuple_value.type, v
+        
+        root.type
+      
+      when "Array_init"
+        for v in root.list
+          walk v, ctx
+        
+        nest_type = null
+        if root.type
+          if root.type.main != "array"
+            throw new Error "Array_init can have only array type"
+          nest_type = root.type.nest_list[0]
+        
+        for v in root.list
+          nest_type = type_spread_left nest_type, v.type
+        
+        for v in root.list
+          v.type = type_spread_left v.type, nest_type
+        
+        type = new Type "array<#{nest_type}>"
+        root.type = type_spread_left root.type, type
+        root.type
       
       else
         ### !pragma coverage-skip-block ###
-        puts root
+        perr root
         throw new Error "ti phase 2 unknown node '#{root.constructor.name}'"
   
+  change_count = 0
   for i in [0 ... 100] # prevent infinite
     walk ast_tree, new Ti_context
     # p "phase 2 ti change_count=#{change_count}" # DEBUG

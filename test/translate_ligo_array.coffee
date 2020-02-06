@@ -181,8 +181,8 @@ describe "translate ligo section", ()->
       block {
         const temp : map(nat, nat) = map
           0n -> abs(1);
-          1n -> 2;
-          2n -> 3;
+          1n -> 2n;
+          2n -> 3n;
         end;
       } with (opList, contractStorage);
     """

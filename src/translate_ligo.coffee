@@ -34,7 +34,7 @@ walk = null
     ret = if ctx.lvalue
       "#{a}[#{b}]"
     else
-      val = type2default_value ast.type
+      val = type2default_value ast.type, ctx
       "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
@@ -79,22 +79,7 @@ walk = null
     # ###################################################################################################
     when "bool"
       "bool"
-    
-    when "uint"
-      "nat"
-    
-    when "int"
-      "int"
-    
-    when "int8"
-      "int"
-    
-    when "uint8"
-      "nat"
-    
-    when "bytes"
-      "bytes"
-    
+        
     when "string"
       "string"
     
@@ -112,6 +97,12 @@ walk = null
       # "list(#{nest})"
       "map(nat, #{nest})"
     
+    when "tuple"
+      list = []
+      for v in type.nest_list
+        list.push translate_type v, ctx
+      "(#{list.join ' * '})"
+    
     when "map"
       key   = translate_type type.nest_list[0], ctx
       value = translate_type type.nest_list[1], ctx
@@ -127,12 +118,18 @@ walk = null
     else
       if ctx.type_decl_hash[type.main]
         type.main
+      else if type.main.match /^byte[s]?\d{0,2}$/
+        "bytes"
+      else if type.main.match /^uint\d{0,3}$/
+        "nat"
+      else if type.main.match /^int\d{0,3}$/
+        "int"
       else
         ### !pragma coverage-skip-block ###
         puts ctx.type_decl_hash
         throw new Error("unknown solidity type '#{type}'")
 
-@type2default_value = type2default_value = (type)->
+@type2default_value = type2default_value = (type, ctx)->
   switch type.main
     when "bool"
       "False"
@@ -150,7 +147,7 @@ walk = null
       "(nil: list(operation))"
     
     when "map"
-      "map end : #{translate_type type}"
+      "map end : #{translate_type type, ctx}"
     
     when "string"
       '""'
@@ -158,96 +155,8 @@ walk = null
     else
       ### !pragma coverage-skip-block ###
       throw new Error("unknown solidity type '#{type}'")
-# ###################################################################################################
-#    translate_var_name
-# ###################################################################################################
-reserved_hash =
-  # https://gitlab.com/ligolang/ligo/blob/dev/src/passes/operators/operators.ml
-  "get_force"       : true
-  "get_chain_id"    : true
-  "transaction"     : true
-  "get_contract"    : true
-  "get_entrypoint"  : true
-  "size"            : true
-  "int"             : true
-  "abs"             : true
-  "is_nat"          : true
-  "amount"          : true
-  "balance"         : true
-  "now"             : true
-  "unit"            : true
-  "source"          : true
-  "sender"          : true
-  "failwith"        : true
-  "bitwise_or"      : true
-  "bitwise_and"     : true
-  "bitwise_xor"     : true
-  "string_concat"   : true
-  "string_slice"    : true
-  "crypto_check"    : true
-  "crypto_hash_key" : true
-  "bytes_concat"    : true
-  "bytes_slice"     : true
-  "bytes_pack"      : true
-  "bytes_unpack"    : true
-  "set_empty"       : true
-  "set_mem"         : true
-  "set_add"         : true
-  "set_remove"      : true
-  "set_iter"        : true
-  "set_fold"        : true
-  "list_iter"       : true
-  "list_fold"       : true
-  "list_map"        : true
-  "map_iter"        : true
-  "map_map"         : true
-  "map_fold"        : true
-  "map_remove"      : true
-  "map_update"      : true
-  "map_get"         : true
-  "map_mem"         : true
-  "sha_256"         : true
-  "sha_512"         : true
-  "blake2b"         : true
-  "cons"            : true
-  "EQ"              : true
-  "NEQ"             : true
-  "NEG"             : true
-  "ADD"             : true
-  "SUB"             : true
-  "TIMES"           : true
-  "DIV"             : true
-  "MOD"             : true
-  "NOT"             : true
-  "AND"             : true
-  "OR"              : true
-  "GT"              : true
-  "GE"              : true
-  "LT"              : true
-  "LE"              : true
-  "CONS"            : true
-  "address"         : true
-  "self_address"    : true
-  "implicit_account": true
-  "set_delegate"    : true
-  "to"              : true
-  "args"            : true
-  # note not reserved, but we don't want collide with types
-  
-  "map"             : true
 
-reserved_hash[config.contract_storage] = true
-reserved_hash[config.op_list] = true
-
-@translate_var_name = translate_var_name = (name)->
-  if reserved_hash[name]
-    "#{config.reserved}__#{name}"
-  else
-    if name[0] == "_"
-      "#{config.fix_underscore}_"+name
-    else
-      # first letter should be lowercase
-      name.substr(0,1).toLowerCase() + name.substr 1
+{translate_var_name} = require "./translate_var_name"
 # ###################################################################################################
 #    special id, field access
 # ###################################################################################################
@@ -460,7 +369,7 @@ walk = (root, ctx)->
             switch root.fn.name
               when "push"
                 tmp_var = "tmp_#{ctx.tmp_idx++}"
-                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type} = #{t};"
+                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
                 return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
               
               else
@@ -478,7 +387,7 @@ walk = (root, ctx)->
               
               when "built_in_pure_callback"
                 # TODO check balance
-                ret_type = translate_type root.arg_list[0].type
+                ret_type = translate_type root.arg_list[0].type, ctx
                 ret = arg_list[0]
                 op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
                 return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
@@ -488,7 +397,7 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "assert"
+          when "require", "require2", "assert"
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
             return "if #{cond} then {skip} else failwith(#{str})"
@@ -518,7 +427,7 @@ walk = (root, ctx)->
       
       type_jl = []
       for v in root.fn.type.nest_list[1].nest_list
-        type_jl.push translate_type v
+        type_jl.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
@@ -549,7 +458,7 @@ walk = (root, ctx)->
       else if target_type == "nat"
         "abs(#{t})"
       else if target_type == "address" and t == "0"
-        type2default_value root.target_type
+        type2default_value root.target_type, ctx
       else
         "(#{t} : #{target_type})"
     
@@ -578,7 +487,7 @@ walk = (root, ctx)->
           """
         else
           """
-          const #{name} : #{type} = #{type2default_value root.type}
+          const #{name} : #{type} = #{type2default_value root.type, ctx}
           """
     
     when "Throw"
@@ -764,14 +673,14 @@ walk = (root, ctx)->
         """
         #{translated_type}(#{args})
         """
-
+    
     when "Tuple"
       #TODO does this even work?
       arg_list = []
       for v in root.list
         arg_list.push walk v, ctx
       "(#{arg_list.join ', '})"
-
+    
     when "Array_init"
       arg_list = []
       for v in root.list
