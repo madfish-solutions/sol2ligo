@@ -29,8 +29,8 @@ walk = null
   BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
-  SHR : (a, b)-> "bitwise_lsr(#{a}, #{b})"
-  SHL : (a, b)-> "bitwise_lsl(#{a}, #{b})"
+  SHR     : (a, b)-> "bitwise_lsr(#{a}, #{b})"
+  SHL     : (a, b)-> "bitwise_lsl(#{a}, #{b})"
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
