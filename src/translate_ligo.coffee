@@ -163,6 +163,8 @@ walk = null
 spec_id_trans_hash =
   "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.sender": "sender"
+  "tx.origin" : "source"
+  "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.value" : "(amount / 1mutez)"
 
 # ###################################################################################################

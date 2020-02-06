@@ -99,8 +99,14 @@ unpack_id_type = (root, ctx)->
     when "msg"
       null # fields would be replaced in type inference
     
+    when "block"
+      null # fields would be replaced in type inference
+    
+    when "tx"
+      null # fields would be replaced in type inference
+    
     else
-      if root.typeString.match /^byte[s]?\d{0,2}$/
+      if root.typeString.match /^(byte|bytes\d{0,2})$/
         new Type "bytes"
       else if root.typeString.match /^uint\d{0,3}$/
         new Type "uint"
