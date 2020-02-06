@@ -19,6 +19,9 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
+  SHR : "LIGO_IMPLEMENT_ME_PLEASE_SHR"
+  SHL : "LIGO_IMPLEMENT_ME_PLEASE_SHL"
+  POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -55,6 +58,10 @@ walk = null
     else
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
+  RET_INC : (a, ctx)->
+    perr "RET_INC can have not fully correct implementation"
+    ctx.sink_list.push "#{a} := #{a} + 1"
+    "(#{a} - 1)"
   
   DELETE : (a, ctx, ast)->
     if ast.a.constructor.name != "Bin_op"
@@ -146,7 +153,7 @@ walk = null
     when "built_in_op_list"
       "(nil: list(operation))"
     
-    when "map"
+    when "map", "array"
       "map end : #{translate_type type, ctx}"
     
     when "string"

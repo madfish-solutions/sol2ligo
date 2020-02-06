@@ -65,6 +65,7 @@ address_field_hash =
   ]
   BIT_NOT : []
   MINUS   : []
+  RET_INC : []
 }
 
 # ###################################################################################################
@@ -76,6 +77,9 @@ do ()=>
   
   for type in config.int_type_list
     @un_op_ret_type_hash_list.MINUS.push [type, type]
+  
+  for type in config.any_int_type_list
+    @un_op_ret_type_hash_list.RET_INC.push [type, type]
     
   for v in "ADD SUB MUL POW".split  /\s+/g
     @bin_op_ret_type_hash_list[v] = list = []
@@ -93,7 +97,7 @@ do ()=>
       list.push [type, type, "bool"]
   
   # special
-  for v in "SHL SHR".split  /\s+/g
+  for v in "SHL SHR POW".split  /\s+/g
     @bin_op_ret_type_hash_list[v] = list = []
     for type_main in config.uint_type_list
       for type_index in config.uint_type_list
