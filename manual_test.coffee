@@ -30,11 +30,12 @@ process_file = (file)->
       p "FLAG need_prevent_deploy"
   
   if argv.full
-    new_ast = ast_transform.ligo_pack new_ast, {
+    opt = {
       router  : argv.router
     }
+    new_ast = ast_transform.ligo_pack new_ast, opt
     new_ast = type_inference new_ast
-    code = translate new_ast
+    code = translate new_ast, opt
     if argv.print
       puts code
     

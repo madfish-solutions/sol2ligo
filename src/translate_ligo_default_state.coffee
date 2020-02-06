@@ -5,7 +5,6 @@ Type = require "type"
 {
   translate_type
   type2default_value
-  translate_var_name
 } = require "./translate_ligo"
 # ###################################################################################################
 
@@ -13,14 +12,17 @@ class @Gen_context
   next_gen : null
   var_hash : {}
   contract_hash : {}
+  type_decl_hash: {}
   
   constructor:()->
     @var_hash = {}
-    @contract_hash = {}
+    @contract_hash  = {}
+    @type_decl_hash = {}
   
   mk_nest_contract : (name)->
     t = new module.Gen_context
     @contract_hash[name] = t.var_hash
+    obj_set t.type_decl_hash, @type_decl_hash
     t
 
 last_bracket_state = false
@@ -39,16 +41,21 @@ walk = (root, ctx)->
     
     when "Var_decl"
       ctx.var_hash[root.name] = {
-        type  : translate_type root.type
-        value : type2default_value root.type
+        type  : translate_type root.type, ctx
+        value : type2default_value root.type, ctx
       }
       "nothing"
     
     when "Class_decl"
       return if root.need_skip
+      ctx.type_decl_hash[root.name] = root
       if root.is_contract
         ctx = ctx.mk_nest_contract(root.name)
       walk root.scope, ctx
+    
+    when "Enum_decl"
+      ctx.type_decl_hash[root.name] = root
+      "nothing"
     
     else
       if ctx.next_gen?
@@ -68,8 +75,8 @@ walk = (root, ctx)->
     if 0 == h_count v
       type = new Type "uint"
       v[config.empty_state] = {
-        type  : translate_type type
-        value : type2default_value type
+        type  : translate_type type, ctx
+        value : type2default_value type, ctx
       }
   
   if !opt.convert_to_string

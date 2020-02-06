@@ -16,8 +16,6 @@ describe "translate ligo section", ()->
       bool  public value_bool  ;
       int   public value_int   ;
       uint  public value_uint  ;
-      int8  public value_int8  ;
-      uint8 public value_uint8 ;
       address public value_address;
       string  public value_string;
       
@@ -29,10 +27,54 @@ describe "translate ligo section", ()->
       value_bool : bool;
       value_int : int;
       value_uint : nat;
-      value_int8 : int;
-      value_uint8 : nat;
       value_address : address;
       value_string : string;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        skip
+      } with (opList, contractStorage);
+    
+    """
+    make_test text_i, text_o
+  it "extended types", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Basic_types {
+        int8 public value_int8;
+        int16 public value_int16;
+        int160 public value_int160;
+        int256 public value_int256;
+        uint8 public value_uint8;
+        uint16 public value_uint16;
+        uint160 public value_uint160;
+        uint256 public value_uint256;
+        byte public value_byte;
+        bytes public value_bytes;
+        bytes8 public value_bytes8;
+        bytes16 public value_bytes16;
+        bytes32 public value_bytes32;
+
+        function test() public {}
+    }
+    """
+    text_o = """
+    type state is record
+      value_int8 : int;
+      value_int16 : int;
+      value_int160 : int;
+      value_int256 : int;
+      value_uint8 : nat;
+      value_uint16 : nat;
+      value_uint160 : nat;
+      value_uint256 : nat;
+      value_byte : bytes;
+      value_bytes : bytes;
+      value_bytes8 : bytes;
+      value_bytes16 : bytes;
+      value_bytes32 : bytes;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is

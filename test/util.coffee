@@ -34,13 +34,13 @@ fs                  = require "fs"
       
       """
     
-    if fs.existsSync "ligo_tmp_log"
-      fs.unlinkSync "ligo_tmp_log"
+    if fs.existsSync "ligo_tmp_.log"
+      fs.unlinkSync "ligo_tmp.log"
     try
-      execSync "ligo compile-contract test.ligo main > ./ligo_tmp_log", {stdio: "inherit"}
+      execSync "ligo compile-contract test.ligo main > ./ligo_tmp.log", {stdio: "inherit"}
     catch err
       perr text_o_real
-      perr fs.readFileSync "./ligo_tmp_log", "utf-8"
+      perr fs.readFileSync "./ligo_tmp.log", "utf-8"
       throw err
       
   return

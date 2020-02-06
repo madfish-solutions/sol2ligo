@@ -162,4 +162,28 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
-  # TODO array<address> index access for default value test
+  it "inline-array", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+        
+    contract InlineArray {
+      function inlineArray() public {
+        uint[3] memory temp = [uint(1),2,3];
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function inlineArray (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const temp : map(nat, nat) = map
+          0n -> abs(1);
+          1n -> 2n;
+          2n -> 3n;
+        end;
+      } with (opList, contractStorage);
+    """
+    make_test text_i, text_o

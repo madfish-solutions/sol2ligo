@@ -145,6 +145,7 @@ class @Comment
 
 class @Tuple
   list : []
+  type : null
   line : 0
   pos  : 0
   
@@ -155,6 +156,7 @@ class @Tuple
     ret = new module.Tuple
     for v in @list
       ret.list.push v.clone()
+    ret.type  = @type.clone()
     ret.line  = @line
     ret.pos   = @pos
     ret
