@@ -205,28 +205,36 @@ describe "translate ligo section", ()->
     
     contract Globals {
       address public sender;
+      address public source;
       uint public value;
       uint public time;
+      uint public timestamp;
       
       function test() public payable {
         sender = msg.sender;
+        source = tx.origin;
         value = msg.value;
         time = now;
+        timestamp = block.timestamp;
       }
     }
     """
     text_o = """
     type state is record
       #{config.reserved}__sender : address;
+      #{config.reserved}__source : address;
       value : nat;
       time : nat;
+      timestamp : nat;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.#{config.reserved}__sender := sender;
+        contractStorage.#{config.reserved}__source := source;
         contractStorage.value := (amount / 1mutez);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
+        contractStorage.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (opList, contractStorage);
     
     """#"
