@@ -190,7 +190,7 @@ describe "translate ligo real contracts section", ()->
     
     (* EventDefinition OwnershipTransferred *)
     
-    (* modifier onlyOwner removed *)
+    (* modifier onlyOwner inlined *)
     
     type owner_args is record
       #{config.reserved}__empty_state : int;
