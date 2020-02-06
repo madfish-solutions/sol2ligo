@@ -247,6 +247,7 @@ walk = (root, ctx)->
       ret = new ast.Const
       ret.type  = new Type root.kind
       ret.val   = root.value
+      ret.subdenomination = root.subdenomination
       ret
     
     when "VariableDeclaration"

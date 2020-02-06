@@ -302,7 +302,19 @@ walk = (root, ctx)->
               throw new Error "can't translate bool constant '#{root.val}'"
         
         when "uint"
-          "#{root.val}n"
+          switch root.subdenomination
+            when "seconds"
+              "#{root.val}n"
+            when "minutes"
+              "#{root.val}n * 60n"
+            when "hours"
+              "#{root.val}n * 3600n"
+            when "days"
+              "#{root.val}n * 86400n"
+            when "weeks"
+              "#{root.val}n * 604800n"
+            else
+              "#{root.val}n"
         
         when "uint8"
           "#{root.val}n"

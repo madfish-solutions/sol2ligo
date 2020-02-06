@@ -99,6 +99,44 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o
 
+  it "constants", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Const_types {
+        uint public time_minutes;
+        uint public time_hours;
+        uint public time_weeks;
+        uint public time_days;
+
+        function test() public returns (uint) {
+            time_minutes = 12 minutes;
+            time_hours = 3 weeks;
+            time_weeks = 11 hours;
+            time_days = 1 days;
+            return 100 seconds;
+        }
+    }
+    """#"
+    text_o = """
+    type state is record
+      time_minutes : nat;
+      time_hours : nat;
+      time_weeks : nat;
+      time_days : nat;
+    end;
+
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+      block {
+        contractStorage.time_minutes := 12n * 60n;
+        contractStorage.time_hours := 3n * 604800n;
+        contractStorage.time_weeks := 11n * 3600n;
+        contractStorage.time_days := 1n * 86400n;
+      } with (opList, contractStorage, 100n);
+
+    """#"
+    make_test text_i, text_o
+
   it "new-keyword", ()->
     text_i = """
     pragma solidity ^0.5.11;
