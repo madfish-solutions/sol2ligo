@@ -1,6 +1,7 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+module.warning_counter = 0
 # ###################################################################################################
 #    *_op
 # ###################################################################################################
@@ -311,6 +312,11 @@ walk = (root, ctx)->
               "False"
             else
               throw new Error "can't translate bool constant '#{root.val}'"
+        
+        when "number"
+          perr "WARNING number constant passed to translation stage. That's type inference mistake"
+          module.warning_counter++
+          root.val
         
         when "string"
           JSON.stringify root.val

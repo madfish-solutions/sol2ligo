@@ -62,12 +62,12 @@ address_field_hash =
   ret
 
 @bin_op_ret_type_hash_list = {
-  BOOL_AND : [["bool", "bool", "bool"]]
-  BOOL_OR  : [["bool", "bool", "bool"]]
-  ASSIGN   : [] # only cases a != b
+  BOOL_AND: [["bool", "bool", "bool"]]
+  BOOL_OR : [["bool", "bool", "bool"]]
+  ASSIGN  : [] # only cases a != b
 }
 @un_op_ret_type_hash_list = {
-  BOOL_NOT : [
+  BOOL_NOT: [
     ["bool", "bool"]
   ]
   BIT_NOT : []
@@ -75,10 +75,10 @@ address_field_hash =
   RET_INC : []
 }
 
-for v in "ADD SUB MUL POW".split  /\s+/g
+for v in "ADD SUB MUL DIV MOD POW".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = []
 
-for v in "BIT_AND BIT_OR".split  /\s+/g
+for v in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = []
 
 for v in "EQ NE GT LT GTE LTE".split  /\s+/g
@@ -101,12 +101,12 @@ do ()=>
   for type in config.any_int_type_list
     @un_op_ret_type_hash_list.RET_INC.push [type, type]
     
-  for op in "ADD SUB MUL POW".split  /\s+/g
+  for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]
-    for type in config.uint_type_list
+    for type in config.any_int_type_list
       list.push [type, type, type]
     
-  for op in "BIT_AND BIT_OR".split  /\s+/g
+  for op in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]
     for type in config.uint_type_list
       list.push [type, type, type]
@@ -141,6 +141,7 @@ do ()=>
       for type_int in config.any_int_type_list
         @bin_op_ret_type_hash_list[op].push [type_byte, type_int, "bool"]
         @bin_op_ret_type_hash_list[op].push [type_int, type_byte, "bool"]
+      @bin_op_ret_type_hash_list[op].push [type_byte, type_byte, "bool"]
   
   return
 
@@ -323,59 +324,16 @@ is_defined_number_or_byte_type = (type)->
         root.type
       
       when "Un_op"
-        list = module.un_op_ret_type_hash_list[root.op]
-        a = walk(root.a, ctx)
+        a = walk root.a, ctx
         
-        found = false
-        if list
-          a_main = a?.main
-          for tuple in list
-            if a
-              continue if tuple[0] != a_main
-            found = true
-            root.type = type_spread_left root.type, new Type tuple[1]
-            break
-          
-          if !found and is_not_a_type a
-            uint_candidate_list = []
-            for tuple in list
-              continue if !config.uint_type_hash[tuple[0]]
-              uint_candidate_list.push tuple[1]
-            
-            int_candidate_list = []
-            for tuple in list
-              continue if !config.int_type_hash[tuple[0]]
-              int_candidate_list.push tuple[1]
-            
-            can_be_int  = int_candidate_list.length > 0
-            can_be_uint = uint_candidate_list.length > 0
-            
-            if can_be_int and can_be_uint
-              "skip"
-              # p "NOTE can_be_int and can_be_uint"
-            else if can_be_int and !can_be_uint
-              found = true
-              if int_candidate_list.length == 1
-                root.type = type_spread_left root.type, new Type int_candidate_list[0]
-              # else
-                # p "NOTE multiple int_candidate_list"
-            else if !can_be_int and can_be_uint
-              found = true
-              if uint_candidate_list.length == 1
-                root.type = type_spread_left root.type, new Type uint_candidate_list[0]
-              # else
-                # p "NOTE multiple uint_candidate_list"
+        if root.op == "DELETE"
+          if root.a.constructor.name == "Bin_op"
+            if root.a.op == "INDEX_ACCESS"
+              if root.a.a.type?.main == "array"
+                return root.type
+              if root.a.a.type?.main == "map"
+                return root.type
         
-        if !found
-          if root.op == "DELETE"
-            if root.a.constructor.name == "Bin_op"
-              if root.a.op == "INDEX_ACCESS"
-                if root.a.a.type?.main == "array"
-                  return
-                if root.a.a.type?.main == "map"
-                  return
-        if !found and a
-          throw new Error "unknown un_op=#{root.op} a=#{a}"
         root.type
       
       when "Field_access"
@@ -601,165 +559,188 @@ is_defined_number_or_byte_type = (type)->
             root.type = type_spread_left root.type, root.a.type
             root.a.type = type_spread_left root.a.type, root.type
             root.b.type = type_spread_left root.b.type, root.type
+            return root.type
           
           when "EQ", "NE"
             root.type = type_spread_left root.type, new Type "bool"
             root.a.type = type_spread_left root.a.type, root.b.type
             root.b.type = type_spread_left root.b.type, root.a.type
+            return root.type
           
           when "INDEX_ACCESS"
             switch root.a.type?.main
               when "string"
                 root.b.type = type_spread_left root.b.type, new Type "uint256"
                 root.type = type_spread_left root.type, new Type "string"
+                return root.type
               
               when "map"
                 root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]
                 root.type   = type_spread_left root.type, root.a.type.nest_list[1]
+                return root.type
               
               when "array"
                 root.b.type = type_spread_left root.b.type, new Type "uint256"
                 root.type   = type_spread_left root.type, root.a.type.nest_list[0]
+                return root.type
               
               else
                 if config.bytes_type_hash[root.a.type?.main]
                   root.b.type = type_spread_left root.b.type, new Type "uint256"
                   root.type = type_spread_left root.type, new Type "bytes1"
+                  return root.type
         
-        bruteforce_a    = is_not_a_type root.a.type
-        bruteforce_b    = is_not_a_type root.b.type
-        bruteforce_ret  = is_not_a_type root.type
+        bruteforce_a  = is_not_a_type root.a.type
+        bruteforce_b  = is_not_a_type root.b.type
+        bruteforce_ret= is_not_a_type root.type
         a   = (root.a.type or "").toString()
         b   = (root.b.type or "").toString()
         ret = (root.type   or "").toString()
         
-        if bruteforce_a or bruteforce_b or bruteforce_ret
-          list = module.bin_op_ret_type_hash_list[root.op]
-          if list
-            # filter for fully defined types
-            found_list = []
-            for tuple in list
-              continue if tuple[0] != a   and !bruteforce_a
-              continue if tuple[1] != b   and !bruteforce_b
-              continue if tuple[2] != ret and !bruteforce_ret
-              found_list.push tuple
-            
-            # filter for partially defined types
-            if root.a.type?.main == "number"
-              filter_found_list = []
-              for tuple in found_list
-                continue if !config.any_int_type_hash[tuple[0]]
-                filter_found_list.push tuple
-              
-              found_list = filter_found_list
-            
-            if root.b.type?.main == "number"
-              filter_found_list = []
-              for tuple in found_list
-                continue if !config.any_int_type_hash[tuple[1]]
-                filter_found_list.push tuple
-              
-              found_list = filter_found_list
-            
-            if root.type?.main == "number"
-              filter_found_list = []
-              for tuple in found_list
-                continue if !config.any_int_type_hash[tuple[2]]
-                filter_found_list.push tuple
-              
-              found_list = filter_found_list
-            
-            # ###################################################################################################
-            
-            if found_list.length == 1
-              [a, b, ret] = found_list[0]
-              root.a.type = type_spread_left root.a.type, new Type a
-              root.b.type = type_spread_left root.b.type, new Type b
-              root.type   = type_spread_left root.type,   new Type ret
-            else
-              if bruteforce_a
-                a_type_list = []
-                for tuple in found_list
-                  a_type_list.upush tuple[0]
-                if a_type_list.length == 0
-                  perr "bruteforce stuck bin_op #{root.op} caused a can't be any type"
-                else if a_type_list.length == 1
-                  root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
-              
-              if bruteforce_b
-                b_type_list = []
-                for tuple in found_list
-                  b_type_list.upush tuple[1]
-                if b_type_list.length == 0
-                  perr "bruteforce stuck bin_op #{root.op} caused b can't be any type"
-                else if b_type_list.length == 1
-                  root.b.type = type_spread_left root.b.type, new Type b_type_list[0]
-              
-              if bruteforce_ret
-                ret_type_list = []
-                for tuple in found_list
-                  ret_type_list.upush tuple[2]
-                if ret_type_list.length == 0
-                  perr "bruteforce stuck bin_op #{root.op} caused ret can't be any type"
-                else if ret_type_list.length == 1
-                  root.type = type_spread_left root.type, new Type ret_type_list[0]
+        if !list = module.bin_op_ret_type_hash_list[root.op]
+          throw new Error "unknown bin_op #{root.op}"
+          
+        # filter for fully defined types
+        found_list = []
+        for tuple in list
+          continue if tuple[0] != a   and !bruteforce_a
+          continue if tuple[1] != b   and !bruteforce_b
+          continue if tuple[2] != ret and !bruteforce_ret
+          found_list.push tuple
+        
+        # filter for partially defined types
+        if root.a.type?.main == "number"
+          filter_found_list = []
+          for tuple in found_list
+            continue if !config.any_int_type_hash[tuple[0]]
+            filter_found_list.push tuple
+          
+          found_list = filter_found_list
+        
+        if root.b.type?.main == "number"
+          filter_found_list = []
+          for tuple in found_list
+            continue if !config.any_int_type_hash[tuple[1]]
+            filter_found_list.push tuple
+          
+          found_list = filter_found_list
+        
+        if root.type?.main == "number"
+          filter_found_list = []
+          for tuple in found_list
+            continue if !config.any_int_type_hash[tuple[2]]
+            filter_found_list.push tuple
+          
+          found_list = filter_found_list
+        
+        # ###################################################################################################
+        
+        if found_list.length == 0
+          throw new Error "type inference stuck bin_op #{root.op} invalid a=#{a} b=#{b} ret=#{ret}"
+        else if found_list.length == 1
+          [a, b, ret] = found_list[0]
+          root.a.type = type_spread_left root.a.type, new Type a
+          root.b.type = type_spread_left root.b.type, new Type b
+          root.type   = type_spread_left root.type,   new Type ret
+        else
+          if bruteforce_a
+            a_type_list = []
+            for tuple in found_list
+              a_type_list.upush tuple[0]
+            if a_type_list.length == 0
+              perr "bruteforce stuck bin_op #{root.op} caused a can't be any type"
+            else if a_type_list.length == 1
+              root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+          
+          if bruteforce_b
+            b_type_list = []
+            for tuple in found_list
+              b_type_list.upush tuple[1]
+            if b_type_list.length == 0
+              perr "bruteforce stuck bin_op #{root.op} caused b can't be any type"
+            else if b_type_list.length == 1
+              root.b.type = type_spread_left root.b.type, new Type b_type_list[0]
+          
+          if bruteforce_ret
+            ret_type_list = []
+            for tuple in found_list
+              ret_type_list.upush tuple[2]
+            if ret_type_list.length == 0
+              perr "bruteforce stuck bin_op #{root.op} caused ret can't be any type"
+            else if ret_type_list.length == 1
+              root.type = type_spread_left root.type, new Type ret_type_list[0]
         
         root.type
       
       when "Un_op"
-        list = module.un_op_ret_type_hash_list[root.op]
-        a = walk(root.a, ctx)
+        walk root.a, ctx
         
-        found = false
-        if list
-          a_main = a?.main
-          for tuple in list
-            if a
-              continue if tuple[0] != a_main
-            found = true
-            root.type = type_spread_left root.type, new Type tuple[1]
-            break
+        if root.op == "DELETE"
+          if root.a.constructor.name == "Bin_op"
+            if root.a.op == "INDEX_ACCESS"
+              if root.a.a.type?.main == "array"
+                return root.type
+              if root.a.a.type?.main == "map"
+                return root.type
+        
+        bruteforce_a  = is_not_a_type root.a.type
+        bruteforce_ret= is_not_a_type root.type
+        a   = (root.a.type or "").toString()
+        ret = (root.type   or "").toString()
+        
+        if !list = module.un_op_ret_type_hash_list[root.op]
+          throw new Error "unknown un_op #{root.op}"
+        # filter for fully defined types
+        found_list = []
+        for tuple in list
+          continue if tuple[0] != a   and !bruteforce_a
+          continue if tuple[1] != ret and !bruteforce_ret
+          found_list.push tuple
+        
+        # filter for partially defined types
+        if root.a.type?.main == "number"
+          filter_found_list = []
+          for tuple in found_list
+            continue if !config.any_int_type_hash[tuple[0]]
+            filter_found_list.push tuple
           
-          if !found and is_not_a_type a
-            uint_candidate_list = []
-            for tuple in list
-              continue if !config.uint_type_hash[tuple[0]]
-              uint_candidate_list.push tuple[1]
-            
-            int_candidate_list = []
-            for tuple in list
-              continue if !config.int_type_hash[tuple[0]]
-              int_candidate_list.push tuple[1]
-            
-            can_be_int  = int_candidate_list.length > 0
-            can_be_uint = uint_candidate_list.length > 0
-            
-            if can_be_int and can_be_uint
-              "skip"
-              # p "NOTE can_be_int and can_be_uint"
-            else if can_be_int and !can_be_uint
-              found = true
-              if int_candidate_list.length == 1
-                root.type = type_spread_left root.type, new Type int_candidate_list[0]
-              # else
-                # p "NOTE multiple int_candidate_list"
-            else if !can_be_int and can_be_uint
-              found = true
-              if uint_candidate_list.length == 1
-                root.type = type_spread_left root.type, new Type uint_candidate_list[0]
-              # else
-                # p "NOTE multiple uint_candidate_list"
+          found_list = filter_found_list
         
-        if !found
-          if root.op == "DELETE"
-            if root.a.constructor.name == "Bin_op"
-              if root.a.op == "INDEX_ACCESS"
-                if root.a.a.type?.main == "array"
-                  return
-                if root.a.a.type?.main == "map"
-                  return
-        if !found and a
-          throw new Error "unknown un_op=#{root.op} a=#{a}"
+        if root.type?.main == "number"
+          filter_found_list = []
+          for tuple in found_list
+            continue if !config.any_int_type_hash[tuple[1]]
+            filter_found_list.push tuple
+          
+          found_list = filter_found_list
+        
+        # ###################################################################################################
+        
+        if found_list.length == 0
+          throw new Error "type inference stuck un_op #{root.op} invalid a=#{a} ret=#{ret}"
+        else if found_list.length == 1
+          [a, ret] = found_list[0]
+          root.a.type = type_spread_left root.a.type, new Type a
+          root.type   = type_spread_left root.type,   new Type ret
+        else
+          if bruteforce_a
+            a_type_list = []
+            for tuple in found_list
+              a_type_list.upush tuple[0]
+            if a_type_list.length == 0
+              throw new Error "type inference bruteforce stuck un_op #{root.op} caused a can't be any type"
+            else if a_type_list.length == 1
+              root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+          
+          if bruteforce_ret
+            ret_type_list = []
+            for tuple in found_list
+              ret_type_list.upush tuple[1]
+            if ret_type_list.length == 0
+              throw new Error "type inference bruteforce stuck un_op #{root.op} caused ret can't be any type"
+            else if ret_type_list.length == 1
+              root.type = type_spread_left root.type, new Type ret_type_list[0]
+        
         root.type
       
       when "Field_access"
