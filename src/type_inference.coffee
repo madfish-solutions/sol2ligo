@@ -114,7 +114,15 @@ do ()=>
     list = @bin_op_ret_type_hash_list[op]
     for type in config.any_int_type_list
       list.push [type, type, type]
-    
+  
+  # non-equal types
+  for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
+    list = @bin_op_ret_type_hash_list[op]
+    for type1, idx1 in config.any_int_type_list
+      for type2, idx2 in config.any_int_type_list
+        continue if idx1 >= idx2
+        list.push [type1, type2, type2]
+  
   for op in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]
     for type in config.uint_type_list
@@ -362,9 +370,6 @@ is_defined_number_or_byte_type = (type)->
           when "array"
             field_hash = array_field_hash
           
-          when "bytes"
-            field_hash = bytes_field_hash
-          
           when "address"
             field_hash = address_field_hash
           
@@ -372,8 +377,11 @@ is_defined_number_or_byte_type = (type)->
             field_hash = root_type.field_hash
           
           else
-            class_decl = ctx.check_type root_type.main
-            field_hash = class_decl._prepared_field2type
+            if config.bytes_type_hash[root_type.main]
+              field_hash = bytes_field_hash
+            else
+              class_decl = ctx.check_type root_type.main
+              field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
           perr root.t
@@ -539,7 +547,8 @@ is_defined_number_or_byte_type = (type)->
         for v in root.list
           v.type = type_spread_left v.type, nest_type
         
-        type = new Type "array<#{nest_type}>"
+        type = new Type "array<>"
+        type.nest_list[0] = nest_type
         root.type = type_spread_left root.type, type
         root.type
       
