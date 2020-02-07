@@ -186,6 +186,9 @@ walk = (root, ctx)->
         when "library"
           ret.is_library = true
         
+        when "interface"
+          ret.is_interface = true
+        
         else
           throw new Error "unknown contractKind #{root.contractKind}"
       
