@@ -389,4 +389,31 @@ describe "translate ligo section", ()->
       } with (opList, contractStorage);
     """
     make_test text_i, text_o
-  
+
+  it "un_op", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract UnOpTest {
+        function test1(uint256 u0) internal {
+            uint256 u1 = ~u0;
+            uint256 u2 = ~(~u0);
+            uint256 u3 = ~u0 + u2;
+            uint256 u4 = ~u3 + u2;
+        }
+    }"""#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test1 (const opList : list(operation); const contractStorage : state; const u0 : nat) : (list(operation) * state) is
+      block {
+        const u1 : nat = abs(not (u0));
+        const u2 : nat = abs(not (abs(not (u0))));
+        const u3 : nat = (abs(not (u0)) + u2);
+        const u4 : nat = (abs(not (u3)) + u2);
+      } with (opList, contractStorage);
+    """
+    make_test text_i, text_o
+    
