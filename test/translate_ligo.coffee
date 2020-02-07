@@ -98,6 +98,57 @@ describe "translate ligo section", ()->
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o
+  it "constants", ()->
+      text_i = """
+      pragma solidity ^0.5.11;
+      contract Consttypes {
+          uint256 public timesSeconds;
+          uint256 public timeMinutes;
+          uint256 public timeHours;
+          uint256 public timeWeeks;
+          uint256 public timeDays;
+          uint256 public amountSzabo;
+          uint256 public amountFinney;
+          uint256 public amountEther;
+
+          function test() public {
+              timesSeconds = 100 seconds;
+              timeMinutes = 12 minutes;
+              timeHours = 3 weeks;
+              timeWeeks = 11 hours;
+              timeDays = 1 days;
+              amountSzabo = 12 szabo;
+              amountFinney = 3 finney;
+              amountEther = 11 ether;
+          }
+      }
+      """#"
+      text_o = """
+      type state is record
+        timesSeconds : nat;
+        timeMinutes : nat;
+        timeHours : nat;
+        timeWeeks : nat;
+        timeDays : nat;
+        amountSzabo : nat;
+        amountFinney : nat;
+        amountEther : nat;
+      end;
+
+      function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+        block {
+          contractStorage.timesSeconds := 100n;
+          contractStorage.timeMinutes := (12n * 60n);
+          contractStorage.timeHours := (3n * 604800n);
+          contractStorage.timeWeeks := (11n * 3600n);
+          contractStorage.timeDays := (1n * 86400n);
+          contractStorage.amountSzabo := 12n;
+          contractStorage.amountFinney := (3n * 1000n);
+          contractStorage.amountEther := (11n * 1000000n);
+        } with (opList, contractStorage);
+
+      """#"
+      make_test text_i, text_o
 
   it "new-keyword", ()->
     text_i = """

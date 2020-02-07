@@ -268,7 +268,67 @@ walk = (root, ctx)->
       ret = new ast.Const
       ret.type  = new Type root.kind
       ret.val   = root.value
-      ret
+      switch root.subdenomination
+        when "seconds"
+          ret
+        when "minutes"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 60
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "hours"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 3600
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "days"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 86400
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "weeks"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 604800
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "szabo"
+          ret
+        when "finney"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 1000
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "ether"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 1000000
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        else
+          ret
     
     when "VariableDeclaration"
       ret = new ast.Var_decl
