@@ -24,15 +24,20 @@ module = @
       ret.field_hash["timestamp"] = new Type "uint256"
       ret
     )()
-    now     : new Type "uint256"
-    require : new Type "function2_pure<function<bool>,function<>>"
-    require2: new Type "function2_pure<function<bool, string>,function<>>"
-    assert  : new Type "function2_pure<function<bool>,function<>>"
-    revert  : new Type "function2_pure<function<string>,function<>>"
-    sha256  : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    sha3  : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    keccak256  : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    ripemd160  : new Type "function2_pure<function<bytes>,function<bytes20>>"
+    abi : (()->
+      ret = new Type "struct"
+      ret.field_hash["encodePacked"] = new Type "function2_pure<function<bytes>,function<bytes>>"
+      ret
+    )()
+    now       : new Type "uint256"
+    require   : new Type "function2_pure<function<bool>,function<>>"
+    require2  : new Type "function2_pure<function<bool, string>,function<>>"
+    assert    : new Type "function2_pure<function<bool>,function<>>"
+    revert    : new Type "function2_pure<function<string>,function<>>"
+    sha256    : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    sha3      : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    keccak256 : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    ripemd160 : new Type "function2_pure<function<bytes>,function<bytes20>>"
   }
 
 array_field_hash =
@@ -248,6 +253,16 @@ is_defined_number_or_byte_type = (type)->
       # p "NOTE Reverse spread collision detected", new Error "..."
     else
       return a_type if a_type.cmp b_type
+      # not fully correct, but solidity will wipe all incorrect cases for us
+      if a_type.main == "bytes" and config.bytes_type_hash[b_type.main]
+        return a_type
+      if config.bytes_type_hash[a_type.main] and b_type.main == "bytes"
+        return a_type
+        
+      if a_type.main == "string" and config.bytes_type_hash[b_type.main]
+        return a_type
+      if config.bytes_type_hash[a_type.main] and b_type.main == "string"
+        return a_type
       
       if is_composite_type a_type
         if !is_composite_type b_type
