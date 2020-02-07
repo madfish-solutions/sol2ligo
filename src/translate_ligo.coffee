@@ -34,6 +34,16 @@ string2bytes = (val)->
     return "bytes_pack(unit)"
   ret.join ""
 
+number2bytes = (val, precision = 32)->
+  ret = []
+  for i in [0 ... precision]
+    hex = val & 0xFF
+    ret.push hex.toString(16).rjust 2, "0"
+    val >>= 8
+  ret.push "0x"
+  ret.reverse()
+  ret.join ""
+
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
     if config.bytes_type_hash[ast.a.type.main] and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
@@ -341,7 +351,10 @@ walk = (root, ctx)->
           JSON.stringify root.val
         
         else
-          root.val
+          if config.bytes_type_hash[root.type.main]
+            number2bytes root.val, +root.type.main.replace(/bytes/, '')
+          else
+            root.val
     
     when "Bin_op"
       # TODO lvalue ctx ???
@@ -538,6 +551,8 @@ walk = (root, ctx)->
           val = walk root.assign_value, ctx
           if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
+          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
+            val = number2bytes root.assign_value.val
           """
           const #{name} : #{type} = #{val}
           """

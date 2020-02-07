@@ -111,8 +111,11 @@ unpack_id_type = (root, ctx)->
     when "int"
       new Type "int256"
     
-    when "byte", "bytes"
+    when "byte"
       new Type "bytes1"
+    
+    when "bytes"
+      new Type "bytes"
     
     when "address"
       new Type "address"
