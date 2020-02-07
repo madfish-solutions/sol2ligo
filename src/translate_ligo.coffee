@@ -334,6 +334,9 @@ walk = (root, ctx)->
           module.warning_counter++
           root.val
         
+        when "unsigned_number"
+          "#{root.val}n"
+        
         when "string"
           JSON.stringify root.val
         
