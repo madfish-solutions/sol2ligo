@@ -29,6 +29,10 @@ module = @
     require2: new Type "function2_pure<function<bool, string>,function<>>"
     assert  : new Type "function2_pure<function<bool>,function<>>"
     revert  : new Type "function2_pure<function<string>,function<>>"
+    sha256  : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    sha3  : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    keccak256  : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    ripemd160  : new Type "function2_pure<function<bytes>,function<bytes20>>"
   }
 
 array_field_hash =

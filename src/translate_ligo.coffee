@@ -420,6 +420,14 @@ walk = (root, ctx)->
           when "revert"
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
+
+          when "sha256", "sha3", "keccak256"
+            msg = arg_list[0]
+            return "sha_256(#{msg})"
+
+          when "ripemd160"
+            msg = arg_list[0]
+            return "blake2b(#{msg})"
           
           else
             name = root.fn.name
