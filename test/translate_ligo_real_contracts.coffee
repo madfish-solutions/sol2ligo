@@ -42,7 +42,7 @@ describe "translate ligo real contracts section", ()->
       #{config.reserved}__amount : nat;
     end;
     
-    function #{config.reserved}__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         contractStorage.balances[sender] := 1000000n;
       } with (opList, contractStorage);
@@ -64,7 +64,7 @@ describe "translate ligo real contracts section", ()->
         if (contractStorage.#{config.reserved}__initialized) then block {
           case action of
           | Constructor(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = #{config.reserved}__constructor(opList, contractStorage);
+            const tmp_0 : (list(operation) * state) = constructor(opList, contractStorage);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }
@@ -190,7 +190,7 @@ describe "translate ligo real contracts section", ()->
     
     (* EventDefinition OwnershipTransferred *)
     
-    (* modifier onlyOwner removed *)
+    (* modifier onlyOwner inlined *)
     
     type owner_args is record
       #{config.reserved}__empty_state : int;
@@ -218,7 +218,7 @@ describe "translate ligo real contracts section", ()->
         skip
       } with (opList, contractStorage);
     
-    function #{config.reserved}__constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
         const tmp_0 : (list(operation) * state) = context_constructor(opList, contractStorage);
         opList := tmp_0.0;

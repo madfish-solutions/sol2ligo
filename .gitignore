@@ -1,9 +1,9 @@
 node_modules
 coverage
 lib
-npm-debug.log
 solc-bin
 test.sol
 test.ligo
 test.pp.ligo
-ligo_tmp.log
+*.log
+report.sh

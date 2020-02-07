@@ -273,6 +273,34 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o
   
+  it "crypto fn", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract UnOpTest {
+        function test2(bytes b0) internal {
+            bytes32 h0 = sha256(b0);
+            bytes20 h1 = ripemd160(b0);
+            bytes32 h2 = sha3(b0);
+            bytes32 h3 = keccak256(b0);
+        }
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+
+    function test2 (const opList : list(operation); const contractStorage : state; const b0 : bytes) : (list(operation) * state) is
+      block {
+        const h0 : bytes = sha_256(b0);
+        const h1 : bytes = blake2b(b0);
+        const h2 : bytes = sha_256(b0);
+        const h3 : bytes = sha_256(b0);
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o
+
   it "require 0.4", ()->
     text_i = """
     pragma solidity >=0.4.21;

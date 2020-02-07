@@ -1,5 +1,6 @@
-Type = require "type"
-ast = require "./ast"
+config= require "./config"
+Type  = require "type"
+ast   = require "./ast"
 
 bin_op_map =
   "+"   : "ADD"
@@ -65,7 +66,15 @@ walk_type = (root, ctx)->
     return new Type root
   switch root.nodeType
     when "ElementaryTypeName"
-      new Type root.name
+      switch root.name
+        when "uint"
+          new Type "uint256"
+        
+        when "int"
+          new Type "int256"
+        
+        else
+          new Type root.name
     
     when "UserDefinedTypeName"
       new Type root.name
@@ -89,7 +98,16 @@ unpack_id_type = (root, ctx)->
   switch root.typeString
     when "bool"
       new Type "bool"
-        
+    
+    when "uint"
+      new Type "uint256"
+    
+    when "int"
+      new Type "int256"
+    
+    when "byte", "bytes"
+      new Type "bytes1"
+    
     when "address"
       new Type "address"
     
@@ -106,12 +124,12 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if root.typeString.match /^(byte|bytes\d{0,2})$/
-        new Type "bytes"
-      else if root.typeString.match /^uint\d{0,3}$/
-        new Type "uint"
-      else if root.typeString.match /^int\d{0,3}$/
-        new Type "int"
+      if root.typeString.match /^bytes\d{1,2}$/
+        new Type root.typeString
+      else if config.uint_type_list.has root.typeString
+        new Type root.typeString
+      else if config.int_type_list.has root.typeString
+        new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 
@@ -173,11 +191,14 @@ walk = (root, ctx)->
       
       ret.inheritance_list = []
       for v in root.baseContracts
+        arg_list = []
         if v.arguments
-          throw new Error "arguments not supported for inheritance for now"
+          for arg in v.arguments
+            arg_list.push walk arg, ctx
+        
         ret.inheritance_list.push {
           name : v.baseName.name
-          # TODO arg_list
+          arg_list
         }
       ret.name = root.name
       for node in root.nodes
@@ -247,7 +268,67 @@ walk = (root, ctx)->
       ret = new ast.Const
       ret.type  = new Type root.kind
       ret.val   = root.value
-      ret
+      switch root.subdenomination
+        when "seconds"
+          ret
+        when "minutes"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 60
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "hours"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 3600
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "days"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 86400
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "weeks"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 604800
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "szabo"
+          ret
+        when "finney"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 1000
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        when "ether"
+          mult = new ast.Const
+          mult.type  = new Type root.kind
+          mult.val = 1000000
+          exp = new ast.Bin_op
+          exp.op = bin_op_map["*"]
+          exp.a = ret
+          exp.b = mult
+          exp
+        else
+          ret
     
     when "VariableDeclaration"
       ret = new ast.Var_decl
@@ -334,16 +415,21 @@ walk = (root, ctx)->
       ret
     
     when "TupleExpression"
-      if root.isInlineArray 
+      if root.isInlineArray
         ret = new ast.Array_init
       else
         ret = new ast.Tuple
-
+      
       for v in root.components
         if v?
           ret.list.push walk v, ctx
         else
           ret.list.push null
+      
+      if ret.constructor.name == "Tuple"
+        if ret.list.length == 1
+          ret = ret.list[0]
+      
       ret
     
     when "NewExpression"

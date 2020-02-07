@@ -1,6 +1,7 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+module.warning_counter = 0
 # ###################################################################################################
 #    *_op
 # ###################################################################################################
@@ -19,6 +20,7 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
+  POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -28,6 +30,8 @@ walk = null
   BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
+  SHR     : (a, b)-> "bitwise_lsr(#{a}, #{b})"
+  SHL     : (a, b)-> "bitwise_lsl(#{a}, #{b})"
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
@@ -39,7 +43,7 @@ walk = null
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if ast.a.type.main == "uint" and ast.b.type.main == "uint"
+    if config.uint_type_list.has(ast.a.type.main) and config.uint_type_list.has(ast.b.type.main)
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -50,11 +54,15 @@ walk = null
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
-    if ast.type and ast.type.main == "uint"
+    if ast.type and config.uint_type_list.has ast.type.main
       "abs(not (#{a}))"
     else
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
+  RET_INC : (a, ctx)->
+    perr "RET_INC can have not fully correct implementation"
+    ctx.sink_list.push "#{a} := #{a} + 1"
+    "(#{a} - 1)"
   
   DELETE : (a, ctx, ast)->
     if ast.a.constructor.name != "Bin_op"
@@ -120,9 +128,9 @@ walk = null
         type.main
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if type.main.match /^uint\d{0,3}$/
+      else if config.uint_type_list.has type.main
         "nat"
-      else if type.main.match /^int\d{0,3}$/
+      else if config.int_type_list.has type.main
         "int"
       else
         ### !pragma coverage-skip-block ###
@@ -130,15 +138,15 @@ walk = null
         throw new Error("unknown solidity type '#{type}'")
 
 @type2default_value = type2default_value = (type, ctx)->
+  if config.uint_type_list.has type.main
+    return "0n"
+  
+  if config.int_type_list.has type.main
+    return "0"
+  
   switch type.main
     when "bool"
       "False"
-    
-    when "uint"
-      "0n"
-    
-    when "int"
-      "0"
     
     when "address"
       "(#{JSON.stringify config.default_address} : address)"
@@ -146,7 +154,7 @@ walk = null
     when "built_in_op_list"
       "(nil: list(operation))"
     
-    when "map"
+    when "map", "array"
       "map end : #{translate_type type, ctx}"
     
     when "string"
@@ -278,7 +286,7 @@ walk = (root, ctx)->
     when "Var"
       name = root.name
       return "" if name == "this"
-      name = translate_var_name name if root.name_translate
+      name = translate_var_name name, ctx if root.name_translate
       if ctx.contract_var_hash[name]
         "#{config.contract_storage}.#{name}"
       else
@@ -291,6 +299,10 @@ walk = (root, ctx)->
       if !root.type
         puts root
         throw new Error "Can't type inference"
+      
+      if config.uint_type_list.has root.type.main
+        return "#{root.val}n"
+      
       switch root.type.main
         when "bool"
           switch root.val
@@ -301,11 +313,10 @@ walk = (root, ctx)->
             else
               throw new Error "can't translate bool constant '#{root.val}'"
         
-        when "uint"
-          "#{root.val}n"
-        
-        when "uint8"
-          "#{root.val}n"
+        when "number"
+          perr "WARNING number constant passed to translation stage. That's type inference mistake"
+          module.warning_counter++
+          root.val
         
         when "string"
           JSON.stringify root.val
@@ -340,6 +351,14 @@ walk = (root, ctx)->
       t = walk root.t, ctx
       switch root.t.type.main
         when "array"
+          switch root.name
+            when "length"
+              return "size(#{t})"
+            
+            else
+              throw new Error "unknown array field #{root.name}"
+        
+        when "bytes"
           switch root.name
             when "length"
               return "size(#{t})"
@@ -407,10 +426,18 @@ walk = (root, ctx)->
           when "revert"
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
+
+          when "sha256", "sha3", "keccak256"
+            msg = arg_list[0]
+            return "sha_256(#{msg})"
+
+          when "ripemd160"
+            msg = arg_list[0]
+            return "blake2b(#{msg})"
           
           else
             name = root.fn.name
-            name = translate_var_name name if root.fn.name_translate
+            name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -476,7 +503,7 @@ walk = (root, ctx)->
     
     when "Var_decl"
       name = root.name
-      name = translate_var_name name if root.name_translate
+      name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
       if ctx.current_class
         ctx.contract_var_hash[name] = root
@@ -548,7 +575,7 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v unless idx <= 1 # storage, op_list
+        v = translate_var_name v, ctx unless idx <= 1 # storage, op_list
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -566,7 +593,7 @@ walk = (root, ctx)->
         name = "#{orig_ctx.current_class.name}_#{name}"
       body = walk root.scope, ctx
       """
-      function #{translate_var_name name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{translate_var_name name, ctx} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
@@ -613,7 +640,7 @@ walk = (root, ctx)->
       if root.is_contract or root.is_library
         orig_ctx.storage_sink_list.append field_decl_jl
       else
-        name = translate_var_name root.name
+        name = translate_var_name root.name, ctx
         if field_decl_jl.length
           jl.unshift """
           type #{name} is record
@@ -640,13 +667,14 @@ walk = (root, ctx)->
         # not covered by tests yet
         aux = ""
         if v.type
-          aux = " of #{translate_type v.type, ctx}"
+          type = translate_type v.type, ctx
+          aux = " of #{translate_var_name type, ctx}"
         
         jl.push "| #{v.name}#{aux}"
         # jl.push "| #{v.name}"
       
       """
-      type #{translate_var_name root.name} is
+      type #{translate_var_name root.name, ctx} is
         #{join_list jl, '  '};
       """
     

@@ -73,12 +73,16 @@ reserved_hash =
   # note not reserved, but we don't want collide with types
   
   "map"             : true
+  
+  # WTF
+  "some"            : true
+  
 
 reserved_hash[config.contract_storage] = true
 reserved_hash[config.op_list] = true
 
-@translate_var_name = (name)->
-  if reserved_hash[name]
+@translate_var_name = (name, ctx)->
+  if reserved_hash[name] and name != "constructor"
     "#{config.reserved}__#{name}"
   else
     if name[0] == "_"

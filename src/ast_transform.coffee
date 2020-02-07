@@ -2,6 +2,7 @@ module = @
 Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
+{translate_var_name} = require "./translate_var_name"
 
 # ###################################################################################################
 
@@ -107,7 +108,6 @@ do ()=>
   module.default_walk = out_walk
 
 # ###################################################################################################
-{translate_var_name} = require "./translate_var_name"
 # do not use full version. we need only replace contractStorage
 tweak_translate_var_name = (name)->
   if name == config.contract_storage
@@ -298,12 +298,12 @@ do ()=>
 
 do ()=>
   func2args_struct = (name)->
-    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
     name = name+"_args"
+    name = translate_var_name name, null
     name
   
   func2struct = (name)->
-    name = "#{config.fix_underscore}_#{name}" if name[0] == "_"
+    name = translate_var_name name, null
     name = name.capitalize()
     if name.length > 31
       new_name = name.substr 0, 31
@@ -502,6 +502,9 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Class_decl"
+        is_constructor_name = (name)->
+          name == "constructor" or name == root.name
+        
         root = ctx.next_gen root, ctx
         ctx.class_hash[root.name] = root # store unmodified
         return root if !root.inheritance_list.length # for coverage purposes
@@ -538,7 +541,7 @@ do ()=>
           for v in look_list
             continue if v.constructor.name != "Fn_decl_multiret"
             v = v.clone()
-            if v.name == "constructor"
+            if is_constructor_name v.name
               v.name = "#{parent.name}_constructor"
               v.visibility = "internal"
               need_constuctor = v
@@ -556,14 +559,14 @@ do ()=>
           found_constructor = null
           for v in root.scope.list
             continue if v.constructor.name != "Fn_decl_multiret"
-            continue if v.name != "constructor"
+            continue if !is_constructor_name v.name
             found_constructor = v
             break
           
           # inject constructor call on top of my constructor (create my constructor if not exists)
           
           if !found_constructor
-            root.list.push found_constructor = new ast.Fn_decl_multiret
+            root.scope.list.unshift found_constructor = new ast.Fn_decl_multiret
             found_constructor.name = "constructor"
             found_constructor.type_i = new Type "function"
             found_constructor.type_o = new Type "function"
@@ -662,7 +665,7 @@ do ()=>
           
           # remove node
           ret = new ast.Comment
-          ret.text = "modifier #{root.name} removed"
+          ret.text = "modifier #{root.name} inlined"
           ret
         else
           return root if root.modifier_list.length == 0

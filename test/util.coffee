@@ -7,6 +7,8 @@ translate           = require("../src/translate_ligo").gen
 fs                  = require "fs"
 {execSync}          = require("child_process")
 
+cache_content_hash = {}
+
 @translate_ligo_make_test = (text_i, text_o_expected, opt={})->
   opt.router ?= false
   solidity_ast = ast_gen text_i, silent:true
@@ -22,10 +24,8 @@ fs                  = require "fs"
     # strip known non-working code
     text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, ""
     
-    if opt.router
-      fs.writeFileSync "test.ligo", text_o_real
-    else
-      fs.writeFileSync "test.ligo", """
+    if !opt.router
+      text_o_real = """
       #{text_o_real}
       function main (const action : nat; const contractStorage : state) : (list(operation) * state) is
         block {
@@ -33,6 +33,13 @@ fs                  = require "fs"
         } with (opList, contractStorage);
       
       """
+    
+    if cache_content_hash[text_o_real]
+      puts "LIGO check skipped. Reason: content was already checked"
+      return
+    cache_content_hash[text_o_real] = true
+    
+    fs.writeFileSync "test.ligo", text_o_real
     
     if fs.existsSync "ligo_tmp_.log"
       fs.unlinkSync "ligo_tmp.log"

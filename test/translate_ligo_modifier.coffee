@@ -32,7 +32,7 @@ describe "translate ligo section", ()->
       a : bool;
     end;
     
-    (* modifier lock removed *)
+    (* modifier lock inlined *)
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
       block {
@@ -70,7 +70,7 @@ describe "translate ligo section", ()->
       val : bool;
     end;
     
-    (* modifier greaterThan removed *)
+    (* modifier greaterThan inlined *)
     
     function test (const opList : list(operation); const contractStorage : state; const a : nat) : (list(operation) * state) is
       block {
