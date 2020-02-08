@@ -28,18 +28,18 @@ describe "translate ligo real contracts section", ()->
     """#"
     
     text_o = """
-    type state is record
-      balances : map(address, nat);
-      #{config.reserved}__initialized : bool;
-    end;
-    
     type constructor_args is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     type transfer_args is record
       #{config.reserved}__to : address;
       #{config.reserved}__amount : nat;
+    end;
+    
+    type state is record
+      balances : map(address, nat);
+      #{config.initialized} : bool;
     end;
     
     function constructor (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -61,7 +61,7 @@ describe "translate ligo real contracts section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.reserved}__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | Constructor(match_action) -> block {
             const tmp_0 : (list(operation) * state) = constructor(opList, contractStorage);
@@ -75,7 +75,7 @@ describe "translate ligo real contracts section", ()->
           }
           end;
         } else block {
-          contractStorage.#{config.reserved}__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """#"
@@ -183,30 +183,30 @@ describe "translate ligo real contracts section", ()->
     """#"
     
     text_o = """
-    type state is record
-      #{config.fix_underscore}__owner : address;
-      #{config.reserved}__initialized : bool;
-    end;
-    
-    (* EventDefinition OwnershipTransferred *)
-    
-    (* modifier onlyOwner inlined *)
-    
     type owner_args is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     type isOwner_args is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     type renounceOwnership_args is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     type transferOwnership_args is record
       newOwner : address;
     end;
+    
+    type state is record
+      #{config.fix_underscore}__owner : address;
+      #{config.initialized} : bool;
+    end;
+    
+    (* EventDefinition OwnershipTransferred *)
+    
+    (* modifier onlyOwner inlined *)
     
     function #{config.fix_underscore}__msgSender (const opList : list(operation); const contractStorage : state) : (list(operation) * state * address) is
       block {
@@ -280,7 +280,7 @@ describe "translate ligo real contracts section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.reserved}__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | Owner(match_action) -> block {
             const tmp_0 : (list(operation) * state * address) = owner(opList, contractStorage);
@@ -304,7 +304,7 @@ describe "translate ligo real contracts section", ()->
           }
           end;
         } else block {
-          contractStorage.#{config.reserved}__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """#"

@@ -15,10 +15,6 @@ describe "generate router", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.reserved}__initialized : bool;
-    end;
-    
     type oneArgFunction_args is record
       #{config.reserved}__amount : nat;
     end;
@@ -26,6 +22,10 @@ describe "generate router", ()->
     type twoArgsFunction_args is record
       dest : address;
       #{config.reserved}__amount : nat;
+    end;
+    
+    type state is record
+      #{config.initialized} : bool;
     end;
     
     function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
@@ -45,7 +45,7 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.reserved}__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | OneArgFunction(match_action) -> block {
             const tmp_0 : (list(operation) * state) = oneArgFunction(opList, contractStorage, match_action.#{config.reserved}__amount);
@@ -59,7 +59,7 @@ describe "generate router", ()->
           }
           end;
         } else block {
-          contractStorage.#{config.reserved}__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """
@@ -77,13 +77,13 @@ describe "generate router", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.reserved}__initialized : bool;
-    end;
-    
     type twoArgsFunction_args is record
       dest : address;
       #{config.reserved}__amount : nat;
+    end;
+    
+    type state is record
+      #{config.initialized} : bool;
     end;
     
     function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
@@ -102,7 +102,7 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.reserved}__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | TwoArgsFunction(match_action) -> block {
             const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.#{config.reserved}__amount);
@@ -111,7 +111,7 @@ describe "generate router", ()->
           }
           end;
         } else block {
-          contractStorage.#{config.reserved}__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """
@@ -129,13 +129,13 @@ describe "generate router", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.reserved}__initialized : bool;
-    end;
-    
     type twoArgsFunction_args is record
       dest : address;
       #{config.reserved}__amount : nat;
+    end;
+    
+    type state is record
+      #{config.initialized} : bool;
     end;
     
     function oneArgFunction (const opList : list(operation); const contractStorage : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
@@ -154,7 +154,7 @@ describe "generate router", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.reserved}__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | TwoArgsFunction(match_action) -> block {
             const tmp_0 : (list(operation) * state) = twoArgsFunction(opList, contractStorage, match_action.dest, match_action.#{config.reserved}__amount);
@@ -163,7 +163,7 @@ describe "generate router", ()->
           }
           end;
         } else block {
-          contractStorage.#{config.reserved}__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """

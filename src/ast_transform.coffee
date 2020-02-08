@@ -343,6 +343,7 @@ do ()=>
           for func in ctx.router_func_list
             root.scope.list.push record = new ast.Class_decl
             record.name = func2args_struct func.name
+            record.namespace_name = false
             for value,idx in func.arg_name_list
               continue if idx <= 1 # skip contract_storage, op_list
               record.scope.list.push arg = new ast.Var_decl
@@ -532,7 +533,7 @@ do ()=>
           for i in [inheritance_list.length-1 .. 0] by -1
             v = inheritance_list[i]
             if !class_decl = ctx.class_hash[v.name]
-              throw new Error "can't find parent class #{parent.name}"
+              throw new Error "can't find parent class #{v.name}"
             
             class_decl.need_skip = true
             inheritance_apply_list.push v

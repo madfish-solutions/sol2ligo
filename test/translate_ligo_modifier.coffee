@@ -1,3 +1,4 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")

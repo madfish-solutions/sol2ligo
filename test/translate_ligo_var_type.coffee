@@ -110,7 +110,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -143,7 +143,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -165,7 +165,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -187,7 +187,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -253,7 +253,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -277,7 +277,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      #{config.reserved}__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state; const #{config.reserved}__#{config.contract_storage} : nat) : (list(operation) * state) is

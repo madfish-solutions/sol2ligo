@@ -27,7 +27,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function one (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
@@ -40,7 +40,7 @@ describe "translate ligo section", ()->
         skip
       } with (opList, contractStorage);
     
-    function reserved__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function #{config.reserved}__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);
@@ -69,7 +69,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function ownable (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
@@ -82,7 +82,7 @@ describe "translate ligo section", ()->
         skip
       } with (opList, contractStorage);
     
-    function reserved__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function #{config.reserved}__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
       block {
         skip
       } with (opList, contractStorage);

@@ -25,7 +25,7 @@ describe "translate ligo default state section", ()->
     }
     """
     State = {}
-    State[config.reserved+"__empty_state"] = {
+    State[config.empty_state] = {
       type : "nat"
       value: "0n"
     }
@@ -33,7 +33,7 @@ describe "translate ligo default state section", ()->
       State
     }, """
     record
-      #{config.reserved}__empty_state = 0n;
+      #{config.empty_state} = 0n;
     end
     """
   

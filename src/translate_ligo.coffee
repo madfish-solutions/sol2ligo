@@ -127,7 +127,9 @@ walk = null
     #   config.storage
     else
       if ctx.type_decl_hash[type.main]
-        type.main
+        name = type.main.replace /\./g, "_"
+        name = translate_var_name name, ctx
+        name
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
       else if config.uint_type_list.has type.main
@@ -180,6 +182,7 @@ spec_id_trans_hash =
 # ###################################################################################################
 
 class @Gen_context
+  parent            : null
   next_gen          : null
   
   current_class     : null
@@ -191,6 +194,7 @@ class @Gen_context
   trim_expr         : ""
   storage_sink_list : []
   sink_list         : []
+  type_decl_sink_list: []
   tmp_idx           : 0
   
   constructor:()->
@@ -198,12 +202,15 @@ class @Gen_context
     @contract_var_hash= {}
     @storage_sink_list= []
     @sink_list        = []
+    @type_decl_sink_list= []
   
   mk_nest : ()->
     t = new module.Gen_context
+    t.parent = @
     t.current_class = @current_class
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
+    t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t
 
 last_bracket_state = false
@@ -220,19 +227,32 @@ walk = (root, ctx)->
           
           name = config.storage
           jl.unshift ""
-          if ctx.storage_sink_list.length
-            jl.unshift """
+          if ctx.storage_sink_list.length == 0
+            ctx.storage_sink_list.push "#{config.empty_state} : int;"
+          
+          jl.unshift """
             type #{name} is record
               #{join_list ctx.storage_sink_list, '  '}
             end;
             """
-          else
-            jl.unshift """
-            type #{name} is record
-              #{config.empty_state} : int;
-            end;
-            """
           ctx.storage_sink_list.clear()
+          
+          if ctx.type_decl_sink_list.length
+            type_decl_jl = []
+            for type_decl in ctx.type_decl_sink_list
+              {name, field_decl_jl} = type_decl
+              if field_decl_jl.length == 0
+                field_decl_jl.push "#{config.empty_state} : int;"
+              type_decl_jl.push """
+                type #{name} is record
+                  #{join_list field_decl_jl, '  '}
+                end;
+                
+                """
+            
+            jl.unshift """
+              #{join_list type_decl_jl}
+              """
           
           join_list jl, ""
         
@@ -644,6 +664,11 @@ walk = (root, ctx)->
       return "" if root.need_skip
       orig_ctx = ctx
       ctx.type_decl_hash[root.name] = root
+      prefix = ""
+      if ctx.parent and ctx.current_class and root.namespace_name
+        ctx.parent.type_decl_hash["#{ctx.current_class.name}.#{root.name}"] = root
+        prefix = ctx.current_class.name
+      
       ctx = ctx.mk_nest()
       ctx.current_class = root
       ctx.is_class_scope = true
@@ -662,7 +687,8 @@ walk = (root, ctx)->
             "skip"
           
           when "Class_decl"
-            ctx.sink_list.push walk v, ctx
+            code = walk v, ctx
+            ctx.sink_list.push code if code
           
           when "Comment"
             ctx.sink_list.push walk v, ctx
@@ -692,19 +718,15 @@ walk = (root, ctx)->
       if root.is_contract or root.is_library
         orig_ctx.storage_sink_list.append field_decl_jl
       else
-        name = translate_var_name root.name, ctx
-        if field_decl_jl.length
-          jl.unshift """
-          type #{name} is record
-            #{join_list field_decl_jl, '  '}
-          end;
-          """
-        else
-          jl.unshift """
-          type #{name} is record
-            #{config.empty_state} : int;
-          end;
-          """
+        name = root.name
+        if prefix
+          name = "#{prefix}_#{name}"
+        name = translate_var_name name, ctx
+        
+        ctx.type_decl_sink_list.push {
+          name
+          field_decl_jl
+        }
       
       jl.join "\n\n"
     
