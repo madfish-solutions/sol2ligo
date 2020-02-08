@@ -54,6 +54,7 @@ walk = null
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
+      module.warning_counter++
     if ast.type and config.uint_type_list.has ast.type.main
       "abs(not (#{a}))"
     else
@@ -61,6 +62,7 @@ walk = null
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx)->
     perr "RET_INC can have not fully correct implementation"
+    module.warning_counter++
     ctx.sink_list.push "#{a} := #{a} + 1"
     "(#{a} - 1)"
   
@@ -181,6 +183,7 @@ class @Gen_context
   next_gen          : null
   
   current_class     : null
+  is_class_scope    : false
   lvalue            : false
   type_decl_hash    : {}
   contract_var_hash : {}
@@ -198,6 +201,7 @@ class @Gen_context
   
   mk_nest : ()->
     t = new module.Gen_context
+    t.current_class = @current_class
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t
@@ -426,18 +430,22 @@ walk = (root, ctx)->
           when "revert"
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
-
+          
           when "sha256", "sha3", "keccak256"
             msg = arg_list[0]
             return "sha_256(#{msg})"
-
+          
           when "ripemd160"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           else
             name = root.fn.name
-            name = translate_var_name name, ctx if root.fn.name_translate
+            if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
+              name = "#{ctx.current_class.name}_#{name}"
+              name = translate_var_name name, ctx
+            else
+              name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -461,7 +469,7 @@ walk = (root, ctx)->
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
       if type_jl.length == 0
-        p root
+        perr root
         throw new Error "Bad call of pure function that returns nothing"
       if type_jl.length == 1
         ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
@@ -505,7 +513,7 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
-      if ctx.current_class
+      if ctx.is_class_scope
         ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
@@ -518,6 +526,39 @@ walk = (root, ctx)->
           """
           const #{name} : #{type} = #{type2default_value root.type, ctx}
           """
+    
+    when "Var_decl_multi"
+      if root.assign_value
+        val = walk root.assign_value, ctx
+        tmp_var = "tmp_#{ctx.tmp_idx++}"
+        
+        jl = []
+        type_list = []
+        for _var, idx in root.list
+          {name} = _var
+          name = translate_var_name name, ctx
+          type_list.push type = translate_type _var.type, ctx
+          jl.push """
+          const #{name} : #{type} = #{tmp_var}.#{idx};
+          """
+        
+        """
+        const #{tmp_var} : (#{type_list.join ' * '}) = #{val};
+        #{join_list jl}
+        """
+      else
+        perr "CRITICAL WARNING Var_decl_multi with no assign value should be unreachable, but something goes wrong"
+        perr "CRITICAL WARNING We can't guarantee that smart contract would work at all"
+        module.warning_counter++
+        jl = []
+        for _var in root.list
+          {name} = _var
+          name = translate_var_name name, ctx
+          type = translate_type root.type, ctx
+          jl.push """
+          const #{name} : #{type} = #{type2default_value _var.type, ctx}
+          """
+        jl.join "\n"
     
     when "Throw"
       if root.t
@@ -591,9 +632,11 @@ walk = (root, ctx)->
       # current_class is missing for router
       if orig_ctx.current_class?.is_library
         name = "#{orig_ctx.current_class.name}_#{name}"
+      
+      name = translate_var_name name, ctx
       body = walk root.scope, ctx
       """
-      function #{translate_var_name name, ctx} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
@@ -603,6 +646,7 @@ walk = (root, ctx)->
       ctx.type_decl_hash[root.name] = root
       ctx = ctx.mk_nest()
       ctx.current_class = root
+      ctx.is_class_scope = true
       
       # stage 1 collect declarations
       field_decl_jl = []
@@ -610,14 +654,19 @@ walk = (root, ctx)->
         switch v.constructor.name
           when "Var_decl"
             field_decl_jl.push walk v, ctx
+          
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
+          
           when "Enum_decl"
             "skip"
+          
           when "Class_decl"
             ctx.sink_list.push walk v, ctx
+          
           when "Comment"
             ctx.sink_list.push walk v, ctx
+          
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
@@ -630,10 +679,13 @@ walk = (root, ctx)->
         switch v.constructor.name
           when "Var_decl"
             "skip"
+          
           when "Fn_decl_multiret", "Enum_decl"
             jl.push walk v, ctx
+          
           when "Class_decl", "Comment"
             "skip"
+          
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       

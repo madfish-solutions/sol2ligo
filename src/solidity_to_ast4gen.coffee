@@ -481,6 +481,13 @@ walk = (root, ctx)->
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         
+        type_list = []
+        for v in ret.list
+          type_list.push v.type
+        
+        ret.type = new Type "tuple<>"
+        ret.type.nest_list = type_list
+        
         ret
       else
         decl = root.declarations[0]
@@ -599,10 +606,23 @@ walk = (root, ctx)->
         ret.scope.list = arr_merge scope_prepend_list, ret.scope.list
         if ret.scope.list.last().constructor.name != "Ret_multi"
           ret.scope.list.push ret_multi = new ast.Ret_multi
-          for v in scope_prepend_list
-            ret_multi.t_list.push _var = new ast.Var
-            _var.name = v.name
-      
+          switch scope_prepend_list.length
+            when 0
+              "nothing"
+            
+            when 1
+              v = scope_prepend_list[0]
+              ret_multi.t_list.push _var = new ast.Var
+              _var.name = v.name
+            
+            else
+              tuple = new ast.Tuple
+              for v in scope_prepend_list
+                tuple.list.push _var = new ast.Var
+                _var.name = v.name
+              
+              ret_multi.t_list.push tuple
+        
       ret.visibility = root.visibility
       ret.state_mutability = root.stateMutability
       ret
