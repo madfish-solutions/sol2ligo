@@ -528,6 +528,9 @@ is_defined_number_or_byte_type = (type)->
         root.type = type_spread_left root.type, type
         root.type
       
+      when "Event_decl"
+        null
+      
       else
         ### !pragma coverage-skip-block ###
         perr root
@@ -930,6 +933,9 @@ is_defined_number_or_byte_type = (type)->
         type = new Type "array<#{nest_type}>"
         root.type = type_spread_left root.type, type
         root.type
+      
+      when "Event_decl"
+        null
       
       else
         ### !pragma coverage-skip-block ###

@@ -618,6 +618,8 @@ walk = (root, ctx)->
             ctx.sink_list.push walk v, ctx
           when "Comment"
             ctx.sink_list.push walk v, ctx
+          when "Event_decl"
+            ctx.sink_list.push walk v, ctx
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
@@ -632,7 +634,7 @@ walk = (root, ctx)->
             "skip"
           when "Fn_decl_multiret", "Enum_decl"
             jl.push walk v, ctx
-          when "Class_decl", "Comment"
+          when "Class_decl", "Comment", "Event_decl"
             "skip"
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
@@ -724,7 +726,12 @@ walk = (root, ctx)->
         #{join_list decls, '  '}
       end
       """
-
+    
+    when "Event_decl"
+      """
+      (* EventDefinition #{root.name} *)
+      """
+    
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx

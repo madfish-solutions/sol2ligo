@@ -311,3 +311,15 @@ class @Enum_decl
     ret.line  = @line
     ret.pos   = @pos
     ret
+
+class @Event_decl
+  name  : ""
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    ret = new module.Event_decl
+    ret.name  = @name
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
