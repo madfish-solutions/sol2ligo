@@ -207,6 +207,44 @@ do ()=>
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
+      when "Class_decl"
+        modifier_list   = []
+        field_decl_list = []
+        other_list      = []
+        for v in root.scope.list
+          switch v.constructor.name
+            when "Fn_decl_multiret"
+              if v.is_modifier
+                modifier_list.push v
+              else
+                other_list.push v
+            
+            when "Var_decl"
+              field_decl_list.push v
+            
+            else
+              other_list.push v
+        
+        reconstruct_list = []
+        reconstruct_list.append field_decl_list
+        reconstruct_list.append modifier_list
+        reconstruct_list.append other_list
+        root.scope.list = reconstruct_list
+        
+        ctx.next_gen root, ctx
+      
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @fix_modifier_order = (root)->
+    walk root, {walk, next_gen: module.default_walk}
+# ###################################################################################################
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
       when "For3"
         ret = new ast.Scope
         ret.need_nest = false
@@ -737,6 +775,7 @@ do ()=>
   root = module.var_translate root
   root = module.require_distinguish root
   root = module.fix_missing_emit root
+  root = module.fix_modifier_order root
   root = module.for3_unpack root
   root = module.math_funcs_convert root
   root = module.ass_op_unpack root
