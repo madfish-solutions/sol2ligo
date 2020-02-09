@@ -82,11 +82,12 @@ reserved_hash[config.contract_storage] = true
 reserved_hash[config.op_list] = true
 
 @translate_var_name = (name, ctx)->
+  if name[0] == "_"
+    name = "#{config.fix_underscore}_"+name
+  
+  name = name.substr(0,1).toLowerCase() + name.substr 1
+  
   if reserved_hash[name] and name != "constructor"
     "#{config.reserved}__#{name}"
   else
-    if name[0] == "_"
-      "#{config.fix_underscore}_"+name
-    else
-      # first letter should be lowercase
-      name.substr(0,1).toLowerCase() + name.substr 1
+    name

@@ -9,6 +9,40 @@ describe "translate ligo section", ()->
   # ###################################################################################################
   #    stmt
   # ###################################################################################################
+  it "var_decl_multi", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    contract Main {
+      function fromBytes(bytes memory bts) internal pure returns (uint addr, uint len) {
+        
+      }
+      function main(bytes memory self, bytes memory other) {
+        var (src, srcLen) = fromBytes(self);
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function fromBytes (const bts : bytes) : ((nat * nat)) is
+      block {
+        const addr : nat = 0n;
+        const len : nat = 0n;
+      } with ((addr, len));
+    
+    function main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+      block {
+        const tmp_0 : (nat * nat) = fromBytes(self);
+        const tmp_1 : (nat * nat) = tmp_0;
+        const src : nat = tmp_1.0;
+        const srcLen : nat = tmp_1.1;
+      } with (opList, contractStorage);
+    """
+    make_test text_i, text_o
+  
   it "if", ()->
     text_i = """
     pragma solidity ^0.5.11;

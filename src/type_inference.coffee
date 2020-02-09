@@ -463,6 +463,13 @@ get_list_sign = (list)->
         ctx.var_hash[root.name] = root.type
         null
       
+      when "Var_decl_multi"
+        if root.assign_value
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          walk root.assign_value, ctx
+        
+        null
+      
       when "Throw"
         if root.t
           walk root.t, ctx
@@ -881,6 +888,13 @@ get_list_sign = (list)->
           root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
+        null
+      
+      when "Var_decl_multi"
+        if root.assign_value
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          walk root.assign_value, ctx
+        
         null
       
       when "Throw"

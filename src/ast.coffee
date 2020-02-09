@@ -174,6 +174,7 @@ class @Tuple
 class @Var_decl_multi # used for var (a,b) = fn_call();
   list  : []
   assign_value : null
+  type  : null
   line  : 0
   pos   : 0
   
@@ -185,6 +186,7 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
     for v in @list
       ret.list.push v.clone()
     ret.assign_value  = @assign_value.clone()
+    ret.type  = @type.clone() if @type
     ret.line  = @line
     ret.pos   = @pos
     ret
