@@ -207,6 +207,7 @@ describe "translate ligo section", ()->
       address public sender;
       address public source;
       uint public value;
+      bytes public data;
       uint public time;
       uint public timestamp;
       
@@ -214,6 +215,7 @@ describe "translate ligo section", ()->
         sender = msg.sender;
         source = tx.origin;
         value = msg.value;
+        data = msg.data;
         time = now;
         timestamp = block.timestamp;
       }
@@ -224,6 +226,7 @@ describe "translate ligo section", ()->
       #{config.reserved}__sender : address;
       #{config.reserved}__source : address;
       value : nat;
+      data : bytes;
       time : nat;
       timestamp : nat;
     end;
@@ -233,6 +236,7 @@ describe "translate ligo section", ()->
         contractStorage.#{config.reserved}__sender := sender;
         contractStorage.#{config.reserved}__source := source;
         contractStorage.value := (amount / 1mutez);
+        contractStorage.data := bytes_pack(unit);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
         contractStorage.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (opList, contractStorage);

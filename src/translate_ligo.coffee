@@ -201,6 +201,7 @@ spec_id_trans_hash =
   "tx.origin"       : "source"
   "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.value"       : "(amount / 1mutez)"
+  "msg.data"        : "bytes_pack(unit)"
   "abi.encodePacked": ""
 
 # ###################################################################################################
