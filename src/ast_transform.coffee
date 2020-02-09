@@ -55,6 +55,11 @@ do ()=>
           root.assign_value = walk root.assign_value, ctx
         root
       
+      when "Var_decl_multi"
+        if root.assign_value
+          root.assign_value = walk root.assign_value, ctx
+        root
+      
       when "Throw"
         if root.t
           walk root.t, ctx
@@ -127,6 +132,13 @@ do ()=>
         if root.assign_value
           root.assign_value = walk root.assign_value, ctx
         root.name = tweak_translate_var_name root.name
+        root
+      
+      when "Var_decl_multi"
+        if root.assign_value
+          root.assign_value = walk root.assign_value, ctx
+        for _var in root.list
+          _var.name = tweak_translate_var_name _var.name
         root
       
       when "Fn_decl_multiret"
@@ -280,6 +292,7 @@ do ()=>
     switch root.constructor.name
       when "Class_decl"
         return root if root.need_skip
+        return root if root.is_library
         ctx.next_gen root, ctx
       
       when "Fn_decl_multiret"
@@ -534,6 +547,8 @@ do ()=>
         for parent in inheritance_apply_list
           if !class_decl = ctx.class_hash[parent.name]
             throw new Error "can't find parent class #{parent.name}"
+          
+          continue if class_decl.is_interface
           look_list = class_decl.scope.list
           
           need_constuctor = null

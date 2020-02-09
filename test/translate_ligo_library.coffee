@@ -108,4 +108,70 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o, router: true
   
+  it "library call from library", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    library Bytes {
+      function fromBytes(bytes memory bts) internal pure returns (uint addr) {
+        
+      }
+      
+      function concat(bytes memory self, bytes memory other) {
+        var src = fromBytes(self);
+      }
+    }
+    
+    contract Main {
+      function main(bytes memory self, bytes memory other) {
+        var src = Bytes.fromBytes(self);
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      reserved__initialized : bool;
+    end;
+    
+    function bytes_fromBytes (const bts : bytes) : (nat) is
+      block {
+        const addr : nat = 0n;
+      } with (addr);
+    
+    function reserved__bytes_concat (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+      block {
+        const tmp_0 : nat = bytes_fromBytes(self);
+        const src : nat = tmp_0;
+      } with (opList, contractStorage);
+    type main_args is record
+      self : bytes;
+      other : bytes;
+    end;
+    
+    function main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+      block {
+        const tmp_0 : nat = bytes_fromBytes(self);
+        const src : nat = tmp_0;
+      } with (opList, contractStorage);
+    
+    type router_enum is
+      | Main of main_args;
+    
+    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+      block {
+        const opList : list(operation) = (nil: list(operation));
+        if (contractStorage.reserved__initialized) then block {
+          case action of
+          | Main(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = main(opList, contractStorage, match_action.self, match_action.other);
+            opList := tmp_0.0;
+            contractStorage := tmp_0.1;
+          }
+          end;
+        } else block {
+          contractStorage.reserved__initialized := True;
+        };
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o, router: true
   

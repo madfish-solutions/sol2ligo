@@ -40,15 +40,16 @@ Type.prototype.toString = ()->
   ret
 
 Type.prototype.cmp = (t)->
-  return false if @main != t.main
+  return false if @main != t?.main
   return false if @nest_list.length != t.nest_list.length
   for v,k in @nest_list
-    continue if t.nest_list[k] == v
-    return false if !t.nest_list[k].cmp v
+    tv = t.nest_list[k]
+    continue if tv == v
+    return false if !tv?.cmp v
   for k,v of @field_hash
     continue if t.field_hash[k] == v
     return false if !tv = t.field_hash[k]
-    return false if !tv.cmp v
+    return false if !tv?.cmp v
   for k,v of t.field_hash
     return false if !tv = @field_hash[k]
     # return false if !tv.cmp v
