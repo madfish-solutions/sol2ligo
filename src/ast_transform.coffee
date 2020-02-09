@@ -266,6 +266,9 @@ do ()=>
               continue if !fn_hash[k]
               fn_use_refined_hash[k] = v
             
+            if fn_use_refined_hash[fn.name]
+              delete fn_use_refined_hash[fn.name]
+              perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target"
             fn_dep_hash_hash[fn.name] = fn_use_refined_hash
           
           # phase 3 check no loops
@@ -296,7 +299,8 @@ do ()=>
           
           if 0 != h_count clone_fn_dep_hash_hash
             perr clone_fn_dep_hash_hash
-            throw new Error "Can't reorder methods. Loop detected"
+            perr "CRITICAL WARNING Can't reorder methods. Loop detected. This will produce uncompileable target"
+            break
           
           break if fn_move_list.length == 0
           

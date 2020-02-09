@@ -74,3 +74,34 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o
   
+  # NOTE this test will not compile with Ligo
+  it "allow self recursion", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract Recursive_test {
+      function test() public {
+        if (false) {
+          test();
+        }
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      #{config.empty_state} : int;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        if (False) then block {
+          const tmp_0 : (list(operation) * state) = test(opList, contractStorage);
+          opList := tmp_0.0;
+          contractStorage := tmp_0.1;
+        } else block {
+          skip
+        };
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o, no_ligo:true
+  
