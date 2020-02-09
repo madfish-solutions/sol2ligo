@@ -114,7 +114,22 @@ do ()=>
     list = @bin_op_ret_type_hash_list[op]
     for type in config.any_int_type_list
       list.push [type, type, type]
+  
+  # non-equal types
+  for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
+    list = @bin_op_ret_type_hash_list[op]
+    for type1, idx1 in config.int_type_list
+      for type2, idx2 in config.int_type_list
+        continue if idx1 >= idx2
+        list.push [type1, type2, type2]
+        list.push [type2, type1, type2]
     
+    for type1, idx1 in config.uint_type_list
+      for type2, idx2 in config.uint_type_list
+        continue if idx1 >= idx2
+        list.push [type1, type2, type2]
+        list.push [type2, type1, type2]
+  
   for op in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]
     for type in config.uint_type_list
@@ -220,15 +235,39 @@ class_prepare = (root, ctx)->
   
   return
 
-is_not_a_type = (type)->
-  !type or type.main == "number"
+is_not_defined_type = (type)->
+  !type or type.main in ["number", "unsigned_number", "signed_number"]
+
+is_number_type = (type)->
+  return false if !type
+  type.main in ["number", "unsigned_number", "signed_number"]
 
 is_composite_type = (type)->
   type.main in ["array", "tuple", "map", "struct"]
 
 is_defined_number_or_byte_type = (type)->
   config.any_int_type_hash[type.main] or config.bytes_type_hash[type.main]
+
+get_list_sign = (list)->
+  has_signed   = false
+  has_unsigned = false
+  has_wtf      = false
+  for v in list
+    if config.int_type_hash[v] or v == "signed_number"
+      has_signed = true
+    else if config.uint_type_hash[v] or v == "unsigned_number"
+      has_unsigned = true
+    else if v == "number"
+      has_signed = true
+      has_unsigned = true
+    else
+      has_wtf = true
   
+  return null if has_wtf
+  return "number"           if  has_signed  and  has_unsigned
+  return "signed_number"    if  has_signed  and !has_unsigned
+  return "unsigned_number"  if !has_signed  and  has_unsigned
+  throw new Error "unreachable"
 
 @gen = (ast_tree, opt)->
   change_count = 0
@@ -237,17 +276,28 @@ is_defined_number_or_byte_type = (type)->
     if !a_type and b_type
       a_type = b_type.clone()
       change_count++ if touch_counter
-    else if is_not_a_type(a_type) and !is_not_a_type(b_type)
-      if a_type.main == "number"
+    else if a_type.main == "number"
+      if b_type.main in ["unsigned_number", "signed_number"]
+        a_type = b_type.clone()
+        change_count++ if touch_counter
+      else if b_type.main == "number"
+        "nothing"
+      else
+        unless is_defined_number_or_byte_type b_type
+          throw new Error "can't spread '#{b_type}' to '#{a_type}'"
+        a_type = b_type.clone()
+        change_count++ if touch_counter
+    else if is_not_defined_type(a_type) and !is_not_defined_type(b_type)
+      if a_type.main in ["unsigned_number", "signed_number"]
         unless is_defined_number_or_byte_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
       else
-        throw new Error "unknown is_not_a_type spread case"
+        throw new Error "unknown is_not_defined_type spread case"
       a_type = b_type.clone()
       change_count++ if touch_counter
-    else if !is_not_a_type(a_type) and is_not_a_type(b_type)
+    else if !is_not_defined_type(a_type) and is_not_defined_type(b_type)
       # will check, but not spread
-      if b_type.main == "number"
+      if b_type.main in ["number", "unsigned_number", "signed_number"]
         unless is_defined_number_or_byte_type a_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
       # p "NOTE Reverse spread collision detected", new Error "..."
@@ -362,9 +412,6 @@ is_defined_number_or_byte_type = (type)->
           when "array"
             field_hash = array_field_hash
           
-          when "bytes"
-            field_hash = bytes_field_hash
-          
           when "address"
             field_hash = address_field_hash
           
@@ -372,8 +419,11 @@ is_defined_number_or_byte_type = (type)->
             field_hash = root_type.field_hash
           
           else
-            class_decl = ctx.check_type root_type.main
-            field_hash = class_decl._prepared_field2type
+            if config.bytes_type_hash[root_type.main]
+              field_hash = bytes_field_hash
+            else
+              class_decl = ctx.check_type root_type.main
+              field_hash = class_decl._prepared_field2type
         
         if !field_type = field_hash[root.name]
           perr root.t
@@ -430,16 +480,14 @@ is_defined_number_or_byte_type = (type)->
       
       when "Ret_multi"
         for v,idx in root.t_list
-          if is_not_a_type v.type
-            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
-          else
-            expected = ctx.parent_fn.type_o.nest_list[idx]
-            real = v.type
-            if !expected.cmp real
-              perr root
-              perr "fn_type=#{ctx.parent_fn.type_o}"
-              perr v
-              throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
+          expected = ctx.parent_fn.type_o.nest_list[idx]
+          real = v.type
+          if !expected.cmp real
+            perr root
+            perr "fn_type=#{ctx.parent_fn.type_o}"
+            perr v
+            throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
           
           walk v, ctx
         null
@@ -539,7 +587,8 @@ is_defined_number_or_byte_type = (type)->
         for v in root.list
           v.type = type_spread_left v.type, nest_type
         
-        type = new Type "array<#{nest_type}>"
+        type = new Type "array<>"
+        type.nest_list[0] = nest_type
         root.type = type_spread_left root.type, type
         root.type
       
@@ -609,9 +658,9 @@ is_defined_number_or_byte_type = (type)->
                   root.type = type_spread_left root.type, new Type "bytes1"
                   return root.type
         
-        bruteforce_a  = is_not_a_type root.a.type
-        bruteforce_b  = is_not_a_type root.b.type
-        bruteforce_ret= is_not_a_type root.type
+        bruteforce_a  = is_not_defined_type root.a.type
+        bruteforce_b  = is_not_defined_type root.b.type
+        bruteforce_ret= is_not_defined_type root.type
         a   = (root.a.type or "").toString()
         b   = (root.b.type or "").toString()
         ret = (root.type   or "").toString()
@@ -628,7 +677,7 @@ is_defined_number_or_byte_type = (type)->
           found_list.push tuple
         
         # filter for partially defined types
-        if root.a.type?.main == "number"
+        if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
             continue if !config.any_int_type_hash[tuple[0]]
@@ -636,7 +685,7 @@ is_defined_number_or_byte_type = (type)->
           
           found_list = filter_found_list
         
-        if root.b.type?.main == "number"
+        if is_number_type root.b.type
           filter_found_list = []
           for tuple in found_list
             continue if !config.any_int_type_hash[tuple[1]]
@@ -644,7 +693,7 @@ is_defined_number_or_byte_type = (type)->
           
           found_list = filter_found_list
         
-        if root.type?.main == "number"
+        if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
             continue if !config.any_int_type_hash[tuple[2]]
@@ -670,6 +719,9 @@ is_defined_number_or_byte_type = (type)->
               perr "bruteforce stuck bin_op #{root.op} caused a can't be any type"
             else if a_type_list.length == 1
               root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+            else
+              if new_type = get_list_sign a_type_list
+                root.a.type = type_spread_left root.a.type, new Type new_type
           
           if bruteforce_b
             b_type_list = []
@@ -679,6 +731,9 @@ is_defined_number_or_byte_type = (type)->
               perr "bruteforce stuck bin_op #{root.op} caused b can't be any type"
             else if b_type_list.length == 1
               root.b.type = type_spread_left root.b.type, new Type b_type_list[0]
+            else
+              if new_type = get_list_sign b_type_list
+                root.b.type = type_spread_left root.b.type, new Type new_type
           
           if bruteforce_ret
             ret_type_list = []
@@ -688,6 +743,9 @@ is_defined_number_or_byte_type = (type)->
               perr "bruteforce stuck bin_op #{root.op} caused ret can't be any type"
             else if ret_type_list.length == 1
               root.type = type_spread_left root.type, new Type ret_type_list[0]
+            else
+              if new_type = get_list_sign ret_type_list
+                root.type = type_spread_left root.type, new Type new_type
         
         root.type
       
@@ -702,8 +760,8 @@ is_defined_number_or_byte_type = (type)->
               if root.a.a.type?.main == "map"
                 return root.type
         
-        bruteforce_a  = is_not_a_type root.a.type
-        bruteforce_ret= is_not_a_type root.type
+        bruteforce_a  = is_not_defined_type root.a.type
+        bruteforce_ret= is_not_defined_type root.type
         a   = (root.a.type or "").toString()
         ret = (root.type   or "").toString()
         
@@ -717,7 +775,7 @@ is_defined_number_or_byte_type = (type)->
           found_list.push tuple
         
         # filter for partially defined types
-        if root.a.type?.main == "number"
+        if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
             continue if !config.any_int_type_hash[tuple[0]]
@@ -725,7 +783,7 @@ is_defined_number_or_byte_type = (type)->
           
           found_list = filter_found_list
         
-        if root.type?.main == "number"
+        if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
             continue if !config.any_int_type_hash[tuple[1]]
@@ -750,6 +808,9 @@ is_defined_number_or_byte_type = (type)->
               throw new Error "type inference bruteforce stuck un_op #{root.op} caused a can't be any type"
             else if a_type_list.length == 1
               root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+            else
+              if new_type = get_list_sign a_type_list
+                root.a.type = type_spread_left root.a.type, new Type new_type
           
           if bruteforce_ret
             ret_type_list = []
@@ -759,6 +820,9 @@ is_defined_number_or_byte_type = (type)->
               throw new Error "type inference bruteforce stuck un_op #{root.op} caused ret can't be any type"
             else if ret_type_list.length == 1
               root.type = type_spread_left root.type, new Type ret_type_list[0]
+            else
+              if new_type = get_list_sign ret_type_list
+                root.type = type_spread_left root.type, new Type new_type
         
         root.type
       
@@ -833,16 +897,14 @@ is_defined_number_or_byte_type = (type)->
       
       when "Ret_multi"
         for v,idx in root.t_list
-          if is_not_a_type v.type
-            v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
-          else
-            expected = ctx.parent_fn.type_o.nest_list[idx]
-            real = v.type
-            if !expected.cmp real
-              perr root
-              perr "fn_type=#{ctx.parent_fn.type_o}"
-              perr v
-              throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
+          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
+          expected = ctx.parent_fn.type_o.nest_list[idx]
+          real = v.type
+          if !expected.cmp real
+            perr root
+            perr "fn_type=#{ctx.parent_fn.type_o}"
+            perr v
+            throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
           
           walk v, ctx
         null
