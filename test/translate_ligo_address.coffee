@@ -21,7 +21,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test (const opList : list(operation); const contractStorage : state; const target : address) : (list(operation) * state) is

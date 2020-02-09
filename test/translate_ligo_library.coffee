@@ -1,3 +1,4 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -29,7 +30,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function exactMath_exactAdd (const opList : list(operation); const contractStorage : state; const self : nat; const other : nat) : (list(operation) * state * nat) is
@@ -68,8 +69,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
+    type test_args is record
+      callbackAddress : address;
+    end;
+    
     type state is record
-      reserved__initialized : bool;
+      #{config.initialized} : bool;
     end;
     
     function exactMath_exactAdd (const self : nat; const other : nat) : (nat) is
@@ -78,11 +83,7 @@ describe "translate ligo section", ()->
         sum := (self + other);
         if (sum >= self) then {skip} else failwith("require fail");
       } with (sum);
-    type test_args is record
-      callbackAddress : address;
-    end;
-    
-    function test (const reserved__unit : unit) : (nat) is
+    function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         const n : nat = abs(not (0));
         const tmp_0 : nat = exactMath_exactAdd(n, 1n);
@@ -94,7 +95,7 @@ describe "translate ligo section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | Test(match_action) -> block {
             const tmp_0 : nat = test(unit);
@@ -102,7 +103,7 @@ describe "translate ligo section", ()->
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """#"
@@ -129,8 +130,13 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
+    type main_args is record
+      self : bytes;
+      other : bytes;
+    end;
+    
     type state is record
-      reserved__initialized : bool;
+      #{config.initialized} : bool;
     end;
     
     function bytes_fromBytes (const bts : bytes) : (nat) is
@@ -138,16 +144,11 @@ describe "translate ligo section", ()->
         const addr : nat = 0n;
       } with (addr);
     
-    function reserved__bytes_concat (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__bytes_concat (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const tmp_0 : nat = bytes_fromBytes(self);
         const src : nat = tmp_0;
       } with (opList, contractStorage);
-    type main_args is record
-      self : bytes;
-      other : bytes;
-    end;
-    
     function main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const tmp_0 : nat = bytes_fromBytes(self);
@@ -160,7 +161,7 @@ describe "translate ligo section", ()->
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.reserved__initialized) then block {
+        if (contractStorage.#{config.initialized}) then block {
           case action of
           | Main(match_action) -> block {
             const tmp_0 : (list(operation) * state) = main(opList, contractStorage, match_action.self, match_action.other);
@@ -169,7 +170,7 @@ describe "translate ligo section", ()->
           }
           end;
         } else block {
-          contractStorage.reserved__initialized := True;
+          contractStorage.#{config.initialized} := True;
         };
       } with (opList, contractStorage);
     """#"

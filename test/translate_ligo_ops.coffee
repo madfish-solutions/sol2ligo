@@ -376,7 +376,7 @@ describe "translate ligo section", ()->
     }"""#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function addmulmod (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
@@ -404,7 +404,7 @@ describe "translate ligo section", ()->
     }"""#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test1 (const opList : list(operation); const contractStorage : state; const u0 : nat) : (list(operation) * state) is
@@ -428,7 +428,7 @@ describe "translate ligo section", ()->
     }"""#"
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.empty_state} : int;
     end;
     
     function test2 (const opList : list(operation); const contractStorage : state; const b0 : bool) : (list(operation) * state) is

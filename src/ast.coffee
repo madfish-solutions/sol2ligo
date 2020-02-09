@@ -8,6 +8,7 @@ for k,v of ast
 # ###################################################################################################
 class @Class_decl
   name  : ""
+  namespace_name : true
   is_contract : false
   is_library  : false
   is_interface: false
@@ -20,12 +21,14 @@ class @Class_decl
   constructor:()->
     @scope = new module.Scope
     @_prepared_field2type = {}
+    @inheritance_list = []
   
   # skip validate
   
   clone : ()->
     ret = new module.Class_decl
     ret.name  = @name
+    ret.namespace_name = @namespace_name
     ret.is_contract = @is_contract
     ret.is_library  = @is_library
     ret.is_interface= @is_interface
