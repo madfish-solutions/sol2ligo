@@ -10,6 +10,7 @@ class @Class_decl
   name  : ""
   is_contract : false
   is_library  : false
+  is_interface: false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -27,6 +28,7 @@ class @Class_decl
     ret.name  = @name
     ret.is_contract = @is_contract
     ret.is_library  = @is_library
+    ret.is_interface= @is_interface
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type

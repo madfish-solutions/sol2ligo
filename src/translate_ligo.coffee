@@ -641,6 +641,7 @@ walk = (root, ctx)->
     
     when "Class_decl"
       return "" if root.need_skip
+      return "" if root.is_interface # skip for now
       orig_ctx = ctx
       ctx.type_decl_hash[root.name] = root
       ctx = ctx.mk_nest()
