@@ -20,7 +20,7 @@ cache_content_hash = {}
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected
-  if process.argv.has "--ext_compiler"
+  if process.argv.has "--ext_compiler" and !opt.no_ligo
     # strip known non-working code
     text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, "const unused : nat = 0n;"
     

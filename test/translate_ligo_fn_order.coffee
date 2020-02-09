@@ -74,6 +74,7 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o
   
+  # NOTE this test will not compile with Ligo
   it "allow self recursion", ()->
     text_i = """
     pragma solidity ^0.5.0;
@@ -102,5 +103,5 @@ describe "translate ligo section", ()->
         };
       } with (opList, contractStorage);
     """#"
-    make_test text_i, text_o
+    make_test text_i, text_o, no_ligo:true
   
