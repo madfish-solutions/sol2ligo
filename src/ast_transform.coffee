@@ -266,6 +266,7 @@ do ()=>
               continue if !fn_hash[k]
               fn_use_refined_hash[k] = v
             
+            delete fn_use_refined_hash[fn.name]
             fn_dep_hash_hash[fn.name] = fn_use_refined_hash
           
           # phase 3 check no loops
