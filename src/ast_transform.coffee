@@ -547,6 +547,8 @@ do ()=>
         for parent in inheritance_apply_list
           if !class_decl = ctx.class_hash[parent.name]
             throw new Error "can't find parent class #{parent.name}"
+          
+          continue if class_decl.is_interface
           look_list = class_decl.scope.list
           
           need_constuctor = null

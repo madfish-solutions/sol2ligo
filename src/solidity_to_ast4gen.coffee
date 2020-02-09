@@ -95,7 +95,13 @@ walk_type = (root, ctx)->
       throw new Error("walk_type unknown nodeType '#{root.nodeType}'")
 
 unpack_id_type = (root, ctx)->
-  switch root.typeString
+  type_string = root.typeString
+  if /\smemory$/.test type_string
+    type_string = type_string.replace /\smemory$/, ""
+  
+  if /\sstorage$/.test type_string
+    type_string = type_string.replace /\sstorage$/, ""
+  switch type_string
     when "bool"
       new Type "bool"
     
@@ -105,8 +111,11 @@ unpack_id_type = (root, ctx)->
     when "int"
       new Type "int256"
     
-    when "byte", "bytes"
+    when "byte"
       new Type "bytes1"
+    
+    when "bytes"
+      new Type "bytes"
     
     when "address"
       new Type "address"
@@ -124,11 +133,11 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if root.typeString.match /^bytes\d{1,2}$/
+      if config.bytes_type_hash[type_string]
         new Type root.typeString
-      else if config.uint_type_list.has root.typeString
+      else if config.uint_type_hash[type_string]
         new Type root.typeString
-      else if config.int_type_list.has root.typeString
+      else if config.int_type_hash[type_string]
         new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
@@ -185,6 +194,9 @@ walk = (root, ctx)->
         
         when "library"
           ret.is_library = true
+        
+        when "interface"
+          ret.is_interface = true
         
         else
           throw new Error "unknown contractKind #{root.contractKind}"
