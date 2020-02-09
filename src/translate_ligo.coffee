@@ -296,8 +296,9 @@ walk = (root, ctx)->
               if ctx.trim_expr == code
                 ctx.trim_expr = ""
                 continue
-              code += ";" if !/;$/.test code
-              jl.push code
+              if code
+                code += ";" if !/;$/.test code
+                jl.push code
             
             ret = jl.pop() or ""
             if 0 != ret.indexOf "with"
