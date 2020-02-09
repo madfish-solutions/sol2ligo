@@ -38,6 +38,7 @@ module = @
     sha3      : new Type "function2_pure<function<bytes>,function<bytes32>>"
     keccak256 : new Type "function2_pure<function<bytes>,function<bytes32>>"
     ripemd160 : new Type "function2_pure<function<bytes>,function<bytes20>>"
+    ecrecover : new Type "function2_pure<function<bytes, uint8, bytes32, bytes32>,function<address>>"
   }
 
 array_field_hash =
