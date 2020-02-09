@@ -11,6 +11,7 @@ class @Class_decl
   namespace_name : true
   is_contract : false
   is_library  : false
+  is_interface: false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -30,6 +31,7 @@ class @Class_decl
     ret.namespace_name = @namespace_name
     ret.is_contract = @is_contract
     ret.is_library  = @is_library
+    ret.is_interface= @is_interface
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type
@@ -313,6 +315,18 @@ class @Enum_decl
     ret.name = @name
     for v in @value_list
       ret.value_list.push v.clone()
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Event_decl
+  name  : ""
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    ret = new module.Event_decl
+    ret.name  = @name
     ret.line  = @line
     ret.pos   = @pos
     ret

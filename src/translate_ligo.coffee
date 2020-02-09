@@ -25,8 +25,30 @@ walk = null
   BOOL_AND: "and"
   BOOL_OR : "or"
 
+string2bytes = (val)->
+  ret = ["0x"]
+  for ch in val
+    ret.push ch.charCodeAt(0).rjust 2, "0"
+  
+  if ret.length == 1
+    return "bytes_pack(unit)"
+  ret.join ""
+
+number2bytes = (val, precision = 32)->
+  ret = []
+  for i in [0 ... precision]
+    hex = val & 0xFF
+    ret.push hex.toString(16).rjust 2, "0"
+    val >>= 8
+  ret.push "0x"
+  ret.reverse()
+  ret.join ""
+
 @bin_op_name_cb_map =
-  ASSIGN  : (a, b)-> "#{a} := #{b}"
+  ASSIGN  : (a, b, ctx, ast)->
+    if config.bytes_type_hash[ast.a.type.main] and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
+      b = string2bytes ast.b.val
+    "#{a} := #{b}"
   BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
@@ -43,7 +65,7 @@ walk = null
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if config.uint_type_list.has(ast.a.type.main) and config.uint_type_list.has(ast.b.type.main)
+    if config.uint_type_hash[ast.a.type.main] and config.uint_type_hash[ast.b.type.main]
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -55,7 +77,7 @@ walk = null
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
       module.warning_counter++
-    if ast.type and config.uint_type_list.has ast.type.main
+    if ast.type and config.uint_type_hash[ast.type.main]
       "abs(not (#{a}))"
     else
       "not (#{a})"
@@ -132,9 +154,9 @@ walk = null
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if config.uint_type_list.has type.main
+      else if config.uint_type_hash[type.main]
         "nat"
-      else if config.int_type_list.has type.main
+      else if config.int_type_hash[type.main]
         "int"
       else
         ### !pragma coverage-skip-block ###
@@ -142,11 +164,14 @@ walk = null
         throw new Error("unknown solidity type '#{type}'")
 
 @type2default_value = type2default_value = (type, ctx)->
-  if config.uint_type_list.has type.main
+  if config.uint_type_hash[type.main]
     return "0n"
   
-  if config.int_type_list.has type.main
+  if config.int_type_hash[type.main]
     return "0"
+  
+  if config.bytes_type_hash[type.main]
+    return "bytes_pack(unit)"
   
   switch type.main
     when "bool"
@@ -173,11 +198,13 @@ walk = null
 #    special id, field access
 # ###################################################################################################
 spec_id_trans_hash =
-  "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.sender": "sender"
-  "tx.origin" : "source"
+  "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.sender"      : "sender"
+  "tx.origin"       : "source"
   "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.value" : "(amount / 1mutez)"
+  "msg.value"       : "(amount / 1mutez)"
+  "msg.data"        : "bytes_pack(unit)"
+  "abi.encodePacked": ""
 
 # ###################################################################################################
 
@@ -317,14 +344,14 @@ walk = (root, ctx)->
         if {}[root.name]? # constructor and other reserved JS stuff
           name
         else
-          spec_id_trans_hash[root.name] or name
+          spec_id_trans_hash[root.name] ? name
     
     when "Const"
       if !root.type
         puts root
         throw new Error "Can't type inference"
       
-      if config.uint_type_list.has root.type.main
+      if config.uint_type_hash[root.type.main]
         return "#{root.val}n"
       
       switch root.type.main
@@ -342,11 +369,17 @@ walk = (root, ctx)->
           module.warning_counter++
           root.val
         
+        when "unsigned_number"
+          "#{root.val}n"
+        
         when "string"
           JSON.stringify root.val
         
         else
-          root.val
+          if config.bytes_type_hash[root.type.main]
+            number2bytes root.val, +root.type.main.replace(/bytes/, '')
+          else
+            root.val
     
     when "Bin_op"
       # TODO lvalue ctx ???
@@ -400,7 +433,7 @@ walk = (root, ctx)->
         if ctx.type_decl_hash[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
       
-      spec_id_trans_hash[chk_ret] or ret
+      spec_id_trans_hash[chk_ret] ? ret
     
     when "Fn_call"
       arg_list = []
@@ -451,11 +484,17 @@ walk = (root, ctx)->
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
           
-          when "sha256", "sha3", "keccak256"
+          when "sha256"
+            msg = arg_list[0]
+            return "sha_256(#{msg})"
+          
+          when "sha3", "keccak256"
+            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256"
             msg = arg_list[0]
             return "sha_256(#{msg})"
           
           when "ripemd160"
+            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
@@ -539,6 +578,10 @@ walk = (root, ctx)->
       else
         if root.assign_value
           val = walk root.assign_value, ctx
+          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
+            val = string2bytes root.assign_value.val
+          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
+            val = number2bytes root.assign_value.val
           """
           const #{name} : #{type} = #{val}
           """
@@ -662,6 +705,7 @@ walk = (root, ctx)->
     
     when "Class_decl"
       return "" if root.need_skip
+      return "" if root.is_interface # skip for now
       orig_ctx = ctx
       ctx.type_decl_hash[root.name] = root
       prefix = ""
@@ -693,6 +737,9 @@ walk = (root, ctx)->
           when "Comment"
             ctx.sink_list.push walk v, ctx
           
+          when "Event_decl"
+            ctx.sink_list.push walk v, ctx
+          
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
@@ -709,7 +756,7 @@ walk = (root, ctx)->
           when "Fn_decl_multiret", "Enum_decl"
             jl.push walk v, ctx
           
-          when "Class_decl", "Comment"
+          when "Class_decl", "Comment", "Event_decl"
             "skip"
           
           else
@@ -798,7 +845,12 @@ walk = (root, ctx)->
         #{join_list decls, '  '}
       end
       """
-
+    
+    when "Event_decl"
+      """
+      (* EventDefinition #{root.name} *)
+      """
+    
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx

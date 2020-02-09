@@ -207,6 +207,7 @@ describe "translate ligo section", ()->
       address public sender;
       address public source;
       uint public value;
+      bytes public data;
       uint public time;
       uint public timestamp;
       
@@ -214,6 +215,7 @@ describe "translate ligo section", ()->
         sender = msg.sender;
         source = tx.origin;
         value = msg.value;
+        data = msg.data;
         time = now;
         timestamp = block.timestamp;
       }
@@ -224,6 +226,7 @@ describe "translate ligo section", ()->
       #{config.reserved}__sender : address;
       #{config.reserved}__source : address;
       value : nat;
+      data : bytes;
       time : nat;
       timestamp : nat;
     end;
@@ -233,6 +236,7 @@ describe "translate ligo section", ()->
         contractStorage.#{config.reserved}__sender := sender;
         contractStorage.#{config.reserved}__source := source;
         contractStorage.value := (amount / 1mutez);
+        contractStorage.data := bytes_pack(unit);
         contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
         contractStorage.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with (opList, contractStorage);
@@ -329,4 +333,57 @@ describe "translate ligo section", ()->
   
   it "address(this).balance"
   it "blockhash(block.number - 1)"
+  
+  it "bytes memory", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    contract Globals {
+      function test() public {
+        bytes  memory bts0;
+        bytes1 bts1;
+      }
+      
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const bts0 : bytes = bytes_pack(unit);
+        const bts1 : bytes = bytes_pack(unit);
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o
+  
+  it "bytes + string assign", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    contract Globals {
+      function test() public {
+        bytes  memory bts0 = hex"00010203";
+        bytes1 bts1 = hex"00";
+        var    bts2 = bts0;
+        bts2 = hex"00";
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      reserved__empty_state : int;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const bts0 : bytes = 0x00010203;
+        const bts1 : bytes = 0x00;
+        const bts2 : bytes = bts0;
+        bts2 := 0x00;
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o
   

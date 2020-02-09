@@ -10,7 +10,14 @@ describe "translate ligo section", ()->
   # ###################################################################################################
   describe "bytesX un_ops", ()->
     for type in config.bytes_type_list
+      continue if type == "bytes"
+      ###
+      LIGO doesn't have ~ for bytes
+        #{type} c = 0;
+        c = ~a;
+      ###
       it "#{type} un_ops", ()->
+        count = +(type.replace /bytes/, "")
         text_i = """
         pragma solidity ^0.5.11;
         
@@ -19,9 +26,7 @@ describe "translate ligo section", ()->
           
           function expr() public returns (#{type}) {
             #{type} a = 0;
-            #{type} c = 0;
-            c = ~a;
-            return c;
+            return a;
           }
         }
         """#"
@@ -32,10 +37,8 @@ describe "translate ligo section", ()->
           
           function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * bytes) is
             block {
-              const a : bytes = 0;
-              const c : bytes = 0;
-              c := not (a);
-            } with (opList, contractStorage, c);
+              const a : bytes = 0x#{'00'.repeat count};
+            } with (opList, contractStorage, a);
         """
         make_test text_i, text_o
   

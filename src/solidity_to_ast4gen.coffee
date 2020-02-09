@@ -91,11 +91,17 @@ walk_type = (root, ctx)->
       ret
     
     else
-      puts root
+      perr root
       throw new Error("walk_type unknown nodeType '#{root.nodeType}'")
 
 unpack_id_type = (root, ctx)->
-  switch root.typeString
+  type_string = root.typeString
+  if /\smemory$/.test type_string
+    type_string = type_string.replace /\smemory$/, ""
+  
+  if /\sstorage$/.test type_string
+    type_string = type_string.replace /\sstorage$/, ""
+  switch type_string
     when "bool"
       new Type "bool"
     
@@ -105,8 +111,11 @@ unpack_id_type = (root, ctx)->
     when "int"
       new Type "int256"
     
-    when "byte", "bytes"
+    when "byte"
       new Type "bytes1"
+    
+    when "bytes"
+      new Type "bytes"
     
     when "address"
       new Type "address"
@@ -124,11 +133,11 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if root.typeString.match /^bytes\d{1,2}$/
+      if config.bytes_type_hash[type_string]
         new Type root.typeString
-      else if config.uint_type_list.has root.typeString
+      else if config.uint_type_hash[type_string]
         new Type root.typeString
-      else if config.int_type_list.has root.typeString
+      else if config.int_type_hash[type_string]
         new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
@@ -152,7 +161,7 @@ walk_param = (root, ctx)->
       ret
     
     else
-      puts root
+      perr root
       throw new Error("walk_param unknown nodeType '#{root.nodeType}'")
 
 class Context
@@ -162,7 +171,7 @@ class Context
 prev_root = null # DEBUG only
 walk = (root, ctx)->
   if !root
-    puts prev_root
+    perr prev_root
     throw new Error "!root"
   prev_root = root
   result = switch root.nodeType
@@ -185,6 +194,9 @@ walk = (root, ctx)->
         
         when "library"
           ret.is_library = true
+        
+        when "interface"
+          ret.is_interface = true
         
         else
           throw new Error "unknown contractKind #{root.contractKind}"
@@ -217,7 +229,7 @@ walk = (root, ctx)->
       ret
     
     when "UsingForDirective"
-      puts "NOTE bad UsingForDirective"
+      perr "WARNING UsingForDirective is not supported"
       ret = new ast.Comment
       ret.text = "UsingForDirective"
       ret
@@ -230,19 +242,19 @@ walk = (root, ctx)->
       ret
     
     when "InlineAssembly"
-      puts "NOTE bad InlineAssembly"
+      perr "WARNING InlineAssembly is not supported"
       ret = new ast.Comment
       ret.text = "InlineAssembly #{root.operations}"
       ret
     
     when "EventDefinition"
-      puts "NOTE bad EventDefinition"
-      ret = new ast.Comment
-      ret.text = "EventDefinition #{root.name}"
+      perr "WARNING EventDefinition is not supported"
+      ret = new ast.Event_decl
+      ret.name = root.name
       ret
     
     when "EmitStatement"
-      puts "NOTE bad EmitStatement"
+      perr "WARNING EmitStatement is not supported"
       ret = new ast.Comment
       ret.text = "EmitStatement"
       ret
@@ -261,7 +273,7 @@ walk = (root, ctx)->
       try
         ret.type = unpack_id_type root.typeDescriptions, ctx
       catch err
-        perr "NOTE can't resolve type #{err}"
+        perr "WARNING can't resolve type #{err}"
       ret
     
     when "Literal"
@@ -384,7 +396,7 @@ walk = (root, ctx)->
         else
           ret.op = un_op_post_map[root.operator]
       if !ret.op
-        puts root
+        perr root
         throw new Error("unknown un_op #{root.operator}")
       ret.a = walk root.subExpression, ctx
       ret
@@ -402,7 +414,7 @@ walk = (root, ctx)->
         
         when "Type_cast"
           if arg_list.length != 1
-            puts arg_list
+            perr arg_list
             throw new Error "arg_list.length != 1"
           ret = fn
           ret.t = arg_list[0]
@@ -472,7 +484,7 @@ walk = (root, ctx)->
             try
               type = unpack_id_type decl.typeDescriptions, ctx
             catch err
-              perr "NOTE can't resolve type #{err}"
+              perr "WARNING can't resolve type #{err}"
             
             ret.list.push {
               name : decl.name
@@ -638,7 +650,7 @@ walk = (root, ctx)->
       ret
     
     else
-      puts root
+      perr root
       throw new Error("walk unknown nodeType '#{root.nodeType}'")
   
   if ctx.need_prevent_deploy
