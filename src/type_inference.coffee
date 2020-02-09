@@ -599,6 +599,9 @@ get_list_sign = (list)->
         root.type = type_spread_left root.type, type
         root.type
       
+      when "Event_decl"
+        null
+      
       else
         ### !pragma coverage-skip-block ###
         perr root
@@ -1021,6 +1024,9 @@ get_list_sign = (list)->
         type = new Type "array<#{nest_type}>"
         root.type = type_spread_left root.type, type
         root.type
+      
+      when "Event_decl"
+        null
       
       else
         ### !pragma coverage-skip-block ###

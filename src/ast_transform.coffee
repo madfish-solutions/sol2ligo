@@ -105,6 +105,9 @@ do ()=>
       when "Tuple", "Array_init"
         root
       
+      when "Event_decl"
+        root
+      
       else
         ### !pragma coverage-skip-block ###
         puts root
@@ -173,6 +176,31 @@ do ()=>
   
   @require_distinguish = (root)->
     walk root, {walk, next_gen: module.default_walk}
+# ###################################################################################################
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Event_decl"
+        ctx.emit_decl_hash[root.name] = true
+        root
+      
+      when "Fn_call"
+        if root.fn.constructor.name == "Var"
+          if ctx.emit_decl_hash[root.fn.name]
+            perr "WARNING EmitStatement is not supported"
+            ret = new ast.Comment
+            ret.text = "EmitStatement"
+            return ret
+        ctx.next_gen root, ctx
+      
+      else
+        ctx.next_gen root, ctx
+    
+  
+  @fix_missing_emit = (root)->
+    walk root, {walk, next_gen: module.default_walk, emit_decl_hash: {}}
 # ###################################################################################################
 
 do ()=>
@@ -707,6 +735,7 @@ do ()=>
   opt.router ?= true
   root = module.var_translate root
   root = module.require_distinguish root
+  root = module.fix_missing_emit root
   root = module.for3_unpack root
   root = module.math_funcs_convert root
   root = module.ass_op_unpack root

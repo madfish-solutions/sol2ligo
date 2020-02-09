@@ -22,7 +22,7 @@ cache_content_hash = {}
   assert.strictEqual text_o_real, text_o_expected
   if process.argv.has "--ext_compiler"
     # strip known non-working code
-    text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, ""
+    text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, "const unused : nat = 0n;"
     
     if !opt.router
       text_o_real = """
