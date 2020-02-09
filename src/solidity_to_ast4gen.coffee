@@ -556,12 +556,16 @@ walk = (root, ctx)->
         ret.t_list.push walk root.expression, ctx
       ret
     
-    when "Break"
-      ret = new ast.Break
+    when "Continue"
+      perr "CRITICAL WARNING 'continue' is not supported by LIGO"
+      ctx.need_prevent_deploy = true
+      ret = new ast.Continue
       ret
     
-    when "Continue"
-      ret = new ast.Continue
+    when "Break"
+      perr "CRITICAL WARNING 'break' is not supported by LIGO"
+      ctx.need_prevent_deploy = true
+      ret = new ast.Break
       ret
     
     when "Throw"

@@ -456,6 +456,9 @@ get_list_sign = (list)->
       when "Comment"
         null
       
+      when "Continue", "Break"
+        root
+      
       when "Var_decl"
         if root.assign_value
           root.assign_value.type = type_spread_left root.assign_value.type, root.type
@@ -885,6 +888,9 @@ get_list_sign = (list)->
       # ###################################################################################################
       when "Comment"
         null
+      
+      when "Continue", "Break"
+        root
       
       when "Var_decl"
         if root.assign_value

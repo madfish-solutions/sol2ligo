@@ -569,6 +569,12 @@ walk = (root, ctx)->
       else
         "(* #{root.text} *)"
     
+    when "Continue"
+      "(* CRITICAL WARNING continue is not supported *)"
+    
+    when "Break"
+      "(* CRITICAL WARNING break is not supported *)"
+    
     when "Var_decl"
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
