@@ -95,7 +95,13 @@ walk_type = (root, ctx)->
       throw new Error("walk_type unknown nodeType '#{root.nodeType}'")
 
 unpack_id_type = (root, ctx)->
-  switch root.typeString
+  type_string = root.typeString
+  if /\smemory$/.test type_string
+    type_string = type_string.replace /\smemory$/, ""
+  
+  if /\sstorage$/.test type_string
+    type_string = type_string.replace /\sstorage$/, ""
+  switch type_string
     when "bool"
       new Type "bool"
     
@@ -105,8 +111,11 @@ unpack_id_type = (root, ctx)->
     when "int"
       new Type "int256"
     
-    when "byte", "bytes"
+    when "byte"
       new Type "bytes1"
+    
+    when "bytes"
+      new Type "bytes"
     
     when "address"
       new Type "address"
@@ -124,11 +133,11 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if root.typeString.match /^bytes\d{1,2}$/
+      if config.bytes_type_hash[type_string]
         new Type root.typeString
-      else if config.uint_type_list.has root.typeString
+      else if config.uint_type_hash[type_string]
         new Type root.typeString
-      else if config.int_type_list.has root.typeString
+      else if config.int_type_hash[type_string]
         new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
@@ -185,6 +194,9 @@ walk = (root, ctx)->
         
         when "library"
           ret.is_library = true
+        
+        when "interface"
+          ret.is_interface = true
         
         else
           throw new Error "unknown contractKind #{root.contractKind}"
@@ -481,6 +493,13 @@ walk = (root, ctx)->
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         
+        type_list = []
+        for v in ret.list
+          type_list.push v.type
+        
+        ret.type = new Type "tuple<>"
+        ret.type.nest_list = type_list
+        
         ret
       else
         decl = root.declarations[0]
@@ -599,10 +618,23 @@ walk = (root, ctx)->
         ret.scope.list = arr_merge scope_prepend_list, ret.scope.list
         if ret.scope.list.last().constructor.name != "Ret_multi"
           ret.scope.list.push ret_multi = new ast.Ret_multi
-          for v in scope_prepend_list
-            ret_multi.t_list.push _var = new ast.Var
-            _var.name = v.name
-      
+          switch scope_prepend_list.length
+            when 0
+              "nothing"
+            
+            when 1
+              v = scope_prepend_list[0]
+              ret_multi.t_list.push _var = new ast.Var
+              _var.name = v.name
+            
+            else
+              tuple = new ast.Tuple
+              for v in scope_prepend_list
+                tuple.list.push _var = new ast.Var
+                _var.name = v.name
+              
+              ret_multi.t_list.push tuple
+        
       ret.visibility = root.visibility
       ret.state_mutability = root.stateMutability
       ret

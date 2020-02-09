@@ -10,6 +10,7 @@ class @Class_decl
   name  : ""
   is_contract : false
   is_library  : false
+  is_interface: false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -27,6 +28,7 @@ class @Class_decl
     ret.name  = @name
     ret.is_contract = @is_contract
     ret.is_library  = @is_library
+    ret.is_interface= @is_interface
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type
@@ -172,6 +174,7 @@ class @Tuple
 class @Var_decl_multi # used for var (a,b) = fn_call();
   list  : []
   assign_value : null
+  type  : null
   line  : 0
   pos   : 0
   
@@ -183,6 +186,7 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
     for v in @list
       ret.list.push v.clone()
     ret.assign_value  = @assign_value.clone()
+    ret.type  = @type.clone() if @type
     ret.line  = @line
     ret.pos   = @pos
     ret

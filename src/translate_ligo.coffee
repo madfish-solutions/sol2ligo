@@ -25,8 +25,30 @@ walk = null
   BOOL_AND: "and"
   BOOL_OR : "or"
 
+string2bytes = (val)->
+  ret = ["0x"]
+  for ch in val
+    ret.push ch.charCodeAt(0).rjust 2, "0"
+  
+  if ret.length == 1
+    return "bytes_pack(unit)"
+  ret.join ""
+
+number2bytes = (val, precision = 32)->
+  ret = []
+  for i in [0 ... precision]
+    hex = val & 0xFF
+    ret.push hex.toString(16).rjust 2, "0"
+    val >>= 8
+  ret.push "0x"
+  ret.reverse()
+  ret.join ""
+
 @bin_op_name_cb_map =
-  ASSIGN  : (a, b)-> "#{a} := #{b}"
+  ASSIGN  : (a, b, ctx, ast)->
+    if config.bytes_type_hash[ast.a.type.main] and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
+      b = string2bytes ast.b.val
+    "#{a} := #{b}"
   BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
   BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
   BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
@@ -43,7 +65,7 @@ walk = null
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if config.uint_type_list.has(ast.a.type.main) and config.uint_type_list.has(ast.b.type.main)
+    if config.uint_type_hash[ast.a.type.main] and config.uint_type_hash[ast.b.type.main]
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -54,13 +76,15 @@ walk = null
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
-    if ast.type and config.uint_type_list.has ast.type.main
+      module.warning_counter++
+    if ast.type and config.uint_type_hash[ast.type.main]
       "abs(not (#{a}))"
     else
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx)->
     perr "RET_INC can have not fully correct implementation"
+    module.warning_counter++
     ctx.sink_list.push "#{a} := #{a} + 1"
     "(#{a} - 1)"
   
@@ -128,9 +152,9 @@ walk = null
         type.main
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if config.uint_type_list.has type.main
+      else if config.uint_type_hash[type.main]
         "nat"
-      else if config.int_type_list.has type.main
+      else if config.int_type_hash[type.main]
         "int"
       else
         ### !pragma coverage-skip-block ###
@@ -138,11 +162,14 @@ walk = null
         throw new Error("unknown solidity type '#{type}'")
 
 @type2default_value = type2default_value = (type, ctx)->
-  if config.uint_type_list.has type.main
+  if config.uint_type_hash[type.main]
     return "0n"
   
-  if config.int_type_list.has type.main
+  if config.int_type_hash[type.main]
     return "0"
+  
+  if config.bytes_type_hash[type.main]
+    return "bytes_pack(unit)"
   
   switch type.main
     when "bool"
@@ -169,11 +196,13 @@ walk = null
 #    special id, field access
 # ###################################################################################################
 spec_id_trans_hash =
-  "now"       : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.sender": "sender"
-  "tx.origin" : "source"
+  "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.sender"      : "sender"
+  "tx.origin"       : "source"
   "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.value" : "(amount / 1mutez)"
+  "msg.value"       : "(amount / 1mutez)"
+  "msg.data"        : "bytes_pack(unit)"
+  "abi.encodePacked": ""
 
 # ###################################################################################################
 
@@ -181,6 +210,7 @@ class @Gen_context
   next_gen          : null
   
   current_class     : null
+  is_class_scope    : false
   lvalue            : false
   type_decl_hash    : {}
   contract_var_hash : {}
@@ -198,6 +228,7 @@ class @Gen_context
   
   mk_nest : ()->
     t = new module.Gen_context
+    t.current_class = @current_class
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t
@@ -293,14 +324,14 @@ walk = (root, ctx)->
         if {}[root.name]? # constructor and other reserved JS stuff
           name
         else
-          spec_id_trans_hash[root.name] or name
+          spec_id_trans_hash[root.name] ? name
     
     when "Const"
       if !root.type
         puts root
         throw new Error "Can't type inference"
       
-      if config.uint_type_list.has root.type.main
+      if config.uint_type_hash[root.type.main]
         return "#{root.val}n"
       
       switch root.type.main
@@ -318,11 +349,17 @@ walk = (root, ctx)->
           module.warning_counter++
           root.val
         
+        when "unsigned_number"
+          "#{root.val}n"
+        
         when "string"
           JSON.stringify root.val
         
         else
-          root.val
+          if config.bytes_type_hash[root.type.main]
+            number2bytes root.val, +root.type.main.replace(/bytes/, '')
+          else
+            root.val
     
     when "Bin_op"
       # TODO lvalue ctx ???
@@ -376,7 +413,7 @@ walk = (root, ctx)->
         if ctx.type_decl_hash[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
       
-      spec_id_trans_hash[chk_ret] or ret
+      spec_id_trans_hash[chk_ret] ? ret
     
     when "Fn_call"
       arg_list = []
@@ -426,18 +463,28 @@ walk = (root, ctx)->
           when "revert"
             str = arg_list[0] or '"revert"'
             return "failwith(#{str})"
-
-          when "sha256", "sha3", "keccak256"
+          
+          when "sha256"
             msg = arg_list[0]
             return "sha_256(#{msg})"
-
+          
+          when "sha3", "keccak256"
+            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256"
+            msg = arg_list[0]
+            return "sha_256(#{msg})"
+          
           when "ripemd160"
+            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           else
             name = root.fn.name
-            name = translate_var_name name, ctx if root.fn.name_translate
+            if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
+              name = "#{ctx.current_class.name}_#{name}"
+              name = translate_var_name name, ctx
+            else
+              name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
               name
@@ -461,7 +508,7 @@ walk = (root, ctx)->
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
       if type_jl.length == 0
-        p root
+        perr root
         throw new Error "Bad call of pure function that returns nothing"
       if type_jl.length == 1
         ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
@@ -505,12 +552,16 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
-      if ctx.current_class
+      if ctx.is_class_scope
         ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
           val = walk root.assign_value, ctx
+          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
+            val = string2bytes root.assign_value.val
+          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
+            val = number2bytes root.assign_value.val
           """
           const #{name} : #{type} = #{val}
           """
@@ -518,6 +569,39 @@ walk = (root, ctx)->
           """
           const #{name} : #{type} = #{type2default_value root.type, ctx}
           """
+    
+    when "Var_decl_multi"
+      if root.assign_value
+        val = walk root.assign_value, ctx
+        tmp_var = "tmp_#{ctx.tmp_idx++}"
+        
+        jl = []
+        type_list = []
+        for _var, idx in root.list
+          {name} = _var
+          name = translate_var_name name, ctx
+          type_list.push type = translate_type _var.type, ctx
+          jl.push """
+          const #{name} : #{type} = #{tmp_var}.#{idx};
+          """
+        
+        """
+        const #{tmp_var} : (#{type_list.join ' * '}) = #{val};
+        #{join_list jl}
+        """
+      else
+        perr "CRITICAL WARNING Var_decl_multi with no assign value should be unreachable, but something goes wrong"
+        perr "CRITICAL WARNING We can't guarantee that smart contract would work at all"
+        module.warning_counter++
+        jl = []
+        for _var in root.list
+          {name} = _var
+          name = translate_var_name name, ctx
+          type = translate_type root.type, ctx
+          jl.push """
+          const #{name} : #{type} = #{type2default_value _var.type, ctx}
+          """
+        jl.join "\n"
     
     when "Throw"
       if root.t
@@ -591,18 +675,22 @@ walk = (root, ctx)->
       # current_class is missing for router
       if orig_ctx.current_class?.is_library
         name = "#{orig_ctx.current_class.name}_#{name}"
+      
+      name = translate_var_name name, ctx
       body = walk root.scope, ctx
       """
-      function #{translate_var_name name, ctx} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
     when "Class_decl"
       return "" if root.need_skip
+      return "" if root.is_interface # skip for now
       orig_ctx = ctx
       ctx.type_decl_hash[root.name] = root
       ctx = ctx.mk_nest()
       ctx.current_class = root
+      ctx.is_class_scope = true
       
       # stage 1 collect declarations
       field_decl_jl = []
@@ -610,16 +698,22 @@ walk = (root, ctx)->
         switch v.constructor.name
           when "Var_decl"
             field_decl_jl.push walk v, ctx
+          
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
+          
           when "Enum_decl"
             "skip"
+          
           when "Class_decl"
             ctx.sink_list.push walk v, ctx
+          
           when "Comment"
             ctx.sink_list.push walk v, ctx
+          
           when "Event_decl"
             ctx.sink_list.push walk v, ctx
+          
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
@@ -632,10 +726,13 @@ walk = (root, ctx)->
         switch v.constructor.name
           when "Var_decl"
             "skip"
+          
           when "Fn_decl_multiret", "Enum_decl"
             jl.push walk v, ctx
+          
           when "Class_decl", "Comment", "Event_decl"
             "skip"
+          
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
