@@ -81,7 +81,6 @@ address_field_hash =
   ]
   BIT_NOT : []
   MINUS   : []
-  RET_INC : []
 }
 
 for v in "ADD SUB MUL DIV MOD POW".split  /\s+/g
@@ -96,6 +95,8 @@ for v in "EQ NE GT LT GTE LTE".split  /\s+/g
 for v in "SHL SHR POW".split  /\s+/g
   @bin_op_ret_type_hash_list[v] = []
 
+for op in "RET_INC RET_DEC INC_RET DEC_RET".split  /\s+/g
+  @un_op_ret_type_hash_list[op] = []
 
 # ###################################################################################################
 #    numeric operation type table
@@ -107,8 +108,9 @@ do ()=>
   for type in config.int_type_list
     @un_op_ret_type_hash_list.MINUS.push [type, type]
   
-  for type in config.any_int_type_list
-    @un_op_ret_type_hash_list.RET_INC.push [type, type]
+  for op in "RET_INC RET_DEC INC_RET DEC_RET".split  /\s+/g
+    for type in config.any_int_type_list
+      @un_op_ret_type_hash_list[op].push [type, type]
     
   for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]

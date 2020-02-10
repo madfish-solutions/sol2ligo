@@ -20,6 +20,14 @@ describe "translate ligo section", ()->
           function expr() public returns (#{type}) {
             #{type} a = 0;
             #{type} c = 0;
+            a++;
+            a--;
+            ++a;
+            --a;
+            c = a++;
+            c = a--;
+            c = ++a;
+            c = --a;
             c = ~a;
             c = #{type}(~0);
             return c;
@@ -35,6 +43,18 @@ describe "translate ligo section", ()->
             block {
               const a : nat = 0n;
               const c : nat = 0n;
+              a := a + 1;
+              a := a - 1;
+              a := a + 1;
+              a := a - 1;
+              a := a + 1;
+              c := (a - 1);
+              a := a - 1;
+              c := (a + 1);
+              a := a + 1;
+              c := a;
+              a := a - 1;
+              c := a;
               c := abs(not (a));
               c := abs(not (0));
             } with (opList, contractStorage, c);

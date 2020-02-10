@@ -86,7 +86,25 @@ number2bytes = (val, precision = 32)->
     perr "RET_INC can have not fully correct implementation"
     module.warning_counter++
     ctx.sink_list.push "#{a} := #{a} + 1"
-    "(#{a} - 1)"
+    ctx.trim_expr = "(#{a} - 1)"
+  
+  RET_DEC : (a, ctx)->
+    perr "RET_DEC can have not fully correct implementation"
+    module.warning_counter++
+    ctx.sink_list.push "#{a} := #{a} - 1"
+    ctx.trim_expr = "(#{a} + 1)"
+  
+  INC_RET : (a, ctx)->
+    perr "INC_RET can have not fully correct implementation"
+    module.warning_counter++
+    ctx.sink_list.push "#{a} := #{a} + 1"
+    ctx.trim_expr = "#{a}"
+  
+  DEC_RET : (a, ctx)->
+    perr "DEC_RET can have not fully correct implementation"
+    module.warning_counter++
+    ctx.sink_list.push "#{a} := #{a} - 1"
+    ctx.trim_expr = "#{a}"
   
   DELETE : (a, ctx, ast)->
     if ast.a.constructor.name != "Bin_op"
