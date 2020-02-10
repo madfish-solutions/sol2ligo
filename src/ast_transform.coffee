@@ -92,6 +92,7 @@ do ()=>
         if root.iter
           root.iter = walk root.iter, ctx
         root.scope= walk root.scope, ctx
+        p "For3 scope", root.scope
         root
       
       when "Class_decl"
@@ -222,6 +223,7 @@ do ()=>
           while_inside.cond.val = "true"
           while_inside.cond.type = new Type "bool"
         # clone scope
+        p "while_inside", while_inside
         while_inside.scope.list.append root.scope.list
         if root.iter
           while_inside.scope.list.push root.iter
