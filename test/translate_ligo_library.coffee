@@ -176,3 +176,37 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o, router: true
   
+  it "library struct use from contract", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    library Roles {
+      struct Role {
+        mapping (address => bool) bearer;
+      }
+    }
+    
+    contract PauserRole {
+      Roles.Role private _pausers;
+      
+      function _addPauser(address account) internal {
+        _pausers.bearer[account] = true;
+      }
+    }
+    """
+    text_o = """
+    type roles_Role is record
+      bearer : map(address, bool);
+    end;
+    
+    type state is record
+      #{config.fix_underscore}__pausers : roles_Role;
+    end;
+    
+    function #{config.fix_underscore}__addPauser (const opList : list(operation); const contractStorage : state; const account : address) : (list(operation) * state) is
+      block {
+        contractStorage.#{config.fix_underscore}__pausers.bearer[account] := True;
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o
+  

@@ -220,6 +220,8 @@ class Ti_context
 
 class_prepare = (root, ctx)->
   ctx.type_hash[root.name] = root
+  if ctx.parent and ctx.current_class
+    ctx.parent.type_hash["#{ctx.current_class.name}.#{root.name}"] = root
   for v in root.scope.list
     switch v.constructor.name
       when "Var_decl"
@@ -909,6 +911,9 @@ get_list_sign = (list)->
       
       when "Scope"
         ctx_nest = ctx.mk_nest()
+        for v in root.list
+          if v.constructor.name == "Class_decl"
+            class_prepare v, ctx
         for v in root.list
           walk v, ctx_nest
         
