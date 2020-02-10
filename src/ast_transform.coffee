@@ -95,7 +95,6 @@ do ()=>
         if root.iter
           root.iter = walk root.iter, ctx
         root.scope= walk root.scope, ctx
-        p "For3 scope", root.scope
         root
       
       when "Class_decl"
@@ -114,7 +113,7 @@ do ()=>
       
       else
         ### !pragma coverage-skip-block ###
-        puts root
+        perr root
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
   module.default_walk = out_walk
@@ -361,7 +360,6 @@ do ()=>
           while_inside.cond.val = "true"
           while_inside.cond.type = new Type "bool"
         # clone scope
-        p "while_inside", while_inside
         while_inside.scope.list.append root.scope.list
         if root.iter
           while_inside.scope.list.push root.iter
