@@ -82,6 +82,8 @@ describe "translate ligo section", ()->
         uint u = uint(-1);
         int i = int(255);
         address addr = address(0);
+        string memory str = "123";
+        bytes memory b1 = bytes(str);
       }
     }
     """#"
@@ -95,6 +97,8 @@ describe "translate ligo section", ()->
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
         const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const str : string = "123";
+        const b1 : bytes = bytes_pack(str);
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o

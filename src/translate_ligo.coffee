@@ -555,6 +555,8 @@ walk = (root, ctx)->
         "abs(#{t})"
       else if target_type == "address" and t == "0"
         type2default_value root.target_type, ctx
+      else if target_type == "bytes" and root.t.type?.main == "string"
+        "bytes_pack(#{t})"
       else
         "(#{t} : #{target_type})"
     
