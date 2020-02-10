@@ -164,6 +164,12 @@ walk_param = (root, ctx)->
       perr root
       throw new Error("walk_param unknown nodeType '#{root.nodeType}'")
 
+ensure_scope = (t)->
+  return t if t.constructor.name == "Scope"
+  ret = new ast.Scope
+  ret.list.push t
+  ret
+
 class Context
   need_prevent_deploy : false
   constructor:()->
@@ -525,15 +531,15 @@ walk = (root, ctx)->
     when "IfStatement"
       ret = new ast.If
       ret.cond = walk root.condition, ctx
-      ret.t    = walk root.trueBody,  ctx
+      ret.t    = ensure_scope walk root.trueBody,  ctx
       if root.falseBody
-        ret.f    = walk root.falseBody, ctx
+        ret.f    = ensure_scope walk root.falseBody, ctx
       ret
     
     when "WhileStatement"
       ret = new ast.While
       ret.cond = walk root.condition, ctx
-      ret.scope= walk root.body, ctx
+      ret.scope= ensure_scope walk root.body, ctx
       ret
     
     when "ForStatement"
@@ -544,7 +550,7 @@ walk = (root, ctx)->
         ret.cond = walk root.condition, ctx
       if root.loopExpression
         ret.iter = walk root.loopExpression, ctx
-      ret.scope= walk root.body, ctx
+      ret.scope= ensure_scope walk root.body, ctx
       ret
     
     # ###################################################################################################

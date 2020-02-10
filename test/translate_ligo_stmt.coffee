@@ -237,3 +237,34 @@ describe "translate ligo section", ()->
     """
     make_test text_i, text_o
   
+  it "for with body of no scope", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    contract Body_no_scope {
+      function test() returns (int256) {
+        for (uint256 i = 0; false;)
+          if (i > 0) i = 2;
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      #{config.empty_state} : int;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
+      block {
+        const i : nat = 0n;
+        while (False) block {
+          if (i > 0n) then block {
+            i := 2n;
+          } else block {
+            skip
+          };
+        };
+      } with (opList, contractStorage, 0);
+    """
+    make_test text_i, text_o
+  
