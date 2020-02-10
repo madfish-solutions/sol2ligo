@@ -50,6 +50,9 @@ do ()=>
       when "Comment"
         root
       
+      when "Continue", "Break"
+        root
+      
       when "Var_decl"
         if root.assign_value
           root.assign_value = walk root.assign_value, ctx

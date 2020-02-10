@@ -517,6 +517,11 @@ walk = (root, ctx)->
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
+          when "ecrecover"
+            perr "WARNING ecrecover function is not present in LIGO"
+            # do not mangle, because it can be user-defined function
+            fn = "ecrecover"
+          
           else
             name = root.fn.name
             if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
@@ -586,6 +591,12 @@ walk = (root, ctx)->
         ""
       else
         "(* #{root.text} *)"
+    
+    when "Continue"
+      "(* CRITICAL WARNING continue is not supported *)"
+    
+    when "Break"
+      "(* CRITICAL WARNING break is not supported *)"
     
     when "Var_decl"
       name = root.name

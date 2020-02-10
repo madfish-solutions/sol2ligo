@@ -59,6 +59,9 @@ process_file = (file)->
       puts "ERROR"
       puts fs.readFileSync "./ligo_tmp.log", "utf-8"
   
+  if new_ast.need_prevent_deploy
+    puts "CRITICAL WARNING. Generated code is not 100% correct. DO NOT DEPLOY IT! Otherwise YOU WILL BE FIRED"
+  
   return
 
 if !(file = argv._[0])? and !(file = argv.file)
