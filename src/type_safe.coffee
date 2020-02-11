@@ -48,9 +48,11 @@ Type.prototype.cmp = (t)->
     return false if !tv?.cmp v
   for k,v of @field_hash
     continue if t.field_hash[k] == v
-    return false if !tv = t.field_hash[k]
+    return false if !t.field_hash.hasOwnProperty k
+    tv = t.field_hash[k]
     return false if !tv?.cmp v
   for k,v of t.field_hash
-    return false if !tv = @field_hash[k]
+    return false if !@field_hash.hasOwnProperty k
+    tv = @field_hash[k]
     # return false if !tv.cmp v
   true
