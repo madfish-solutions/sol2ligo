@@ -203,9 +203,10 @@ class Ti_context
   check_id : (id)->
     if id == "this"
       return @type_proxy @current_class
-    if type_decl = @type_hash[id]
-      return @type_proxy type_decl
-    return ret if ret = @var_hash[id]
+    if @type_hash.hasOwnProperty id
+      return @type_proxy @type_hash[id]
+    if @var_hash.hasOwnProperty id
+      return @var_hash[id]
     if state_class = @type_hash[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
     
@@ -214,7 +215,8 @@ class Ti_context
     throw new Error "can't find decl for id '#{id}'"
   
   check_type : (_type)->
-    return ret if ret = @type_hash[_type]
+    if @type_hash.hasOwnProperty _type
+      return @type_hash[_type]
     if @parent
       return @parent.check_type _type
     throw new Error "can't find type '#{_type}'"
@@ -258,9 +260,9 @@ get_list_sign = (list)->
   has_unsigned = false
   has_wtf      = false
   for v in list
-    if config.int_type_hash[v] or v == "signed_number"
+    if config.int_type_hash.hasOwnProperty(v) or v == "signed_number"
       has_signed = true
-    else if config.uint_type_hash[v] or v == "unsigned_number"
+    else if config.uint_type_hash.hasOwnProperty(v) or v == "unsigned_number"
       has_unsigned = true
     else if v == "number"
       has_signed = true
@@ -309,14 +311,14 @@ get_list_sign = (list)->
     else
       return a_type if a_type.cmp b_type
       # not fully correct, but solidity will wipe all incorrect cases for us
-      if a_type.main == "bytes" and config.bytes_type_hash[b_type.main]
+      if a_type.main == "bytes" and config.bytes_type_hash.hasOwnProperty b_type.main
         return a_type
-      if config.bytes_type_hash[a_type.main] and b_type.main == "bytes"
+      if config.bytes_type_hash.hasOwnProperty(a_type.main) and b_type.main == "bytes"
         return a_type
         
-      if a_type.main == "string" and config.bytes_type_hash[b_type.main]
+      if a_type.main == "string" and config.bytes_type_hash.hasOwnProperty b_type.main
         return a_type
-      if config.bytes_type_hash[a_type.main] and b_type.main == "string"
+      if config.bytes_type_hash.hasOwnProperty(a_type.main) and b_type.main == "string"
         return a_type
       
       if is_composite_type a_type
@@ -389,7 +391,7 @@ get_list_sign = (list)->
                 root.type   = type_spread_left root.type, root.a.type.nest_list[0]
               
               else
-                if config.bytes_type_hash[root.a.type?.main]
+                if config.bytes_type_hash.hasOwnProperty root.a.type?.main
                   root.b.type = type_spread_left root.b.type, new Type "uint256"
                   root.type = type_spread_left root.type, new Type "bytes1"
         
@@ -424,16 +426,17 @@ get_list_sign = (list)->
             field_hash = root_type.field_hash
           
           else
-            if config.bytes_type_hash[root_type.main]
+            if config.bytes_type_hash.hasOwnProperty root_type.main
               field_hash = bytes_field_hash
             else
               class_decl = ctx.check_type root_type.main
               field_hash = class_decl._prepared_field2type
         
-        if !field_type = field_hash[root.name]
+        if !field_hash.hasOwnProperty root.name
           perr root.t
           perr field_hash
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+        field_type = field_hash[root.name]
         
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
@@ -671,7 +674,7 @@ get_list_sign = (list)->
                 return root.type
               
               else
-                if config.bytes_type_hash[root.a.type?.main]
+                if config.bytes_type_hash.hasOwnProperty root.a.type?.main
                   root.b.type = type_spread_left root.b.type, new Type "uint256"
                   root.type = type_spread_left root.type, new Type "bytes1"
                   return root.type
@@ -698,7 +701,7 @@ get_list_sign = (list)->
         if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash[tuple[0]]
+            continue if !config.any_int_type_hash.hasOwnProperty tuple[0]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -706,7 +709,7 @@ get_list_sign = (list)->
         if is_number_type root.b.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash[tuple[1]]
+            continue if !config.any_int_type_hash.hasOwnProperty tuple[1]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -714,7 +717,7 @@ get_list_sign = (list)->
         if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash[tuple[2]]
+            continue if !config.any_int_type_hash.hasOwnProperty tuple[2]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -796,7 +799,7 @@ get_list_sign = (list)->
         if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash[tuple[0]]
+            continue if !config.any_int_type_hash.hasOwnProperty tuple[0]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -804,7 +807,7 @@ get_list_sign = (list)->
         if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash[tuple[1]]
+            continue if !config.any_int_type_hash.hasOwnProperty tuple[1]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -864,9 +867,9 @@ get_list_sign = (list)->
             class_decl = ctx.check_type root_type.main
             field_hash = class_decl._prepared_field2type
         
-        if !field_type = field_hash[root.name]
+        if !field_hash.hasOwnProperty root.name
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
-        
+        field_type = field_hash[root.name]
         # Я не понял зачем это
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
