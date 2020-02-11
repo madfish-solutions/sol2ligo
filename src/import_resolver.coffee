@@ -96,7 +96,7 @@ module.exports = (path, import_cache = {})->
   for line in line_list
     key = line.trim()
     if /^pragma/.test key
-      continue if pragma_hash[key]?
+      continue if pragma_hash.hasOwnProperty key
       pragma_hash[key] = true
     filter_line_list.push line
   
