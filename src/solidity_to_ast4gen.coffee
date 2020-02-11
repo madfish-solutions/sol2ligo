@@ -248,19 +248,19 @@ walk = (root, ctx)->
       ret
     
     when "InlineAssembly"
-      perr "WARNING InlineAssembly is not supported"
+      perr "WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler"
       ret = new ast.Comment
       ret.text = "InlineAssembly #{root.operations}"
       ret
     
     when "EventDefinition"
-      perr "WARNING EventDefinition is not supported"
+      perr "WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Event_decl
       ret.name = root.name
       ret
     
     when "EmitStatement"
-      perr "WARNING EmitStatement is not supported"
+      perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
       ret.text = "EmitStatement"
       ret
@@ -563,13 +563,13 @@ walk = (root, ctx)->
       ret
     
     when "Continue"
-      perr "CRITICAL WARNING 'continue' is not supported by LIGO"
+      perr "CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
       ret
     
     when "Break"
-      perr "CRITICAL WARNING 'break' is not supported by LIGO"
+      perr "CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Break
       ret

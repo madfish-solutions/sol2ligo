@@ -193,7 +193,7 @@ do ()=>
       when "Fn_call"
         if root.fn.constructor.name == "Var"
           if ctx.emit_decl_hash[root.fn.name]
-            perr "WARNING EmitStatement is not supported"
+            perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
             ret = new ast.Comment
             ret.text = "EmitStatement"
             return ret
@@ -272,7 +272,7 @@ do ()=>
             
             if fn_use_refined_hash[fn.name]
               delete fn_use_refined_hash[fn.name]
-              perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target"
+              perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             fn_dep_hash_hash[fn.name] = fn_use_refined_hash
           
           # phase 3 check no loops
@@ -303,7 +303,7 @@ do ()=>
           
           if 0 != h_count clone_fn_dep_hash_hash
             perr clone_fn_dep_hash_hash
-            perr "CRITICAL WARNING Can't reorder methods. Loop detected. This will produce uncompileable target"
+            perr "CRITICAL WARNING Can't reorder methods. Loop detected. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             break
           
           break if fn_move_list.length == 0
@@ -488,7 +488,7 @@ do ()=>
     name = name.capitalize()
     if name.length > 31
       new_name = name.substr 0, 31
-      perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}"
+      perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
       name = new_name
     name
   
@@ -788,7 +788,7 @@ do ()=>
               addmod.b = root.arg_list[2]
               addmod.a = add
               
-              perr "WARNING `addmod` translation may compute incorrectly due to possible overflow"
+              perr "WARNING `addmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types"
               
               return addmod
             
@@ -803,7 +803,7 @@ do ()=>
               mulmod.b = root.arg_list[2]
               mulmod.a = mul
               
-              perr "WARNING `mulmod` translation may compute incorrectly due to possible overflow"
+              perr "WARNING `mulmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types"
               
               return mulmod
         root
