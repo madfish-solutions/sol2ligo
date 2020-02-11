@@ -540,7 +540,7 @@ do ()=>
           # ###################################################################################################
           # TODO _main -> main_fn
           root.scope.list.push _main = new ast.Fn_decl_multiret
-          _main.name = "main"
+          _main.name = "@main"
           
           _main.type_i = new Type "function"
           _main.type_o =  new Type "function"
