@@ -74,6 +74,10 @@ address_field_hash =
 @bin_op_ret_type_hash_list = {
   BOOL_AND: [["bool", "bool", "bool"]]
   BOOL_OR : [["bool", "bool", "bool"]]
+  BOOL_GT : [["bool", "bool", "bool"]]
+  BOOL_LT : [["bool", "bool", "bool"]]
+  BOOL_GTE : [["bool", "bool", "bool"]]
+  BOOL_LTE : [["bool", "bool", "bool"]]
   ASSIGN  : [] # only cases a != b
 }
 @un_op_ret_type_hash_list = {
@@ -647,7 +651,7 @@ get_list_sign = (list)->
             root.b.type = type_spread_left root.b.type, root.type
             return root.type
           
-          when "EQ", "NE"
+          when "EQ", "NE", "GT", "GTE", "LT", "LTE"
             root.type = type_spread_left root.type, new Type "bool"
             root.a.type = type_spread_left root.a.type, root.b.type
             root.b.type = type_spread_left root.b.type, root.a.type

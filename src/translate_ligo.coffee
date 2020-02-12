@@ -416,9 +416,14 @@ walk = (root, ctx)->
               "bitwise_not(bitwise_xor(#{_a}, #{_b}))"
             when "=/="
               "bitwise_xor(#{_a}, #{_b})"
-            when ">", "<", ">=", "<="
-              perr "CRITICAL WARNING Bool comparison is not supported by Ligo."
-              "(#{_a} #{op} #{_b})"
+            when ">"
+              "(#{_a} and not #{_b})"
+            when "<" 
+              "((not #{_a}) and #{_b})"
+            when ">="
+              "(#{_a} or not #{_b})"
+            when "<="
+              "((not #{_a}) or #{_b})"
             else
               "(#{_a} #{op} #{_b})"
         else
