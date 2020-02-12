@@ -598,9 +598,18 @@ get_list_sign = (list)->
         root.type
       
       when "Ternary"
+        walk root.cond, ctx
+        t = walk root.t, ctx
+        f = walk root.f, ctx
+        root.t.type = type_spread_left root.t.type, root.f.type, ctx
+        root.f.type = type_spread_left root.f.type, root.t.type, ctx
+        root.type = type_spread_left root.type, root.t.type, ctx
         root.type
       
       when "New"
+        # TODO check suitable constructor
+        for arg in root.arg_list
+          walk arg, ctx
         root.type
       
       when "Tuple"
@@ -1041,9 +1050,18 @@ get_list_sign = (list)->
         root.type
       
       when "Ternary"
+        walk root.cond, ctx
+        t = walk root.t, ctx
+        f = walk root.f, ctx
+        root.t.type = type_spread_left root.t.type, root.f.type, ctx
+        root.f.type = type_spread_left root.f.type, root.t.type, ctx
+        root.type = type_spread_left root.type, root.t.type, ctx
         root.type
       
       when "New"
+        # TODO check suitable constructor
+        for arg in root.arg_list
+          walk arg, ctx
         root.type
       
       when "Tuple"
