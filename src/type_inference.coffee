@@ -352,6 +352,10 @@ get_list_sign = (list)->
           perr "CRITICAL WARNING address <-> defined number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
           return a_type
         
+        if b_type.main == "address" and config.any_int_type_hash.hasOwnProperty(a_type)
+          perr "CRITICAL WARNING address <-> defined number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+          return a_type
+        
         throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
