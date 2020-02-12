@@ -410,7 +410,7 @@ walk = (root, ctx)->
       
       ret = if op = module.bin_op_name_map[root.op]
         last_bracket_state = true
-        if (root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')
+        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=','<=','>','<','=']
           perr "CRITICAL WARNING Bool comparison is not supported by Ligo."
         "(#{_a} #{op} #{_b})"
       else if cb = module.bin_op_name_cb_map[root.op]
