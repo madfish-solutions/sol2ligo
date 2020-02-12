@@ -221,12 +221,28 @@ spec_id_trans_hash =
   "tx.origin"       : "source"
   "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.value"       : "(amount / 1mutez)"
-  "msg.data"        : "bytes_pack(unit)"
   "abi.encodePacked": ""
 
+bad_spec_id_trans_hash =
+  "block.coinbase"  : config.default_address
+  "block.difficulty": "0n"
+  "block.gaslimit"  : "0n"
+  "block.number"    : "0n"
+  "msg.data"        : "bytes_pack(unit)"
+  "msg.gas"         : "0n"
+  "msg.sig"         : "bytes_pack(unit)"
+  "tx.gasprice"     : "0n"
+
+warning_once_hash = {}
 spec_id_translate = (t, name)->
   if spec_id_trans_hash.hasOwnProperty t
     spec_id_trans_hash[t]
+  else if bad_spec_id_trans_hash.hasOwnProperty t
+    val = bad_spec_id_trans_hash[t]
+    if !warning_once_hash.hasOwnProperty t
+      warning_once_hash.hasOwnProperty[t] = true
+      perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
+    val
   else
     name
 # ###################################################################################################
