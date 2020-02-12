@@ -306,6 +306,9 @@ get_list_sign = (list)->
       # will check, but not spread
       if b_type.main in ["number", "unsigned_number", "signed_number"]
         unless is_defined_number_or_byte_type a_type
+          if a_type.main == "address"
+            perr "CRITICAL WARNING address <-> number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+            return a_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
       # p "NOTE Reverse spread collision detected", new Error "..."
     else
@@ -342,6 +345,13 @@ get_list_sign = (list)->
         if is_composite_type b_type
           throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
         # scalar
+        if is_number_type(a_type) and is_number_type(b_type)
+          return a_type
+        
+        if a_type.main == "address" and config.any_int_type_hash.hasOwnProperty(b_type)
+          perr "CRITICAL WARNING address <-> defined number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+          return a_type
+        
         throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
@@ -447,6 +457,24 @@ get_list_sign = (list)->
         root.type
       
       when "Fn_call"
+        switch root.fn.constructor.name
+          when "Var"
+            if root.fn.name == "super"
+              perr "CRITICAL WARNING skip super() call"
+              for arg in root.arg_list
+                walk arg, ctx
+              
+              return root.type
+          
+          when "Field_access"
+            if root.fn.t.constructor.name == "Var"
+              if root.fn.t.name == "super"
+                perr "CRITICAL WARNING skip super.fn call"
+                for arg in root.arg_list
+                  walk arg, ctx
+                
+                return root.type
+        
         root_type = walk root.fn, ctx
         
         if root_type.main == "function2_pure"
@@ -478,7 +506,8 @@ get_list_sign = (list)->
         if root.assign_value
           root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
-        
+        for decl in root.list
+          ctx.var_hash[decl.name] = decl.type
         null
       
       when "Throw"
@@ -878,6 +907,24 @@ get_list_sign = (list)->
         root.type
       
       when "Fn_call"
+        switch root.fn.constructor.name
+          when "Var"
+            if root.fn.name == "super"
+              perr "CRITICAL WARNING skip super() call"
+              for arg in root.arg_list
+                walk arg, ctx
+              
+              return root.type
+          
+          when "Field_access"
+            if root.fn.t.constructor.name == "Var"
+              if root.fn.t.name == "super"
+                perr "CRITICAL WARNING skip super.fn call"
+                for arg in root.arg_list
+                  walk arg, ctx
+                
+                return root.type
+        
         root_type = walk root.fn, ctx
         
         if root_type.main == "function2_pure"
@@ -911,6 +958,9 @@ get_list_sign = (list)->
         if root.assign_value
           root.assign_value.type = type_spread_left root.assign_value.type, root.type
           walk root.assign_value, ctx
+        
+        for decl in root.list
+          ctx.var_hash[decl.name] = decl.type
         
         null
       
