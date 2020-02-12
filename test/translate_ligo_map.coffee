@@ -41,7 +41,7 @@ describe "translate ligo section", ()->
   # TODO
   it "nested map"
   ###
-  (case contractStorage.addresses[0] of | None -> map end : map(nat, nat) | Some(x) -> x end)[0n] := 0n;
+  (case contractStorage.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
   this is not proper assign...
   TODO FIXME
   ###
