@@ -496,12 +496,15 @@ walk = (root, ctx)->
             when "address"
               switch root.fn.name
                 when "send"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
                   # TODO check balance
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
                   return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "transfer"
-                  throw new Error "not implemented"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+                  op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
+                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "built_in_pure_callback"
                   # TODO check balance
@@ -569,7 +572,9 @@ walk = (root, ctx)->
         arg_list.push "unit"
       
       type_jl = []
-      for v in root.fn.type?.nest_list[1].nest_list or []
+      # type can be null
+      # type can be contract name, so no nest_list
+      for v in root.fn.type?.nest_list[1]?.nest_list or []
         type_jl.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
