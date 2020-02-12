@@ -290,6 +290,9 @@ get_list_sign = (list)->
       else if b_type.main == "number"
         "nothing"
       else
+        if b_type.main == "address"
+          perr "NOTE address to number type cast is not supported in LIGO"
+          return a_type
         unless is_defined_number_or_byte_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
         a_type = b_type.clone()
@@ -456,7 +459,16 @@ get_list_sign = (list)->
         
         for arg in root.arg_list
           walk arg, ctx
-        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
+        
+        if root_type.main == "struct"
+          # this is contract(address) case
+          if root.arg_list.length != 1
+            throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+          [arg] = root.arg_list
+          arg.type = type_spread_left arg.type, new Type "address"
+          root.type = type_spread_left root.type, root_type
+        else
+          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
@@ -888,9 +900,19 @@ get_list_sign = (list)->
         
         for arg,i in root.arg_list
           walk arg, ctx
-          expected_type = root_type.nest_list[0].nest_list[i+offset]
-          arg.type = type_spread_left arg.type, expected_type
-        root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
+          if root_type.main != "struct"
+            expected_type = root_type.nest_list[0].nest_list[i+offset]
+            arg.type = type_spread_left arg.type, expected_type
+        
+        if root_type.main == "struct"
+          # this is contract(address) case
+          if root.arg_list.length != 1
+            throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+          [arg] = root.arg_list
+          arg.type = type_spread_left arg.type, new Type "address"
+          root.type = type_spread_left root.type, root_type
+        else
+          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
       
       # ###################################################################################################
       #    stmt
