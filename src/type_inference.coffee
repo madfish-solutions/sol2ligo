@@ -141,6 +141,10 @@ do ()=>
     list = @bin_op_ret_type_hash_list[op]
     for type in config.uint_type_list
       list.push [type, type, type]
+    for type in config.int_type_list
+      list.push [type, type, type]
+    for type in config.bytes_type_list
+      list.push [type, type, type]
   
   for op in "EQ NE GT LT GTE LTE".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]

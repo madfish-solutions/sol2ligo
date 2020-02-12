@@ -34,6 +34,13 @@ string2bytes = (val)->
     return "bytes_pack(unit)"
   ret.join ""
 
+some2nat = (val, type)->
+  if type.match /^int\d{0,3}$/
+    val = "abs(#{val})"
+  if type.match /^byte[s]?\d{0,2}$/
+    val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
+  val
+
 number2bytes = (val, precision = 32)->
   ret = []
   for i in [0 ... precision]
@@ -49,11 +56,26 @@ number2bytes = (val, precision = 32)->
     if config.bytes_type_hash[ast.a.type.main] and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
       b = string2bytes ast.b.val
     "#{a} := #{b}"
-  BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
-  BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
-  BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
-  SHR     : (a, b)-> "bitwise_lsr(#{a}, #{b})"
-  SHL     : (a, b)-> "bitwise_lsl(#{a}, #{b})"
+  BIT_AND : (a, b, ctx, ast) ->
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_and(#{a}, #{b})"
+  BIT_OR  : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_or(#{a}, #{b})"
+  BIT_XOR : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_xor(#{a}, #{b})"
+  SHR     : (a, b, ctx, ast) ->
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_lsr(#{a}, #{b})"
+  SHL     : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_lsl(#{a}, #{b})"
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
