@@ -337,6 +337,12 @@ get_list_sign = (list)->
         catch err
           perr "NOTE failed to resolve #{a_type.main} type"
       
+      if a_type.main == "struct" and b_type.main != "struct"
+        try
+          b_type = ctx.check_id b_type.main
+        catch err
+          perr "NOTE failed to resolve #{b_type.main} type"
+      
       if is_composite_type a_type
         if !is_composite_type b_type
           throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
@@ -359,6 +365,9 @@ get_list_sign = (list)->
         if is_composite_type b_type
           throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
         # scalar
+        if is_number_type(a_type) and is_number_type(b_type)
+          return a_type
+        
         throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
