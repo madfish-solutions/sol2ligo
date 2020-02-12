@@ -17,7 +17,7 @@ module.exports = (code, opt={})->
   
   target_dir = "#{__dirname}/../solc-bin/bin"
   if allow_download and !fs.existsSync "#{target_dir}/list.js"
-    puts "download solc catalog"
+    perr "download solc catalog"
     execSync "mkdir -p #{target_dir}"
     execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js --output #{target_dir}/list.js"
   
@@ -28,7 +28,7 @@ module.exports = (code, opt={})->
   
   pick_version = (candidate_version)->
     if debug
-      p "try pick_version #{candidate_version}" # DEBUG
+      perr "try pick_version #{candidate_version}" # DEBUG
     if full_name = release_hash[candidate_version]
       solc_full_name = full_name
     else
@@ -52,14 +52,14 @@ module.exports = (code, opt={})->
   if !(solc = solc_hash[solc_full_name])?
     path = "#{target_dir}/#{solc_full_name}"
     if allow_download and !fs.existsSync path
-      puts "download #{solc_full_name}"
+      perr "download #{solc_full_name}"
       execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/#{solc_full_name} --output #{target_dir}/#{solc_full_name}"
       
-    puts "loading solc #{solc_full_name}"
+    perr "loading solc #{solc_full_name}"
     solc_hash[solc_full_name] = solc = setupMethods require path
   
   if debug
-    p "use #{solc_full_name}" # DEBUG
+    perr "use #{solc_full_name}" # DEBUG
   input = {
     language: "Solidity",
     sources: {
@@ -84,7 +84,7 @@ module.exports = (code, opt={})->
   for error in output.errors or []
     if error.type == "Warning"
       unless opt.silent
-        p "WARNING", error
+        perr "WARNING", error
       continue
     is_ok = false
     perr error

@@ -62,7 +62,7 @@ walk = (root, ctx)->
         ctx.next_gen root, ctx
       else
         # TODO gen extentions
-        puts root
+        perr root
         throw new Error "Unknown root.constructor.name #{root.constructor.name}"
 
 @gen = (root, opt = {})->

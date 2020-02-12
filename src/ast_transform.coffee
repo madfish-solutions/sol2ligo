@@ -113,7 +113,7 @@ do ()=>
       
       else
         ### !pragma coverage-skip-block ###
-        puts root
+        perr root
         throw new Error "unknown root.constructor.name #{root.constructor.name}"
     
   module.default_walk = out_walk
