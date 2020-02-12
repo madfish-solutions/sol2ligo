@@ -202,7 +202,7 @@ number2bytes = (val, precision = 32)->
       "(nil: list(operation))"
     
     when "map", "array"
-      "map end : #{translate_type type, ctx}"
+      "(map end : #{translate_type type, ctx})"
     
     when "string"
       '""'
