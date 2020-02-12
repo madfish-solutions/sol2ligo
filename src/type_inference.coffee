@@ -560,6 +560,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"
@@ -993,6 +994,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"
