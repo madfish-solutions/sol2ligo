@@ -191,7 +191,7 @@ do ()=>
       
       when "Fn_call"
         if root.fn.constructor.name == "Var"
-          if ctx.emit_decl_hash[root.fn.name]
+          if ctx.emit_decl_hash.hasOwnProperty root.fn.name
             perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
             ret = new ast.Comment
             ret.text = "EmitStatement"
@@ -266,10 +266,10 @@ do ()=>
             fn_use_hash = module.collect_fn_call fn
             fn_use_refined_hash = {}
             for k,v of fn_use_hash
-              continue if !fn_hash[k]
+              continue if !fn_hash.hasOwnProperty k
               fn_use_refined_hash[k] = v
             
-            if fn_use_refined_hash[fn.name]
+            if fn_use_refined_hash.hasOwnProperty fn.name
               delete fn_use_refined_hash[fn.name]
               perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             fn_dep_hash_hash[fn.name] = fn_use_refined_hash
@@ -698,8 +698,9 @@ do ()=>
           need_lookup_list = []
           for i in [inheritance_list.length-1 .. 0] by -1
             v = inheritance_list[i]
-            if !class_decl = ctx.class_hash[v.name]
+            if !ctx.class_hash.hasOwnProperty v.name
               throw new Error "can't find parent class #{v.name}"
+            class_decl = ctx.class_hash[v.name]
             
             class_decl.need_skip = true
             inheritance_apply_list.push v
@@ -712,8 +713,9 @@ do ()=>
         root = root.clone()
         
         for parent in inheritance_apply_list
-          if !class_decl = ctx.class_hash[parent.name]
+          if !ctx.class_hash.hasOwnProperty parent.name
             throw new Error "can't find parent class #{parent.name}"
+          class_decl = ctx.class_hash[parent.name]
           
           continue if class_decl.is_interface
           look_list = class_decl.scope.list
@@ -823,8 +825,9 @@ do ()=>
     ###
     if mod.fn.constructor.name != "Var"
       throw new Error "unimplemented"
-    if !mod_decl = ctx.modifier_hash[mod.fn.name]
+    if !ctx.modifier_hash.hasOwnProperty mod.fn.name
       throw new Error "unknown modifier #{mod.fn.name}"
+    mod_decl = ctx.modifier_hash[mod.fn.name]
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list

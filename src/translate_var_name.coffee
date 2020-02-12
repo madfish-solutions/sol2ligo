@@ -87,7 +87,7 @@ reserved_hash[config.op_list] = true
   
   name = name.substr(0,1).toLowerCase() + name.substr 1
   
-  if reserved_hash[name] and name != "constructor"
+  if reserved_hash.hasOwnProperty name
     "#{config.reserved}__#{name}"
   else
     name

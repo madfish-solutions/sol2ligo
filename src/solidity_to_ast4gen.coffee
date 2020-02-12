@@ -133,11 +133,11 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if config.bytes_type_hash[type_string]
+      if config.bytes_type_hash.hasOwnProperty type_string
         new Type root.typeString
-      else if config.uint_type_hash[type_string]
+      else if config.uint_type_hash.hasOwnProperty type_string
         new Type root.typeString
-      else if config.int_type_hash[type_string]
+      else if config.int_type_hash.hasOwnProperty type_string
         new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
