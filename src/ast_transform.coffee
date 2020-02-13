@@ -556,21 +556,7 @@ do ()=>
           op_list_decl.type = new Type "built_in_op_list"
           op_list_decl.name_translate = false
           
-          _main.scope.list.push _if = new ast.If
-          _if.cond = new ast.Var
-          _if.cond.name = config.initialized
-          _if.name_translate = false
-          
-          _if.f.list.push assign = new ast.Bin_op
-          assign.op = "ASSIGN"
-          assign.a = new ast.Var
-          assign.a.name = config.initialized
-          assign.a.name_translate = false
-          assign.b = new ast.Const
-          assign.b.val = "true"
-          assign.b.type = new Type "bool"
-          
-          _if.t.list.push _switch = new ast.PM_switch
+          _main.scope.list.push _switch = new ast.PM_switch
           _switch.cond = new ast.Var
           _switch.cond.name = "action"
           _switch.cond.type = new Type "string" # TODO proper type
@@ -604,7 +590,11 @@ do ()=>
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
-            
+
+            req = new ast.If
+            req.cond = new ast.Var
+            req.cond.name = config.initialized
+            req.name_translate = false
             if func.state_mutability == "pure"
               transfer_call = new ast.Fn_call
               transfer_call.fn = fn = new ast.Field_access
@@ -622,10 +612,22 @@ do ()=>
               fn.type = new Type "function2<function<>,#{func.type_o}>"
               
               transfer_call.arg_list.push call
-              
-              _case.scope.list.push transfer_call
+              req.f.list.push transfer_call
             else
-              _case.scope.list.push call
+              if func.name == "constructor"
+                req.t.list.push call
+                req.t.list.push assign = new ast.Bin_op
+                assign.op = "ASSIGN"
+                assign.a = new ast.Var
+                assign.a.name = config.initialized
+                assign.a.name_translate = false
+                assign.a.type = new Type "bool" 
+                assign.b = new ast.Const
+                assign.b.val = "true"
+                assign.b.type = new Type "bool" 
+              else
+                req.f.list.push call
+            _case.scope.list.push req
           _main.scope.list.push ret = new ast.Ret_multi
           
           ret.t_list.push _var = new ast.Var
@@ -711,7 +713,6 @@ do ()=>
         
         # keep unmodified stored in ctx.class_decl
         root = root.clone()
-        
         for parent in inheritance_apply_list
           if !ctx.class_hash.hasOwnProperty parent.name
             throw new Error "can't find parent class #{parent.name}"
