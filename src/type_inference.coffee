@@ -3,8 +3,7 @@ Type = require "type"
 require "./type_safe"
 module = @
 
-# Прим. Это система типов eth
-# каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
+# NOTE. Type system. Each language should define its own
 @default_var_hash_gen = ()->
   {
     msg : (()->
@@ -12,16 +11,23 @@ module = @
       ret.field_hash.sender = new Type "address"
       ret.field_hash.value  = new Type "uint256"
       ret.field_hash.data   = new Type "bytes"
+      ret.field_hash.gas    = new Type "uint256"
+      ret.field_hash.sig    = new Type "bytes4"
       ret
     )()
     tx : (()->
       ret = new Type "struct"
-      ret.field_hash["origin"] = new Type "address"
+      ret.field_hash["origin"]  = new Type "address"
+      ret.field_hash["gasprice"]= new Type "uint256"
       ret
     )()
     block : (()->
       ret = new Type "struct"
       ret.field_hash["timestamp"] = new Type "uint256"
+      ret.field_hash["coinbase"]  = new Type "address"
+      ret.field_hash["difficulty"]= new Type "uint256"
+      ret.field_hash["gaslimit"]  = new Type "uint256"
+      ret.field_hash["number"]    = new Type "uint256"
       ret
     )()
     abi : (()->
@@ -231,7 +237,7 @@ class_prepare = (root, ctx)->
         root._prepared_field2type[v.name] = v.type
       
       when "Fn_decl_multiret"
-        # BUG внутри scope уже есть this и ему нужен тип...
+        # BUG this is defined inside scope and it needs type
         if v.state_mutability == "pure"
           type = new Type "function2_pure<function,function>"
         else
@@ -290,6 +296,9 @@ get_list_sign = (list)->
       else if b_type.main == "number"
         "nothing"
       else
+        if b_type.main == "address"
+          perr "NOTE address to number type cast is not supported in LIGO"
+          return a_type
         unless is_defined_number_or_byte_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
         a_type = b_type.clone()
@@ -454,7 +463,7 @@ get_list_sign = (list)->
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         field_type = field_hash[root.name]
         
-        # Я не понял зачем это
+        # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
@@ -585,6 +594,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"
@@ -657,8 +667,6 @@ get_list_sign = (list)->
   # iterable
   
   # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
-  # Прим. спорно. В этом случае надо будет как-то информировать что это phase 2 иначе будет непонятно что привело к этому
-  # возможно копипастить меньшее зло, чем потом дебажить непонятно как (т.к. сейчас p можно поставить на stage 1 и stage 2 раздельно)
   walk = (root, ctx)->
     switch root.constructor.name
       # ###################################################################################################
@@ -904,7 +912,7 @@ get_list_sign = (list)->
         if !field_hash.hasOwnProperty root.name
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         field_type = field_hash[root.name]
-        # Я не понял зачем это
+        # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
@@ -1037,6 +1045,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"

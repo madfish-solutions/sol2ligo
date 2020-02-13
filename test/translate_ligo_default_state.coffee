@@ -116,12 +116,12 @@ describe "translate ligo default state section", ()->
       State : {
         balances : {
           type : "map(address, nat)"
-          value: "map end : map(address, nat)"
+          value: "(map end : map(address, nat))"
         }
       }
     }, """
     record
-      balances = map end : map(address, nat);
+      balances = (map end : map(address, nat));
     end
     """
   
