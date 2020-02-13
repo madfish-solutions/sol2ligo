@@ -277,15 +277,15 @@ get_list_sign = (list)->
 
 @gen = (ast_tree, opt)->
   change_count = 0
-  type_spread_left = (a_type, b_type, touch_counter=true)->
+  type_spread_left = (a_type, b_type, ctx)->
     return a_type if !b_type
     if !a_type and b_type
       a_type = b_type.clone()
-      change_count++ if touch_counter
+      change_count++
     else if a_type.main == "number"
       if b_type.main in ["unsigned_number", "signed_number"]
         a_type = b_type.clone()
-        change_count++ if touch_counter
+        change_count++
       else if b_type.main == "number"
         "nothing"
       else
@@ -295,7 +295,7 @@ get_list_sign = (list)->
         unless is_defined_number_or_byte_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
         a_type = b_type.clone()
-        change_count++ if touch_counter
+        change_count++
     else if is_not_defined_type(a_type) and !is_not_defined_type(b_type)
       if a_type.main in ["unsigned_number", "signed_number"]
         unless is_defined_number_or_byte_type b_type
@@ -303,7 +303,7 @@ get_list_sign = (list)->
       else
         throw new Error "unknown is_not_defined_type spread case"
       a_type = b_type.clone()
-      change_count++ if touch_counter
+      change_count++
     else if !is_not_defined_type(a_type) and is_not_defined_type(b_type)
       # will check, but not spread
       if b_type.main in ["number", "unsigned_number", "signed_number"]
@@ -323,9 +323,22 @@ get_list_sign = (list)->
       if config.bytes_type_hash.hasOwnProperty(a_type.main) and b_type.main == "string"
         return a_type
       
+      if a_type.main != "struct" and b_type.main == "struct"
+        try
+          a_type = ctx.check_id a_type.main
+        catch err
+          perr "NOTE failed to resolve #{a_type.main} type"
+      
+      if a_type.main == "struct" and b_type.main != "struct"
+        try
+          b_type = ctx.check_id b_type.main
+        catch err
+          perr "NOTE failed to resolve #{b_type.main} type"
+      
       if is_composite_type a_type
         if !is_composite_type b_type
           throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+        
         # composite
         if a_type.main != b_type.main
           throw new Error "spread composite collision '#{a_type}' '#{b_type}'. Reason: composite container mismatch"
@@ -336,7 +349,7 @@ get_list_sign = (list)->
         for idx in [0 ... a_type.nest_list.length]
           inner_a = a_type.nest_list[idx]
           inner_b = b_type.nest_list[idx]
-          new_inner_a = type_spread_left inner_a, inner_b, touch_counter
+          new_inner_a = type_spread_left inner_a, inner_b, ctx
           a_type.nest_list[idx] = new_inner_a
         
         # TODO struct? but we don't need it? (field_hash)
@@ -344,6 +357,9 @@ get_list_sign = (list)->
         if is_composite_type b_type
           throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
         # scalar
+        if is_number_type(a_type) and is_number_type(b_type)
+          return a_type
+        
         throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
@@ -355,7 +371,7 @@ get_list_sign = (list)->
       #    expr
       # ###################################################################################################
       when "Var"
-        root.type = type_spread_left root.type, ctx.check_id root.name
+        root.type = type_spread_left root.type, ctx.check_id(root.name), ctx
       
       when "Const"
         root.type
@@ -366,36 +382,36 @@ get_list_sign = (list)->
         
         switch root.op
           when "ASSIGN"
-            root.a.type = type_spread_left root.a.type, root.b.type
-            root.b.type = type_spread_left root.b.type, root.a.type
+            root.a.type = type_spread_left root.a.type, root.b.type, ctx
+            root.b.type = type_spread_left root.b.type, root.a.type, ctx
             
-            root.type = type_spread_left root.type, root.a.type
-            root.a.type = type_spread_left root.a.type, root.type
-            root.b.type = type_spread_left root.b.type, root.type
+            root.type = type_spread_left root.type, root.a.type, ctx
+            root.a.type = type_spread_left root.a.type, root.type, ctx
+            root.b.type = type_spread_left root.b.type, root.type, ctx
           
           when "EQ", "NE"
-            root.type = type_spread_left root.type, new Type "bool"
-            root.a.type = type_spread_left root.a.type, root.b.type
-            root.b.type = type_spread_left root.b.type, root.a.type
+            root.type = type_spread_left root.type, new Type("bool"), ctx
+            root.a.type = type_spread_left root.a.type, root.b.type, ctx
+            root.b.type = type_spread_left root.b.type, root.a.type, ctx
           
           when "INDEX_ACCESS"
             switch root.a.type?.main
               when "string"
-                root.b.type = type_spread_left root.b.type, new Type "uint256"
-                root.type = type_spread_left root.type, new Type "string"
+                root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                root.type = type_spread_left root.type, new Type("string"), ctx
               
               when "map"
-                root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]
-                root.type   = type_spread_left root.type, root.a.type.nest_list[1]
+                root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0], ctx
+                root.type   = type_spread_left root.type, root.a.type.nest_list[1], ctx
               
               when "array"
-                root.b.type = type_spread_left root.b.type, new Type "uint256"
-                root.type   = type_spread_left root.type, root.a.type.nest_list[0]
+                root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                root.type   = type_spread_left root.type, root.a.type.nest_list[0], ctx
               
               else
                 if config.bytes_type_hash.hasOwnProperty root.a.type?.main
-                  root.b.type = type_spread_left root.b.type, new Type "uint256"
-                  root.type = type_spread_left root.type, new Type "bytes1"
+                  root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                  root.type = type_spread_left root.type, new Type("bytes1"), ctx
         
         # bruteforce only at stage 2
         
@@ -445,7 +461,7 @@ get_list_sign = (list)->
         if typeof field_type == "function"
           field_type = field_type root.t.type
         
-        root.type = type_spread_left root.type, field_type
+        root.type = type_spread_left root.type, field_type, ctx
         root.type
       
       when "Fn_call"
@@ -464,10 +480,10 @@ get_list_sign = (list)->
           if root.arg_list.length != 1
             throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
           [arg] = root.arg_list
-          arg.type = type_spread_left arg.type, new Type "address"
-          root.type = type_spread_left root.type, root_type
+          arg.type = type_spread_left arg.type, new Type("address"), ctx
+          root.type = type_spread_left root.type, root_type, ctx
         else
-          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
+          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
       
       # ###################################################################################################
       #    stmt
@@ -480,14 +496,14 @@ get_list_sign = (list)->
       
       when "Var_decl"
         if root.assign_value
-          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
         null
       
       when "Var_decl_multi"
         if root.assign_value
-          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
         
         null
@@ -509,7 +525,7 @@ get_list_sign = (list)->
       
       when "Ret_multi"
         for v,idx in root.t_list
-          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
+          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx], ctx
           expected = ctx.parent_fn.type_o.nest_list[idx]
           real = v.type
           if !expected.cmp real
@@ -591,13 +607,13 @@ get_list_sign = (list)->
         
         type = new Type "tuple<>"
         type.nest_list = nest_list
-        root.type = type_spread_left root.type, type
+        root.type = type_spread_left root.type, type, ctx
         
         # <- ret
         
         for v,idx in root.type.nest_list
           tuple_value = root.list[idx]
-          tuple_value.type = type_spread_left tuple_value.type, v
+          tuple_value.type = type_spread_left tuple_value.type, v, ctx
         
         root.type
       
@@ -612,14 +628,14 @@ get_list_sign = (list)->
           nest_type = root.type.nest_list[0]
         
         for v in root.list
-          nest_type = type_spread_left nest_type, v.type
+          nest_type = type_spread_left nest_type, v.type, ctx
         
         for v in root.list
-          v.type = type_spread_left v.type, nest_type
+          v.type = type_spread_left v.type, nest_type, ctx
         
         type = new Type "array<>"
         type.nest_list[0] = nest_type
-        root.type = type_spread_left root.type, type
+        root.type = type_spread_left root.type, type, ctx
         root.type
       
       when "Event_decl"
@@ -641,7 +657,7 @@ get_list_sign = (list)->
       #    expr
       # ###################################################################################################
       when "Var"
-        root.type = type_spread_left root.type, ctx.check_id root.name
+        root.type = type_spread_left root.type, ctx.check_id(root.name), ctx
       
       when "Const"
         root.type
@@ -652,41 +668,41 @@ get_list_sign = (list)->
         
         switch root.op
           when "ASSIGN"
-            root.a.type = type_spread_left root.a.type, root.b.type
-            root.b.type = type_spread_left root.b.type, root.a.type
+            root.a.type = type_spread_left root.a.type, root.b.type, ctx
+            root.b.type = type_spread_left root.b.type, root.a.type, ctx
             
-            root.type = type_spread_left root.type, root.a.type
-            root.a.type = type_spread_left root.a.type, root.type
-            root.b.type = type_spread_left root.b.type, root.type
+            root.type = type_spread_left root.type, root.a.type, ctx
+            root.a.type = type_spread_left root.a.type, root.type, ctx
+            root.b.type = type_spread_left root.b.type, root.type, ctx
             return root.type
           
           when "EQ", "NE"
-            root.type = type_spread_left root.type, new Type "bool"
-            root.a.type = type_spread_left root.a.type, root.b.type
-            root.b.type = type_spread_left root.b.type, root.a.type
+            root.type = type_spread_left root.type, new Type("bool"), ctx
+            root.a.type = type_spread_left root.a.type, root.b.type, ctx
+            root.b.type = type_spread_left root.b.type, root.a.type, ctx
             return root.type
           
           when "INDEX_ACCESS"
             switch root.a.type?.main
               when "string"
-                root.b.type = type_spread_left root.b.type, new Type "uint256"
-                root.type = type_spread_left root.type, new Type "string"
+                root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                root.type = type_spread_left root.type, new Type("string"), ctx
                 return root.type
               
               when "map"
-                root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0]
-                root.type   = type_spread_left root.type, root.a.type.nest_list[1]
+                root.b.type = type_spread_left root.b.type, root.a.type.nest_list[0], ctx
+                root.type   = type_spread_left root.type, root.a.type.nest_list[1], ctx
                 return root.type
               
               when "array"
-                root.b.type = type_spread_left root.b.type, new Type "uint256"
-                root.type   = type_spread_left root.type, root.a.type.nest_list[0]
+                root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                root.type   = type_spread_left root.type, root.a.type.nest_list[0], ctx
                 return root.type
               
               else
                 if config.bytes_type_hash.hasOwnProperty root.a.type?.main
-                  root.b.type = type_spread_left root.b.type, new Type "uint256"
-                  root.type = type_spread_left root.type, new Type "bytes1"
+                  root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
+                  root.type = type_spread_left root.type, new Type("bytes1"), ctx
                   return root.type
         
         bruteforce_a  = is_not_defined_type root.a.type
@@ -738,9 +754,9 @@ get_list_sign = (list)->
           throw new Error "type inference stuck bin_op #{root.op} invalid a=#{a} b=#{b} ret=#{ret}"
         else if found_list.length == 1
           [a, b, ret] = found_list[0]
-          root.a.type = type_spread_left root.a.type, new Type a
-          root.b.type = type_spread_left root.b.type, new Type b
-          root.type   = type_spread_left root.type,   new Type ret
+          root.a.type = type_spread_left root.a.type, new Type(a), ctx
+          root.b.type = type_spread_left root.b.type, new Type(b), ctx
+          root.type   = type_spread_left root.type,   new Type(ret), ctx
         else
           if bruteforce_a
             a_type_list = []
@@ -749,10 +765,10 @@ get_list_sign = (list)->
             if a_type_list.length == 0
               perr "bruteforce stuck bin_op #{root.op} caused a can't be any type"
             else if a_type_list.length == 1
-              root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+              root.a.type = type_spread_left root.a.type, new Type(a_type_list[0]), ctx
             else
               if new_type = get_list_sign a_type_list
-                root.a.type = type_spread_left root.a.type, new Type new_type
+                root.a.type = type_spread_left root.a.type, new Type(new_type), ctx
           
           if bruteforce_b
             b_type_list = []
@@ -761,10 +777,10 @@ get_list_sign = (list)->
             if b_type_list.length == 0
               perr "bruteforce stuck bin_op #{root.op} caused b can't be any type"
             else if b_type_list.length == 1
-              root.b.type = type_spread_left root.b.type, new Type b_type_list[0]
+              root.b.type = type_spread_left root.b.type, new Type(b_type_list[0]), ctx
             else
               if new_type = get_list_sign b_type_list
-                root.b.type = type_spread_left root.b.type, new Type new_type
+                root.b.type = type_spread_left root.b.type, new Type(new_type), ctx
           
           if bruteforce_ret
             ret_type_list = []
@@ -773,10 +789,10 @@ get_list_sign = (list)->
             if ret_type_list.length == 0
               perr "bruteforce stuck bin_op #{root.op} caused ret can't be any type"
             else if ret_type_list.length == 1
-              root.type = type_spread_left root.type, new Type ret_type_list[0]
+              root.type = type_spread_left root.type, new Type(ret_type_list[0]), ctx
             else
               if new_type = get_list_sign ret_type_list
-                root.type = type_spread_left root.type, new Type new_type
+                root.type = type_spread_left root.type, new Type(new_type), ctx
         
         root.type
       
@@ -828,8 +844,8 @@ get_list_sign = (list)->
           throw new Error "type inference stuck un_op #{root.op} invalid a=#{a} ret=#{ret}"
         else if found_list.length == 1
           [a, ret] = found_list[0]
-          root.a.type = type_spread_left root.a.type, new Type a
-          root.type   = type_spread_left root.type,   new Type ret
+          root.a.type = type_spread_left root.a.type, new Type(a), ctx
+          root.type   = type_spread_left root.type,   new Type(ret), ctx
         else
           if bruteforce_a
             a_type_list = []
@@ -838,10 +854,10 @@ get_list_sign = (list)->
             if a_type_list.length == 0
               throw new Error "type inference bruteforce stuck un_op #{root.op} caused a can't be any type"
             else if a_type_list.length == 1
-              root.a.type = type_spread_left root.a.type, new Type a_type_list[0]
+              root.a.type = type_spread_left root.a.type, new Type(a_type_list[0]), ctx
             else
               if new_type = get_list_sign a_type_list
-                root.a.type = type_spread_left root.a.type, new Type new_type
+                root.a.type = type_spread_left root.a.type, new Type(new_type), ctx
           
           if bruteforce_ret
             ret_type_list = []
@@ -850,10 +866,10 @@ get_list_sign = (list)->
             if ret_type_list.length == 0
               throw new Error "type inference bruteforce stuck un_op #{root.op} caused ret can't be any type"
             else if ret_type_list.length == 1
-              root.type = type_spread_left root.type, new Type ret_type_list[0]
+              root.type = type_spread_left root.type, new Type(ret_type_list[0]), ctx
             else
               if new_type = get_list_sign ret_type_list
-                root.type = type_spread_left root.type, new Type new_type
+                root.type = type_spread_left root.type, new Type(new_type), ctx
         
         root.type
       
@@ -884,7 +900,7 @@ get_list_sign = (list)->
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
-        root.type = type_spread_left root.type, field_type
+        root.type = type_spread_left root.type, field_type, ctx
         root.type
       
       when "Fn_call"
@@ -899,17 +915,17 @@ get_list_sign = (list)->
           walk arg, ctx
           if root_type.main != "struct"
             expected_type = root_type.nest_list[0].nest_list[i+offset]
-            arg.type = type_spread_left arg.type, expected_type
+            arg.type = type_spread_left arg.type, expected_type, ctx
         
         if root_type.main == "struct"
           # this is contract(address) case
           if root.arg_list.length != 1
             throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
           [arg] = root.arg_list
-          arg.type = type_spread_left arg.type, new Type "address"
-          root.type = type_spread_left root.type, root_type
+          arg.type = type_spread_left arg.type, new Type("address"), ctx
+          root.type = type_spread_left root.type, root_type, ctx
         else
-          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset]
+          root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
       
       # ###################################################################################################
       #    stmt
@@ -922,14 +938,14 @@ get_list_sign = (list)->
       
       when "Var_decl"
         if root.assign_value
-          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
         ctx.var_hash[root.name] = root.type
         null
       
       when "Var_decl_multi"
         if root.assign_value
-          root.assign_value.type = type_spread_left root.assign_value.type, root.type
+          root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
         
         null
@@ -951,7 +967,7 @@ get_list_sign = (list)->
       
       when "Ret_multi"
         for v,idx in root.t_list
-          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx]
+          v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx], ctx
           expected = ctx.parent_fn.type_o.nest_list[idx]
           real = v.type
           if !expected.cmp real
@@ -1033,13 +1049,13 @@ get_list_sign = (list)->
         
         type = new Type "tuple<>"
         type.nest_list = nest_list
-        root.type = type_spread_left root.type, type
+        root.type = type_spread_left root.type, type, ctx
         
         # <- ret
         
         for v,idx in root.type.nest_list
           tuple_value = root.list[idx]
-          tuple_value.type = type_spread_left tuple_value.type, v
+          tuple_value.type = type_spread_left tuple_value.type, v, ctx
         
         root.type
       
@@ -1054,13 +1070,13 @@ get_list_sign = (list)->
           nest_type = root.type.nest_list[0]
         
         for v in root.list
-          nest_type = type_spread_left nest_type, v.type
+          nest_type = type_spread_left nest_type, v.type, ctx
         
         for v in root.list
-          v.type = type_spread_left v.type, nest_type
+          v.type = type_spread_left v.type, nest_type, ctx
         
         type = new Type "array<#{nest_type}>"
-        root.type = type_spread_left root.type, type
+        root.type = type_spread_left root.type, type, ctx
         root.type
       
       when "Event_decl"
