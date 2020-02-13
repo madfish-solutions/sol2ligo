@@ -3,8 +3,7 @@ Type = require "type"
 require "./type_safe"
 module = @
 
-# Прим. Это система типов eth
-# каждый язык, который хочет транслироваться должен сам решать как он будет преобразовывать эти типы в свои
+# NOTE. Type system. Each language should define its own
 @default_var_hash_gen = ()->
   {
     msg : (()->
@@ -231,7 +230,7 @@ class_prepare = (root, ctx)->
         root._prepared_field2type[v.name] = v.type
       
       when "Fn_decl_multiret"
-        # BUG внутри scope уже есть this и ему нужен тип...
+        # BUG this is defined inside scope and it needs type
         if v.state_mutability == "pure"
           type = new Type "function2_pure<function,function>"
         else
@@ -441,7 +440,7 @@ get_list_sign = (list)->
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         field_type = field_hash[root.name]
         
-        # Я не понял зачем это
+        # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
@@ -636,8 +635,6 @@ get_list_sign = (list)->
   # iterable
   
   # TODO refactor. Stage 2 should reuse code from stage 1 but override some branches
-  # Прим. спорно. В этом случае надо будет как-то информировать что это phase 2 иначе будет непонятно что привело к этому
-  # возможно копипастить меньшее зло, чем потом дебажить непонятно как (т.к. сейчас p можно поставить на stage 1 и stage 2 раздельно)
   walk = (root, ctx)->
     switch root.constructor.name
       # ###################################################################################################
@@ -883,7 +880,7 @@ get_list_sign = (list)->
         if !field_hash.hasOwnProperty root.name
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
         field_type = field_hash[root.name]
-        # Я не понял зачем это
+        # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
           field_type = field_type root.t.type
