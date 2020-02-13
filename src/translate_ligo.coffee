@@ -496,10 +496,14 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "require2", "assert"
+          when "require"
+            cond= arg_list[0]
+            return "assert(#{cond})"
+
+          when "require2", "assert"
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
-            return "assert(#{cond})"
+            return "if #{cond} then {skip} else failwith(#{str})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
