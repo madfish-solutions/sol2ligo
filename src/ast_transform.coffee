@@ -587,7 +587,7 @@ do ()=>
             # NOTE that PM_switch is ignored by type inference
             # BUG. Type inference should resolve this fn properly
             
-            # Прим. Все-равно затрется type inference'ом
+            # NETE. will be changed in type inference
             if func.state_mutability == "pure"
               call.fn.type = new Type "function2_pure"
               # BUG only 1 ret value supported
@@ -856,7 +856,7 @@ do ()=>
           return root if root.modifier_list.length == 0
           inner = root.scope.clone()
           inner.need_nest = false
-          # TODO уточнить порядок применения modifier'ов
+          # TODO clarify modifier's order
           for mod in root.modifier_list
             inner = fn_apply_modifier inner, mod, ctx
           

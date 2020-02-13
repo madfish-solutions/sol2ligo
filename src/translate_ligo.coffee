@@ -112,7 +112,7 @@ number2bytes = (val, precision = 32)->
     if ast.a.op != "INDEX_ACCESS"
       throw new Error "can't compile DELETE operation for non 'delete a[b]' like construction. Reason not INDEX_ACCESS"
     # BUG WARNING!!! re-walk can be dangerous (sink_list can be re-emitted)
-    # экранируемся от повторгного inject'а в sink_list
+    # protects from reinjection in sink_list
     nest_ctx = ctx.mk_nest()
     bin_op_a = walk ast.a.a, nest_ctx
     bin_op_b = walk ast.a.b, nest_ctx
