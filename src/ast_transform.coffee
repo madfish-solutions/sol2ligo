@@ -591,10 +591,25 @@ do ()=>
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
 
-            req = new ast.If
-            req.cond = new ast.Var
-            req.cond.name = config.initialized
-            req.name_translate = false
+            if func.name == "constructor"
+              cond = new ast.Un_op
+              cond.op = "BOOL_NOT"
+              cond.a = new ast.Var
+              cond.a.name = config.initialized
+            else
+              cond = new ast.Var
+              cond.name = config.initialized
+
+
+            req = new ast.Fn_call
+            req.fn = new ast.Var
+            req.fn.name = "require"
+            req.fn.type = new Type "function2"
+            req.fn.type.nest_list[0] = new Type "function"
+            req.fn.type.nest_list[1] = new Type "function"
+            req.arg_list.push cond
+            
+            _case.scope.list.push req
             if func.state_mutability == "pure"
               transfer_call = new ast.Fn_call
               transfer_call.fn = fn = new ast.Field_access
@@ -612,11 +627,11 @@ do ()=>
               fn.type = new Type "function2<function<>,#{func.type_o}>"
               
               transfer_call.arg_list.push call
-              req.f.list.push transfer_call
+              _case.scope.list.push transfer_call
             else
+              _case.scope.list.push call
               if func.name == "constructor"
-                req.t.list.push call
-                req.t.list.push assign = new ast.Bin_op
+                _case.scope.list.push assign = new ast.Bin_op
                 assign.op = "ASSIGN"
                 assign.a = new ast.Var
                 assign.a.name = config.initialized
@@ -624,10 +639,7 @@ do ()=>
                 assign.a.type = new Type "bool" 
                 assign.b = new ast.Const
                 assign.b.val = "true"
-                assign.b.type = new Type "bool" 
-              else
-                req.f.list.push call
-            _case.scope.list.push req
+                assign.b.type = new Type "bool"
           _main.scope.list.push ret = new ast.Ret_multi
           
           ret.t_list.push _var = new ast.Var

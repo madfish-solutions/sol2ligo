@@ -499,7 +499,7 @@ walk = (root, ctx)->
           when "require", "require2", "assert"
             cond= arg_list[0]
             str = arg_list[1] or '"require fail"'
-            return "if #{cond} then {skip} else failwith(#{str})"
+            return "assert(#{cond})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
