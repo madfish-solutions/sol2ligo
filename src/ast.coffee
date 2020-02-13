@@ -187,7 +187,10 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
   clone : ()->
     ret = new module.Var_decl_multi
     for v in @list
-      ret.list.push v.clone()
+      ret.list.push {
+        name : v.name
+        type : v.type.clone()
+      }
     ret.assign_value  = @assign_value.clone()
     ret.type  = @type.clone() if @type
     ret.line  = @line
