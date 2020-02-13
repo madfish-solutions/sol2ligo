@@ -13,7 +13,6 @@ url_resolve = (url)->
   # e.g. input https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/ownership/Ownable.sol
   # e.g. input https://github.com/OpenZeppelin/openzeppelin-solidity/master/blob/contracts/ownership/Ownable.sol # NOT SUPPORTED by us
   # https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/ownership/Ownable.sol
-  # Очень примитивная реализация, но ИМХО проживет очень долго
   if reg_ret = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)\/(.*)$/.exec url
     [_skip, user, repo, path] = reg_ret
     path_list = path.split "/"

@@ -112,7 +112,7 @@ number2bytes = (val, precision = 32)->
     if ast.a.op != "INDEX_ACCESS"
       throw new Error "can't compile DELETE operation for non 'delete a[b]' like construction. Reason not INDEX_ACCESS"
     # BUG WARNING!!! re-walk can be dangerous (sink_list can be re-emitted)
-    # экранируемся от повторгного inject'а в sink_list
+    # protects from reinjection in sink_list
     nest_ctx = ctx.mk_nest()
     bin_op_a = walk ast.a.a, nest_ctx
     bin_op_b = walk ast.a.b, nest_ctx
@@ -202,7 +202,7 @@ number2bytes = (val, precision = 32)->
       "(nil: list(operation))"
     
     when "map", "array"
-      "map end : #{translate_type type, ctx}"
+      "(map end : #{translate_type type, ctx})"
     
     when "string"
       '""'
@@ -551,6 +551,12 @@ walk = (root, ctx)->
             fn = spec_id_translate root.fn.name, name
       else
         fn = walk root.fn, ctx
+      
+      if root.fn.type.main == "struct"
+        # this is contract(address) case
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
+        perr "CRITICAL WARNING #{msg}"
+        return "(* #{msg} *)"
       
       is_pure = root.fn.type.main == "function2_pure"
       if !is_pure
