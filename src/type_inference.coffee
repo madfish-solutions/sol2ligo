@@ -261,6 +261,12 @@ is_composite_type = (type)->
 is_defined_number_or_byte_type = (type)->
   config.any_int_type_hash[type.main] or config.bytes_type_hash[type.main]
 
+type_resolve = (type, ctx)->
+  if type and type.main != "struct"
+    if ctx.type_hash[type.main]
+      type = ctx.check_id type.main
+  type
+
 get_list_sign = (list)->
   has_signed   = false
   has_unsigned = false
@@ -334,16 +340,10 @@ get_list_sign = (list)->
         return a_type
       
       if a_type.main != "struct" and b_type.main == "struct"
-        try
-          a_type = ctx.check_id a_type.main
-        catch err
-          perr "NOTE failed to resolve #{a_type.main} type"
+        a_type = type_resolve a_type, ctx
       
       if a_type.main == "struct" and b_type.main != "struct"
-        try
-          b_type = ctx.check_id b_type.main
-        catch err
-          perr "NOTE failed to resolve #{b_type.main} type"
+        b_type = type_resolve b_type, ctx
       
       if is_composite_type a_type
         if !is_composite_type b_type
@@ -451,22 +451,24 @@ get_list_sign = (list)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        switch root_type.main
-          when "array"
-            field_hash = array_field_hash
-          
-          when "address"
-            field_hash = address_field_hash
-          
-          when "struct"
-            field_hash = root_type.field_hash
-          
-          else
-            if config.bytes_type_hash.hasOwnProperty root_type.main
-              field_hash = bytes_field_hash
+        field_hash = {}
+        if root_type
+          switch root_type.main
+            when "array"
+              field_hash = array_field_hash
+            
+            when "address"
+              field_hash = address_field_hash
+            
+            when "struct"
+              field_hash = root_type.field_hash
+            
             else
-              class_decl = ctx.check_type root_type.main
-              field_hash = class_decl._prepared_field2type
+              if config.bytes_type_hash.hasOwnProperty root_type.main
+                field_hash = bytes_field_hash
+              else
+                class_decl = ctx.check_type root_type.main
+                field_hash = class_decl._prepared_field2type
         
         if !field_hash.hasOwnProperty root.name
           perr root.t
@@ -502,6 +504,7 @@ get_list_sign = (list)->
                 return root.type
         
         root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
         
         if root_type.main == "function2_pure"
           offset = 0
@@ -514,7 +517,8 @@ get_list_sign = (list)->
         if root_type.main == "struct"
           # this is contract(address) case
           if root.arg_list.length != 1
-            throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+            perr "CRITICAL WARNING contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+            return root.type
           [arg] = root.arg_list
           arg.type = type_spread_left arg.type, new Type("address"), ctx
           root.type = type_spread_left root.type, root_type, ctx
@@ -922,22 +926,24 @@ get_list_sign = (list)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        switch root_type.main
-          when "array"
-            field_hash = array_field_hash
-          
-          when "bytes"
-            field_hash = bytes_field_hash
-          
-          when "address"
-            field_hash = address_field_hash
-          
-          when "struct"
-            field_hash = root_type.field_hash
-          
-          else
-            class_decl = ctx.check_type root_type.main
-            field_hash = class_decl._prepared_field2type
+        field_hash = {}
+        if root_type
+          switch root_type.main
+            when "array"
+              field_hash = array_field_hash
+            
+            when "bytes"
+              field_hash = bytes_field_hash
+            
+            when "address"
+              field_hash = address_field_hash
+            
+            when "struct"
+              field_hash = root_type.field_hash
+            
+            else
+              class_decl = ctx.check_type root_type.main
+              field_hash = class_decl._prepared_field2type
         
         if !field_hash.hasOwnProperty root.name
           throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
@@ -969,6 +975,7 @@ get_list_sign = (list)->
                 return root.type
         
         root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
         
         if root_type.main == "function2_pure"
           offset = 0
@@ -984,7 +991,8 @@ get_list_sign = (list)->
         if root_type.main == "struct"
           # this is contract(address) case
           if root.arg_list.length != 1
-            throw new Error "contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+            perr "CRITICAL WARNING contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+            return root.type
           [arg] = root.arg_list
           arg.type = type_spread_left arg.type, new Type("address"), ctx
           root.type = type_spread_left root.type, root_type, ctx
