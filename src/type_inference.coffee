@@ -11,16 +11,23 @@ module = @
       ret.field_hash.sender = new Type "address"
       ret.field_hash.value  = new Type "uint256"
       ret.field_hash.data   = new Type "bytes"
+      ret.field_hash.gas    = new Type "uint256"
+      ret.field_hash.sig    = new Type "bytes4"
       ret
     )()
     tx : (()->
       ret = new Type "struct"
-      ret.field_hash["origin"] = new Type "address"
+      ret.field_hash["origin"]  = new Type "address"
+      ret.field_hash["gasprice"]= new Type "uint256"
       ret
     )()
     block : (()->
       ret = new Type "struct"
       ret.field_hash["timestamp"] = new Type "uint256"
+      ret.field_hash["coinbase"]  = new Type "address"
+      ret.field_hash["difficulty"]= new Type "uint256"
+      ret.field_hash["gaslimit"]  = new Type "uint256"
+      ret.field_hash["number"]    = new Type "uint256"
       ret
     )()
     abi : (()->
