@@ -202,7 +202,7 @@ number2bytes = (val, precision = 32)->
       "(nil: list(operation))"
     
     when "map", "array"
-      "map end : #{translate_type type, ctx}"
+      "(map end : #{translate_type type, ctx})"
     
     when "string"
       '""'
@@ -535,6 +535,12 @@ walk = (root, ctx)->
             fn = spec_id_translate root.fn.name, name
       else
         fn = walk root.fn, ctx
+      
+      if root.fn.type.main == "struct"
+        # this is contract(address) case
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
+        perr "CRITICAL WARNING #{msg}"
+        return "(* #{msg} *)"
       
       is_pure = root.fn.type.main == "function2_pure"
       if !is_pure

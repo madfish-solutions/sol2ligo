@@ -290,6 +290,9 @@ get_list_sign = (list)->
       else if b_type.main == "number"
         "nothing"
       else
+        if b_type.main == "address"
+          perr "NOTE address to number type cast is not supported in LIGO"
+          return a_type
         unless is_defined_number_or_byte_type b_type
           throw new Error "can't spread '#{b_type}' to '#{a_type}'"
         a_type = b_type.clone()
@@ -585,6 +588,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"
@@ -1028,6 +1032,7 @@ get_list_sign = (list)->
         null
       
       when "Type_cast"
+        walk root.t, ctx
         root.type
       
       when "Ternary"
