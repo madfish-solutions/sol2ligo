@@ -591,7 +591,7 @@ do ()=>
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
 
-            if func.name == "constructor"
+            if func.name.match /constructor$/
               cond = new ast.Un_op
               cond.op = "BOOL_NOT"
               cond.a = new ast.Var
@@ -630,7 +630,7 @@ do ()=>
               _case.scope.list.push transfer_call
             else
               _case.scope.list.push call
-              if func.name == "constructor"
+              if func.name.match /constructor$/
                 _case.scope.list.push assign = new ast.Bin_op
                 assign.op = "ASSIGN"
                 assign.a = new ast.Var
