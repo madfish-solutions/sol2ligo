@@ -494,6 +494,8 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Class_decl"
+        is_constructor_name = (name)->
+            name == "constructor" or name == root.name
         if root.is_contract
           # ###################################################################################################
           #    patch state
@@ -591,7 +593,7 @@ do ()=>
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
 
-            if func.name.match /constructor$/
+            if is_constructor_name func.name
               cond = new ast.Un_op
               cond.op = "BOOL_NOT"
               cond.a = new ast.Var
@@ -630,7 +632,7 @@ do ()=>
               _case.scope.list.push transfer_call
             else
               _case.scope.list.push call
-              if func.name.match /constructor$/
+              if is_constructor_name func.name
                 _case.scope.list.push assign = new ast.Bin_op
                 assign.op = "ASSIGN"
                 assign.a = new ast.Var
