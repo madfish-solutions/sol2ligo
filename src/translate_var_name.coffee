@@ -90,7 +90,7 @@ reserved_hash[config.op_list] = true
   
   if name == "@main"
     "main"
-  else if reserved_hash[name] and name != "constructor"
+  if reserved_hash.hasOwnProperty name
     "#{config.reserved}__#{name}"
   else
     name

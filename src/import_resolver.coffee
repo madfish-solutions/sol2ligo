@@ -13,7 +13,6 @@ url_resolve = (url)->
   # e.g. input https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/ownership/Ownable.sol
   # e.g. input https://github.com/OpenZeppelin/openzeppelin-solidity/master/blob/contracts/ownership/Ownable.sol # NOT SUPPORTED by us
   # https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/ownership/Ownable.sol
-  # Очень примитивная реализация, но ИМХО проживет очень долго
   if reg_ret = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)\/(.*)$/.exec url
     [_skip, user, repo, path] = reg_ret
     path_list = path.split "/"
@@ -96,7 +95,7 @@ module.exports = (path, import_cache = {})->
   for line in line_list
     key = line.trim()
     if /^pragma/.test key
-      continue if pragma_hash[key]?
+      continue if pragma_hash.hasOwnProperty key
       pragma_hash[key] = true
     filter_line_list.push line
   

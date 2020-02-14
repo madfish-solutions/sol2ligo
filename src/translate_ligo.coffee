@@ -53,7 +53,7 @@ number2bytes = (val, precision = 32)->
 
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
-    if config.bytes_type_hash[ast.a.type.main] and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
+    if config.bytes_type_hash.hasOwnProperty(ast.a.type.main) and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
       b = string2bytes ast.b.val
     "#{a} := #{b}"
   BIT_AND : (a, b, ctx, ast) ->
@@ -87,7 +87,7 @@ number2bytes = (val, precision = 32)->
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if config.uint_type_hash[ast.a.type.main] and config.uint_type_hash[ast.b.type.main]
+    if config.uint_type_hash.hasOwnProperty(ast.a.type.main) and config.uint_type_hash.hasOwnProperty(ast.b.type.main)
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -99,7 +99,7 @@ number2bytes = (val, precision = 32)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
       module.warning_counter++
-    if ast.type and config.uint_type_hash[ast.type.main]
+    if ast.type and config.uint_type_hash.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
     else
       "not (#{a})"
@@ -134,7 +134,7 @@ number2bytes = (val, precision = 32)->
     if ast.a.op != "INDEX_ACCESS"
       throw new Error "can't compile DELETE operation for non 'delete a[b]' like construction. Reason not INDEX_ACCESS"
     # BUG WARNING!!! re-walk can be dangerous (sink_list can be re-emitted)
-    # экранируемся от повторгного inject'а в sink_list
+    # protects from reinjection in sink_list
     nest_ctx = ctx.mk_nest()
     bin_op_a = walk ast.a.a, nest_ctx
     bin_op_b = walk ast.a.b, nest_ctx
@@ -188,15 +188,15 @@ number2bytes = (val, precision = 32)->
     # when config.storage
     #   config.storage
     else
-      if ctx.type_decl_hash[type.main]
+      if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if config.uint_type_hash[type.main]
+      else if config.uint_type_hash.hasOwnProperty type.main
         "nat"
-      else if config.int_type_hash[type.main]
+      else if config.int_type_hash.hasOwnProperty type.main
         "int"
       else
         ### !pragma coverage-skip-block ###
@@ -204,13 +204,13 @@ number2bytes = (val, precision = 32)->
         throw new Error("unknown solidity type '#{type}'")
 
 @type2default_value = type2default_value = (type, ctx)->
-  if config.uint_type_hash[type.main]
+  if config.uint_type_hash.hasOwnProperty type.main
     return "0n"
   
-  if config.int_type_hash[type.main]
+  if config.int_type_hash.hasOwnProperty type.main
     return "0"
   
-  if config.bytes_type_hash[type.main]
+  if config.bytes_type_hash.hasOwnProperty type.main
     return "bytes_pack(unit)"
   
   switch type.main
@@ -224,7 +224,7 @@ number2bytes = (val, precision = 32)->
       "(nil: list(operation))"
     
     when "map", "array"
-      "map end : #{translate_type type, ctx}"
+      "(map end : #{translate_type type, ctx})"
     
     when "string"
       '""'
@@ -243,9 +243,30 @@ spec_id_trans_hash =
   "tx.origin"       : "source"
   "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.value"       : "(amount / 1mutez)"
-  "msg.data"        : "bytes_pack(unit)"
   "abi.encodePacked": ""
 
+bad_spec_id_trans_hash =
+  "block.coinbase"  : config.default_address
+  "block.difficulty": "0n"
+  "block.gaslimit"  : "0n"
+  "block.number"    : "0n"
+  "msg.data"        : "bytes_pack(unit)"
+  "msg.gas"         : "0n"
+  "msg.sig"         : "bytes_pack(unit)"
+  "tx.gasprice"     : "0n"
+
+warning_once_hash = {}
+spec_id_translate = (t, name)->
+  if spec_id_trans_hash.hasOwnProperty t
+    spec_id_trans_hash[t]
+  else if bad_spec_id_trans_hash.hasOwnProperty t
+    val = bad_spec_id_trans_hash[t]
+    if !warning_once_hash.hasOwnProperty t
+      warning_once_hash.hasOwnProperty[t] = true
+      perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
+    val
+  else
+    name
 # ###################################################################################################
 
 class @Gen_context
@@ -379,20 +400,17 @@ walk = (root, ctx)->
       name = root.name
       return "" if name == "this"
       name = translate_var_name name, ctx if root.name_translate
-      if ctx.contract_var_hash[name]
+      if ctx.contract_var_hash.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else
-        if {}[root.name]? # constructor and other reserved JS stuff
-          name
-        else
-          spec_id_trans_hash[root.name] ? name
+        spec_id_translate root.name, name
     
     when "Const"
       if !root.type
         puts root
         throw new Error "Can't type inference"
       
-      if config.uint_type_hash[root.type.main]
+      if config.uint_type_hash.hasOwnProperty root.type.main
         return "#{root.val}n"
       
       switch root.type.main
@@ -417,7 +435,7 @@ walk = (root, ctx)->
           JSON.stringify root.val
         
         else
-          if config.bytes_type_hash[root.type.main]
+          if config.bytes_type_hash.hasOwnProperty root.type.main
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
           else
             root.val
@@ -491,7 +509,7 @@ walk = (root, ctx)->
         if ctx.type_decl_hash[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
       
-      spec_id_trans_hash[chk_ret] ? ret
+      spec_id_translate chk_ret, ret
     
     when "Fn_call"
       arg_list = []
@@ -569,12 +587,15 @@ walk = (root, ctx)->
             else
               name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
-            fn = if {}[root.fn.name]? # constructor and other reserved JS stuff
-              name
-            else
-              spec_id_trans_hash[root.fn.name] or name
+            fn = spec_id_translate root.fn.name, name
       else
         fn = walk root.fn, ctx
+      
+      if root.fn.type.main == "struct"
+        # this is contract(address) case
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
+        perr "CRITICAL WARNING #{msg}"
+        return "(* #{msg} *)"
       
       is_pure = root.fn.type.main == "function2_pure"
       if !is_pure
@@ -620,6 +641,8 @@ walk = (root, ctx)->
         type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
+      else if target_type == "address" and (t == "0x0" or  t == "0")
+        "(#{JSON.stringify config.default_address} : #{target_type})"
       else
         "(#{t} : #{target_type})"
     
@@ -649,9 +672,9 @@ walk = (root, ctx)->
       else
         if root.assign_value
           val = walk root.assign_value, ctx
-          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
+          if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
-          if config.bytes_type_hash[root.type.main] and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
+          if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
             val = number2bytes root.assign_value.val
           """
           const #{name} : #{type} = #{val}
@@ -927,7 +950,7 @@ walk = (root, ctx)->
         ctx.next_gen root, ctx
       else
         # TODO gen extentions
-        puts root
+        perr root
         throw new Error "Unknown root.constructor.name #{root.constructor.name}"
 
 @gen = (root, opt = {})->
