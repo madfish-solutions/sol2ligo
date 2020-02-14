@@ -515,7 +515,7 @@ walk = (root, ctx)->
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
-      else if root.fn.constructor.name == "Var"
+      if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "require2", "assert"
             cond= arg_list[0]
