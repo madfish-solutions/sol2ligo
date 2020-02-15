@@ -91,6 +91,43 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o
   
+  it "crypto fn", ()->
+    text_i = """
+    pragma solidity ^0.4.21;
+
+    contract Test {
+        function test() public {
+            address a = block.coinbase;
+            uint256 b = block.difficulty;
+            uint256 gl = block.gaslimit;
+            uint256 n = block.number;
+            bytes memory d = msg.data;
+            uint256 g = msg.gas;
+            // uint256 g = gasleft();
+            bytes4 s = msg.sig;
+            uint256 gp = tx.gasprice;
+        }
+    }
+    """#"
+    text_o = """
+    type state is record
+      #{config.empty_state} : int;
+    end;
+    
+    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+      block {
+        const a : address = tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg;
+        const b : nat = 0n;
+        const gl : nat = 0n;
+        const n : nat = 0n;
+        const d : bytes = bytes_pack(unit);
+        const g : nat = 0n;
+        const s : bytes = bytes_pack(unit);
+        const gp : nat = 0n;
+      } with (opList, contractStorage);
+    """#"
+    make_test text_i, text_o
+  
   it "require 0.4", ()->
     text_i = """
     pragma solidity >=0.4.21;
