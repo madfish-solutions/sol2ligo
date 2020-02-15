@@ -80,6 +80,10 @@ address_field_hash =
 @bin_op_ret_type_hash_list = {
   BOOL_AND: [["bool", "bool", "bool"]]
   BOOL_OR : [["bool", "bool", "bool"]]
+  BOOL_GT : [["bool", "bool", "bool"]]
+  BOOL_LT : [["bool", "bool", "bool"]]
+  BOOL_GTE : [["bool", "bool", "bool"]]
+  BOOL_LTE : [["bool", "bool", "bool"]]
   ASSIGN  : [] # only cases a != b
 }
 @un_op_ret_type_hash_list = {
@@ -142,6 +146,10 @@ do ()=>
   for op in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
     list = @bin_op_ret_type_hash_list[op]
     for type in config.uint_type_list
+      list.push [type, type, type]
+    for type in config.int_type_list
+      list.push [type, type, type]
+    for type in config.bytes_type_list
       list.push [type, type, type]
   
   for op in "EQ NE GT LT GTE LTE".split  /\s+/g
@@ -371,11 +379,15 @@ get_list_sign = (list)->
           return a_type
         
         if a_type.main == "address" and config.any_int_type_hash.hasOwnProperty(b_type)
-          perr "CRITICAL WARNING address <-> defined number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+          perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
           return a_type
         
         if b_type.main == "address" and config.any_int_type_hash.hasOwnProperty(a_type)
-          perr "CRITICAL WARNING address <-> defined number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+          perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
+          return a_type
+        
+        if config.bytes_type_hash.hasOwnProperty(a_type.main) and config.bytes_type_hash.hasOwnProperty(b_type.main)
+          perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
           return a_type
         
         throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
@@ -471,9 +483,10 @@ get_list_sign = (list)->
                 field_hash = class_decl._prepared_field2type
         
         if !field_hash.hasOwnProperty root.name
-          perr root.t
-          perr field_hash
-          throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          # perr root.t
+          # perr field_hash
+          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          return root.type
         field_type = field_hash[root.name]
         
         # Seems to be useless
@@ -505,6 +518,9 @@ get_list_sign = (list)->
         
         root_type = walk root.fn, ctx
         root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Fn_call"
+          return root.type
         
         if root_type.main == "function2_pure"
           offset = 0
@@ -726,7 +742,7 @@ get_list_sign = (list)->
             root.b.type = type_spread_left root.b.type, root.type, ctx
             return root.type
           
-          when "EQ", "NE"
+          when "EQ", "NE", "GT", "GTE", "LT", "LTE"
             root.type = type_spread_left root.type, new Type("bool"), ctx
             root.a.type = type_spread_left root.a.type, root.b.type, ctx
             root.b.type = type_spread_left root.b.type, root.a.type, ctx
@@ -946,7 +962,10 @@ get_list_sign = (list)->
               field_hash = class_decl._prepared_field2type
         
         if !field_hash.hasOwnProperty root.name
-          throw new Error "unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          # perr root.t
+          # perr field_hash
+          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          return root.type
         field_type = field_hash[root.name]
         # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
@@ -976,6 +995,9 @@ get_list_sign = (list)->
         
         root_type = walk root.fn, ctx
         root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Fn_call"
+          return root.type
         
         if root_type.main == "function2_pure"
           offset = 0

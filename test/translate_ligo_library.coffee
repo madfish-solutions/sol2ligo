@@ -149,22 +149,22 @@ describe "translate ligo section", ()->
         const tmp_0 : nat = bytes_fromBytes(self);
         const src : nat = tmp_0;
       } with (opList, contractStorage);
-    function main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const tmp_0 : nat = bytes_fromBytes(self);
         const src : nat = tmp_0;
       } with (opList, contractStorage);
     
     type router_enum is
-      | Main of main_args;
+      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_args;
     
     function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
         if (contractStorage.#{config.initialized}) then block {
           case action of
-          | Main(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = main(opList, contractStorage, match_action.self, match_action.other);
+          | #{config.reserved[0].toUpperCase() +  config.reserved.slice(1)}__main(match_action) -> block {
+            const tmp_0 : (list(operation) * state) = #{config.reserved}__main(opList, contractStorage, match_action.self, match_action.other);
             opList := tmp_0.0;
             contractStorage := tmp_0.1;
           }

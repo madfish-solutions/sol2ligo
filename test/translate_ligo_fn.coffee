@@ -63,6 +63,28 @@ describe "translate ligo section", ()->
       } with (opList, contractStorage, c);
     """
     make_test text_i, text_o
+
+  it "main test", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract UnOpTest {
+        function main(bool b0) internal {
+            bool b1 = !!!!!b0;
+        }
+    }
+    """
+    text_o = """
+    type state is record
+      #{config.empty_state} : int;
+    end;
+
+    function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const b0 : bool) : (list(operation) * state) is
+      block {
+        const b1 : bool = not (not (not (not (not (b0)))));
+      } with (opList, contractStorage);
+    """
+    make_test text_i, text_o
   
   it "named ret val no return", ()->
     text_i = """

@@ -33,7 +33,7 @@ describe "translate ligo section", ()->
         const len : nat = 0n;
       } with ((addr, len));
     
-    function main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const tmp_0 : (nat * nat) = fromBytes(self);
         const tmp_1 : (nat * nat) = tmp_0;

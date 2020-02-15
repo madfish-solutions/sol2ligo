@@ -34,6 +34,13 @@ string2bytes = (val)->
     return "bytes_pack(unit)"
   ret.join ""
 
+some2nat = (val, type)->
+  if type.match /^int\d{0,3}$/
+    val = "abs(#{val})"
+  if type.match /^byte[s]?\d{0,2}$/
+    val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
+  val
+
 number2bytes = (val, precision = 32)->
   ret = []
   for i in [0 ... precision]
@@ -49,11 +56,26 @@ number2bytes = (val, precision = 32)->
     if config.bytes_type_hash.hasOwnProperty(ast.a.type.main) and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
       b = string2bytes ast.b.val
     "#{a} := #{b}"
-  BIT_AND : (a, b)-> "bitwise_and(#{a}, #{b})"
-  BIT_OR  : (a, b)-> "bitwise_or(#{a}, #{b})"
-  BIT_XOR : (a, b)-> "bitwise_xor(#{a}, #{b})"
-  SHR     : (a, b)-> "bitwise_lsr(#{a}, #{b})"
-  SHL     : (a, b)-> "bitwise_lsl(#{a}, #{b})"
+  BIT_AND : (a, b, ctx, ast) ->
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_and(#{a}, #{b})"
+  BIT_OR  : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_or(#{a}, #{b})"
+  BIT_XOR : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_xor(#{a}, #{b})"
+  SHR     : (a, b, ctx, ast) ->
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_lsr(#{a}, #{b})"
+  SHL     : (a, b, ctx, ast) -> 
+    a = some2nat(a, ast.a.type.main)
+    b = some2nat(b, ast.b.type.main)
+    "bitwise_lsl(#{a}, #{b})"
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
@@ -177,9 +199,8 @@ number2bytes = (val, precision = 32)->
       else if config.int_type_hash.hasOwnProperty type.main
         "int"
       else
-        ### !pragma coverage-skip-block ###
-        puts ctx.type_decl_hash
-        throw new Error("unknown solidity type '#{type}'")
+        perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
+        "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
   if config.uint_type_hash.hasOwnProperty type.main
@@ -208,8 +229,8 @@ number2bytes = (val, precision = 32)->
       '""'
     
     else
-      ### !pragma coverage-skip-block ###
-      throw new Error("unknown solidity type '#{type}'")
+      perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
+      "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 {translate_var_name} = require "./translate_var_name"
 # ###################################################################################################
@@ -428,7 +449,24 @@ walk = (root, ctx)->
       
       ret = if op = module.bin_op_name_map[root.op]
         last_bracket_state = true
-        "(#{_a} #{op} #{_b})"
+        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
+          switch op
+            when "="
+              "bitwise_not(bitwise_xor(#{_a}, #{_b}))"
+            when "=/="
+              "bitwise_xor(#{_a}, #{_b})"
+            when ">"
+              "(#{_a} and not #{_b})"
+            when "<" 
+              "((not #{_a}) and #{_b})"
+            when ">="
+              "(#{_a} or not #{_b})"
+            when "<="
+              "((not #{_a}) or #{_b})"
+            else
+              "(#{_a} #{op} #{_b})"
+        else
+          "(#{_a} #{op} #{_b})"
       else if cb = module.bin_op_name_cb_map[root.op]
         cb(_a, _b, ctx, root)
       else
@@ -443,23 +481,26 @@ walk = (root, ctx)->
     
     when "Field_access"
       t = walk root.t, ctx
-      switch root.t.type.main
-        when "array"
-          switch root.name
-            when "length"
-              return "size(#{t})"
-            
-            else
-              throw new Error "unknown array field #{root.name}"
-        
-        when "bytes"
-          switch root.name
-            when "length"
-              return "size(#{t})"
-            
-            else
-              throw new Error "unknown array field #{root.name}"
-        
+      if !root.t.type
+        perr "CRITICAL WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+      else
+        switch root.t.type.main
+          when "array"
+            switch root.name
+              when "length"
+                return "size(#{t})"
+              
+              else
+                throw new Error "unknown array field #{root.name}"
+          
+          when "bytes"
+            switch root.name
+              when "length"
+                return "size(#{t})"
+              
+              else
+                throw new Error "unknown array field #{root.name}"
+      
       # else
       if t == "" # this case
         return translate_var_name root.name, ctx
@@ -479,37 +520,40 @@ walk = (root, ctx)->
       
       if root.fn.constructor.name == "Field_access"
         t = walk root.fn.t, ctx
-        switch root.fn.t.type.main
-          when "array"
-            switch root.fn.name
-              when "push"
-                tmp_var = "tmp_#{ctx.tmp_idx++}"
-                ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
-                return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
-              
-              else
-                throw new Error "unknown array field function #{root.fn.name}"
-          
-          when "address"
-            switch root.fn.name
-              when "send"
-                # TODO check balance
-                op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
-              
-              when "transfer"
-                throw new Error "not implemented"
-              
-              when "built_in_pure_callback"
-                # TODO check balance
-                ret_type = translate_type root.arg_list[0].type, ctx
-                ret = arg_list[0]
-                op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
-                return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
-              
-              else
-                throw new Error "unknown address field #{root.fn.name}"
-      
+        if root.fn.t.type
+          switch root.fn.t.type.main
+            when "array"
+              switch root.fn.name
+                when "push"
+                  tmp_var = "tmp_#{ctx.tmp_idx++}"
+                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
+                  return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
+                
+                else
+                  throw new Error "unknown array field function #{root.fn.name}"
+            
+            when "address"
+              switch root.fn.name
+                when "send"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
+                  # TODO check balance
+                  op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
+                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+                
+                when "transfer"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+                  op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
+                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+                
+                when "built_in_pure_callback"
+                  # TODO check balance
+                  ret_type = translate_type root.arg_list[0].type, ctx
+                  ret = arg_list[0]
+                  op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
+                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+                
+                else
+                  throw new Error "unknown address field #{root.fn.name}"
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "require2", "assert"
@@ -552,13 +596,13 @@ walk = (root, ctx)->
       else
         fn = walk root.fn, ctx
       
-      if root.fn.type.main == "struct"
+      if root.fn.type?.main == "struct"
         # this is contract(address) case
         msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
         perr "CRITICAL WARNING #{msg}"
         return "(* #{msg} *)"
       
-      is_pure = root.fn.type.main == "function2_pure"
+      is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
         arg_list.unshift config.contract_storage
         arg_list.unshift config.op_list
@@ -567,12 +611,14 @@ walk = (root, ctx)->
         arg_list.push "unit"
       
       type_jl = []
-      for v in root.fn.type.nest_list[1].nest_list
+      # type can be null
+      # type can be contract name, so no nest_list
+      for v in root.fn.type?.nest_list[1]?.nest_list or []
         type_jl.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
-      if type_jl.length == 0
+      if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
       if type_jl.length == 1

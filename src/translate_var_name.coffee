@@ -70,6 +70,7 @@ reserved_hash =
   "set_delegate"    : true
   "to"              : true
   "args"            : true
+  "main"            : true
   # note not reserved, but we don't want collide with types
   
   "map"             : true
@@ -87,7 +88,9 @@ reserved_hash[config.op_list] = true
   
   name = name.substr(0,1).toLowerCase() + name.substr 1
   
-  if reserved_hash.hasOwnProperty name
+  if name == "@main"
+    "main"
+  else if reserved_hash.hasOwnProperty name
     "#{config.reserved}__#{name}"
   else
     name
