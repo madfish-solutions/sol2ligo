@@ -61,31 +61,3 @@ describe "translate ligo section", ()->
     """#"
     make_test text_i, text_o, no_ligo:true
   
-  # ###################################################################################################
-  #    unimplemented yet
-  # ###################################################################################################
-  it "ecrecover", ()->
-    text_i = """
-    pragma solidity ^0.4.13;
-    
-    contract DSAuthority {
-      
-    }
-    
-    contract DSAuth {
-      function isAuthorized() {
-        DSAuthority(0);
-      }
-    }
-    """
-    text_o = """
-    type state is record
-      #{config.reserved}__empty_state : int;
-    end;
-    
-    function isAuthorized (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
-      block {
-        (* address contract to type_cast is not supported yet (we need enum action type for each contract) *);
-      } with (opList, contractStorage);
-    """#"
-    make_test text_i, text_o, no_ligo:true

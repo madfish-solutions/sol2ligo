@@ -208,7 +208,7 @@ class Ti_context
     ret
   
   type_proxy : (cls)->
-    ret = new Type "struct"
+    ret = new Type "struct<#{cls.name}>"
     for k,v of cls._prepared_field2type
       continue unless v.main in ["function2", "function2_pure"]
       ret.field_hash[k] = v

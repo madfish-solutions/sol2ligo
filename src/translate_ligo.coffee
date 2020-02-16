@@ -192,9 +192,16 @@ number2bytes = (val, precision = 32)->
     #   config.storage
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
+        decl = ctx.type_decl_hash[type.main]
         name = type.main.replace /\./g, "_"
         name = translate_var_name name, ctx
-        name
+        if decl.is_contract
+          if !ctx.router
+            perr "CRITICAL WARNING contract var decl with disabled router will produce non-compileable code"
+            module.warning_counter++
+          "contract(#{name}_enum)"
+        else
+          name
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
       else if config.uint_type_hash.hasOwnProperty type.main
@@ -203,6 +210,7 @@ number2bytes = (val, precision = 32)->
         "int"
       else
         perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
+        module.warning_counter++
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
@@ -233,6 +241,7 @@ number2bytes = (val, precision = 32)->
     
     else
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
+      module.warning_counter++
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 # ###################################################################################################
@@ -265,6 +274,7 @@ spec_id_translate = (t, name)->
     if !warning_once_hash.hasOwnProperty t
       warning_once_hash.hasOwnProperty[t] = true
       perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
+      module.warning_counter++
     val
   else
     name
@@ -309,6 +319,15 @@ class @Gen_context
 
 need_hide_in_router = (fn_decl_node)->
   fn_decl_node.visibility in ["private", "internal"]
+
+func2struct = (name)->
+  name = translate_var_name name, null
+  name = name.capitalize()
+  if name.length > 31
+    new_name = name.substr 0, 31
+    perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
+    name = new_name
+  name
 
 last_bracket_state = false
 walk = (root, ctx)->
@@ -493,6 +512,7 @@ walk = (root, ctx)->
       t = walk root.t, ctx
       if !root.t.type
         perr "CRITICAL WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+        module.warning_counter++
       else
         switch root.t.type.main
           when "array"
@@ -546,12 +566,14 @@ walk = (root, ctx)->
               switch root.fn.name
                 when "send"
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
+                  module.warning_counter++
                   # TODO check balance
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
                   return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "transfer"
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+                  module.warning_counter++
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
                   return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
@@ -564,6 +586,35 @@ walk = (root, ctx)->
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
+            
+            else
+              if ctx.type_decl_hash.hasOwnProperty root.fn.t.type.main
+                decl = ctx.type_decl_hash[root.fn.t.type.main]
+                if decl.is_contract
+                  # this is contract call
+                  fn_type = func2struct root.fn.name
+                  
+                  # we need not type, but Fn_decl_multiret, so _prepared_field2type will not help
+                  found = null
+                  for v in decl.scope.list
+                    continue if v.constructor.name != "Fn_decl_multiret"
+                    continue if v.name != root.fn.name
+                    found = v
+                    break
+                  
+                  arg_jl = []
+                  for v,idx in found.arg_name_list
+                    continue if idx <= 1 # skip op list and contract storage
+                    arg_jl.push "#{v} = #{arg_list[idx]};"
+                  
+                  if arg_jl.length == 0
+                    arg_jl.push "#{config.empty_state} = 0;"
+                  
+                  if !found
+                    throw new Error "!found #{root.fn.name} in #{root.fn.t.type.main}"
+                  
+                  op_code = "transaction(#{fn_type}(record [ #{arg_jl.join '  '} ]), 0mutez, #{t})"
+                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "require2", "assert"
@@ -581,16 +632,19 @@ walk = (root, ctx)->
           
           when "sha3", "keccak256"
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            module.warning_counter++
             msg = arg_list[0]
             return "sha_256(#{msg})"
           
           when "ripemd160"
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            module.warning_counter++
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           when "ecrecover"
-            perr "WARNING ecrecover function is not present in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "CRITICAL WARNING ecrecover function is not present in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            module.warning_counter++
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
@@ -607,10 +661,11 @@ walk = (root, ctx)->
         fn = walk root.fn, ctx
       
       if root.fn.type?.main == "struct"
-        # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
-        perr "CRITICAL WARNING #{msg}"
-        return "(* #{msg} *)"
+        if !ctx.router
+          perr "CRITICAL WARNING contract var decl with disabled router will produce non-compileable code"
+          module.warning_counter++
+        enum_name = translate_var_name "#{root.fn.type.nest_list[0].main}_enum", ctx
+        return "(get_contract(#{arg_list[0]}) : contract(#{enum_name}))"
       
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
@@ -674,9 +729,11 @@ walk = (root, ctx)->
         "(* #{root.text} *)"
     
     when "Continue"
+      module.warning_counter++
       "(* CRITICAL WARNING continue is not supported *)"
     
     when "Break"
+      module.warning_counter++
       "(* CRITICAL WARNING break is not supported *)"
     
     when "Var_decl"
@@ -870,15 +927,6 @@ walk = (root, ctx)->
       func2args_struct = (name)->
         name = "#{root.name}_#{name}_args"
         name = translate_var_name name, null
-        name
-      
-      func2struct = (name)->
-        name = translate_var_name name, null
-        name = name.capitalize()
-        if name.length > 31
-          new_name = name.substr 0, 31
-          perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
-          name = new_name
         name
       
       # stage 2 collect fn implementations
