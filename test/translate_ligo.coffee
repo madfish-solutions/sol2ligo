@@ -226,11 +226,11 @@ describe "translate ligo section", ()->
     
     """#"
     text_o = """
-    type #{config.fix_underscore}__transferOwnership_args is record
+    type this_test__transferOwnership_args is record
       newOwner : address;
     end;
     
-    type transferOwnership_args is record
+    type this_test_transferOwnership_args is record
       newOwner : address;
     end;
     
@@ -238,6 +238,11 @@ describe "translate ligo section", ()->
       owner : address;
       #{config.initialized} : bool;
     end;
+    
+    type this_test_enum is
+      | #{translate '_transferOwnership'} of this_test__transferOwnership_args
+      | TransferOwnership of this_test_transferOwnership_args;
+    
     
     function #{config.fix_underscore}__transferOwnership (const opList : list(operation); const contractStorage : state; const newOwner : address) : (list(operation) * state) is
       block {
@@ -252,29 +257,23 @@ describe "translate ligo section", ()->
         contractStorage.owner := self_address;
       } with (opList, contractStorage);
     
-    type router_enum is
-      | #{translate '_transferOwnership'} of #{config.fix_underscore}__transferOwnership_args
-      | TransferOwnership of transferOwnership_args;
-    
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : this_test_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | #{translate '_transferOwnership'}(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, match_action.newOwner);
-            opList := tmp_0.0;
-            contractStorage := tmp_0.1;
-          }
-          | TransferOwnership(match_action) -> block {
-            const tmp_1 : (list(operation) * state) = transferOwnership(opList, contractStorage, match_action.newOwner);
-            opList := tmp_1.0;
-            contractStorage := tmp_1.1;
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
+        case action of
+        | #{translate '_transferOwnership'}(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contractStorage, match_action.newOwner);
+          opList := tmp_0.0;
+          contractStorage := tmp_0.1;
+        }
+        | TransferOwnership(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_1 : (list(operation) * state) = transferOwnership(opList, contractStorage, match_action.newOwner);
+          opList := tmp_1.0;
+          contractStorage := tmp_1.1;
+        }
+        end;
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o, {

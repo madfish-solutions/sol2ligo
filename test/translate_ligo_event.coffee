@@ -1,3 +1,4 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -19,7 +20,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     (* EventDefinition PrimaryTransferred *)
@@ -46,7 +47,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      reserved__empty_state : int;
+      #{config.reserved}__empty_state : int;
     end;
     
     (* EventDefinition PrimaryTransferred *)

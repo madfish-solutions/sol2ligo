@@ -12,6 +12,7 @@ class @Class_decl
   is_contract : false
   is_library  : false
   is_interface: false
+  is_deployable : false # for contract
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -28,11 +29,12 @@ class @Class_decl
   clone : ()->
     ret = new module.Class_decl
     ret.name  = @name
-    ret.namespace_name = @namespace_name
-    ret.is_contract = @is_contract
-    ret.is_library  = @is_library
-    ret.is_interface= @is_interface
-    ret.need_skip   = @need_skip
+    ret.namespace_name= @namespace_name
+    ret.is_contract   = @is_contract
+    ret.is_library    = @is_library
+    ret.is_interface  = @is_interface
+    ret.is_deployable = @is_deployable
+    ret.need_skip     = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type
       ret._prepared_field2type[k] = v.clone()

@@ -456,201 +456,6 @@ do ()=>
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
-      when "Class_decl"
-        return root if root.need_skip
-        return root if root.is_library
-        ctx.next_gen root, ctx
-      
-      when "Fn_decl_multiret"
-        unless root.visibility in ["private", "internal"]
-          ctx.router_func_list.push root
-        root
-      
-      else
-        ctx.next_gen root, ctx
-  
-  @router_collector = (root)->
-    walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
-    ctx.router_func_list
-
-# ###################################################################################################
-
-do ()=>
-  func2args_struct = (name)->
-    name = name+"_args"
-    name = translate_var_name name, null
-    name
-  
-  func2struct = (name)->
-    name = translate_var_name name, null
-    name = name.capitalize()
-    if name.length > 31
-      new_name = name.substr 0, 31
-      perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
-      name = new_name
-    name
-  
-  walk = (root, ctx)->
-    {walk} = ctx
-    switch root.constructor.name
-      when "Class_decl"
-        if root.is_contract
-          # ###################################################################################################
-          #    patch state
-          # ###################################################################################################
-          root.scope.list.push initialized = new ast.Var_decl
-          initialized.name = config.initialized
-          initialized.type = new Type "bool"
-          initialized.name_translate = false
-          
-          # ###################################################################################################
-          #    add struct for each endpoint
-          # ###################################################################################################
-          for func in ctx.router_func_list
-            root.scope.list.push record = new ast.Class_decl
-            record.name = func2args_struct func.name
-            record.namespace_name = false
-            for value,idx in func.arg_name_list
-              continue if idx <= 1 # skip contract_storage, op_list
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = value
-              arg.type = func.type_i.nest_list[idx]
-            
-            if func.state_mutability == "pure"
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = config.callback_address
-              arg.type = new Type "address"
-            
-            if record.scope.list.length == 0
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = config.empty_state
-              arg.type = new Type "int"
-          
-          root.scope.list.push _enum = new ast.Enum_decl
-          _enum.name = "router_enum"
-          for func in ctx.router_func_list
-            _enum.value_list.push decl = new ast.Var_decl
-            decl.name = func2struct func.name
-            decl.type = new Type func2args_struct(func.name)
-          
-          # ###################################################################################################
-          #    add router
-          # ###################################################################################################
-          # TODO _main -> main_fn
-          root.scope.list.push _main = new ast.Fn_decl_multiret
-          _main.name = "@main"
-          
-          _main.type_i = new Type "function"
-          _main.type_o =  new Type "function"
-          
-          _main.arg_name_list.push "action"
-          _main.type_i.nest_list.push new Type "router_enum"
-          _main.arg_name_list.push config.contract_storage
-          _main.type_i.nest_list.push new Type config.storage
-          
-          _main.type_o.nest_list.push new Type "built_in_op_list"
-          _main.type_o.nest_list.push new Type config.storage
-          
-          _main.scope.list.push op_list_decl = new ast.Var_decl
-          op_list_decl.name = config.op_list
-          op_list_decl.type = new Type "built_in_op_list"
-          op_list_decl.name_translate = false
-          
-          _main.scope.list.push _if = new ast.If
-          _if.cond = new ast.Var
-          _if.cond.name = config.initialized
-          _if.name_translate = false
-          
-          _if.f.list.push assign = new ast.Bin_op
-          assign.op = "ASSIGN"
-          assign.a = new ast.Var
-          assign.a.name = config.initialized
-          assign.a.name_translate = false
-          assign.b = new ast.Const
-          assign.b.val = "true"
-          assign.b.type = new Type "bool"
-          
-          _if.t.list.push _switch = new ast.PM_switch
-          _switch.cond = new ast.Var
-          _switch.cond.name = "action"
-          _switch.cond.type = new Type "string" # TODO proper type
-          
-          for func in ctx.router_func_list
-            _switch.scope.list.push _case = new ast.PM_case
-            _case.struct_name = func2struct func.name
-            _case.var_decl.name = "match_action"
-            _case.var_decl.type = new Type _case.struct_name
-            
-            call = new ast.Fn_call
-            call.fn = new ast.Var
-            call.fn.name = func.name # TODO word "constructor" gets corruped here
-            # NOTE that PM_switch is ignored by type inference
-            # BUG. Type inference should resolve this fn properly
-            
-            # NETE. will be changed in type inference
-            if func.state_mutability == "pure"
-              call.fn.type = new Type "function2_pure"
-              # BUG only 1 ret value supported
-              call.type = func.type_o.nest_list[0]
-            else
-              call.fn.type = new Type "function2"
-            call.fn.type.nest_list[0] = func.type_i
-            call.fn.type.nest_list[1] = func.type_o
-            for arg_name,idx in func.arg_name_list
-              if func.state_mutability != "pure"
-                continue if idx <= 1 # skip contract_storage, op_list
-              call.arg_list.push arg = new ast.Field_access
-              arg.t = new ast.Var
-              arg.t.name = _case.var_decl.name
-              arg.t.type = _case.var_decl.type
-              arg.name = arg_name
-            
-            if func.state_mutability == "pure"
-              transfer_call = new ast.Fn_call
-              transfer_call.fn = fn = new ast.Field_access
-              
-              callback_address = new ast.Field_access
-              callback_address.t = new ast.Var
-              callback_address.t.name = _case.var_decl.name
-              callback_address.t.type = _case.var_decl.type
-              callback_address.name = config.callback_address
-              callback_address.type = new Type "address"
-              
-              fn.t = callback_address
-              fn.name = "built_in_pure_callback"
-              
-              fn.type = new Type "function2<function<>,#{func.type_o}>"
-              
-              transfer_call.arg_list.push call
-              
-              _case.scope.list.push transfer_call
-            else
-              _case.scope.list.push call
-          _main.scope.list.push ret = new ast.Ret_multi
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.op_list
-          _var.name_translate = false
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.contract_storage
-          _var.name_translate = false
-          
-          root
-        else
-          ctx.next_gen root, ctx
-      else
-        ctx.next_gen root, ctx
-  
-  @add_router = (root, ctx)->
-    walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
-
-# ###################################################################################################
-
-do ()=>
-  walk = (root, ctx)->
-    {walk} = ctx
-    switch root.constructor.name
       when "Comment"
         return root if root.text != "COMPILER MSG PlaceholderStatement"
         ctx.target_ast.clone()
@@ -870,11 +675,54 @@ do ()=>
   
   @modifier_unpack = (root)->
     walk root, {walk, next_gen: module.default_walk, modifier_hash: {}}
+# ###################################################################################################
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
+      when "Class_decl"
+        return root if root.is_library
+        return root if root.is_interface
+        ctx.contract_list.push root
+        root
+      
+      else
+        ctx.next_gen root, ctx
+  
+  @mark_last_deployable = (root, opt)->
+    contract_list = []
+    ret = walk root, {walk, next_gen: module.default_walk, contract_list}
+    
+    if opt.router and contract_list.length == 0
+      # we need add empty contract with 1 function
+      root.list.push cls = new ast.Class_decl
+      contract_list.push cls
+      cls.name = "dummy_contract"
+      cls.is_contract = true
+    
+    contract = contract_list.last()
+    if contract
+      contract.is_deployable = true
+    
+    if opt.router
+      fn_count = 0
+      for v in contract.scope.list
+        fn_count++ if v.constructor.name == "Fn_decl_multiret"
+      
+      if fn_count == 0
+        contract.scope.list.push fn = new ast.Fn_decl_multiret
+        fn.name = "dummy_fn"
+        fn.type_i = new Type "function"
+        fn.type_o = new Type "function"
+    
+    ret
 
 # ###################################################################################################
 
 @ligo_pack = (root, opt={})->
   opt.router ?= true
+  root = module.mark_last_deployable root, opt
   root = module.var_translate root
   root = module.require_distinguish root
   root = module.fix_missing_emit root
@@ -885,7 +733,4 @@ do ()=>
   root = module.modifier_unpack root
   root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
-  if opt.router
-    router_func_list = module.router_collector root
-    root = module.add_router root, obj_merge {router_func_list}, opt
   root

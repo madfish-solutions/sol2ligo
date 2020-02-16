@@ -250,7 +250,7 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type test_args is record
+    type pure_test_test_args is record
       callbackAddress : address;
     end;
     
@@ -258,27 +258,25 @@ describe "translate ligo section", ()->
       #{config.initialized} : bool;
     end;
     
+    type pure_test_enum is
+      | Test of pure_test_test_args;
+    
+    
     function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         skip
       } with (0n);
     
-    type router_enum is
-      | Test of test_args;
-    
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : pure_test_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | Test(match_action) -> block {
-            const tmp_0 : nat = test(unit);
-            opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
+        case action of
+        | Test(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_0 : nat = test(unit);
+          opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
+        }
+        end;
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o, router: true
@@ -300,13 +298,17 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type test_args is record
+    type pure_test_test_args is record
       callbackAddress : address;
     end;
     
     type state is record
       #{config.initialized} : bool;
     end;
+    
+    type pure_test_enum is
+      | Test of pure_test_test_args;
+    
     
     function exactAdd (const self : nat; const other : nat) : (nat) is
       block {
@@ -321,22 +323,16 @@ describe "translate ligo section", ()->
         const tmp_0 : nat = exactAdd(n, 1n);
       } with (0n);
     
-    type router_enum is
-      | Test of test_args;
-    
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : pure_test_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | Test(match_action) -> block {
-            const tmp_0 : nat = test(unit);
-            opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
+        case action of
+        | Test(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_0 : nat = test(unit);
+          opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
+        }
+        end;
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o, router: true

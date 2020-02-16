@@ -50,6 +50,7 @@ describe "translate ligo section", ()->
     make_test text_i, text_o
   
   it "library (no using) + pure", ()->
+    perr "NOTE missing space is BUG"
     text_i = """
     pragma solidity ^0.4.22;
     
@@ -69,7 +70,7 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type test_args is record
+    type pure_test_test_args is record
       callbackAddress : address;
     end;
     
@@ -83,33 +84,32 @@ describe "translate ligo section", ()->
         sum := (self + other);
         if (sum >= self) then {skip} else failwith("require fail");
       } with (sum);
+    type pure_test_enum is
+      | Test of pure_test_test_args;
+    
+    
     function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         const n : nat = abs(not (0));
         const tmp_0 : nat = exactMath_exactAdd(n, 1n);
       } with (0n);
     
-    type router_enum is
-      | Test of test_args;
-    
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : pure_test_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | Test(match_action) -> block {
-            const tmp_0 : nat = test(unit);
-            opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
+        case action of
+        | Test(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_0 : nat = test(unit);
+          opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
+        }
+        end;
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o, router: true
   
   it "library call from library", ()->
+    perr "NOTE missing space is BUG"
     text_i = """
     pragma solidity ^0.4.16;
     
@@ -130,7 +130,7 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type main_args is record
+    type main_main_args is record
       self : bytes;
       other : bytes;
     end;
@@ -149,29 +149,27 @@ describe "translate ligo section", ()->
         const tmp_0 : nat = bytes_fromBytes(self);
         const src : nat = tmp_0;
       } with (opList, contractStorage);
+    type main_enum is
+      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_main_args;
+    
+    
     function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const tmp_0 : nat = bytes_fromBytes(self);
         const src : nat = tmp_0;
       } with (opList, contractStorage);
     
-    type router_enum is
-      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_args;
-    
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function main (const action : main_enum; const contractStorage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | #{config.reserved[0].toUpperCase() +  config.reserved.slice(1)}__main(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = #{config.reserved}__main(opList, contractStorage, match_action.self, match_action.other);
-            opList := tmp_0.0;
-            contractStorage := tmp_0.1;
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
+        case action of
+        | #{config.reserved[0].toUpperCase() +  config.reserved.slice(1)}__main(match_action) -> block {
+          if contractStorage.test_reserved_long___initialized then {skip} else failwith("can't call this method on non-initialized contract");
+          const tmp_0 : (list(operation) * state) = #{config.reserved}__main(opList, contractStorage, match_action.self, match_action.other);
+          opList := tmp_0.0;
+          contractStorage := tmp_0.1;
+        }
+        end;
       } with (opList, contractStorage);
     """#"
     make_test text_i, text_o, router: true

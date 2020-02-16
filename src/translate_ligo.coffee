@@ -1,7 +1,10 @@
 module = @
 require "fy/codegen"
-config = require "./config"
+Type  = require "type"
+ast   = require "./ast"
+config= require "./config"
 module.warning_counter = 0
+{translate_var_name} = require "./translate_var_name"
 # ###################################################################################################
 #    *_op
 # ###################################################################################################
@@ -232,7 +235,6 @@ number2bytes = (val, precision = 32)->
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
-{translate_var_name} = require "./translate_var_name"
 # ###################################################################################################
 #    special id, field access
 # ###################################################################################################
@@ -271,6 +273,8 @@ spec_id_translate = (t, name)->
 class @Gen_context
   parent            : null
   next_gen          : null
+  # opt
+  router            : false
   
   current_class     : null
   is_class_scope    : false
@@ -293,12 +297,18 @@ class @Gen_context
   
   mk_nest : ()->
     t = new module.Gen_context
-    t.parent = @
+    t.parent  = @
+    t.next_gen= @next_gen
+    t.router  = @router
+    
     t.current_class = @current_class
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t
+
+need_hide_in_router = (fn_decl_node)->
+  fn_decl_node.visibility in ["private", "internal"]
 
 last_bracket_state = false
 walk = (root, ctx)->
@@ -820,6 +830,7 @@ walk = (root, ctx)->
       
       # stage 1 collect declarations
       field_decl_jl = []
+      router_func_list = []
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
@@ -827,6 +838,8 @@ walk = (root, ctx)->
           
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
+            if !need_hide_in_router v
+              router_func_list.push v
           
           when "Enum_decl"
             "skip"
@@ -847,6 +860,26 @@ walk = (root, ctx)->
       jl = []
       jl.append ctx.sink_list
       ctx.sink_list.clear()
+      fn_decl_jl = []
+      
+      generated_ast_pre_list  = []
+      generated_ast_post_list = []
+      _enum = new ast.Enum_decl
+      _enum.name = "#{root.name}_enum"
+      
+      func2args_struct = (name)->
+        name = "#{root.name}_#{name}_args"
+        name = translate_var_name name, null
+        name
+      
+      func2struct = (name)->
+        name = translate_var_name name, null
+        name = name.capitalize()
+        if name.length > 31
+          new_name = name.substr 0, 31
+          perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
+          name = new_name
+        name
       
       # stage 2 collect fn implementations
       for v in root.scope.list
@@ -854,7 +887,36 @@ walk = (root, ctx)->
           when "Var_decl"
             "skip"
           
-          when "Fn_decl_multiret", "Enum_decl"
+          when "Fn_decl_multiret"
+            if root.is_contract and ctx.router and !need_hide_in_router v
+              func = v
+              generated_ast_pre_list.push record = new ast.Class_decl
+              record.name = func2args_struct func.name
+              record.namespace_name = false
+              for value,idx in func.arg_name_list
+                continue if idx <= 1 # skip contract_storage, op_list
+                record.scope.list.push arg = new ast.Var_decl
+                arg.name = value
+                arg.type = func.type_i.nest_list[idx]
+              
+              if func.state_mutability == "pure"
+                record.scope.list.push arg = new ast.Var_decl
+                arg.name = config.callback_address
+                arg.type = new Type "address"
+              
+              if record.scope.list.length == 0
+                record.scope.list.push arg = new ast.Var_decl
+                arg.name = config.empty_state
+                arg.type = new Type "int"
+              
+              _enum.value_list.push decl = new ast.Var_decl
+              decl.name = func2struct func.name
+              decl.type = new Type func2args_struct(func.name)
+            
+            unless root.is_contract and !root.is_deployable
+              fn_decl_jl.push walk v, ctx
+          
+          when "Enum_decl"
             jl.push walk v, ctx
           
           when "Class_decl", "Comment", "Event_decl"
@@ -863,7 +925,158 @@ walk = (root, ctx)->
           else
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
-      if root.is_contract or root.is_library
+      if ctx.router
+        is_constructor_name = (name)->
+          name == "constructor" or name == root.name
+        
+        if root.is_contract
+          generated_ast_pre_list.push _enum
+          if root.is_deployable
+            initialized = new ast.Var_decl
+            initialized.name = config.initialized
+            initialized.type = new Type "bool"
+            initialized.name_translate = false
+            field_decl_jl.push walk initialized, ctx
+            
+            generated_ast_post_list.push _main = new ast.Fn_decl_multiret
+            _main.name = "@main"
+            
+            _main.type_i = new Type "function"
+            _main.type_o = new Type "function"
+            
+            _main.arg_name_list.push "action"
+            _main.type_i.nest_list.push new Type _enum.name
+            _main.arg_name_list.push config.contract_storage
+            _main.type_i.nest_list.push new Type config.storage
+            
+            _main.type_o.nest_list.push new Type "built_in_op_list"
+            _main.type_o.nest_list.push new Type config.storage
+            
+            _main.scope.list.push op_list_decl = new ast.Var_decl
+            op_list_decl.name = config.op_list
+            op_list_decl.type = new Type "built_in_op_list"
+            op_list_decl.name_translate = false
+            
+            _main.scope.list.push _switch = new ast.PM_switch
+            _switch.cond = new ast.Var
+            _switch.cond.name = "action"
+            _switch.cond.type = new Type "string"
+            
+            for func in router_func_list
+              _switch.scope.list.push _case = new ast.PM_case
+              _case.struct_name = func2struct func.name
+              _case.var_decl.name = "match_action"
+              _case.var_decl.type = new Type _case.struct_name
+              
+              # check initialized
+              if is_constructor_name func.name
+                cond = new ast.Un_op
+                cond.op = "BOOL_NOT"
+                cond.a = new ast.Var
+                cond.a.name = config.initialized
+                cond.a.name_translate = false
+                cond.a.type = new Type "bool"
+                
+                msg = new ast.Const
+                msg.val = "can't call constructor on initialized contract"
+                msg.type = new Type "string"
+              else
+                cond = new ast.Var
+                cond.name = config.initialized
+                cond.name_translate = false
+                cond.type = new Type "bool"
+                
+                msg = new ast.Const
+                msg.val = "can't call this method on non-initialized contract"
+                msg.type = new Type "string"
+              
+              _case.scope.list.push req = new ast.Fn_call
+              req.fn = new ast.Var
+              req.fn.name = "require2"
+              req.fn.type = new Type "function2<function,function>"
+              req.arg_list.push cond
+              req.arg_list.push msg
+              
+              call = new ast.Fn_call
+              call.fn = new ast.Var
+              call.fn.name = func.name # TODO word "constructor" gets corruped here
+              # NOTE that PM_switch is ignored by type inference
+              # BUG. Type inference should resolve this fn properly
+              
+              # NETE. will be changed in type inference
+              if func.state_mutability == "pure"
+                call.fn.type = new Type "function2_pure"
+                # BUG only 1 ret value supported
+                call.type = func.type_o.nest_list[0]
+              else
+                call.fn.type = new Type "function2"
+              call.fn.type.nest_list[0] = func.type_i
+              call.fn.type.nest_list[1] = func.type_o
+              for arg_name,idx in func.arg_name_list
+                if func.state_mutability != "pure"
+                  continue if idx <= 1 # skip contract_storage, op_list
+                call.arg_list.push arg = new ast.Field_access
+                arg.t = new ast.Var
+                arg.t.name = _case.var_decl.name
+                arg.t.type = _case.var_decl.type
+                arg.name = arg_name
+              
+              if func.state_mutability == "pure"
+                transfer_call = new ast.Fn_call
+                transfer_call.fn = fn = new ast.Field_access
+                
+                callback_address = new ast.Field_access
+                callback_address.t = new ast.Var
+                callback_address.t.name = _case.var_decl.name
+                callback_address.t.type = _case.var_decl.type
+                callback_address.name = config.callback_address
+                callback_address.type = new Type "address"
+                
+                fn.t = callback_address
+                fn.name = "built_in_pure_callback"
+                
+                fn.type = new Type "function2<function<>,#{func.type_o}>"
+                
+                transfer_call.arg_list.push call
+                
+                _case.scope.list.push transfer_call
+              else
+                _case.scope.list.push call
+              
+              if is_constructor_name func.name
+                # set initialized
+                _case.scope.list.push assign = new ast.Bin_op
+                assign.op = "ASSIGN"
+                assign.a = new ast.Var
+                assign.a.name = config.initialized
+                assign.a.name_translate = false
+                assign.a.type = new Type "bool"
+                assign.b = new ast.Const
+                assign.b.val = "true"
+                assign.b.type = new Type "bool"
+              
+            _main.scope.list.push ret = new ast.Ret_multi
+            
+            ret.t_list.push _var = new ast.Var
+            _var.name = config.op_list
+            _var.name_translate = false
+            
+            ret.t_list.push _var = new ast.Var
+            _var.name = config.contract_storage
+            _var.name_translate = false
+      
+      for v in generated_ast_pre_list
+        code = walk v, ctx
+        jl.push code if code
+      
+      jl.append fn_decl_jl
+      for v in generated_ast_post_list
+        jl.push walk v, ctx
+      
+      if root.is_contract
+        if root.is_deployable
+          orig_ctx.storage_sink_list.append field_decl_jl
+      else if root.is_library
         orig_ctx.storage_sink_list.append field_decl_jl
       else
         name = root.name
@@ -898,6 +1111,7 @@ walk = (root, ctx)->
       """
       type #{translate_var_name root.name, ctx} is
         #{join_list jl, '  '};
+      
       """
     
     when "Ternary"
@@ -963,4 +1177,5 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
+  ctx.router = opt.router
   walk root, ctx
