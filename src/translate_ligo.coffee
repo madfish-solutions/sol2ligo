@@ -315,13 +315,15 @@ walk = (root, ctx)->
           name = config.storage
           jl.unshift ""
           if ctx.storage_sink_list.length == 0
-            ctx.storage_sink_list.push "#{config.empty_state} : int;"
-          
-          jl.unshift """
-            type #{name} is record
-              #{join_list ctx.storage_sink_list, '  '}
-            end;
-            """
+            jl.unshift """
+              type #{name} is unit;
+              """
+          else
+            jl.unshift """
+              type #{name} is record
+                #{join_list ctx.storage_sink_list, '  '}
+              end;
+              """
           ctx.storage_sink_list.clear()
           
           if ctx.type_decl_sink_list.length
@@ -329,13 +331,16 @@ walk = (root, ctx)->
             for type_decl in ctx.type_decl_sink_list
               {name, field_decl_jl} = type_decl
               if field_decl_jl.length == 0
-                field_decl_jl.push "#{config.empty_state} : int;"
-              type_decl_jl.push """
-                type #{name} is record
-                  #{join_list field_decl_jl, '  '}
-                end;
-                
-                """
+                type_decl_jl.push """
+                  type #{name} is unit;
+                  """
+              else
+                type_decl_jl.push """
+                  type #{name} is record
+                    #{join_list field_decl_jl, '  '}
+                  end;
+
+                  """
             
             jl.unshift """
               #{join_list type_decl_jl}
