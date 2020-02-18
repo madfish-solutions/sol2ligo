@@ -641,7 +641,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx
@@ -1123,7 +1127,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+          
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx
