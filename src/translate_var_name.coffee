@@ -84,9 +84,13 @@ reserved_hash[config.op_list] = true
 
 @translate_var_name = (name, ctx)->
   if name[0] == "_"
-    name = "#{config.fix_underscore}_"+name
+    # if name starts with undescore, just move it to the end
+    name = name.replace("_","") + "_";
   
-  name = name.substr(0,1).toLowerCase() + name.substr 1
+  #if name isn't all uppercase
+  if name.toUpperCase() != name
+    # make the first letter lowercase
+    name = name.substr(0,1).toLowerCase() + name.substr 1
   
   if name == "@main"
     "main"
