@@ -556,10 +556,16 @@ walk = (root, ctx)->
                   throw new Error "unknown address field #{root.fn.name}"
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "require2", "assert"
+          when "require", "assert", "require2"
             cond= arg_list[0]
-            str = arg_list[1] or '"require fail"'
-            return "if #{cond} then {skip} else failwith(#{str})"
+            return "assert(#{cond})"
+
+          # NOTE: assert doesn't use second parameter in Ligo and it makes fails quite unclear
+          # but it makes code much readable   
+          # when "require2", "assert"
+          #   cond= arg_list[0]
+          #   str = arg_list[1] or '"require fail"'
+          #   return "if #{cond} then {skip} else failwith(#{str})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
