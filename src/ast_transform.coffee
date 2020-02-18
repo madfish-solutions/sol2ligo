@@ -545,27 +545,26 @@ do ()=>
           
           _main.type_o.nest_list.push new Type "built_in_op_list"
           _main.type_o.nest_list.push new Type config.storage
+          _main.scope.list.push ret = new ast.Ret_multi
           
-          _main.scope.list.push op_list_decl = new ast.Var_decl
-          op_list_decl.name = config.op_list
-          op_list_decl.type = new Type "built_in_op_list"
-          op_list_decl.name_translate = false
+          # ret.t_list.push _var = new ast.Const
+          # _var.type = new Type "built_in_op_list"
+
+          # ret.t_list.push _var = new ast.Var
+          # _var.name = config.contract_storage
+          # _var.name_translate = false
+          # _main.scope.list.push op_list_decl = new ast.Var_decl
+          # op_list_decl.name = config.op_list
+          # op_list_decl.type = new Type "built_in_op_list"
+          # op_list_decl.name_translate = false
           
-          _main.scope.list.push _if = new ast.If
-          _if.cond = new ast.Var
-          _if.cond.name = config.initialized
-          _if.name_translate = false
+          # _main.scope.list.push _if = new ast.If
+          # _if.cond = new ast.Var
+          # _if.cond.name = config.initialized
+          # _if.name_translate = false
           
-          _if.f.list.push assign = new ast.Bin_op
-          assign.op = "ASSIGN"
-          assign.a = new ast.Var
-          assign.a.name = config.initialized
-          assign.a.name_translate = false
-          assign.b = new ast.Const
-          assign.b.val = "true"
-          assign.b.type = new Type "bool"
           
-          _if.t.list.push _switch = new ast.PM_switch
+          ret.t_list.push _switch = new ast.PM_switch
           _switch.cond = new ast.Var
           _switch.cond.name = "action"
           _switch.cond.type = new Type "string" # TODO proper type
@@ -579,10 +578,10 @@ do ()=>
             call = new ast.Fn_call
             call.fn = new ast.Var
             call.fn.name = func.name # TODO word "constructor" gets corruped here
-            # NOTE that PM_switch is ignored by type inference
-            # BUG. Type inference should resolve this fn properly
+          #   # NOTE that PM_switch is ignored by type inference
+          #   # BUG. Type inference should resolve this fn properly
             
-            # NETE. will be changed in type inference
+          #   # NETE. will be changed in type inference
             if func.state_mutability == "pure"
               call.fn.type = new Type "function2_pure"
               # BUG only 1 ret value supported
@@ -593,7 +592,7 @@ do ()=>
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
               if func.state_mutability != "pure"
-                continue if idx <= 1 # skip contract_storage, op_list
+                continue if idx < 1 # skip contract_storage, op_list
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
@@ -618,18 +617,27 @@ do ()=>
               
               transfer_call.arg_list.push call
               
-              _case.scope.list.push transfer_call
+              # _case.scope.list.push transfer_call
             else
-              _case.scope.list.push call
-          _main.scope.list.push ret = new ast.Ret_multi
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
           
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.op_list
-          _var.name_translate = false
+              ret.list.push _var = new ast.Const
+              _var.type = new Type "built_in_op_list"
+
+              ret.list.push _var = new ast.Var
+              _var.name = config.contract_storage
+              _var.name_translate = false
+              # _case.scope.list.push call
+          # _main.scope.list.push ret = new ast.Ret_multi
           
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.contract_storage
-          _var.name_translate = false
+          # ret.t_list.push _var = new ast.Var
+          # _var.name = config.op_list
+          # _var.name_translate = false
+          
+          # ret.t_list.push _var = new ast.Var
+          # _var.name = config.contract_storage
+          # _var.name_translate = false
           
           root
         else

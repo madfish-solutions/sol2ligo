@@ -437,7 +437,11 @@ walk = (root, ctx)->
         
         when "string"
           JSON.stringify root.val
-        
+        when "built_in_op_list"
+          if root.val
+            "#{root.val}"
+          else
+            "(nil: list(operation))"
         else
           if config.bytes_type_hash.hasOwnProperty root.type.main
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
