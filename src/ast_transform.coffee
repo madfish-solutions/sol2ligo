@@ -428,12 +428,9 @@ do ()=>
         
         if root.state_mutability != "pure"
           root.arg_name_list.unshift config.contract_storage
-          # root.arg_name_list.unshift config.op_list
           root.type_i.nest_list.unshift new Type config.storage
-          # root.type_i.nest_list.unshift new Type "built_in_op_list"
           
           root.type_o.nest_list.unshift new Type config.storage
-          # root.type_o.nest_list.unshift new Type "built_in_op_list"
         
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"

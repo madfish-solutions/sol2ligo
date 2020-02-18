@@ -620,7 +620,6 @@ walk = (root, ctx)->
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
         arg_list.unshift config.contract_storage
-        arg_list.unshift config.op_list
       
       if arg_list.length == 0
         arg_list.push "unit"
