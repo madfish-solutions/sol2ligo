@@ -948,8 +948,13 @@ walk = (root, ctx)->
       """
     
     when "Event_decl"
+      args = []
+      for arg in root.arg_list
+        name = translate_var_name arg._name, ctx
+        type = translate_type arg, ctx
+        args.push "#{name} : #{type}"
       """
-      (* EventDefinition #{root.name} *)
+      (* EventDefinition #{root.name}(#{args.join('; ')}) *)
       """
     
     else
