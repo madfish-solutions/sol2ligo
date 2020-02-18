@@ -636,17 +636,13 @@ walk = (root, ctx)->
       if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
-      if type_jl.length == 1
-        ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+      if not root.leftUnpack
+        "#{call_expr}"
       else
-        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
-      
-      if !is_pure
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-        ctx.trim_expr = "#{tmp_var}.2"
-      else
-        ctx.trim_expr = "#{tmp_var}"
+        if type_jl.length == 1
+          ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+        else
+          ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
     
     when "Type_cast"
       # TODO detect 'address(0)' here

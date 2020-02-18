@@ -416,9 +416,9 @@ do ()=>
           inject.name = config.contract_storage
           inject.name_translate = false
           
-          root.t_list.unshift inject = new ast.Var
-          inject.name = config.op_list
-          inject.name_translate = false
+          # root.t_list.unshift inject = new ast.Var
+          # inject.name = config.op_list
+          # inject.name_translate = false
         
         root
       
@@ -428,12 +428,12 @@ do ()=>
         
         if root.state_mutability != "pure"
           root.arg_name_list.unshift config.contract_storage
-          root.arg_name_list.unshift config.op_list
+          # root.arg_name_list.unshift config.op_list
           root.type_i.nest_list.unshift new Type config.storage
-          root.type_i.nest_list.unshift new Type "built_in_op_list"
+          # root.type_i.nest_list.unshift new Type "built_in_op_list"
           
           root.type_o.nest_list.unshift new Type config.storage
-          root.type_o.nest_list.unshift new Type "built_in_op_list"
+          # root.type_o.nest_list.unshift new Type "built_in_op_list"
         
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
@@ -545,26 +545,10 @@ do ()=>
           
           _main.type_o.nest_list.push new Type "built_in_op_list"
           _main.type_o.nest_list.push new Type config.storage
-          _main.scope.list.push ret = new ast.Ret_multi
+          _main.scope.need_nest = false
+          _main.scope.list.push ret = new ast.Tuple
           
-          # ret.t_list.push _var = new ast.Const
-          # _var.type = new Type "built_in_op_list"
-
-          # ret.t_list.push _var = new ast.Var
-          # _var.name = config.contract_storage
-          # _var.name_translate = false
-          # _main.scope.list.push op_list_decl = new ast.Var_decl
-          # op_list_decl.name = config.op_list
-          # op_list_decl.type = new Type "built_in_op_list"
-          # op_list_decl.name_translate = false
-          
-          # _main.scope.list.push _if = new ast.If
-          # _if.cond = new ast.Var
-          # _if.cond.name = config.initialized
-          # _if.name_translate = false
-          
-          
-          ret.t_list.push _switch = new ast.PM_switch
+          ret.list.push _switch = new ast.PM_switch
           _switch.cond = new ast.Var
           _switch.cond.name = "action"
           _switch.cond.type = new Type "string" # TODO proper type
@@ -577,6 +561,7 @@ do ()=>
             
             call = new ast.Fn_call
             call.fn = new ast.Var
+            call.fn.leftUnpack = true
             call.fn.name = func.name # TODO word "constructor" gets corruped here
           #   # NOTE that PM_switch is ignored by type inference
           #   # BUG. Type inference should resolve this fn properly
@@ -625,20 +610,7 @@ do ()=>
               ret.list.push _var = new ast.Const
               _var.type = new Type "built_in_op_list"
 
-              ret.list.push _var = new ast.Var
-              _var.name = config.contract_storage
-              _var.name_translate = false
-              # _case.scope.list.push call
-          # _main.scope.list.push ret = new ast.Ret_multi
-          
-          # ret.t_list.push _var = new ast.Var
-          # _var.name = config.op_list
-          # _var.name_translate = false
-          
-          # ret.t_list.push _var = new ast.Var
-          # _var.name = config.contract_storage
-          # _var.name_translate = false
-          
+              ret.list.push call          
           root
         else
           ctx.next_gen root, ctx
