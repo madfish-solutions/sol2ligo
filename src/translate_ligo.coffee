@@ -567,14 +567,11 @@ walk = (root, ctx)->
         switch root.fn.name
           when "require", "assert", "require2"
             cond= arg_list[0]
-            return "assert(#{cond})"
-
-          # NOTE: assert doesn't use second parameter in Ligo and it makes fails quite unclear
-          # but it makes code much readable   
-          # when "require2", "assert"
-          #   cond= arg_list[0]
-          #   str = arg_list[1] or '"require fail"'
-          #   return "if #{cond} then {skip} else failwith(#{str})"
+            str = arg_list[1]
+            if str
+              return "assert(#{cond}) (* #{str} *)"
+            else 
+              return "assert(#{cond})"
           
           when "revert"
             str = arg_list[0] or '"revert"'

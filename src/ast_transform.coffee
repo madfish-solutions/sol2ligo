@@ -419,10 +419,6 @@ do ()=>
           root.t_list.unshift inject = new ast.Const
           inject.type = new Type "built_in_op_list"
         else 
-          # root.t_list.unshift inject = new ast.Var
-          # inject.name = config.contract_storage
-          # inject.name_translate = false
-
           root.t_list.unshift inject = new ast.Const
           inject.type = new Type "built_in_op_list"        
         root
@@ -564,10 +560,10 @@ do ()=>
             call.fn = new ast.Var
             call.fn.leftUnpack = true
             call.fn.name = func.name # TODO word "constructor" gets corruped here
-          #   # NOTE that PM_switch is ignored by type inference
-          #   # BUG. Type inference should resolve this fn properly
+            # NOTE that PM_switch is ignored by type inference
+            # BUG. Type inference should resolve this fn properly
             
-          #   # NETE. will be changed in type inference
+            # NETE. will be changed in type inference
             if func.state_mutability == "pure"
               call.fn.type = new Type "function2_pure"
               # BUG only 1 ret value supported
