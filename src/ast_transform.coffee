@@ -415,10 +415,9 @@ do ()=>
           root.t_list.unshift inject = new ast.Var
           inject.name = config.contract_storage
           inject.name_translate = false
-          
-          # root.t_list.unshift inject = new ast.Var
-          # inject.name = config.op_list
-          # inject.name_translate = false
+
+          root.t_list.unshift inject = new ast.Const
+          inject.type = new Type "built_in_op_list"
         
         root
       
@@ -431,6 +430,7 @@ do ()=>
           root.type_i.nest_list.unshift new Type config.storage
           
           root.type_o.nest_list.unshift new Type config.storage
+          root.type_o.nest_list.unshift new Type "built_in_op_list"
         
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
@@ -602,12 +602,13 @@ do ()=>
               # _case.scope.list.push transfer_call
             else
               _case.scope.need_nest = false
-              _case.scope.list.push ret = new ast.Tuple
-          
-              ret.list.push _var = new ast.Const
-              _var.type = new Type "built_in_op_list"
-
-              ret.list.push call          
+              _case.scope.list.push call
+              
+              # todo: wisely chose how many params are returned from function  
+              # ret = new ast.Tuple
+              # ret.list.push _var = new ast.Const
+              # _var.type = new Type "built_in_op_list"
+              # ret.list.push call          
           root
         else
           ctx.next_gen root, ctx
