@@ -257,12 +257,14 @@ walk = (root, ctx)->
       perr "WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Event_decl
       ret.name = root.name
+      ret.arg_list = walk_param root.parameters, ctx
       ret
     
     when "EmitStatement"
       perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
-      ret.text = "EmitStatement"
+      args = root.arg_list.map (arg) -> arg.name
+      ret.text = "EmitStatement #{root.fn.name}(#{args.join(", ")})"
       ret
     
     when "PlaceholderStatement"
