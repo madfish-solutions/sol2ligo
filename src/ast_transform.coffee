@@ -504,7 +504,7 @@ do ()=>
             record.name = func2args_struct func.name
             record.namespace_name = false
             for value,idx in func.arg_name_list
-              continue if idx <= 1 # skip contract_storage, op_list
+              continue if idx < 1 # skip contract_storage, op_list
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
@@ -569,8 +569,7 @@ do ()=>
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
-              if func.state_mutability != "pure"
-                continue if idx < 1 # skip contract_storage, op_list
+              continue if idx < 1 # skip contract_storage, op_list
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name

@@ -315,6 +315,7 @@ walk = (root, ctx)->
           name = config.storage
           jl.unshift ""
           if ctx.storage_sink_list.length == 0
+            p ctx
             jl.unshift """
               type #{name} is unit;
               """
