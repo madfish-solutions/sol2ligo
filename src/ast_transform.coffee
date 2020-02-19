@@ -418,20 +418,24 @@ do ()=>
 
           root.t_list.unshift inject = new ast.Const
           inject.type = new Type "built_in_op_list"
-        
+        else 
+          # root.t_list.unshift inject = new ast.Var
+          # inject.name = config.contract_storage
+          # inject.name_translate = false
+
+          root.t_list.unshift inject = new ast.Const
+          inject.type = new Type "built_in_op_list"        
         root
       
       when "Fn_decl_multiret"
         ctx.state_mutability = root.state_mutability
         root.scope = walk root.scope, ctx
         
+        root.arg_name_list.unshift config.contract_storage
+        root.type_i.nest_list.unshift new Type config.storage
         if root.state_mutability != "pure"
-          root.arg_name_list.unshift config.contract_storage
-          root.type_i.nest_list.unshift new Type config.storage
-          
           root.type_o.nest_list.unshift new Type config.storage
-          root.type_o.nest_list.unshift new Type "built_in_op_list"
-        
+        root.type_o.nest_list.unshift new Type "built_in_op_list"
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
@@ -582,33 +586,14 @@ do ()=>
               arg.name = arg_name
             
             if func.state_mutability == "pure"
-              transfer_call = new ast.Fn_call
-              transfer_call.fn = fn = new ast.Field_access
-              
-              callback_address = new ast.Field_access
-              callback_address.t = new ast.Var
-              callback_address.t.name = _case.var_decl.name
-              callback_address.t.type = _case.var_decl.type
-              callback_address.name = config.callback_address
-              callback_address.type = new Type "address"
-              
-              fn.t = callback_address
-              fn.name = "built_in_pure_callback"
-              
-              fn.type = new Type "function2<function<>,#{func.type_o}>"
-              
-              transfer_call.arg_list.push call
-              
-              # _case.scope.list.push transfer_call
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push call 
+              ret.list.push _var = new ast.Const
+              _var.type = new Type "built_in_op_list"
             else
               _case.scope.need_nest = false
-              _case.scope.list.push call
-              
-              # todo: wisely chose how many params are returned from function  
-              # ret = new ast.Tuple
-              # ret.list.push _var = new ast.Const
-              # _var.type = new Type "built_in_op_list"
-              # ret.list.push call          
+              _case.scope.list.push call      
           root
         else
           ctx.next_gen root, ctx
