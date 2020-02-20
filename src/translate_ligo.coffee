@@ -513,8 +513,6 @@ walk = (root, ctx)->
       
       chk_ret = "#{t}.#{root.name}"
       ret = "#{t}.#{translate_var_name root.name, ctx}"
-      p "=========================================="
-      p root
       if root.t.constructor.name == "Var"
         if ctx.type_decl_hash[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
