@@ -598,9 +598,11 @@ walk = (root, ctx)->
       
       if root.fn.type?.main == "struct"
         # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
-        perr "CRITICAL WARNING #{msg}"
-        return "(* #{msg} *)"
+        arg_names = ctx.type_decl_hash[root.fn.name].scope.list
+        arg_list = []
+        for i in [0..root.arg_list.length-1]
+          arg_list.push "#{arg_names[i].name} = #{walk root.arg_list[i], ctx}"
+        return "record [ #{arg_list.join ";\n\t"} ]"
       
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
