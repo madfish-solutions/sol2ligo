@@ -390,7 +390,7 @@ get_list_sign = (list)->
           perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
           return a_type
         
-        throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
+        # throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
   

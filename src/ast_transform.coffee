@@ -410,8 +410,7 @@ do ()=>
       when "Ret_multi"
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
-        
-        if ctx.state_mutability != "pure"
+        if ctx.state_mutability not in ["pure", "view"]
           root.t_list.unshift inject = new ast.Var
           inject.name = config.contract_storage
           inject.name_translate = false
@@ -427,9 +426,10 @@ do ()=>
         ctx.state_mutability = root.state_mutability
         root.scope = walk root.scope, ctx
         
-        root.arg_name_list.unshift config.contract_storage
-        root.type_i.nest_list.unshift new Type config.storage
         if root.state_mutability != "pure"
+          root.arg_name_list.unshift config.contract_storage
+          root.type_i.nest_list.unshift new Type config.storage
+        if root.state_mutability not in ["pure", "view"]
           root.type_o.nest_list.unshift new Type config.storage
         root.type_o.nest_list.unshift new Type "built_in_op_list"
         last = root.scope.list.last()

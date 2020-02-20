@@ -558,7 +558,8 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Return"
       ret = new ast.Ret_multi
-      if root.expression
+      
+      if root.expression and ctx.current_function.shouldRetArgs
         ret.t_list.push walk root.expression, ctx
       ret
     
@@ -585,10 +586,14 @@ walk = (root, ctx)->
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
       ret.name = root.name or "constructor"
-      
+      ret.visibility = root.visibility
+      ret.state_mutability = root.stateMutability
+      ret.shouldRetArgs = (ret.state_mutability in ['pure', 'view'] and ret.visibility == 'private') or ret.visibility == 'internal' or (ret.state_mutability == 'pure' and ret.visibility == 'public')
+
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"
-      
+      if !ret.shouldRetArgs
+        root.returnParameters.parameters = []
       ret.type_i.nest_list = walk_param root.parameters, ctx
       unless ret.is_modifier
         list = walk_param root.returnParameters, ctx
@@ -644,9 +649,6 @@ walk = (root, ctx)->
                 _var.name = v.name
               
               ret_multi.t_list.push tuple
-        
-      ret.visibility = root.visibility
-      ret.state_mutability = root.stateMutability
       ret
     
     when "EnumDefinition"
