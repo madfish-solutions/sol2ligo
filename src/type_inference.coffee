@@ -547,9 +547,7 @@ get_list_sign = (list)->
         if !root_type
           perr "CRITICAL WARNING can't resolve function type for Struct_init"
           return root.type
-        
-        offset = 2
-        
+                
         for arg in root.arg_list
           walk arg, ctx
         root.type
@@ -1039,13 +1037,12 @@ get_list_sign = (list)->
           root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
       
       when "Struct_init"        
-        root_type = walk root.fn, ctx
+        root_type = walk root.type, ctx
         root_type = type_resolve root_type, ctx
         if !root_type
           perr "CRITICAL WARNING can't resolve function type for Struct_init"
           return root.type
-        offset = 2
-        for arg,i in root.arg_list
+        for arg,i in root.
           walk arg, ctx
         root.type
       

@@ -634,14 +634,11 @@ walk = (root, ctx)->
         ctx.trim_expr = "#{tmp_var}"
     
     when "Struct_init"
-      if root.fn.type?.main == "struct"
-        arg_list = []
-        for i in [0..root.arg_list.length-1]
-          arg_list.push "#{root.arg_names[i].name} = #{walk root.arg_list[i], ctx}"
-        return "record [ #{arg_list.join ";\n\t"} ]"
-      else
-        "(* UNKNOWN_STRUCT #{root.fn.name} *)"
-    
+      arg_list = []
+      for i in [0..root.arg_list.length-1]
+        arg_list.push "#{root.arg_names[i].name} = #{walk root.arg_list[i], ctx}"
+      "record [ #{arg_list.join ";\n\t"} ]"
+
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
