@@ -881,6 +881,7 @@ walk = (root, ctx)->
         if prefix
           name = "#{prefix}_#{name}"
         name = translate_var_name name, ctx
+        p name
         
         ctx.type_decl_sink_list.push {
           name
