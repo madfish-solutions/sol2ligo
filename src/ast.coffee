@@ -336,7 +336,7 @@ class @Event_decl
 
 class @Struct_init
   fn      : null
-  arg_manes : []
+  arg_names : []
   arg_list  : []
   line  : 0
   pos   : 0
@@ -348,8 +348,8 @@ class @Struct_init
     ret.fn    = @fn
     for v in @arg_list
       ret.arg_list.push v.clone()
-    for v in @arg_manes
-      ret.arg_manes.push v.clone()
+    for v in @arg_names
+      ret.arg_names.push v
     ret.line  = @line
     ret.pos   = @pos
     ret

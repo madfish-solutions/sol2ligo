@@ -434,6 +434,8 @@ walk = (root, ctx)->
             ret = new ast.Struct_init
             ret.fn = fn
             ret.arg_list = arg_list
+            if root.names
+              ret.arg_names = root.names
           else
             ret = new ast.Fn_call
             ret.fn = fn
