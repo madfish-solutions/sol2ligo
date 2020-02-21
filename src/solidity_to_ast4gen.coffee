@@ -354,6 +354,8 @@ walk = (root, ctx)->
       ret = new ast.Var_decl
       ret._const = root.constant
       ret.name = root.name
+      if root.typeName.nodeType == 'UserDefinedTypeName'
+        ret.specialType = true
       ret.type = walk_type root.typeName, ctx
       # ret.type = new Type root.typeDescriptions.typeIdentifier
       if root.value
@@ -428,9 +430,14 @@ walk = (root, ctx)->
           ret.t = arg_list[0]
         
         else
-          ret = new ast.Fn_call
-          ret.fn = fn
-          ret.arg_list = arg_list
+          if root.kind == "structConstructorCall"
+            ret = new ast.Struct_init
+            ret.fn = fn
+            ret.arg_list = arg_list
+          else
+            ret = new ast.Fn_call
+            ret.fn = fn
+            ret.arg_list = arg_list
       
       ret
     

@@ -635,6 +635,15 @@ walk = (root, ctx)->
       else
         ctx.trim_expr = "#{tmp_var}"
     
+    when "Struct_init"
+      if root.fn.type?.main == "struct"
+        arg_list = []
+        for i in [0..root.arg_list.length-1]
+          arg_list.push "#{root.arg_names[i].name} = #{walk root.arg_list[i], ctx}"
+        return "record [ #{arg_list.join ";\n\t"} ]"
+      else
+        "(* UNKNOWN_STRUCT #{root.fn.name} *)"
+    
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
@@ -675,18 +684,23 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
+      prefix = ""
       if ctx.is_class_scope
+        if root.specialType
+          prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}__"
         ctx.contract_var_hash[name] = root
-        "#{name} : #{type};"
+        "#{name} : #{prefix}#{type};"
       else
         if root.assign_value
+          if root.assign_value?.constructor.name == "Struct_init"
+            prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}__"
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
             val = number2bytes root.assign_value.val
           """
-          const #{name} : #{type} = #{val}
+          const #{name} : #{prefix}#{type} = #{val}
           """
         else
           """
