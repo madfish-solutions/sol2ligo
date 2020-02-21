@@ -335,7 +335,7 @@ class @Event_decl
     ret
 
 class @Struct_init
-  name      : null
+  fn      : null
   arg_manes : []
   arg_list  : []
   line  : 0
@@ -345,7 +345,7 @@ class @Struct_init
   
   clone : ()->
     ret = new module.Struct_init
-    ret.name    = @namš
+    ret.fn    = @fn
     for v in @arg_list
       ret.arg_list.push v.clone()
     for v in @arg_manes

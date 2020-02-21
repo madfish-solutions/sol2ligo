@@ -40,6 +40,7 @@ do ()=>
         root
 
       when "Struct_init"
+        p root
         root.fn = walk root.fn, ctx
         for v,idx in root.arg_list
           root.arg_list[idx] = walk v, ctx
