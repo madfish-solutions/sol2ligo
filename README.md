@@ -7,6 +7,27 @@ It converts conditionals, loops, functions and many more. Also it can emulate st
 
 The project is in _EXPERIMENTAL_: it may crash or silently skip some statements, resulting code may be insecure or even plain wrong. Please do not deploy anything without prior review and audit.
 
+# Example
+Solidity code
+```solidity
+pragma solidity ^0.5.0;
+    
+contract IsNegative {
+  function isNegative() public returns (string) {
+    int i = -1;
+    return i < 0 ? "yes" : "no";
+  }
+}
+```
+Transpiled LIGO code
+```js
+function isNegative (const opList : list(operation); const self : state) :
+  (list(operation) * state * string) is 
+  block {
+    const i : int = -(1);
+  } with (opList, self, (case (i < 0) of | True -> "yes" | False -> "no" end));
+```
+
 # Installation
 
 ```sh
