@@ -598,11 +598,9 @@ walk = (root, ctx)->
       
       if root.fn.type?.main == "struct"
         # this is contract(address) case
-        arg_names = ctx.type_decl_hash[root.fn.name].scope.list
-        arg_list = []
-        for i in [0..root.arg_list.length-1]
-          arg_list.push "#{arg_names[i].name} = #{walk root.arg_list[i], ctx}"
-        return "record [ #{arg_list.join ";\n\t"} ]"
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
+        perr "CRITICAL WARNING #{msg}"
+        return "(* #{msg} *)"
       
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
@@ -687,13 +685,13 @@ walk = (root, ctx)->
       prefix = ""
       if ctx.is_class_scope
         if root.specialType
-          prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}__"
+          prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}_"
         ctx.contract_var_hash[name] = root
         "#{name} : #{prefix}#{type};"
       else
         if root.assign_value
           if root.assign_value?.constructor.name == "Struct_init"
-            prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}__"
+            prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}_"
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
