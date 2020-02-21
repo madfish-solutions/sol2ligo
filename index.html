@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Solidity to LIGO compiler</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <div class="nav">
+      <a href="https://madfish-solutions.github.io/sol2ligo/" class="nav_selected" >Ligo</a>
+      <div class="example_selector">
+        <span id="load_msg">
+          Need some time to load. Loading...
+        </span>
+        <select id="src_select">
+        </select>
+      </div>
+    </div>
+    <div class="contents">
+      <div class="code">
+        <div id="solidity_src_wrap">
+          <textarea id="solidity_src" spellcheck="false">pragma solidity ^0.5.11;
+
+contract Ifer {
+  uint public value;
+  
+  function ifer() public returns (uint) {
+    uint x = 6;
+
+    if (x == 5) {
+        x += 1;
+    }
+    else {
+        x -= 1;
+    }
+
+    return x;
+  }
+}</textarea>
+        </div>
+        <div id="ligo_dst_wrap">
+          <pre id="ligo_dst"></pre>
+        </div>
+        <div class="minibutton" id="compile_btn">Compiling...</div>
+      </div>
+    </div>
+    <script src="web/solc/soljson.js"></script>
+    <script src="web/solc/sol_wrapper.js"></script>
+    <script src="web/common/fy.js"></script>
+    <script src="web/common/codegen.js"></script>
+    <script src="web/lib/config.js"></script>
+    <script src="web/common/type.js"></script>
+    <script src="web/lib/type_safe.js"></script>
+    <script src="web/common/ast4gen.js"></script>
+    <script src="web/lib/ast.js"></script>
+    <script src="web/lib/solidity_to_ast4gen.js"></script>
+    <script src="web/lib/translate_var_name.js"></script>
+    <script src="web/lib/translate_ligo.js"></script>
+    <script src="web/lib/translate_ligo_default_state.js"></script>
+    <script src="web/lib/type_inference.js"></script>
+    <script src="web/lib/ast_transform.js"></script>
+    <script src="web/example_list.js"></script>
+    <script>
+      document.querySelector('#solidity_src').focus();
+      document.querySelector('#load_msg').innerText = "Very experimental. Use it at your own RISK.";
+      
+      function compile() {
+        document.querySelector('#compile_btn').style.display = '';
+        document.querySelector('#compile_btn').innerHTML = "Compiling..."
+        document.querySelector('#compile_btn').style.background = ""
+        var next = function() {
+          try {
+            var code = document.querySelector('#solidity_src').value;
+            var solidity_ast = ast_gen(code);
+            var ast = solidity_to_ast4gen.gen(solidity_ast);
+            var ast = ast_transform.ligo_pack(ast);
+            var ast = type_inference.gen(ast);
+            var res = translate_ligo.gen(ast);
+            
+            document.querySelector('#ligo_dst').innerHTML = res;
+            document.querySelector('#compile_btn').style.display = 'none';
+          } catch (e) {
+            console.log(e);
+            document.querySelector('#compile_btn').innerHTML = "ERROR"
+            document.querySelector('#compile_btn').style.background = "#faa"
+          }
+        };
+        setTimeout(next, 10);
+      }
+      compile();
+      
+      var timeout = null;
+      function onchange() {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        timeout = setTimeout(function(){
+          timeout = null;
+          compile();
+        }, 100);
+      };
+      document.querySelector('#solidity_src').onchange = onchange;
+      document.querySelector('#solidity_src').onkeyup = onchange;
+      
+      var $src_select = document.querySelector('#src_select')
+      var jl_list = example_list.map(function(example){
+        return "<option>"+example.title+"</option>";
+      })
+      $src_select.onchange = function(t) {
+        example_list.map(function(t){
+          if (t.title == $src_select.value) {
+            document.querySelector('#solidity_src').value = t.code;
+            compile();
+          }
+        });
+      }
+      $src_select.innerHTML = jl_list.join('');
+    </script>
+  </body>
+</html>
