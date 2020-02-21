@@ -547,8 +547,7 @@ get_list_sign = (list)->
         if !root_type
           perr "CRITICAL WARNING can't resolve function type for Struct_init"
           return root.type
-                
-        for arg in root.arg_list
+        for arg,i in root.arg_list
           walk arg, ctx
         root.type
       
@@ -1042,7 +1041,7 @@ get_list_sign = (list)->
         if !root_type
           perr "CRITICAL WARNING can't resolve function type for Struct_init"
           return root.type
-        for arg,i in root.hash
+        for arg,i in root.arg_list
           walk arg, ctx
         root.type
       

@@ -682,20 +682,22 @@ walk = (root, ctx)->
       prefix = ""
       if ctx.is_class_scope
         if root.specialType
-          prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}_"
+          type = "#{ctx.current_class.name}_#{root.type.main}"
+        type = translate_var_name type, ctx
         ctx.contract_var_hash[name] = root
-        "#{name} : #{prefix}#{type};"
+        "#{name} : #{type};"
       else
         if root.assign_value
           if root.assign_value?.constructor.name == "Struct_init"
-            prefix = "#{ctx.current_class.name[0].toLowerCase() + ctx.current_class.name[1..-1]}_"
+            type = "#{ctx.current_class.name}_#{root.type.main}"
+          type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
             val = number2bytes root.assign_value.val
           """
-          const #{name} : #{prefix}#{type} = #{val}
+          const #{name} : #{type} = #{val}
           """
         else
           """
@@ -881,7 +883,6 @@ walk = (root, ctx)->
         if prefix
           name = "#{prefix}_#{name}"
         name = translate_var_name name, ctx
-        p name
         
         ctx.type_decl_sink_list.push {
           name
