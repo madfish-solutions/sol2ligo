@@ -809,7 +809,8 @@ do ()=>
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
     
-    ret = module.placeholder_replace ret, fn
+    for v in fn.list
+      ret = module.placeholder_replace ret, v
     ret.list = arr_merge prepend_list, ret.list
     ret
   
