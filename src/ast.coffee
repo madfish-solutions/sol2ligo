@@ -104,6 +104,8 @@ class @Fn_decl_multiret
   pos     : 0
   visibility : ""
   state_mutability : ""
+  should_ret_op_list : ""
+  should_modify_storage : ""
   is_modifier: false
   modifier_list : [] # array<Fn_call>
   
@@ -124,6 +126,8 @@ class @Fn_decl_multiret
     ret.pos   = @pos
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
+    ret.should_ret_op_list= @should_ret_op_list
+    ret.should_modify_storage= @should_modify_storage
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret
@@ -330,6 +334,26 @@ class @Event_decl
   clone : ()->
     ret = new module.Event_decl
     ret.name  = @name
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Struct_init
+  fn      : null
+  arg_names : []
+  val_list  : []
+  line  : 0
+  pos   : 0
+  constructor:()->
+    @arg_list = []
+  
+  clone : ()->
+    ret = new module.Struct_init
+    ret.fn    = @fn
+    for v,idx in @val_list
+      ret.val_list[idx] = v.clone()
+    for v,idx in @arg_names
+      ret.arg_names[idx] = v
     ret.line  = @line
     ret.pos   = @pos
     ret

@@ -38,6 +38,13 @@ do ()=>
         for v,idx in root.arg_list
           root.arg_list[idx] = walk v, ctx
         root
+
+      when "Struct_init"
+        root.fn =  root.fn
+        if ctx.class_hash and root.arg_names.length == 0
+          for v, idx in ctx.class_hash[root.fn.name].scope.list
+            root.arg_names.push v.name
+        root
       
       when "New"
         for v,idx in root.arg_list
@@ -194,7 +201,8 @@ do ()=>
           if ctx.emit_decl_hash.hasOwnProperty root.fn.name
             perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
             ret = new ast.Comment
-            ret.text = "EmitStatement"
+            args = root.arg_list.map (arg) -> arg.name
+            ret.text = "EmitStatement #{root.fn.name}(#{args.join(", ")})"
             return ret
         ctx.next_gen root, ctx
       
@@ -411,28 +419,29 @@ do ()=>
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
         
-        if ctx.state_mutability != "pure"
+        if ctx.should_modify_storage
           root.t_list.unshift inject = new ast.Var
           inject.name = config.contract_storage
           inject.name_translate = false
-          
-          root.t_list.unshift inject = new ast.Var
-          inject.name = config.op_list
-          inject.name_translate = false
+        
+        if ctx.should_ret_op_list
+          root.t_list.unshift inject = new ast.Const
+          inject.type = new Type "built_in_op_list"
         
         root
       
       when "Fn_decl_multiret"
         ctx.state_mutability = root.state_mutability
+        ctx.should_ret_op_list = root.should_ret_op_list
+        ctx.should_modify_storage = root.should_modify_storage
         root.scope = walk root.scope, ctx
-        
-        if root.state_mutability != "pure"
+                
+        if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
-          root.arg_name_list.unshift config.op_list
           root.type_i.nest_list.unshift new Type config.storage
-          root.type_i.nest_list.unshift new Type "built_in_op_list"
-          
+        if ctx.should_modify_storage
           root.type_o.nest_list.unshift new Type config.storage
+        if ctx.should_ret_op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
         
         last = root.scope.list.last()
@@ -498,10 +507,7 @@ do ()=>
           # ###################################################################################################
           #    patch state
           # ###################################################################################################
-          root.scope.list.push initialized = new ast.Var_decl
-          initialized.name = config.initialized
-          initialized.type = new Type "bool"
-          initialized.name_translate = false
+
           
           # ###################################################################################################
           #    add struct for each endpoint
@@ -520,11 +526,6 @@ do ()=>
               record.scope.list.push arg = new ast.Var_decl
               arg.name = config.callback_address
               arg.type = new Type "address"
-            
-            if record.scope.list.length == 0
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = config.empty_state
-              arg.type = new Type "int"
           
           root.scope.list.push _enum = new ast.Enum_decl
           _enum.name = "router_enum"
@@ -550,27 +551,10 @@ do ()=>
           
           _main.type_o.nest_list.push new Type "built_in_op_list"
           _main.type_o.nest_list.push new Type config.storage
+          _main.scope.need_nest = false
+          _main.scope.list.push ret = new ast.Tuple
           
-          _main.scope.list.push op_list_decl = new ast.Var_decl
-          op_list_decl.name = config.op_list
-          op_list_decl.type = new Type "built_in_op_list"
-          op_list_decl.name_translate = false
-          
-          _main.scope.list.push _if = new ast.If
-          _if.cond = new ast.Var
-          _if.cond.name = config.initialized
-          _if.name_translate = false
-          
-          _if.f.list.push assign = new ast.Bin_op
-          assign.op = "ASSIGN"
-          assign.a = new ast.Var
-          assign.a.name = config.initialized
-          assign.a.name_translate = false
-          assign.b = new ast.Const
-          assign.b.val = "true"
-          assign.b.type = new Type "bool"
-          
-          _if.t.list.push _switch = new ast.PM_switch
+          ret.list.push _switch = new ast.PM_switch
           _switch.cond = new ast.Var
           _switch.cond.name = "action"
           _switch.cond.type = new Type "string" # TODO proper type
@@ -583,59 +567,40 @@ do ()=>
             
             call = new ast.Fn_call
             call.fn = new ast.Var
+            call.fn.leftUnpack = true
             call.fn.name = func.name # TODO word "constructor" gets corruped here
             # NOTE that PM_switch is ignored by type inference
             # BUG. Type inference should resolve this fn properly
             
             # NETE. will be changed in type inference
-            if func.state_mutability == "pure"
-              call.fn.type = new Type "function2_pure"
-              # BUG only 1 ret value supported
-              call.type = func.type_o.nest_list[0]
-            else
-              call.fn.type = new Type "function2"
+            # if func.state_mutability == "pure"
+            #   call.fn.type = new Type "function2_pure"
+            #   # BUG only 1 ret value supported
+            #   call.type = func.type_o.nest_list[0]
+            # else
+            #   call.fn.type = new Type "function2"
+            call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
-              if func.state_mutability != "pure"
-                continue if idx <= 1 # skip contract_storage, op_list
+              # if func.state_mutability != "pure"
+                # continue if idx < 1 # skip contract_storage, op_list
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
             
-            if func.state_mutability == "pure"
-              transfer_call = new ast.Fn_call
-              transfer_call.fn = fn = new ast.Field_access
-              
-              callback_address = new ast.Field_access
-              callback_address.t = new ast.Var
-              callback_address.t.name = _case.var_decl.name
-              callback_address.t.type = _case.var_decl.type
-              callback_address.name = config.callback_address
-              callback_address.type = new Type "address"
-              
-              fn.t = callback_address
-              fn.name = "built_in_pure_callback"
-              
-              fn.type = new Type "function2<function<>,#{func.type_o}>"
-              
-              transfer_call.arg_list.push call
-              
-              _case.scope.list.push transfer_call
+            if !func.should_ret_op_list
+              p func
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push _var = new ast.Const
+              _var.type = new Type "built_in_op_list"
+              ret.list.push call 
             else
-              _case.scope.list.push call
-          _main.scope.list.push ret = new ast.Ret_multi
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.op_list
-          _var.name_translate = false
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.contract_storage
-          _var.name_translate = false
-          
+              _case.scope.need_nest = false
+              _case.scope.list.push call  
           root
         else
           ctx.next_gen root, ctx

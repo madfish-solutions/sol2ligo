@@ -390,7 +390,7 @@ get_list_sign = (list)->
           perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
           return a_type
         
-        throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
+        # throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
   
@@ -540,6 +540,16 @@ get_list_sign = (list)->
           root.type = type_spread_left root.type, root_type, ctx
         else
           root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
+
+      when "Struct_init"        
+        root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Struct_init"
+          return root.type
+        for arg,i in root.val_list
+          walk arg, ctx
+        root.type
       
       # ###################################################################################################
       #    stmt
@@ -641,7 +651,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx
@@ -1021,6 +1035,16 @@ get_list_sign = (list)->
         else
           root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
       
+      when "Struct_init"        
+        root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Struct_init"
+          return root.type
+        for arg,i in root.val_list
+          walk arg, ctx
+        root.type
+      
       # ###################################################################################################
       #    stmt
       # ###################################################################################################
@@ -1123,7 +1147,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+          
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx
