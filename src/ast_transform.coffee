@@ -788,7 +788,7 @@ do ()=>
 # ###################################################################################################
 
 do ()=>
-  fn_apply_modifier = (fn, mod, ctx, is_first)->
+  fn_apply_modifier = (fn, mod, ctx, unscoped)->
     ###
     Possible intersections
       1. Var_decl
@@ -810,12 +810,10 @@ do ()=>
 
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    if is_first
-      ret = module.placeholder_replace ret, fn
-      ret.list = arr_merge prepend_list, ret.list
-    else
-      ret.list = arr_merge prepend_list, ret.list
-      ret.list = arr_merge ret.list, fn.list
+    if unscoped
+      ret.need_nest = false
+    ret = module.placeholder_replace ret, fn
+    ret.list = arr_merge prepend_list, ret.list
     ret
   
   walk = (root, ctx)->
@@ -835,7 +833,7 @@ do ()=>
           inner.need_nest = false
           # TODO clarify modifier's order
           for mod, idx in root.modifier_list
-            inner = fn_apply_modifier inner, mod, ctx , idx == 0
+            inner = fn_apply_modifier inner, mod, ctx , idx == 0 and root.modifier_list.length != 1
           
           ret = root.clone()
           ret.modifier_list.clear()
