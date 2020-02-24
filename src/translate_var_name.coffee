@@ -7,6 +7,7 @@ reserved_hash =
   "get_contract"    : true
   "get_entrypoint"  : true
   "size"            : true
+  "int"             : true
   "abs"             : true
   "is_nat"          : true
   "amount"          : true
@@ -63,6 +64,7 @@ reserved_hash =
   "LT"              : true
   "LE"              : true
   "CONS"            : true
+  "address"         : true
   "self_address"    : true
   "implicit_account": true
   "set_delegate"    : true
@@ -82,13 +84,9 @@ reserved_hash[config.op_list] = true
 
 @translate_var_name = (name, ctx)->
   if name[0] == "_"
-    # if name starts with undescore, just move it to the end
-    name = name.replace("_","") + "_";
+    name = "#{config.fix_underscore}_"+name
   
-  #if name isn't all uppercase
-  if name.toUpperCase() != name
-    # make the first letter lowercase
-    name = name.substr(0,1).toLowerCase() + name.substr 1
+  name = name.substr(0,1).toLowerCase() + name.substr 1
   
   if name == "@main"
     "main"
