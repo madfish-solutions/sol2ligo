@@ -104,6 +104,8 @@ class @Fn_decl_multiret
   pos     : 0
   visibility : ""
   state_mutability : ""
+  should_ret_op_list : ""
+  should_modify_storage : ""
   is_modifier: false
   modifier_list : [] # array<Fn_call>
   
@@ -124,6 +126,8 @@ class @Fn_decl_multiret
     ret.pos   = @pos
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
+    ret.should_ret_op_list= @should_ret_op_list
+    ret.should_modify_storage= @should_modify_storage
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret

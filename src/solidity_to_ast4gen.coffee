@@ -569,7 +569,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Return"
       ret = new ast.Ret_multi
-      if root.expression
+      if root.expression and ctx.current_function.should_ret_args
         ret.t_list.push walk root.expression, ctx
       ret
     
@@ -599,8 +599,16 @@ walk = (root, ctx)->
       
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"
+      ret.visibility = root.visibility
+      ret.state_mutability = root.stateMutability
+      ret.should_ret_args = (ret.state_mutability in ['pure', 'view'] and ret.visibility == 'private') or ret.visibility == 'internal' or (ret.state_mutability == 'pure' and ret.visibility == 'public')
+      ret.should_ret_op_list = !ret.should_ret_args or ret.visibility == 'public'
+      ret.should_modify_storage = ret.state_mutability not in ['pure', 'view']
+
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
+      if !ret.should_ret_args
+        root.returnParameters.parameters = []
       unless ret.is_modifier
         list = walk_param root.returnParameters, ctx
         if list.length <= 1
@@ -621,6 +629,7 @@ walk = (root, ctx)->
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
       
+
       if !ret.is_modifier
         for modifier in root.modifiers
           ast_mod = new ast.Fn_call
@@ -655,9 +664,6 @@ walk = (root, ctx)->
                 _var.name = v.name
               
               ret_multi.t_list.push tuple
-        
-      ret.visibility = root.visibility
-      ret.state_mutability = root.stateMutability
       ret
     
     when "EnumDefinition"

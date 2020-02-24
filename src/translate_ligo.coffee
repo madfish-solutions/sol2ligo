@@ -321,13 +321,15 @@ walk = (root, ctx)->
           name = config.storage
           jl.unshift ""
           if ctx.storage_sink_list.length == 0
-            ctx.storage_sink_list.push "#{config.empty_state} : int;"
-          
-          jl.unshift """
-            type #{name} is record
-              #{join_list ctx.storage_sink_list, '  '}
-            end;
-            """
+            jl.unshift """
+              type #{name} is unit;
+              """
+          else
+            jl.unshift """
+              type #{name} is record
+                #{join_list ctx.storage_sink_list, '  '}
+              end;
+              """
           ctx.storage_sink_list.clear()
           
           if ctx.type_decl_sink_list.length
@@ -335,13 +337,16 @@ walk = (root, ctx)->
             for type_decl in ctx.type_decl_sink_list
               {name, field_decl_jl} = type_decl
               if field_decl_jl.length == 0
-                field_decl_jl.push "#{config.empty_state} : int;"
-              type_decl_jl.push """
-                type #{name} is record
-                  #{join_list field_decl_jl, '  '}
-                end;
-                
-                """
+                type_decl_jl.push """
+                  type #{name} is unit;
+                  """
+              else
+                type_decl_jl.push """
+                  type #{name} is record
+                    #{join_list field_decl_jl, '  '}
+                  end;
+
+                  """
             
             jl.unshift """
               #{join_list type_decl_jl}
@@ -438,7 +443,11 @@ walk = (root, ctx)->
         
         when "string"
           JSON.stringify root.val
-        
+        when "built_in_op_list"
+          if root.val
+            "#{root.val}"
+          else
+            "(nil: list(operation))"
         else
           if config.bytes_type_hash.hasOwnProperty root.type.main
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
@@ -562,10 +571,13 @@ walk = (root, ctx)->
                   throw new Error "unknown address field #{root.fn.name}"
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "require2", "assert"
+          when "require", "assert", "require2"
             cond= arg_list[0]
-            str = arg_list[1] or '"require fail"'
-            return "if #{cond} then {skip} else failwith(#{str})"
+            str = arg_list[1]
+            if str
+              return "assert(#{cond}) (* #{str} *)"
+            else 
+              return "assert(#{cond})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
@@ -611,7 +623,6 @@ walk = (root, ctx)->
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
         arg_list.unshift config.contract_storage
-        arg_list.unshift config.op_list
       
       if arg_list.length == 0
         arg_list.push "unit"
@@ -627,17 +638,13 @@ walk = (root, ctx)->
       if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
-      if type_jl.length == 1
-        ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+      if not root.leftUnpack
+        "#{call_expr}"
       else
-        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
-      
-      if !is_pure
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-        ctx.trim_expr = "#{tmp_var}.2"
-      else
-        ctx.trim_expr = "#{tmp_var}"
+        if type_jl.length == 1
+          ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+        else
+          ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
     
     when "Struct_init"
       arg_list = []
