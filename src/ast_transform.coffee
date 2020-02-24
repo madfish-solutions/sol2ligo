@@ -528,11 +528,6 @@ do ()=>
               record.scope.list.push arg = new ast.Var_decl
               arg.name = config.callback_address
               arg.type = new Type "address"
-            
-            if record.scope.list.length == 0
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = config.empty_state
-              arg.type = new Type "int"
           
           root.scope.list.push _enum = new ast.Enum_decl
           _enum.name = "router_enum"

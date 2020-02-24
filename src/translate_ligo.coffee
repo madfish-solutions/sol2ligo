@@ -321,13 +321,15 @@ walk = (root, ctx)->
           name = config.storage
           jl.unshift ""
           if ctx.storage_sink_list.length == 0
-            ctx.storage_sink_list.push "#{config.empty_state} : int;"
-          
-          jl.unshift """
-            type #{name} is record
-              #{join_list ctx.storage_sink_list, '  '}
-            end;
-            """
+            jl.unshift """
+              type #{name} is unit;
+              """
+          else
+            jl.unshift """
+              type #{name} is record
+                #{join_list ctx.storage_sink_list, '  '}
+              end;
+              """
           ctx.storage_sink_list.clear()
           
           if ctx.type_decl_sink_list.length
@@ -335,13 +337,16 @@ walk = (root, ctx)->
             for type_decl in ctx.type_decl_sink_list
               {name, field_decl_jl} = type_decl
               if field_decl_jl.length == 0
-                field_decl_jl.push "#{config.empty_state} : int;"
-              type_decl_jl.push """
-                type #{name} is record
-                  #{join_list field_decl_jl, '  '}
-                end;
-                
-                """
+                type_decl_jl.push """
+                  type #{name} is unit;
+                  """
+              else
+                type_decl_jl.push """
+                  type #{name} is record
+                    #{join_list field_decl_jl, '  '}
+                  end;
+
+                  """
             
             jl.unshift """
               #{join_list type_decl_jl}
@@ -562,10 +567,13 @@ walk = (root, ctx)->
                   throw new Error "unknown address field #{root.fn.name}"
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "require2", "assert"
+          when "require", "assert", "require2"
             cond= arg_list[0]
-            str = arg_list[1] or '"require fail"'
-            return "if #{cond} then {skip} else failwith(#{str})"
+            str = arg_list[1]
+            if str
+              return "assert(#{cond}) (* #{str} *)"
+            else 
+              return "assert(#{cond})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
