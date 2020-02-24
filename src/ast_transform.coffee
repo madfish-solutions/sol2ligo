@@ -788,7 +788,7 @@ do ()=>
 # ###################################################################################################
 
 do ()=>
-  fn_apply_modifier = (fn, mod, ctx)->
+  fn_apply_modifier = (fn, mod, ctx, is_first)->
     ###
     Possible intersections
       1. Var_decl
@@ -800,6 +800,7 @@ do ()=>
     if !ctx.modifier_hash.hasOwnProperty mod.fn.name
       throw new Error "unknown modifier #{mod.fn.name}"
     mod_decl = ctx.modifier_hash[mod.fn.name]
+    p mod_decl
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list
@@ -808,10 +809,12 @@ do ()=>
       var_decl.name = mod_decl.arg_name_list[idx]
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    
-    for v in fn.list
-      ret = module.placeholder_replace ret, v
-    ret.list = arr_merge prepend_list, ret.list
+    if is_first
+      ret = module.placeholder_replace ret, fn
+      ret.list = arr_merge prepend_list, ret.list
+    else
+      ret.list = arr_merge prepend_list, ret.list
+      ret.list = arr_merge ret.list, fn.list
     ret
   
   walk = (root, ctx)->
@@ -830,8 +833,8 @@ do ()=>
           inner = root.scope.clone()
           inner.need_nest = false
           # TODO clarify modifier's order
-          for mod in root.modifier_list
-            inner = fn_apply_modifier inner, mod, ctx
+          for mod, idx in root.modifier_list
+            inner = fn_apply_modifier inner, mod, ctx , idx == 0
           
           ret = root.clone()
           ret.modifier_list.clear()
