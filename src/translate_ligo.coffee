@@ -234,6 +234,11 @@ number2bytes = (val, precision = 32)->
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           return t.value_list[0].name
+        if t.constructor.name == "Class_decl"
+          arg_list = []
+          for v in t.scope.list
+            arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
+          return "record [ #{arg_list.join ";\n\t"} ]"
 
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"

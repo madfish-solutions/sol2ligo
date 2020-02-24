@@ -517,7 +517,8 @@ do ()=>
             record.name = func2args_struct func.name
             record.namespace_name = false
             for value,idx in func.arg_name_list
-              continue if idx <= 1 # skip contract_storage, op_list
+              if func.state_mutability != "pure"
+                continue if idx < 1
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
@@ -583,21 +584,28 @@ do ()=>
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
-              # if func.state_mutability != "pure"
-                # continue if idx < 1 # skip contract_storage, op_list
+              if func.state_mutability != "pure"
+                continue if idx < 1
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
             
-            if !func.should_ret_op_list
-              p func
+            if !func.should_ret_op_list and func.should_modify_storage
               _case.scope.need_nest = false
               _case.scope.list.push ret = new ast.Tuple
               ret.list.push _var = new ast.Const
               _var.type = new Type "built_in_op_list"
               ret.list.push call 
+            else if !func.should_modify_storage
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push call 
+              ret.list.push _var = new ast.Var
+              _var.type = new Type config.storage
+              _var.name = config.contract_storage
+              _var.name_translate = false
             else
               _case.scope.need_nest = false
               _case.scope.list.push call  
