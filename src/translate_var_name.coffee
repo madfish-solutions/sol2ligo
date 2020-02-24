@@ -7,7 +7,6 @@ reserved_hash =
   "get_contract"    : true
   "get_entrypoint"  : true
   "size"            : true
-  "int"             : true
   "abs"             : true
   "is_nat"          : true
   "amount"          : true
@@ -64,7 +63,6 @@ reserved_hash =
   "LT"              : true
   "LE"              : true
   "CONS"            : true
-  "address"         : true
   "self_address"    : true
   "implicit_account": true
   "set_delegate"    : true
