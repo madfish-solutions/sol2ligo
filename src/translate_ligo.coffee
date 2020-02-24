@@ -229,6 +229,12 @@ number2bytes = (val, precision = 32)->
       '""'
     
     else
+      if ctx.type_decl_hash.hasOwnProperty type.main
+        t = ctx.type_decl_hash[type.main]
+        # take very first value in enum as default
+        if t.constructor.name == "Enum_decl"
+          return t.value_list[0].name
+
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
