@@ -574,13 +574,12 @@ do ()=>
             # BUG. Type inference should resolve this fn properly
             
             # NETE. will be changed in type inference
-            # if func.state_mutability == "pure"
-            #   call.fn.type = new Type "function2_pure"
-            #   # BUG only 1 ret value supported
-            #   call.type = func.type_o.nest_list[0]
-            # else
-            #   call.fn.type = new Type "function2"
-            call.fn.type = new Type "function2"
+            if func.state_mutability == 'pure'
+              call.fn.type = new Type "function2_pure"
+              # BUG only 1 ret value supported
+              call.type = func.type_o.nest_list[0]
+            else
+              call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
