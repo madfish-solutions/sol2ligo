@@ -337,7 +337,7 @@ class @Event_decl
 class @Struct_init
   fn      : null
   arg_names : []
-  arg_list  : []
+  val_list  : []
   line  : 0
   pos   : 0
   constructor:()->
@@ -346,10 +346,10 @@ class @Struct_init
   clone : ()->
     ret = new module.Struct_init
     ret.fn    = @fn
-    for v in @arg_list
-      ret.arg_list.push v.clone()
-    for v in @arg_names
-      ret.arg_names.push v
+    for v,idx in @val_list
+      ret.val_list[idx] = v.clone()
+    for v,idx in @arg_names
+      ret.arg_names[idx] = v
     ret.line  = @line
     ret.pos   = @pos
     ret

@@ -635,8 +635,8 @@ walk = (root, ctx)->
     
     when "Struct_init"
       arg_list = []
-      for i in [0..root.arg_list.length-1]
-        arg_list.push "#{root.arg_names[i]} = #{walk root.arg_list[i], ctx}"
+      for i in [0..root.val_list.length-1]
+        arg_list.push "#{root.arg_names[i]} = #{walk root.val_list[i], ctx}"
       "record [ #{arg_list.join ";\n\t"} ]"
 
     when "Type_cast"

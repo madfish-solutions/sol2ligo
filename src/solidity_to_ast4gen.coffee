@@ -433,7 +433,7 @@ walk = (root, ctx)->
           if root.kind == "structConstructorCall"
             ret = new ast.Struct_init
             ret.fn = fn
-            ret.arg_list = arg_list
+            ret.val_list = arg_list
             if root.names
               ret.arg_names = root.names
           else
