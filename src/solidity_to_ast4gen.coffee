@@ -607,6 +607,8 @@ walk = (root, ctx)->
 
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
+      if !ret.should_ret_args
+        root.returnParameters.parameters = []
       unless ret.is_modifier
         list = walk_param root.returnParameters, ctx
         if list.length <= 1
@@ -627,8 +629,7 @@ walk = (root, ctx)->
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
       
-      if !ret.should_ret_args
-        root.returnParameters.parameters = []
+
       if !ret.is_modifier
         for modifier in root.modifiers
           ast_mod = new ast.Fn_call
