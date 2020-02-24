@@ -38,6 +38,13 @@ do ()=>
         for v,idx in root.arg_list
           root.arg_list[idx] = walk v, ctx
         root
+
+      when "Struct_init"
+        root.fn =  root.fn
+        if ctx.class_hash and root.arg_names.length == 0
+          for v, idx in ctx.class_hash[root.fn.name].scope.list
+            root.arg_names.push v.name
+        root
       
       when "New"
         for v,idx in root.arg_list

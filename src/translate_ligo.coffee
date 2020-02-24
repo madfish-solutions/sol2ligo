@@ -598,7 +598,7 @@ walk = (root, ctx)->
       
       if root.fn.type?.main == "struct"
         # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
         perr "CRITICAL WARNING #{msg}"
         return "(* #{msg} *)"
       
@@ -633,6 +633,12 @@ walk = (root, ctx)->
       else
         ctx.trim_expr = "#{tmp_var}"
     
+    when "Struct_init"
+      arg_list = []
+      for i in [0..root.val_list.length-1]
+        arg_list.push "#{root.arg_names[i]} = #{walk root.val_list[i], ctx}"
+      "record [ #{arg_list.join ";\n\t"} ]"
+
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
@@ -673,11 +679,18 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
+      prefix = ""
       if ctx.is_class_scope
+        if root.specialType
+          type = "#{ctx.current_class.name}_#{root.type.main}"
+        type = translate_var_name type, ctx
         ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
+          if root.assign_value?.constructor.name == "Struct_init"
+            type = "#{ctx.current_class.name}_#{root.type.main}"
+          type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val

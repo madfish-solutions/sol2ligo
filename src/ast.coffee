@@ -333,3 +333,23 @@ class @Event_decl
     ret.line  = @line
     ret.pos   = @pos
     ret
+
+class @Struct_init
+  fn      : null
+  arg_names : []
+  val_list  : []
+  line  : 0
+  pos   : 0
+  constructor:()->
+    @arg_list = []
+  
+  clone : ()->
+    ret = new module.Struct_init
+    ret.fn    = @fn
+    for v,idx in @val_list
+      ret.val_list[idx] = v.clone()
+    for v,idx in @arg_names
+      ret.arg_names[idx] = v
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
