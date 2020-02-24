@@ -811,7 +811,8 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v, ctx unless idx <= 1 # storage, op_list
+        if root.visibility != 'pure' and idx > 0
+          v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
