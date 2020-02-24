@@ -800,13 +800,14 @@ do ()=>
     if !ctx.modifier_hash.hasOwnProperty mod.fn.name
       throw new Error "unknown modifier #{mod.fn.name}"
     mod_decl = ctx.modifier_hash[mod.fn.name]
-    p mod_decl
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list
+      continue if arg.name == mod_decl.arg_name_list[idx]
       prepend_list.push var_decl = new ast.Var_decl
       # TODO search **fn** for this_var name and replace in **ret** with tmp
       var_decl.name = mod_decl.arg_name_list[idx]
+
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
     if is_first
