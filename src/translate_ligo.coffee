@@ -855,7 +855,8 @@ walk = (root, ctx)->
             ctx.contract_var_hash[v.name] = v
           
           when "Enum_decl"
-            "skip"
+            #HACK walk and discard result of enum declaration as early as possible just to collect it to "type_decl_hash"
+            walk v, ctx
           
           when "Class_decl"
             code = walk v, ctx
