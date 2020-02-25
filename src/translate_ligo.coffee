@@ -83,7 +83,7 @@ number2bytes = (val, precision = 32)->
       "#{a}[#{b}]"
     else
       val = type2default_value ast.type, ctx
-      "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
+      "(case #{a}[#{b}] of | None -> #{val}(unit) | Some(x) -> x end)"
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
