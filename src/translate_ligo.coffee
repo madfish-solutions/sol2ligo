@@ -235,10 +235,9 @@ number2bytes = (val, precision = 32)->
         if t.constructor.name == "Enum_decl"
           return t.value_list[0].name
         if t.constructor.name == "Class_decl"
-          prefix = ""
+          name = type.main
           if ctx.current_class.name
-            prefix = ctx.current_class.name
-          name = "#{prefix}_#{type.main}"
+            name = "#{ctx.current_class.name}_#{type.main}"
           return "#{translate_var_name name}_default"
 
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
