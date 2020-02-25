@@ -83,7 +83,7 @@ number2bytes = (val, precision = 32)->
       "#{a}[#{b}]"
     else
       val = type2default_value ast.type, ctx
-      "(case #{a}[#{b}] of | None -> #{val}(unit) | Some(x) -> x end)"
+      "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
@@ -235,10 +235,11 @@ number2bytes = (val, precision = 32)->
         if t.constructor.name == "Enum_decl"
           return t.value_list[0].name
         if t.constructor.name == "Class_decl"
-          arg_list = []
-          for v in t.scope.list
-            arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
-          return "record [ #{arg_list.join ";\n\t"} ]"
+          prefix = ""
+          if ctx.current_class.name
+            prefix = ctx.current_class.name
+          name = "#{prefix}_#{type.main}"
+          return "#{translate_var_name name}_default"
 
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
@@ -293,6 +294,7 @@ class @Gen_context
   storage_sink_list : []
   sink_list         : []
   type_decl_sink_list: []
+  structs_default_list: []
   tmp_idx           : 0
   
   constructor:()->
@@ -301,6 +303,7 @@ class @Gen_context
     @storage_sink_list= []
     @sink_list        = []
     @type_decl_sink_list= []
+    @structs_default_list= []
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -309,6 +312,7 @@ class @Gen_context
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
+    t.structs_default_list = @structs_default_list
     t
 
 last_bracket_state = false
@@ -323,6 +327,10 @@ walk = (root, ctx)->
             code = walk v, ctx
             jl.push code if code
           
+          if ctx.structs_default_list.length
+            jl.unshift """
+              #{join_list ctx.structs_default_list}
+              """
           name = config.storage
           jl.unshift ""
           if ctx.storage_sink_list.length == 0
@@ -336,7 +344,7 @@ walk = (root, ctx)->
               end;
               """
           ctx.storage_sink_list.clear()
-          
+
           if ctx.type_decl_sink_list.length
             type_decl_jl = []
             for type_decl in ctx.type_decl_sink_list
@@ -907,7 +915,11 @@ walk = (root, ctx)->
         if prefix
           name = "#{prefix}_#{name}"
         name = translate_var_name name, ctx
-        
+        if root.is_struct 
+          arg_list = []
+          for v in root.scope.list
+            arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
+          ctx.structs_default_list.push "const #{name}_default : #{name} = record [ #{arg_list.join ";\n\t"} ];\n"
         ctx.type_decl_sink_list.push {
           name
           field_decl_jl

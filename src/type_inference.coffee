@@ -618,7 +618,7 @@ get_list_sign = (list)->
         
         ctx_nest = ctx.mk_nest()
         ctx_nest.current_class = root
-        
+
         for k,v of root._prepared_field2type
           ctx_nest.var_hash[k] = v
         
