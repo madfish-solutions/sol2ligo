@@ -515,6 +515,11 @@ walk = (root, ctx)->
               
               else
                 throw new Error "unknown array field #{root.name}"
+          
+          when "enum"
+            return "#{translate_var_name root.name, ctx}"
+            # uncomment following for underscore notation like: enumname_varname
+            # return "#{t}_#{translate_var_name root.name, ctx}"
       
       # else
       if t == "" # this case

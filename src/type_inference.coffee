@@ -208,11 +208,17 @@ class Ti_context
     ret
   
   type_proxy : (cls)->
-    ret = new Type "struct"
-    for k,v of cls._prepared_field2type
-      continue unless v.main in ["function2", "function2_pure"]
-      ret.field_hash[k] = v
-    ret
+    if cls.constructor.name == "Enum_decl"
+      ret = new Type "enum"
+      for v in cls.value_list
+        ret.field_hash[v.name] = new Type "int"
+      ret
+    else
+      ret = new Type "struct"
+      for k,v of cls._prepared_field2type
+        continue unless v.main in ["function2", "function2_pure"]
+        ret.field_hash[k] = v
+      ret
   
   check_id : (id)->
     if id == "this"
@@ -473,6 +479,9 @@ get_list_sign = (list)->
               field_hash = address_field_hash
             
             when "struct"
+              field_hash = root_type.field_hash
+            
+            when "enum"
               field_hash = root_type.field_hash
             
             else
@@ -969,6 +978,9 @@ get_list_sign = (list)->
               field_hash = address_field_hash
             
             when "struct"
+              field_hash = root_type.field_hash
+            
+            when "enum"
               field_hash = root_type.field_hash
             
             else
