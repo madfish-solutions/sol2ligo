@@ -817,10 +817,7 @@ walk = (root, ctx)->
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
-      for _case in root.scope.list
-        # register
-        ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl # at least it's better than true
-        
+      for _case in root.scope.list        
         case_scope = walk _case.scope, ctx
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
@@ -865,7 +862,6 @@ walk = (root, ctx)->
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
       orig_ctx = ctx
-      ctx.type_decl_hash[root.name] = root
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
         ctx.parent.type_decl_hash["#{ctx.current_class.name}.#{root.name}"] = root
@@ -875,6 +871,17 @@ walk = (root, ctx)->
       ctx.current_class = root
       ctx.is_class_scope = true
       
+      # stage 0 collect types
+      for v in root.scope.list
+        switch v.constructor.name
+          when "Enum_decl", "Class_decl"
+            ctx.type_decl_hash[v.name] = v
+          when "PM_switch"
+            for _case in root.scope.list
+              ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl
+      
+          else
+            "skip"
       # stage 1 collect declarations
       field_decl_jl = []
       for v in root.scope.list
@@ -948,7 +955,6 @@ walk = (root, ctx)->
     when "Enum_decl"
       jl = []
       # register global type
-      ctx.type_decl_hash[root.name] = root
       prefix = ""
       if ctx.current_class.name and root.name != "router_enum"
         prefix = "#{ctx.current_class.name}_"
@@ -964,7 +970,6 @@ walk = (root, ctx)->
         
         jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-
       """
       type #{translate_var_name prefix + root.name, ctx} is
         #{join_list jl, '  '};
