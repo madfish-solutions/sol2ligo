@@ -517,7 +517,8 @@ do ()=>
             record.name = func2args_struct func.name
             record.namespace_name = false
             for value,idx in func.arg_name_list
-              continue if idx <= 1 # skip contract_storage, op_list
+              if func.state_mutability != "pure"
+                continue if idx < 1
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
@@ -573,31 +574,37 @@ do ()=>
             # BUG. Type inference should resolve this fn properly
             
             # NETE. will be changed in type inference
-            # if func.state_mutability == "pure"
-            #   call.fn.type = new Type "function2_pure"
-            #   # BUG only 1 ret value supported
-            #   call.type = func.type_o.nest_list[0]
-            # else
-            #   call.fn.type = new Type "function2"
-            call.fn.type = new Type "function2"
+            if func.state_mutability == 'pure'
+              call.fn.type = new Type "function2_pure"
+              # BUG only 1 ret value supported
+              call.type = func.type_o.nest_list[0]
+            else
+              call.fn.type = new Type "function2"
             call.fn.type.nest_list[0] = func.type_i
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
-              # if func.state_mutability != "pure"
-                # continue if idx < 1 # skip contract_storage, op_list
+              if func.state_mutability != "pure"
+                continue if idx < 1
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
             
-            if !func.should_ret_op_list
-              p func
+            if !func.should_ret_op_list and func.should_modify_storage
               _case.scope.need_nest = false
               _case.scope.list.push ret = new ast.Tuple
               ret.list.push _var = new ast.Const
               _var.type = new Type "built_in_op_list"
               ret.list.push call 
+            else if !func.should_modify_storage
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push call 
+              ret.list.push _var = new ast.Var
+              _var.type = new Type config.storage
+              _var.name = config.contract_storage
+              _var.name_translate = false
             else
               _case.scope.need_nest = false
               _case.scope.list.push call  
@@ -781,7 +788,7 @@ do ()=>
 # ###################################################################################################
 
 do ()=>
-  fn_apply_modifier = (fn, mod, ctx)->
+  fn_apply_modifier = (fn, mod, ctx, unscoped)->
     ###
     Possible intersections
       1. Var_decl
@@ -796,12 +803,15 @@ do ()=>
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list
+      continue if arg.name == mod_decl.arg_name_list[idx]
       prepend_list.push var_decl = new ast.Var_decl
       # TODO search **fn** for this_var name and replace in **ret** with tmp
       var_decl.name = mod_decl.arg_name_list[idx]
+
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    
+    if unscoped
+      ret.need_nest = false
     ret = module.placeholder_replace ret, fn
     ret.list = arr_merge prepend_list, ret.list
     ret
@@ -822,8 +832,8 @@ do ()=>
           inner = root.scope.clone()
           inner.need_nest = false
           # TODO clarify modifier's order
-          for mod in root.modifier_list
-            inner = fn_apply_modifier inner, mod, ctx
+          for mod, idx in root.modifier_list
+            inner = fn_apply_modifier inner, mod, ctx , idx == 0 and root.modifier_list.length != 1
           
           ret = root.clone()
           ret.modifier_list.clear()

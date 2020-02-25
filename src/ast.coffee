@@ -106,6 +106,7 @@ class @Fn_decl_multiret
   state_mutability : ""
   should_ret_op_list : ""
   should_modify_storage : ""
+  should_ret_args : ""
   is_modifier: false
   modifier_list : [] # array<Fn_call>
   

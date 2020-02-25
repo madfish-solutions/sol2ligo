@@ -234,6 +234,11 @@ number2bytes = (val, precision = 32)->
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           return t.value_list[0].name
+        if t.constructor.name == "Class_decl"
+          arg_list = []
+          for v in t.scope.list
+            arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
+          return "record [ #{arg_list.join ";\n\t"} ]"
 
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
@@ -811,7 +816,8 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v, ctx unless idx <= 1 # storage, op_list
+        if root.visibility != 'pure' and idx > 0
+          v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
