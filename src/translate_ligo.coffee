@@ -233,7 +233,7 @@ number2bytes = (val, precision = 32)->
         t = ctx.type_decl_hash[type.main]
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
-          return t.value_list[0].name
+          return "#{t.value_list[0].name}(uint)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
