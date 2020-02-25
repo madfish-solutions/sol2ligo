@@ -297,6 +297,7 @@ class @Gen_context
   sink_list         : []
   type_decl_sink_list: []
   structs_default_list: []
+  enum_list: []
   tmp_idx           : 0
   
   constructor:()->
@@ -306,6 +307,7 @@ class @Gen_context
     @sink_list        = []
     @type_decl_sink_list= []
     @structs_default_list= []
+    @enum_list= []
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -315,6 +317,7 @@ class @Gen_context
     obj_set t.type_decl_hash, @type_decl_hash
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t.structs_default_list = @structs_default_list
+    t.enum_list = @enum_list
     t
 
 last_bracket_state = false
@@ -366,6 +369,11 @@ walk = (root, ctx)->
             jl.unshift """
               #{join_list type_decl_jl}
               """
+            if ctx.enum_list.length 
+              jl.unshift ""
+              jl.unshift """
+                #{join_list ctx.enum_list}
+                """
           join_list jl, ""
         
         else
@@ -903,7 +911,13 @@ walk = (root, ctx)->
           when "Var_decl"
             "skip"
           
-          when "Fn_decl_multiret", "Enum_decl"
+          when "Enum_decl"
+            if v.name != "router_enum"
+              ctx.enum_list.push walk v, ctx
+            else
+              walk v, ctx
+
+          when "Fn_decl_multiret"
             jl.push walk v, ctx
           
           when "Class_decl", "Comment", "Event_decl"
