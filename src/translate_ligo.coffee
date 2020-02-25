@@ -190,7 +190,7 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        if ctx.type_decl_hash[type.main].constructor.name == "Enum_decl" and ctx.current_class.name
+        if name != "router_enum" and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]
           name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
@@ -924,7 +924,7 @@ walk = (root, ctx)->
             if v.name != "router_enum"
               ctx.enum_list.push walk v, ctx
             else
-              walk v, ctx
+              jl.unshift walk v, ctx
 
           when "Fn_decl_multiret"
             jl.push walk v, ctx
