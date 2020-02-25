@@ -243,6 +243,7 @@ walk = (root, ctx)->
     when "StructDefinition"
       ret = new ast.Class_decl
       ret.name = root.name
+      ret.is_struct = true
       for v in root.members
         ret.scope.list.push walk v, ctx
       ret
