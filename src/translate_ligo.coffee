@@ -190,6 +190,8 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
+        if ctx.type_decl_hash[type.main].constructor.name == "Enum_decl" and ctx.current_class.name
+          name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
