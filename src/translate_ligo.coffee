@@ -233,7 +233,10 @@ number2bytes = (val, precision = 32)->
         t = ctx.type_decl_hash[type.main]
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
-          return "#{t.value_list[0].name}(uint)"
+          name = t.value_list[0].name
+          if ctx.current_class.name and root.name != "router_enum"
+            name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
+          return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
@@ -363,7 +366,6 @@ walk = (root, ctx)->
             jl.unshift """
               #{join_list type_decl_jl}
               """
-          
           join_list jl, ""
         
         else
@@ -529,7 +531,10 @@ walk = (root, ctx)->
                 throw new Error "unknown array field #{root.name}"
           
           when "enum"
-            return "#{translate_var_name root.name, ctx}(unit)"
+            name = translate_var_name root.name, ctx
+            if ctx.current_class.name and root.name != "router_enum"
+              name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
+            return "#{name}(unit)"
             # uncomment following for underscore notation like: enumname_varname
             # return "#{t}_#{translate_var_name root.name, ctx}"
       
@@ -930,6 +935,9 @@ walk = (root, ctx)->
       jl = []
       # register global type
       ctx.type_decl_hash[root.name] = root
+      prefix = ""
+      if ctx.current_class.name and root.name != "router_enum"
+        prefix = "#{ctx.current_class.name}_"
       for v in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
@@ -940,11 +948,11 @@ walk = (root, ctx)->
           type = translate_type v.type, ctx
           aux = " of #{translate_var_name type, ctx}"
         
-        jl.push "| #{v.name}#{aux}"
+        jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-      
+
       """
-      type #{translate_var_name root.name, ctx} is
+      type #{translate_var_name prefix + root.name, ctx} is
         #{join_list jl, '  '};
       """
     
