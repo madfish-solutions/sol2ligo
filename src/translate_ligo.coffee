@@ -522,7 +522,7 @@ walk = (root, ctx)->
                 throw new Error "unknown array field #{root.name}"
           
           when "enum"
-            return "#{translate_var_name root.name, ctx}"
+            return "#{translate_var_name root.name, ctx}(unit)"
             # uncomment following for underscore notation like: enumname_varname
             # return "#{t}_#{translate_var_name root.name, ctx}"
       
