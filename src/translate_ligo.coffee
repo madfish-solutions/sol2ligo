@@ -587,22 +587,21 @@ walk = (root, ctx)->
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
                   # TODO check balance
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "transfer"
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "built_in_pure_callback"
                   # TODO check balance
                   ret_type = translate_type root.arg_list[0].type, ctx
                   ret = arg_list[0]
                   op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
+              return "var #{config.op_list} : list(operation) := #{op_code}"
+
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "assert", "require2"
