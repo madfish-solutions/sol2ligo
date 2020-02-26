@@ -9,6 +9,7 @@ body {
   margin-top: 0px;
   display: flex;
   flex-direction: column;
+  max-height: 100vh;
 }
 .nav {
   margin: 0px;
@@ -42,7 +43,8 @@ body {
   background: #007ea1;
   position: relative;
   display: flex;
-  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
   flex: 1;
 }
 
@@ -72,6 +74,12 @@ body {
   color: #def;
   padding: 0;
   margin: 0;
+}
+
+.divider {
+  width: 2px;
+  min-height: 100%;
+  background: black;
 }
 
 .minibutton {
