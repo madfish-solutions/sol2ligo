@@ -348,7 +348,8 @@ class @Struct_init
   line  : 0
   pos   : 0
   constructor:()->
-    @arg_list = []
+    @val_list = []
+    @arg_names = []
   
   clone : ()->
     ret = new module.Struct_init
