@@ -407,7 +407,14 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk}
 
 # ###################################################################################################
-
+check_external_ops = (scope)->
+  if scope.constructor.name == "Scope"
+    for v in scope.list
+        if v.constructor.name == "Fn_call" and v.fn.constructor.name == "Field_access" and v.fn.name in ["transfer", "send"]
+          return true
+        if v.constructor.name == "Scope"
+          return true if check_external_ops v
+  return false
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -427,7 +434,8 @@ do ()=>
         if ctx.should_ret_op_list
           root.t_list.unshift inject = new ast.Const
           inject.type = new Type "built_in_op_list"
-        
+          if ctx.has_op_list_decl
+            inject.val = config.op_list
         root
       
       when "Fn_decl_multiret"
@@ -435,6 +443,7 @@ do ()=>
         ctx.should_ret_op_list = root.should_ret_op_list
         ctx.should_modify_storage = root.should_modify_storage
         root.scope = walk root.scope, ctx
+        ctx.has_op_list_decl = check_external_ops root.scope
                 
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
