@@ -671,7 +671,7 @@ walk = (root, ctx)->
       if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
-      if not root.leftUnpack
+      if not root.left_unpack
         "#{call_expr}"
       else
         if type_jl.length == 1
@@ -727,7 +727,7 @@ walk = (root, ctx)->
       type = translate_type root.type, ctx
       prefix = ""
       if ctx.is_class_scope
-        if root.specialType
+        if root.special_type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
         ctx.contract_var_hash[name] = root
@@ -837,7 +837,8 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        if root.visibility != 'pure' and idx > 0 and !(root.name == "@main" and idx == 1)
+        is_state_in_main = root.name == "@main" and idx == 1
+        if root.visibility != 'pure' and idx > 0 and !is_state_in_main
           v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
