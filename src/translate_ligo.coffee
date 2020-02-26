@@ -822,6 +822,7 @@ walk = (root, ctx)->
       jl = []
       for _case in root.scope.list        
         case_scope = walk _case.scope, ctx
+        case_scope = case_scope[0..-2] if /;$/.test case_scope
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
       
