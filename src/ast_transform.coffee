@@ -410,8 +410,9 @@ do ()=>
 check_external_ops = (scope)->
   if scope.constructor.name == "Scope"
     for v in scope.list
-        if v.constructor.name == "Fn_call" and v.fn.constructor.name == "Field_access" and v.fn.name in ["transfer", "send"]
-          return true
+        if v.constructor.name == "Fn_call" and v.fn.constructor.name == "Field_access"
+          is_external_call = v.fn.name in ["transfer", "send", "built_in_pure_callback"]
+          return true if is_external_call
         if v.constructor.name == "Scope"
           return true if check_external_ops v
   return false
