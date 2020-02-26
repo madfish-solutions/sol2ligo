@@ -190,7 +190,8 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        if name != "router_enum" and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]
+        is_special_type = ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]
+        if name != "router_enum" and is_special_type
           name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
@@ -392,9 +393,10 @@ walk = (root, ctx)->
                 ctx.trim_expr = ""
                 continue
               if code
-                code += ";" if !/;$/.test code
+                if v.constructor.name not in ["Comment", "Scope"]
+                  code += ";" if !/;$/.test code
                 jl.push code
-            
+
             ret = jl.pop() or ""
             if 0 != ret.indexOf "with"
               jl.push ret
@@ -670,7 +672,7 @@ walk = (root, ctx)->
       if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
-      if not root.leftUnpack
+      if not root.left_unpack
         "#{call_expr}"
       else
         if type_jl.length == 1
@@ -726,7 +728,7 @@ walk = (root, ctx)->
       type = translate_type root.type, ctx
       prefix = ""
       if ctx.is_class_scope
-        if root.specialType
+        if root.special_type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
         ctx.contract_var_hash[name] = root
@@ -735,7 +737,7 @@ walk = (root, ctx)->
         if root.assign_value
           if root.assign_value?.constructor.name == "Struct_init"
             type = "#{ctx.current_class.name}_#{root.type.main}"
-          type = translate_var_name type, ctx
+            type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
@@ -821,6 +823,7 @@ walk = (root, ctx)->
       jl = []
       for _case in root.scope.list        
         case_scope = walk _case.scope, ctx
+        case_scope = case_scope[0..-2] if /;$/.test case_scope
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
       
@@ -835,7 +838,8 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        if root.visibility != 'pure' and idx > 0
+        is_state_in_main = root.name == "@main" and idx == 1
+        if root.visibility != 'pure' and idx > 0 and !is_state_in_main
           v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"

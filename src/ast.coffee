@@ -57,6 +57,7 @@ class @Var
   name  : ""
   name_translate: true
   type  : null
+  left_unpack  : false
   line  : 0
   pos   : 0
   
@@ -65,6 +66,7 @@ class @Var
     ret.name  = @name
     ret.type  = @type.clone() if @type
     ret.line  = @line
+    ret.left_unpack  = @left_unpack
     ret.pos   = @pos
     ret
 
@@ -75,6 +77,7 @@ class @Var_decl
   size  : null
   assign_value      : null
   assign_value_list : null
+  special_type : false
   line  : 0
   pos   : 0
   
@@ -84,6 +87,7 @@ class @Var_decl
     ret.name_translate = @name_translate
     ret.type  = @type.clone() if @type
     ret.size  = @size
+    ret.special_type  = @special_type
     ret.assign_value  = @assign_value.clone() if @assign_value
     if @assign_value_list
       ret.assign_value_list = []
@@ -106,9 +110,9 @@ class @Fn_decl_multiret
   pos     : 0
   visibility : ""
   state_mutability : ""
-  should_ret_op_list : ""
-  should_modify_storage : ""
-  should_ret_args : ""
+  should_ret_op_list : false
+  should_modify_storage : false
+  should_ret_args : false
   is_modifier: false
   modifier_list : [] # array<Fn_call>
   
@@ -348,7 +352,8 @@ class @Struct_init
   line  : 0
   pos   : 0
   constructor:()->
-    @arg_list = []
+    @val_list = []
+    @arg_names = []
   
   clone : ()->
     ret = new module.Struct_init

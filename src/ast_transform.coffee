@@ -568,7 +568,7 @@ do ()=>
             
             call = new ast.Fn_call
             call.fn = new ast.Var
-            call.fn.leftUnpack = true
+            call.fn.left_unpack = true
             call.fn.name = func.name # TODO word "constructor" gets corruped here
             # NOTE that PM_switch is ignored by type inference
             # BUG. Type inference should resolve this fn properly

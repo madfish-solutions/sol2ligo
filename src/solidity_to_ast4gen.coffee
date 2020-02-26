@@ -356,7 +356,7 @@ walk = (root, ctx)->
       ret._const = root.constant
       ret.name = root.name
       if root.typeName.nodeType == 'UserDefinedTypeName'
-        ret.specialType = true
+        ret.special_type = true
       ret.type = walk_type root.typeName, ctx
       # ret.type = new Type root.typeDescriptions.typeIdentifier
       if root.value
