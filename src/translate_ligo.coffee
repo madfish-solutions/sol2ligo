@@ -190,7 +190,8 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        if name != "router_enum" and (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name])
+        is_special_type = ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]
+        if name != "router_enum" and is_special_type
           name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
