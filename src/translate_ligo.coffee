@@ -190,6 +190,8 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
+        if name != "router_enum" and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]
+          name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
@@ -233,7 +235,10 @@ number2bytes = (val, precision = 32)->
         t = ctx.type_decl_hash[type.main]
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
-          return "#{t.value_list[0].name}(uint)"
+          name = t.value_list[0].name
+          if ctx.current_class.name and root.name != "router_enum"
+            name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
+          return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
@@ -294,6 +299,7 @@ class @Gen_context
   sink_list         : []
   type_decl_sink_list: []
   structs_default_list: []
+  enum_list: []
   tmp_idx           : 0
   
   constructor:()->
@@ -303,6 +309,7 @@ class @Gen_context
     @sink_list        = []
     @type_decl_sink_list= []
     @structs_default_list= []
+    @enum_list= []
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -312,6 +319,7 @@ class @Gen_context
     obj_set t.type_decl_hash, @type_decl_hash
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t.structs_default_list = @structs_default_list
+    t.enum_list = @enum_list
     t
 
 last_bracket_state = false
@@ -363,7 +371,11 @@ walk = (root, ctx)->
             jl.unshift """
               #{join_list type_decl_jl}
               """
-          
+            if ctx.enum_list.length 
+              jl.unshift ""
+              jl.unshift """
+                #{join_list ctx.enum_list}
+                """
           join_list jl, ""
         
         else
@@ -529,7 +541,10 @@ walk = (root, ctx)->
                 throw new Error "unknown array field #{root.name}"
           
           when "enum"
-            return "#{translate_var_name root.name, ctx}(unit)"
+            name = translate_var_name root.name, ctx
+            if ctx.current_class.name and root.name != "router_enum"
+              name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
+            return "#{name}(unit)"
             # uncomment following for underscore notation like: enumname_varname
             # return "#{t}_#{translate_var_name root.name, ctx}"
       
@@ -804,10 +819,7 @@ walk = (root, ctx)->
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
-      for _case in root.scope.list
-        # register
-        ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl # at least it's better than true
-        
+      for _case in root.scope.list        
         case_scope = walk _case.scope, ctx
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
@@ -852,7 +864,6 @@ walk = (root, ctx)->
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
       orig_ctx = ctx
-      ctx.type_decl_hash[root.name] = root
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
         ctx.parent.type_decl_hash["#{ctx.current_class.name}.#{root.name}"] = root
@@ -862,6 +873,17 @@ walk = (root, ctx)->
       ctx.current_class = root
       ctx.is_class_scope = true
       
+      # stage 0 collect types
+      for v in root.scope.list
+        switch v.constructor.name
+          when "Enum_decl", "Class_decl"
+            ctx.type_decl_hash[v.name] = v
+          when "PM_switch"
+            for _case in root.scope.list
+              ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl
+      
+          else
+            "skip"
       # stage 1 collect declarations
       field_decl_jl = []
       for v in root.scope.list
@@ -898,7 +920,13 @@ walk = (root, ctx)->
           when "Var_decl"
             "skip"
           
-          when "Fn_decl_multiret", "Enum_decl"
+          when "Enum_decl"
+            if v.name != "router_enum"
+              ctx.enum_list.push walk v, ctx
+            else
+              jl.unshift walk v, ctx
+
+          when "Fn_decl_multiret"
             jl.push walk v, ctx
           
           when "Class_decl", "Comment", "Event_decl"
@@ -929,7 +957,9 @@ walk = (root, ctx)->
     when "Enum_decl"
       jl = []
       # register global type
-      ctx.type_decl_hash[root.name] = root
+      prefix = ""
+      if ctx.current_class.name and root.name != "router_enum"
+        prefix = "#{ctx.current_class.name}_"
       for v in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
@@ -940,11 +970,10 @@ walk = (root, ctx)->
           type = translate_type v.type, ctx
           aux = " of #{translate_var_name type, ctx}"
         
-        jl.push "| #{v.name}#{aux}"
+        jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-      
       """
-      type #{translate_var_name root.name, ctx} is
+      type #{translate_var_name prefix + root.name, ctx} is
         #{join_list jl, '  '};
       """
     
