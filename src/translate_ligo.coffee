@@ -392,9 +392,10 @@ walk = (root, ctx)->
                 ctx.trim_expr = ""
                 continue
               if code
-                code += ";" if !/;$/.test code
+                if v.constructor.name not in ["Comment", "Scope"]
+                  code += ";" if !/;$/.test code
                 jl.push code
-            
+
             ret = jl.pop() or ""
             if 0 != ret.indexOf "with"
               jl.push ret
