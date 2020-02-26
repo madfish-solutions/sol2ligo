@@ -190,7 +190,7 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        if name != "router_enum" and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]
+        if name != "router_enum" and (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name])
           name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
@@ -736,7 +736,7 @@ walk = (root, ctx)->
         if root.assign_value
           if root.assign_value?.constructor.name == "Struct_init"
             type = "#{ctx.current_class.name}_#{root.type.main}"
-          type = translate_var_name type, ctx
+            type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
