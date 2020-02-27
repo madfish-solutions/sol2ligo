@@ -559,8 +559,6 @@ walk = (root, ctx)->
             else
               name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
               return "#{name}(unit)"
-            # uncomment following for underscore notation like: enumname_varname
-            # return "#{t}_#{translate_var_name root.name, ctx}"
       
       # else
       if t == "" # this case
