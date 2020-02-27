@@ -384,6 +384,7 @@ walk = (root, ctx)->
               jl.unshift """
                 #{join_list ctx.enum_list}
                 """
+              ctx.enum_list = []
           join_list jl, ""
         
         else

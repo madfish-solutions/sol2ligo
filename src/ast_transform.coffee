@@ -446,6 +446,7 @@ do ()=>
         root.scope = walk root.scope, ctx
         ctx.has_op_list_decl = check_external_ops root.scope
                 
+        # p root.contract_name
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type config.storage
@@ -481,15 +482,15 @@ do ()=>
         ctx.next_gen root, ctx
       
       when "Fn_decl_multiret"
-        unless root.visibility in ["private", "internal"]
+        if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract)
           ctx.router_func_list.push root
         root
       
       else
         ctx.next_gen root, ctx
   
-  @router_collector = (root)->
-    walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
+  @router_collector = (root, opt)-> 
+    walk root, ctx = obj_merge({walk, next_gen: module.default_walk, router_func_list: []}, opt)
     ctx.router_func_list
 
 # ###################################################################################################
@@ -872,6 +873,6 @@ do ()=>
   root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
   if opt.router
-    router_func_list = module.router_collector root
+    router_func_list = module.router_collector root, opt
     root = module.add_router root, obj_merge {router_func_list}, opt
   root
