@@ -190,9 +190,12 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        is_special_type = ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]
-        if name != "router_enum" and is_special_type
+        is_struct = (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
+        is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
+        if is_struct 
           name = "#{ctx.current_class.name}_#{name}"
+        if name != "router_enum" and is_enum
+          name = "nat"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
