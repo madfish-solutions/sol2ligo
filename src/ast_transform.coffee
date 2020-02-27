@@ -476,6 +476,29 @@ do ()=>
   walk = (root, ctx)->
     {walk} = ctx
     switch root.constructor.name
+      when "Fn_decl_multiret"
+        for v in root.scope.list
+          if v.constructor.name == "Scope"
+            last = v.list?.last()
+            # p root
+            if last?.constructor.name == "Ret_multi"
+              v.list.pop()
+            v = walk v, ctx
+        ctx.next_gen root, ctx
+      
+      else
+        ctx.next_gen root, ctx
+  
+  @delete_extra_ret_inject = (root, ctx)->
+    walk root, obj_merge({walk, next_gen: module.default_walk}, ctx)
+    
+
+# ###################################################################################################
+
+do ()=>
+  walk = (root, ctx)->
+    {walk} = ctx
+    switch root.constructor.name
       when "Class_decl"
         return root if root.need_skip
         return root if root.is_library
@@ -874,6 +897,7 @@ do ()=>
   root = module.modifier_unpack root
   root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
+  root = module.delete_extra_ret_inject root, opt
   if opt.router
     router_func_list = module.router_collector root, opt
     root = module.add_router root, obj_merge {router_func_list}, opt
