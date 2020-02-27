@@ -523,6 +523,8 @@ do ()=>
           # ###################################################################################################
           #    add struct for each endpoint
           # ###################################################################################################
+          return ctx.next_gen root, ctx if ctx.contract and root.name != ctx.contract
+
           for func in ctx.router_func_list
             root.scope.list.push record = new ast.Class_decl
             record.name = func2args_struct func.name
