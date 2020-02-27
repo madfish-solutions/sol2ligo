@@ -540,6 +540,7 @@ do ()=>
           
           root.scope.list.push _enum = new ast.Enum_decl
           _enum.name = "router_enum"
+          _enum.int_type = false
           for func in ctx.router_func_list
             _enum.value_list.push decl = new ast.Var_decl
             decl.name = func2struct func.name

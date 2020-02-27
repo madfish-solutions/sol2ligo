@@ -31,7 +31,7 @@ string2bytes = (val)->
     ret.push ch.charCodeAt(0).rjust 2, "0"
   
   if ret.length == 1
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   ret.join ""
 
 some2nat = (val, type)->
@@ -190,9 +190,12 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        is_special_type = ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]
-        if name != "router_enum" and is_special_type
+        is_struct = (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
+        is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
+        if is_struct 
           name = "#{ctx.current_class.name}_#{name}"
+        if name != "router_enum" and is_enum
+          name = "nat"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
@@ -213,7 +216,7 @@ number2bytes = (val, precision = 32)->
     return "0"
   
   if config.bytes_type_hash.hasOwnProperty type.main
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   
   switch type.main
     when "bool"
@@ -237,9 +240,13 @@ number2bytes = (val, precision = 32)->
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           name = t.value_list[0].name
-          if ctx.current_class.name and root.name != "router_enum"
-            name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
-          return "#{name}(unit)"
+          if ctx.current_class.name and t.name != "router_enum"
+            prefix = ""
+            if ctx.current_class.name
+              prefix = "#{ctx.current_class.name}_"
+            return "#{translate_var_name prefix + t.name}_#{name}"
+          else
+            return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
@@ -266,9 +273,9 @@ bad_spec_id_trans_hash =
   "block.difficulty": "0n"
   "block.gaslimit"  : "0n"
   "block.number"    : "0n"
-  "msg.data"        : "bytes_pack(unit)"
+  "msg.data"        : "(\"00\": bytes)"
   "msg.gas"         : "0n"
-  "msg.sig"         : "bytes_pack(unit)"
+  "msg.sig"         : "(\"00\": bytes)"
   "tx.gasprice"     : "0n"
 
 warning_once_hash = {}
@@ -544,11 +551,14 @@ walk = (root, ctx)->
           
           when "enum"
             name = translate_var_name root.name, ctx
-            if ctx.current_class.name and root.name != "router_enum"
+            if root.t?.name != "router_enum"
+              prefix = ""
+              if ctx.current_class.name
+                prefix = "#{ctx.current_class.name}_"
+              return "#{translate_var_name prefix + root.t.name}_#{root.name}"
+            else
               name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
-            return "#{name}(unit)"
-            # uncomment following for underscore notation like: enumname_varname
-            # return "#{t}_#{translate_var_name root.name, ctx}"
+              return "#{name}(unit)"
       
       # else
       if t == "" # this case
@@ -600,7 +610,7 @@ walk = (root, ctx)->
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
-              return "var #{config.op_list} : list(operation) := #{op_code}"
+              return "var #{config.op_list} : list(operation) := list #{op_code} end"
 
       if root.fn.constructor.name == "Var"
         switch root.fn.name
@@ -961,24 +971,33 @@ walk = (root, ctx)->
       jl = []
       # register global type
       prefix = ""
-      if ctx.current_class.name and root.name != "router_enum"
+      if ctx.current_class.name and root.int_type
         prefix = "#{ctx.current_class.name}_"
-      for v in root.value_list
+      for v, idx in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
         
         # not covered by tests yet
         aux = ""
-        if v.type
-          type = translate_type v.type, ctx
-          aux = " of #{translate_var_name type, ctx}"
-        
-        jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
+        if root.int_type
+          if v.type
+            type = translate_type v.type, ctx
+            aux = "#{translate_var_name type, ctx}"
+          jl.push "const #{translate_var_name prefix + root.name}_#{v.name}#{aux} : nat = #{idx}n;"
+        else
+          if v.type
+            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
+          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-      """
-      type #{translate_var_name prefix + root.name, ctx} is
-        #{join_list jl, '  '};
-      """
+      if root.int_type
+        """
+        #{join_list jl}
+        """
+      else
+        """
+        type #{translate_var_name prefix + root.name, ctx} is
+          #{join_list jl, '  '};
+        """
     
     when "Ternary"
       cond = walk root.cond,  ctx
@@ -1000,7 +1019,7 @@ walk = (root, ctx)->
       if root.cls.main == "array"
         """map end (* args: #{args} *)"""
       else if translated_type == "bytes"
-        """bytes_pack(unit) (* args: #{args} *)"""
+        """(\"00\": bytes) (* args: #{args} *)"""
       else
         """
         #{translated_type}(#{args})
