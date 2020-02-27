@@ -318,6 +318,7 @@ class @PM_case
 class @Enum_decl
   name  : ""
   value_list: [] # array<Var_decl>
+  is_joint_type: false
   line  : 0
   pos   : 0
   
@@ -327,6 +328,7 @@ class @Enum_decl
   clone : ()->
     ret = new module.Enum_decl
     ret.name = @name
+    ret.is_joint_type = @is_joint_type
     for v in @value_list
       ret.value_list.push v.clone()
     ret.line  = @line

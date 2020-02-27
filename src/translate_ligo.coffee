@@ -238,8 +238,12 @@ number2bytes = (val, precision = 32)->
         if t.constructor.name == "Enum_decl"
           name = t.value_list[0].name
           if ctx.current_class.name and root.name != "router_enum"
-            name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
-          return "#{name}(unit)"
+            prefix = ""
+            if ctx.current_class.name
+              prefix = "#{ctx.current_class.name}_"
+            return "#{translate_var_name prefix + t.name}_#{name}"
+          else
+            return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
@@ -544,9 +548,14 @@ walk = (root, ctx)->
           
           when "enum"
             name = translate_var_name root.name, ctx
-            if ctx.current_class.name and root.name != "router_enum"
+            if root.name != "router_enum"
+              prefix = ""
+              if ctx.current_class.name
+                prefix = "#{ctx.current_class.name}_"
+              return "#{translate_var_name prefix + root.t.name}_#{root.name}"
+            else
               name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
-            return "#{name}(unit)"
+              return "#{name}(unit)"
             # uncomment following for underscore notation like: enumname_varname
             # return "#{t}_#{translate_var_name root.name, ctx}"
       
@@ -600,7 +609,7 @@ walk = (root, ctx)->
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
-              return "var #{config.op_list} : list(operation) := #{op_code}"
+              return "var #{config.op_list} : list(operation) := list #{op_code} end"
 
       if root.fn.constructor.name == "Var"
         switch root.fn.name
@@ -963,22 +972,31 @@ walk = (root, ctx)->
       prefix = ""
       if ctx.current_class.name and root.name != "router_enum"
         prefix = "#{ctx.current_class.name}_"
-      for v in root.value_list
+      for v, idx in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
         
         # not covered by tests yet
         aux = ""
-        if v.type
-          type = translate_type v.type, ctx
-          aux = " of #{translate_var_name type, ctx}"
-        
-        jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
+        if root.is_joint_type
+          if v.type
+            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
+          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
+        else
+          if v.type
+            type = translate_type v.type, ctx
+            aux = "#{translate_var_name type, ctx}"
+          jl.push "const #{translate_var_name prefix + root.name}_#{v.name}#{aux} : nat = #{idx}n;"
         # jl.push "| #{v.name}"
-      """
-      type #{translate_var_name prefix + root.name, ctx} is
-        #{join_list jl, '  '};
-      """
+      if root.is_joint_type
+        """
+        type #{translate_var_name prefix + root.name, ctx} is
+          #{join_list jl, '  '};
+        """
+      else
+        """
+        #{join_list jl}
+        """
     
     when "Ternary"
       cond = walk root.cond,  ctx
