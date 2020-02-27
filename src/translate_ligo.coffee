@@ -31,7 +31,7 @@ string2bytes = (val)->
     ret.push ch.charCodeAt(0).rjust 2, "0"
   
   if ret.length == 1
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   ret.join ""
 
 some2nat = (val, type)->
@@ -213,7 +213,7 @@ number2bytes = (val, precision = 32)->
     return "0"
   
   if config.bytes_type_hash.hasOwnProperty type.main
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   
   switch type.main
     when "bool"
@@ -266,9 +266,9 @@ bad_spec_id_trans_hash =
   "block.difficulty": "0n"
   "block.gaslimit"  : "0n"
   "block.number"    : "0n"
-  "msg.data"        : "bytes_pack(unit)"
+  "msg.data"        : "(\"00\": bytes)"
   "msg.gas"         : "0n"
-  "msg.sig"         : "bytes_pack(unit)"
+  "msg.sig"         : "(\"00\": bytes)"
   "tx.gasprice"     : "0n"
 
 warning_once_hash = {}
@@ -1000,7 +1000,7 @@ walk = (root, ctx)->
       if root.cls.main == "array"
         """map end (* args: #{args} *)"""
       else if translated_type == "bytes"
-        """bytes_pack(unit) (* args: #{args} *)"""
+        """(\"00\": bytes) (* args: #{args} *)"""
       else
         """
         #{translated_type}(#{args})
