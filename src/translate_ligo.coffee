@@ -302,6 +302,7 @@ class @Gen_context
   type_decl_hash    : {}
   contract_var_hash : {}
   
+  contract          : false
   trim_expr         : ""
   storage_sink_list : []
   sink_list         : []
@@ -318,6 +319,7 @@ class @Gen_context
     @type_decl_sink_list= []
     @structs_default_list= []
     @enum_list= []
+    @contract = false
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -328,6 +330,7 @@ class @Gen_context
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t.structs_default_list = @structs_default_list
     t.enum_list = @enum_list
+    t.contract = @contract
     t
 
 last_bracket_state = false
@@ -903,7 +906,8 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+            if !ctx.contract or ctx.contract == v.contract_name
+              field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
@@ -1068,4 +1072,5 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
+  ctx.contract = opt.contract if opt.contract
   walk root, ctx

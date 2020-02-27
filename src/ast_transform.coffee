@@ -446,7 +446,6 @@ do ()=>
         root.scope = walk root.scope, ctx
         ctx.has_op_list_decl = check_external_ops root.scope
                 
-        # p root.contract_name
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type config.storage
@@ -480,7 +479,6 @@ do ()=>
         for v in root.scope.list
           if v.constructor.name == "Scope"
             last = v.list?.last()
-            # p root
             if last?.constructor.name == "Ret_multi"
               v.list.pop()
             v = walk v, ctx

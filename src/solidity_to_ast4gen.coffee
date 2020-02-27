@@ -357,6 +357,8 @@ walk = (root, ctx)->
       ret = new ast.Var_decl
       ret._const = root.constant
       ret.name = root.name
+      ret.contract_name = ctx.contract_name
+      ret.contract_type = ctx.contract_type
       if root.typeName.nodeType == 'UserDefinedTypeName'
         ret.special_type = true
       ret.type = walk_type root.typeName, ctx

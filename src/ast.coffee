@@ -73,6 +73,8 @@ class @Var
 class @Var_decl
   name  : ""
   name_translate: true
+  contract_name : ""
+  contract_type : ""
   type  : null
   size  : null
   assign_value      : null
@@ -85,6 +87,8 @@ class @Var_decl
     ret = new module.Var_decl
     ret.name  = @name
     ret.name_translate = @name_translate
+    ret.contract_name = @contract_name
+    ret.contract_type = @contract_type
     ret.type  = @type.clone() if @type
     ret.size  = @size
     ret.special_type  = @special_type
