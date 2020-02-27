@@ -240,7 +240,7 @@ number2bytes = (val, precision = 32)->
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           name = t.value_list[0].name
-          if ctx.current_class.name and root.name != "router_enum"
+          if ctx.current_class.name and t.name != "router_enum"
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"
@@ -551,7 +551,7 @@ walk = (root, ctx)->
           
           when "enum"
             name = translate_var_name root.name, ctx
-            if root.name != "router_enum"
+            if root.t?.name != "router_enum"
               prefix = ""
               if ctx.current_class.name
                 prefix = "#{ctx.current_class.name}_"
@@ -973,7 +973,7 @@ walk = (root, ctx)->
       jl = []
       # register global type
       prefix = ""
-      if ctx.current_class.name and root.name != "router_enum"
+      if ctx.current_class.name and root.int_type
         prefix = "#{ctx.current_class.name}_"
       for v, idx in root.value_list
         # register global value
@@ -981,24 +981,24 @@ walk = (root, ctx)->
         
         # not covered by tests yet
         aux = ""
-        if root.is_joint_type
-          if v.type
-            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
-          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
-        else
+        if root.int_type
           if v.type
             type = translate_type v.type, ctx
             aux = "#{translate_var_name type, ctx}"
           jl.push "const #{translate_var_name prefix + root.name}_#{v.name}#{aux} : nat = #{idx}n;"
+        else
+          if v.type
+            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
+          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-      if root.is_joint_type
+      if root.int_type
         """
-        type #{translate_var_name prefix + root.name, ctx} is
-          #{join_list jl, '  '};
+        #{join_list jl}
         """
       else
         """
-        #{join_list jl}
+        type #{translate_var_name prefix + root.name, ctx} is
+          #{join_list jl, '  '};
         """
     
     when "Ternary"
