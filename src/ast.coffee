@@ -348,12 +348,14 @@ class @Enum_decl
 
 class @Event_decl
   name  : ""
+  arg_list: []
   line  : 0
   pos   : 0
   
   clone : ()->
     ret = new module.Event_decl
     ret.name  = @name
+    ret.arg_list  = @arg_list
     ret.line  = @line
     ret.pos   = @pos
     ret

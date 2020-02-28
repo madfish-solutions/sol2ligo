@@ -492,7 +492,7 @@ get_list_sign = (list)->
               else
                 class_decl = ctx.check_type root_type.main
                 field_hash = class_decl._prepared_field2type
-        
+
         if !field_hash.hasOwnProperty root.name
           # perr root.t
           # perr field_hash
