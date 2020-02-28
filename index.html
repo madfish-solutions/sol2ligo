@@ -19,35 +19,14 @@
         <select id="src_select"> </select>
       </div>
     </div>
-
     <div class="code">
-      <div id="solidity_src_wrap">
-        <textarea id="solidity_src" spellcheck="false">
-pragma solidity ^0.5.11;
-
-contract Ifer {
-uint public value;
-
-function ifer() public returns (uint) {
-  uint x = 6;
-
-  if (x == 5) {
-      x += 1;
-  }
-  else {
-      x -= 1;
-  }
-
-  return x;
-}
-}</textarea
-        >
-      </div>
+      <div id="solidity_container"></div>
       <div class="divider"></div>
       <!-- <div id="ligo_dst_wrap"> -->
-      <pre id="ligo_dst"></pre>
+      <div id="ligo_container"></div>
+      <!-- <pre id="ligo_dst"></pre> -->
       <!-- </div> -->
-      <div class="minibutton" id="compile_btn">Compiling...</div>
+      <!-- <div class="minibutton" id="compile_btn">Compiling...</div> -->
     </div>
     <script src="web/solc/soljson.js"></script>
     <script src="web/solc/sol_wrapper.js"></script>
@@ -65,62 +44,154 @@ function ifer() public returns (uint) {
     <script src="web/lib/type_inference.js"></script>
     <script src="web/lib/ast_transform.js"></script>
     <script src="web/example_list.js"></script>
+    <!-- MONACO EDITOR -->
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/loader.min.js"
+    ></script>
     <script>
-      document.querySelector("#solidity_src").focus();
+      // const outputNode = document.querySelector("#ligo_dst");
+      const compileBtnNode = document.querySelector("#compile_btn");
+
       document.querySelector("#load_msg").innerText =
         "Very experimental. Use it at your own RISK.";
 
-      function compile() {
-        document.querySelector("#compile_btn").style.display = "";
-        document.querySelector("#compile_btn").innerHTML = "Compiling...";
-        document.querySelector("#compile_btn").style.background = "";
-        var next = function() {
+      function compile(code) {
+        return new Promise((res, rej) => {
           try {
-            var code = document.querySelector("#solidity_src").value;
-            var solidity_ast = ast_gen(code);
-            var ast = solidity_to_ast4gen.gen(solidity_ast);
-            var ast = ast_transform.ligo_pack(ast);
-            var ast = type_inference.gen(ast);
-            var res = translate_ligo.gen(ast);
-
-            document.querySelector("#ligo_dst").innerHTML = res;
-            document.querySelector("#compile_btn").style.display = "none";
-          } catch (e) {
-            console.log(e);
-            document.querySelector("#compile_btn").innerHTML = "ERROR";
-            document.querySelector("#compile_btn").style.background = "#faa";
-          }
-        };
-        setTimeout(next, 10);
-      }
-      compile();
-
-      var timeout = null;
-      function onchange() {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-        timeout = setTimeout(function() {
-          timeout = null;
-          compile();
-        }, 100);
-      }
-      document.querySelector("#solidity_src").onchange = onchange;
-      document.querySelector("#solidity_src").onkeyup = onchange;
-
-      var $src_select = document.querySelector("#src_select");
-      var jl_list = example_list.map(function(example) {
-        return "<option>" + example.title + "</option>";
-      });
-      $src_select.onchange = function(t) {
-        example_list.map(function(t) {
-          if (t.title == $src_select.value) {
-            document.querySelector("#solidity_src").value = t.code;
-            compile();
+            const solidity_ast = ast_gen(code);
+            let ast = solidity_to_ast4gen.gen(solidity_ast);
+            ast = ast_transform.ligo_pack(ast);
+            ast = type_inference.gen(ast);
+            const result = translate_ligo.gen(ast);
+            res(result);
+          } catch (err) {
+            rej(err);
           }
         });
+      }
+
+      window.compile = compile;
+    </script>
+
+    <script>
+      const monacoCdnMin =
+        "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min";
+
+      require.config({
+        paths: { vs: `${monacoCdnMin}/vs` }
+      });
+
+      // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+      // the default worker url location (used when creating WebWorkers). The problem here is that
+      // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
+      // a web worker through a same-domain script
+      window.MonacoEnvironment = {
+        getWorkerUrl: function(workerId, label) {
+          return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+        self.MonacoEnvironment = {
+          baseUrl: '${monacoCdnMin}'
+        };
+        importScripts('${monacoCdnMin}/vs/base/worker/workerMain.js');`)}`;
+        }
       };
-      $src_select.innerHTML = jl_list.join("");
+
+      require(["vs/editor/editor.main"], () => {
+        const overlayWidget = {
+          domNode: null,
+          getId: function() {
+            return "my.overlay.widget";
+          },
+          getDomNode: function() {
+            if (!this.domNode) {
+              this.domNode = document.createElement("div");
+              this.domNode.classList.add("minibutton");
+              this.domNode.innerHTML = "Compiling...";
+              this.domNode.style.right = "120px";
+              this.domNode.style.top = "20px";
+              this.domNode.style.zIndex = "20";
+            }
+            return this.domNode;
+          },
+          getPosition: function() {
+            return null;
+          },
+          loading() {
+            if (!this.domNode) return;
+            this.domNode.innerHTML = "Compiling...";
+            this.domNode.style.display = "block";
+            this.domNode.style.background = "#fff";
+            this.domNode.style.color = "black";
+          },
+          success() {
+            if (!this.domNode) return;
+            this.domNode.style.display = "none";
+          },
+          error() {
+            if (!this.domNode) return;
+            this.domNode.innerHTML = "ERROR!!!";
+            this.domNode.style.color = "white";
+            this.domNode.style.background = "#faa";
+          }
+        };
+
+        const solidityEditor = monaco.editor.create(
+          document.getElementById("solidity_container"),
+          {
+            value: example_list[0].code,
+            language: "sol",
+            tabSize: "2"
+          }
+        );
+
+        const ligoEditor = monaco.editor.create(
+          document.getElementById("ligo_container"),
+          {
+            readOnly: true,
+            language: "pascaligo",
+            tabSize: "2",
+            value: ""
+          }
+        );
+
+        ligoEditor.addOverlayWidget(overlayWidget);
+
+        const selectNode = document.querySelector("#src_select");
+        const jl_list = example_list.map(
+          ({ title }) => `<option>${title}</option>`
+        );
+        selectNode.innerHTML = jl_list.join("");
+        selectNode.onchange = e => {
+          const example = example_list.find(ex => ex.title === e.target.value);
+          solidityEditor.setValue(example.code);
+        };
+
+        let timeout = null;
+        function onChange(code) {
+          if (timeout) clearTimeout(timeout);
+          overlayWidget.loading();
+          timeout = setTimeout(() => {
+            timeout = null;
+
+            compile(code)
+              .then(c => {
+                ligoEditor.setValue(c);
+                overlayWidget.success();
+              })
+              .catch(err => {
+                overlayWidget.error();
+              });
+          }, 100);
+        }
+
+        onChange(solidityEditor.getValue());
+
+        solidityEditor.onDidChangeModelContent(_e => {
+          const code = solidityEditor.getValue();
+
+          onChange(code);
+        });
+      });
     </script>
   </body>
 </html>

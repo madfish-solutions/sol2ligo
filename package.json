@@ -28,6 +28,7 @@
     "ast4gen": "github:hu2prod/ast4gen",
     "fy": "github:hu2prod/fy",
     "minimist": "^1.2.0",
+    "monaco-editor": "^0.20.0",
     "solc": "^0.5.14",
     "type": "github:hu2prod/type"
   },
