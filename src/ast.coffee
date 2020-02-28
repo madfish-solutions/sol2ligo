@@ -128,6 +128,7 @@ class @Fn_decl_multiret
     @modifier_list = []
     @contract_name = ""
     @contract_type = ""
+    @should_ret_args = false
   clone : ()->
     ret = new module.Fn_decl_multiret
     ret.is_closure  = @is_closure
@@ -142,6 +143,7 @@ class @Fn_decl_multiret
     ret.state_mutability= @state_mutability
     ret.should_ret_op_list= @should_ret_op_list
     ret.should_modify_storage= @should_modify_storage
+    ret.should_ret_args= @should_ret_args
     ret.contract_name = @contract_name
     ret.contract_type = @contract_type
     for v in @modifier_list
