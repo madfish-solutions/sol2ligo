@@ -2,7 +2,7 @@
  *Submitted for verification at Etherscan.io on 2017-02-09
 */
 
-pragma solidity ^0.4.9;
+pragma solidity ^0.4.26;
 
 contract SafeMath {
   function safeMul(uint a, uint b) internal returns (uint) {
