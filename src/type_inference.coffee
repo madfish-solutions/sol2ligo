@@ -62,6 +62,7 @@ bytes_field_hash =
 address_field_hash =
   "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
   "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
+  "call": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
   "delegatecall": new Type "function2_pure<function2<address,bytes>,function2<bool, bytes>>"
 
 @default_type_hash_gen = ()->

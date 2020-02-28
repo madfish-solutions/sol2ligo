@@ -621,6 +621,18 @@ walk = (root, ctx)->
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
                 
+                when "call"
+                  perr "CRITICAL WARNING call function willl be conveerted into transaction, it doesn't return any value so your code may be wrong."
+                  perr "CRITICAL WARNING we don't check balance in call function. So runtime error will be ignored and no throw"
+                  if root.arg_list[0]
+                    ret_type = translate_type root.arg_list[0].type, ctx
+                    ret = arg_list[0]
+                  else
+                    ret_type = "Unit"
+                    ret = "unit"
+                  op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"    
+
+
                 when "delegatecall"
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
                   op_code = "transaction(#{arg_list[1]}, 1mutez, (get_contract(#{t}) : contract(#{arg_list[0]})))"
