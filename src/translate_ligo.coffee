@@ -632,6 +632,11 @@ walk = (root, ctx)->
                     ret = "unit"
                   op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"    
 
+
+                when "delegatecall"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+                  op_code = "transaction(#{arg_list[1]}, 1mutez, (get_contract(#{t}) : contract(#{arg_list[0]})))"
+                
                 when "built_in_pure_callback"
                   # TODO check balance
                   ret_type = translate_type root.arg_list[0].type, ctx
