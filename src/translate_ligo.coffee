@@ -429,6 +429,7 @@ walk = (root, ctx)->
                 body = join_list jl, ""
               else
                 body = ""
+              ret = ""
             else
               if jl.length
                 body = """
