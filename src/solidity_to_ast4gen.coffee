@@ -603,10 +603,11 @@ walk = (root, ctx)->
     when "FunctionDefinition", "ModifierDefinition"
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
-      ret.name = root.name or "constructor"
+      ret.name = root.name or "fallback"
+      ret.name = "constructor" if root.isConstructor
       ret.contract_name = ctx.contract_name
       ret.contract_type = ctx.contract_type
-      
+
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"
       ret.visibility = root.visibility

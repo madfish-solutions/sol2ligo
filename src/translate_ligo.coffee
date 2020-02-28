@@ -658,6 +658,11 @@ walk = (root, ctx)->
             perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo"
             msg = arg_list[0]
             return "selfdestruct(#{msg})"
+
+          when "blockhash"
+            msg = arg_list[0]
+            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo. Replaced with (\"#{msg}\" : bytes)."
+            return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
