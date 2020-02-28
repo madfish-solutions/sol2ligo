@@ -445,12 +445,15 @@ do ()=>
         ctx.should_modify_storage = root.should_modify_storage
         root.scope = walk root.scope, ctx
         ctx.has_op_list_decl = check_external_ops root.scope
-                
+        
+        state_name = config.storage
+        state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
+
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
-          root.type_i.nest_list.unshift new Type config.storage
+          root.type_i.nest_list.unshift new Type state_name
         if ctx.should_modify_storage
-          root.type_o.nest_list.unshift new Type config.storage
+          root.type_o.nest_list.unshift new Type state_name
         if ctx.should_ret_op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
         

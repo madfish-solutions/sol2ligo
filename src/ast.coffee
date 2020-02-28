@@ -114,6 +114,8 @@ class @Fn_decl_multiret
   pos     : 0
   visibility : ""
   state_mutability : ""
+  contract_name : ""
+  contract_type : ""
   should_ret_op_list : false
   should_modify_storage : false
   should_ret_args : false
@@ -124,7 +126,8 @@ class @Fn_decl_multiret
     @arg_name_list = []
     @scope = new ast.Scope
     @modifier_list = []
-  
+    @contract_name = ""
+    @contract_type = ""
   clone : ()->
     ret = new module.Fn_decl_multiret
     ret.is_closure  = @is_closure
@@ -139,6 +142,8 @@ class @Fn_decl_multiret
     ret.state_mutability= @state_mutability
     ret.should_ret_op_list= @should_ret_op_list
     ret.should_modify_storage= @should_modify_storage
+    ret.contract_name = @contract_name
+    ret.contract_type = @contract_type
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret

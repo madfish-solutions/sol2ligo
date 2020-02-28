@@ -204,6 +204,9 @@ number2bytes = (val, precision = 32)->
         "nat"
       else if config.int_type_hash.hasOwnProperty type.main
         "int"
+      # temporary hack for state
+      else if type.main.match ///^#{config.storage}_///
+        type.main
       else
         perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
