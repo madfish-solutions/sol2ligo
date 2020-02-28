@@ -847,6 +847,8 @@ do ()=>
           ret = new ast.Comment
           ret.text = "modifier #{root.name} inlined"
           ret
+        else if root.is_constructor
+          ctx.modifier_hash[root.name] = root
         else
           return root if root.modifier_list.length == 0
           inner = root.scope.clone()

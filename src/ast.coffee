@@ -120,6 +120,7 @@ class @Fn_decl_multiret
   should_modify_storage : false
   should_ret_args : false
   is_modifier: false
+  is_constructor: false
   modifier_list : [] # array<Fn_call>
   
   constructor:()->
@@ -144,6 +145,8 @@ class @Fn_decl_multiret
     ret.should_modify_storage= @should_modify_storage
     ret.contract_name = @contract_name
     ret.contract_type = @contract_type
+    ret.is_modifier = @is_modifier
+    ret.is_constructor = @is_constructor
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret
