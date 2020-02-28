@@ -804,7 +804,7 @@ do ()=>
 # ###################################################################################################
 
 do ()=>
-  fn_apply_modifier = (fn, mod, ctx, unscoped)->
+  fn_apply_modifier = (fn, mod, ctx, not_need_nest)->
     ###
     Possible intersections
       1. Var_decl
@@ -826,7 +826,7 @@ do ()=>
 
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    if unscoped
+    if not_need_nest
       ret.need_nest = false
     ret = module.placeholder_replace ret, fn
     ret.list = arr_merge prepend_list, ret.list
@@ -849,7 +849,8 @@ do ()=>
           inner.need_nest = false
           # TODO clarify modifier's order
           for mod, idx in root.modifier_list
-            inner = fn_apply_modifier inner, mod, ctx , idx != root.modifier_list.length - 1
+            not_need_nest = idx != root.modifier_list.length - 1
+            inner = fn_apply_modifier inner, mod, ctx , not_need_nest
           ret = root.clone()
           ret.modifier_list.clear()
           ret.scope = inner
