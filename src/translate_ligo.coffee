@@ -151,6 +151,9 @@ number2bytes = (val, precision = 32)->
     # ###################################################################################################
     when "bool"
       "bool"
+
+    when "Unit"
+      "Unit"
         
     when "string"
       "string"
@@ -479,6 +482,8 @@ walk = (root, ctx)->
               "False"
             else
               throw new Error "can't translate bool constant '#{root.val}'"
+        when "Unit"
+          "unit"
         
         when "number"
           perr "WARNING number constant passed to translation stage. That's type inference mistake"
@@ -648,6 +653,11 @@ walk = (root, ctx)->
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
+
+          when "selfdestruct"
+            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo"
+            msg = arg_list[0]
+            return "selfdestruct(#{msg})"
           
           when "ripemd160"
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"

@@ -437,6 +437,10 @@ do ()=>
           inject.type = new Type "built_in_op_list"
           if ctx.has_op_list_decl
             inject.val = config.op_list
+        if root.t_list.length == 0
+          root.t_list.unshift inject = new ast.Const
+          inject.val = "unit"
+          inject.type = new Type "Unit"
         root
       
       when "Fn_decl_multiret"
@@ -456,7 +460,9 @@ do ()=>
           root.type_o.nest_list.unshift new Type state_name
         if ctx.should_ret_op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
-        
+        if root.type_o.nest_list.length == 0
+          root.type_o.nest_list.unshift new Type "Unit"
+
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
