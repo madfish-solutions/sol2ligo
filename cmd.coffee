@@ -13,6 +13,7 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 argv = require("minimist")(process.argv.slice(2))
 argv.router ?= true
 argv.silent ?= false
+argv.contract ?= false
 argv.solc   ?= "0.4.26"
 argv["solc-force"] ?= false
 argv.ds     ?= false
@@ -34,7 +35,8 @@ process_file = (file)->
     puts "CRITICAL WARNING. Generated code is not 100% correct. DO NOT DEPLOY IT! Otherwise YOU WILL BE FIRED"
   
   new_ast = ast_transform.ligo_pack new_ast, {
-    router  : argv.router
+    router  : argv.router,
+    contract : argv.contract
   }
   new_ast = type_inference new_ast
   code = translate new_ast

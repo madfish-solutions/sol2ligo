@@ -11,6 +11,7 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 {execSync}      = require "child_process"
 argv = require("minimist")(process.argv.slice(2))
 argv.router ?= true
+argv.contract ?= false
 
 process_file = (file)->
   code = import_resolver file
@@ -31,7 +32,8 @@ process_file = (file)->
   
   if argv.full
     opt = {
-      router  : argv.router
+      router  : argv.router,
+      contract : argv.contract
     }
     new_ast = ast_transform.ligo_pack new_ast, opt
     new_ast = type_inference new_ast

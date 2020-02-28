@@ -208,6 +208,8 @@ walk = (root, ctx)->
           throw new Error "unknown contractKind #{root.contractKind}"
       
       ret.inheritance_list = []
+      ctx.contract_name = root.name
+      ctx.contract_type = root.contractKind
       for v in root.baseContracts
         arg_list = []
         if v.arguments
@@ -358,6 +360,8 @@ walk = (root, ctx)->
       ret = new ast.Var_decl
       ret._const = root.constant
       ret.name = root.name
+      ret.contract_name = ctx.contract_name
+      ret.contract_type = ctx.contract_type
       if root.typeName.nodeType == 'UserDefinedTypeName'
         ret.special_type = true
       ret.type = walk_type root.typeName, ctx
@@ -600,6 +604,8 @@ walk = (root, ctx)->
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
       ret.name = root.name or "constructor"
+      ret.contract_name = ctx.contract_name
+      ret.contract_type = ctx.contract_type
       
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"

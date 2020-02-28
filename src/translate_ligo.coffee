@@ -204,6 +204,9 @@ number2bytes = (val, precision = 32)->
         "nat"
       else if config.int_type_hash.hasOwnProperty type.main
         "int"
+      # temporary hack for state
+      else if type.main.match ///^#{config.storage}_///
+        type.main
       else
         perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
@@ -302,8 +305,9 @@ class @Gen_context
   type_decl_hash    : {}
   contract_var_hash : {}
   
+  contract          : false
   trim_expr         : ""
-  storage_sink_list : []
+  storage_sink_list : {}
   sink_list         : []
   type_decl_sink_list: []
   structs_default_list: []
@@ -313,11 +317,12 @@ class @Gen_context
   constructor:()->
     @type_decl_hash   = {}
     @contract_var_hash= {}
-    @storage_sink_list= []
+    @storage_sink_list= {}
     @sink_list        = []
     @type_decl_sink_list= []
     @structs_default_list= []
     @enum_list= []
+    @contract = false
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -328,6 +333,7 @@ class @Gen_context
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t.structs_default_list = @structs_default_list
     t.enum_list = @enum_list
+    t.contract = @contract
     t
 
 last_bracket_state = false
@@ -348,17 +354,23 @@ walk = (root, ctx)->
               """
           name = config.storage
           jl.unshift ""
-          if ctx.storage_sink_list.length == 0
+          if Object.keys(ctx.storage_sink_list).length == 0
             jl.unshift """
               type #{name} is unit;
               """
           else
-            jl.unshift """
-              type #{name} is record
-                #{join_list ctx.storage_sink_list, '  '}
-              end;
-              """
-          ctx.storage_sink_list.clear()
+            for k,v of ctx.storage_sink_list
+              if v.length == 0
+                jl.unshift """
+                  type #{k} is unit;
+                  """
+              else
+                jl.unshift """
+                  type #{k} is record
+                    #{join_list v, '  '}
+                  end;
+                  """
+          ctx.storage_sink_list = {} 
 
           if ctx.type_decl_sink_list.length
             type_decl_jl = []
@@ -384,6 +396,7 @@ walk = (root, ctx)->
               jl.unshift """
                 #{join_list ctx.enum_list}
                 """
+              ctx.enum_list = []
           join_list jl, ""
         
         else
@@ -416,6 +429,7 @@ walk = (root, ctx)->
                 body = join_list jl, ""
               else
                 body = ""
+              ret = ""
             else
               if jl.length
                 body = """
@@ -902,7 +916,7 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+              field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
@@ -949,7 +963,11 @@ walk = (root, ctx)->
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
       if root.is_contract or root.is_library
-        orig_ctx.storage_sink_list.append field_decl_jl
+        state_name = config.storage
+        if ctx.contract and ctx.contract != root.name
+          state_name = "#{state_name}_#{root.name}"
+        orig_ctx.storage_sink_list[state_name] ?= []
+        orig_ctx.storage_sink_list[state_name].append field_decl_jl
       else
         name = root.name
         if prefix
@@ -1067,4 +1085,5 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
+  ctx.contract = opt.contract if opt.contract
   walk root, ctx

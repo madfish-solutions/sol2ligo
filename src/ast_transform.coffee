@@ -445,12 +445,15 @@ do ()=>
         ctx.should_modify_storage = root.should_modify_storage
         root.scope = walk root.scope, ctx
         ctx.has_op_list_decl = check_external_ops root.scope
-                
+        
+        state_name = config.storage
+        state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
+
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
-          root.type_i.nest_list.unshift new Type config.storage
+          root.type_i.nest_list.unshift new Type state_name
         if ctx.should_modify_storage
-          root.type_o.nest_list.unshift new Type config.storage
+          root.type_o.nest_list.unshift new Type state_name
         if ctx.should_ret_op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
         
@@ -481,15 +484,15 @@ do ()=>
         ctx.next_gen root, ctx
       
       when "Fn_decl_multiret"
-        unless root.visibility in ["private", "internal"]
+        if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract)
           ctx.router_func_list.push root
         root
       
       else
         ctx.next_gen root, ctx
   
-  @router_collector = (root)->
-    walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
+  @router_collector = (root, opt)-> 
+    walk root, ctx = obj_merge({walk, next_gen: module.default_walk, router_func_list: []}, opt)
     ctx.router_func_list
 
 # ###################################################################################################
@@ -522,6 +525,8 @@ do ()=>
           # ###################################################################################################
           #    add struct for each endpoint
           # ###################################################################################################
+          return ctx.next_gen root, ctx if ctx.contract and root.name != ctx.contract
+
           for func in ctx.router_func_list
             root.scope.list.push record = new ast.Class_decl
             record.name = func2args_struct func.name
@@ -799,7 +804,7 @@ do ()=>
 # ###################################################################################################
 
 do ()=>
-  fn_apply_modifier = (fn, mod, ctx, unscoped)->
+  fn_apply_modifier = (fn, mod, ctx)->
     ###
     Possible intersections
       1. Var_decl
@@ -821,8 +826,6 @@ do ()=>
 
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    if unscoped
-      ret.need_nest = false
     ret = module.placeholder_replace ret, fn
     ret.list = arr_merge prepend_list, ret.list
     ret
@@ -841,11 +844,11 @@ do ()=>
         else
           return root if root.modifier_list.length == 0
           inner = root.scope.clone()
-          inner.need_nest = false
           # TODO clarify modifier's order
           for mod, idx in root.modifier_list
-            inner = fn_apply_modifier inner, mod, ctx , idx == 0 and root.modifier_list.length != 1
-          
+            inner.need_nest = false
+            inner = fn_apply_modifier inner, mod, ctx
+          inner.need_nest = true
           ret = root.clone()
           ret.modifier_list.clear()
           ret.scope = inner
@@ -872,6 +875,6 @@ do ()=>
   root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
   if opt.router
-    router_func_list = module.router_collector root
+    router_func_list = module.router_collector root, opt
     root = module.add_router root, obj_merge {router_func_list}, opt
   root
