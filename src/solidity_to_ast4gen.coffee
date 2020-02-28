@@ -264,8 +264,11 @@ walk = (root, ctx)->
     when "EmitStatement"
       perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
-      args = root.arg_list.map (arg) -> arg.name
-      ret.text = "EmitStatement #{root.fn.name}(#{args.join(", ")})"
+      args = []
+      name = root.fn?.name || root.eventCall.name
+      args = root.arg_list || root.eventCall.arguments
+      arg_names = args.map (arg) -> arg.name
+      ret.text = "EmitStatement #{name}(#{arg_names.join(", ")})"
       ret
     
     when "PlaceholderStatement"
