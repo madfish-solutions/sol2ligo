@@ -411,7 +411,7 @@ check_external_ops = (scope)->
   if scope.constructor.name == "Scope"
     for v in scope.list
         if v.constructor.name == "Fn_call" and v.fn.constructor.name == "Field_access"
-          is_external_call = v.fn.name in ["transfer", "send", "built_in_pure_callback"]
+          is_external_call = v.fn.name in ["transfer", "send", "built_in_pure_callback", "delegatecall"]
           return true if is_external_call
         if v.constructor.name == "Scope"
           return true if check_external_ops v
@@ -437,10 +437,6 @@ do ()=>
           inject.type = new Type "built_in_op_list"
           if ctx.has_op_list_decl
             inject.val = config.op_list
-        if root.t_list.length == 0
-          root.t_list.unshift inject = new ast.Const
-          inject.val = "unit"
-          inject.type = new Type "Unit"
         root
       
       when "Fn_decl_multiret"
@@ -487,10 +483,11 @@ do ()=>
       when "Class_decl"
         return root if root.need_skip
         return root if root.is_library
+        ctx.inheritance_list = root.inheritance_list
         ctx.next_gen root, ctx
       
       when "Fn_decl_multiret"
-        if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract)
+        if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract or ctx.inheritance_list?[ctx.contract])
           ctx.router_func_list.push root
         root
       
