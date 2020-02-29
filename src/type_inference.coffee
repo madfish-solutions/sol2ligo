@@ -62,8 +62,6 @@ bytes_field_hash =
 address_field_hash =
   "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
   "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
-  "call": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
-  "delegatecall": new Type "function2_pure<function2<address,bytes>,function2<bool, bytes>>"
 
 @default_type_hash_gen = ()->
   ret = {
@@ -365,7 +363,8 @@ get_list_sign = (list)->
       
       if is_composite_type a_type
         if !is_composite_type b_type
-          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          perr "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          return a_type
         
         # composite
         if a_type.main != b_type.main
@@ -383,7 +382,8 @@ get_list_sign = (list)->
         # TODO struct? but we don't need it? (field_hash)
       else
         if is_composite_type b_type
-          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          perr "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          return a_type
         # scalar
         if is_number_type(a_type) and is_number_type(b_type)
           return a_type
