@@ -706,7 +706,7 @@ walk = (root, ctx)->
         # this is contract(address) case
         msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
         perr "CRITICAL WARNING #{msg}"
-        return "(* #{msg} *)"
+        fn = "(* LIGO unsupported *)" + fn
       
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
