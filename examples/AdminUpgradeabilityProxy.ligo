@@ -278,7 +278,7 @@ function constructor (const self : state; const implementation_ : address; const
     };
   } with ((nil: list(operation)), self);
 
-function admin (const self : state) : (list(operation)) is
+function admin (const self : state) : (list(operation) * address) is
   block {
     if (sender = admin_(self)) then block {
       skip
@@ -287,7 +287,7 @@ function admin (const self : state) : (list(operation)) is
     };
   } with ((nil: list(operation)));
 
-function implementation (const self : state) : (list(operation)) is
+function implementation (const self : state) : (list(operation) * address) is
   block {
     if (sender = admin_(self)) then block {
       skip

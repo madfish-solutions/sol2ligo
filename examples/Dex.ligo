@@ -414,7 +414,7 @@ function depositToken (const self : state; const token : address; const res__amo
   block {
     (case self.tokens[token] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] := safeAdd(self, (case (case self.tokens[token] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] of | None -> 0n | Some(x) -> x end), res__amount);
     self.lastActiveTransaction[sender] := 0n;
-    if (not ((* address contract to type_cast is not supported yet (we need enum action type for each contract) *).transferFrom(self, sender, , res__amount))) then block {
+    if (not ((* LIGO unsupported *)token(self, token).transferFrom(self, sender, , res__amount))) then block {
       failwith("throw");
     } else block {
       skip
@@ -450,7 +450,7 @@ function withdraw (const self : state; const token : address; const res__amount 
         skip
       };
     } else block {
-      if (not ((* address contract to type_cast is not supported yet (we need enum action type for each contract) *).transfer(self, sender, res__amount))) then block {
+      if (not ((* LIGO unsupported *)token(self, token).transfer(self, sender, res__amount))) then block {
         failwith("throw");
       } else block {
         skip
@@ -499,7 +499,7 @@ function adminWithdraw (const self : state; const token : address; const res__am
         skip
       };
     } else block {
-      if (not ((* address contract to type_cast is not supported yet (we need enum action type for each contract) *).transfer(self, user, res__amount))) then block {
+      if (not ((* LIGO unsupported *)token(self, token).transfer(self, user, res__amount))) then block {
         failwith("throw");
       } else block {
         skip
@@ -509,7 +509,7 @@ function adminWithdraw (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, user, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const token : address; const user : address) : (list(operation)) is
+function balanceOf (const self : state; const token : address; const user : address) : (list(operation) * nat) is
   block {
     skip
   } with ((nil: list(operation)));

@@ -1,16 +1,3 @@
-Field_access {
-  t:
-   Var {
-     name: [32m'spender'[39m,
-     line: [33m0[39m,
-     left_unpack: [33mfalse[39m,
-     pos: [33m0[39m,
-     type:
-      Type { nest_list: [], field_hash: {}, main: [32m'tokenRecipient'[39m } },
-  name: [32m'receiveApproval'[39m,
-  line: [33m0[39m,
-  pos: [33m0[39m }
-Type { nest_list: [], field_hash: {}, main: [32m'tokenRecipient'[39m }
 type receiveApproval_args is record
   from_ : address;
   value_ : nat;
@@ -285,10 +272,10 @@ type router_enum is
 
 (* EventDefinition TokenFrozen(frozenUntilBlock_ : nat; reason_ : string) *)
 
-function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation) * nat) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    const remaining : nat = 0n;
+  } with ((nil: list(operation)), remaining);
 
 function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
@@ -305,15 +292,15 @@ function transfer (const self : state; const to_ : address; const value_ : nat) 
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function balanceOf (const self : state; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state; const owner_ : address) : (list(operation) * nat) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    const res__balance : nat = 0n;
+  } with ((nil: list(operation)), res__balance);
 
-function totalSupply (const self : state) : (list(operation)) is
+function totalSupply (const self : state) : (list(operation) * nat) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    const totalSupply : nat = 0n;
+  } with ((nil: list(operation)), self.totalSupply);
 
 function transferOwnership (const self : state; const newOwner : address) : (list(operation) * state) is
   block {
@@ -339,14 +326,14 @@ function constructor (const self : state; const icoAddress_ : address) : (list(o
     self.icoContractAddress := icoAddress_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state) : (list(operation)) is
+function totalSupply (const self : state) : (list(operation) * nat) is
   block {
-    skip
+    const totalSupply : nat = 0n;
   } with ((nil: list(operation)));
 
-function balanceOf (const self : state; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state; const owner_ : address) : (list(operation) * nat) is
   block {
-    skip
+    const res__balance : nat = 0n;
   } with ((nil: list(operation)));
 
 function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
@@ -392,7 +379,7 @@ function approve (const self : state; const spender_ : address; const value_ : n
 function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
-    const spender : UNKNOWN_TYPE_tokenRecipient = (* address contract to type_cast is not supported yet (we need enum action type for each contract) *);
+    const spender : UNKNOWN_TYPE_tokenRecipient = (* LIGO unsupported *)tokenRecipient(self, spender_);
     approve(self, spender_, value_);
     spender.receiveApproval(self, sender, value_, , extraData_);
   } with ((nil: list(operation)), self);
@@ -431,9 +418,9 @@ function transferFrom (const self : state; const from_ : address; const to_ : ad
     (* EmitStatement Transfer(_from, _to, _value) *)
   } with ((nil: list(operation)), self);
 
-function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation) * nat) is
   block {
-    skip
+    const remaining : nat = 0n;
   } with ((nil: list(operation)));
 
 function mintTokens (const self : state; const to_ : address; const amount_ : nat) : (list(operation) * state) is
@@ -493,9 +480,9 @@ function freezeTransfersUntil (const self : state; const frozenUntilBlock_ : nat
     (* EmitStatement TokenFrozen(_frozenUntilBlock, _reason) *)
   } with ((nil: list(operation)), self);
 
-function isRestrictedAddress (const self : state; const querryAddress_ : address) : (list(operation)) is
+function isRestrictedAddress (const self : state; const querryAddress_ : address) : (list(operation) * bool) is
   block {
-    skip
+    const answer : bool = False;
   } with ((nil: list(operation)));
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is

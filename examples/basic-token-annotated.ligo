@@ -21,7 +21,7 @@ function transfer (const self : state; const recipient : address; const value : 
     self.balances[recipient] := ((case self.balances[recipient] of | None -> 0n | Some(x) -> x end) + value);
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const account : address) : (list(operation)) is
+function balanceOf (const self : state; const account : address) : (list(operation) * nat) is
   block {
     skip
   } with ((nil: list(operation)));

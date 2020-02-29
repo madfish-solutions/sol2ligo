@@ -106,14 +106,19 @@ function expire (const self : state; const swapID_ : bytes) : (list(operation) *
     (* EmitStatement Expire(_swapID) *)
   } with (opList, self);
 
-function check (const self : state; const swapID_ : bytes) : (list(operation)) is
+function check (const self : state; const swapID_ : bytes) : (list(operation) * (nat * nat * address * bytes)) is
   block {
+    const timelock : nat = 0n;
+    const value : nat = 0n;
+    const withdrawTrader : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    const secretLock : bytes = ("00": bytes);
     const swap : atomicSwapEther_Swap = (case self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
   } with (opList);
 
-function checkSecretKey (const self : state; const swapID_ : bytes) : (list(operation)) is
+function checkSecretKey (const self : state; const swapID_ : bytes) : (list(operation) * bytes) is
   block {
     assert(((case self.swapStates[swapID_] of | None -> atomicSwapEther_States_INVALID | Some(x) -> x end) = atomicSwapEther_States_CLOSED));
+    const secretKey : bytes = ("00": bytes);
     const swap : atomicSwapEther_Swap = (case self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
   } with ((nil: list(operation)));
 
