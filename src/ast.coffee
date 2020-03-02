@@ -12,6 +12,7 @@ class @Class_decl
   is_contract : false
   is_library  : false
   is_interface: false
+  is_struct: false
   need_skip   : false # if class was used for inheritance
   scope : null
   _prepared_field2type : {}
@@ -32,6 +33,7 @@ class @Class_decl
     ret.is_contract = @is_contract
     ret.is_library  = @is_library
     ret.is_interface= @is_interface
+    ret.is_struct= @is_struct
     ret.need_skip   = @need_skip
     ret.scope = @scope.clone()
     for k,v of @_prepared_field2type
@@ -55,6 +57,7 @@ class @Var
   name  : ""
   name_translate: true
   type  : null
+  left_unpack  : false
   line  : 0
   pos   : 0
   
@@ -63,16 +66,20 @@ class @Var
     ret.name  = @name
     ret.type  = @type.clone() if @type
     ret.line  = @line
+    ret.left_unpack  = @left_unpack
     ret.pos   = @pos
     ret
 
 class @Var_decl
   name  : ""
   name_translate: true
+  contract_name : ""
+  contract_type : ""
   type  : null
   size  : null
   assign_value      : null
   assign_value_list : null
+  special_type : false
   line  : 0
   pos   : 0
   
@@ -80,8 +87,11 @@ class @Var_decl
     ret = new module.Var_decl
     ret.name  = @name
     ret.name_translate = @name_translate
+    ret.contract_name = @contract_name
+    ret.contract_type = @contract_type
     ret.type  = @type.clone() if @type
     ret.size  = @size
+    ret.special_type  = @special_type
     ret.assign_value  = @assign_value.clone() if @assign_value
     if @assign_value_list
       ret.assign_value_list = []
@@ -104,14 +114,22 @@ class @Fn_decl_multiret
   pos     : 0
   visibility : ""
   state_mutability : ""
+  contract_name : ""
+  contract_type : ""
+  should_ret_op_list : false
+  should_modify_storage : false
+  should_ret_args : false
   is_modifier: false
+  is_constructor: false
   modifier_list : [] # array<Fn_call>
   
   constructor:()->
     @arg_name_list = []
     @scope = new ast.Scope
     @modifier_list = []
-  
+    @contract_name = ""
+    @contract_type = ""
+    @should_ret_args = false
   clone : ()->
     ret = new module.Fn_decl_multiret
     ret.is_closure  = @is_closure
@@ -124,6 +142,13 @@ class @Fn_decl_multiret
     ret.pos   = @pos
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
+    ret.should_ret_op_list= @should_ret_op_list
+    ret.should_modify_storage= @should_modify_storage
+    ret.should_ret_args= @should_ret_args
+    ret.contract_name = @contract_name
+    ret.contract_type = @contract_type
+    ret.is_modifier = @is_modifier
+    ret.is_constructor = @is_constructor
     for v in @modifier_list
       ret.modifier_list.push v.clone()
     ret
@@ -187,10 +212,16 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
   clone : ()->
     ret = new module.Var_decl_multi
     for v in @list
-      ret.list.push {
-        name : v.name
-        type : v.type.clone()
-      }
+      if v.skip
+        ret.list.push {
+          name : v.name
+          skip : v.skip
+        }
+      else
+        ret.list.push {
+          name : v.name
+          type : v.type.clone()
+        }
     ret.assign_value  = @assign_value.clone()
     ret.type  = @type.clone() if @type
     ret.line  = @line
@@ -307,6 +338,7 @@ class @PM_case
 class @Enum_decl
   name  : ""
   value_list: [] # array<Var_decl>
+  int_type: true
   line  : 0
   pos   : 0
   
@@ -316,6 +348,7 @@ class @Enum_decl
   clone : ()->
     ret = new module.Enum_decl
     ret.name = @name
+    ret.int_type = @int_type
     for v in @value_list
       ret.value_list.push v.clone()
     ret.line  = @line
@@ -324,12 +357,35 @@ class @Enum_decl
 
 class @Event_decl
   name  : ""
+  arg_list: []
   line  : 0
   pos   : 0
   
   clone : ()->
     ret = new module.Event_decl
     ret.name  = @name
+    ret.arg_list  = @arg_list
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Struct_init
+  fn      : null
+  arg_names : []
+  val_list  : []
+  line  : 0
+  pos   : 0
+  constructor:()->
+    @val_list = []
+    @arg_names = []
+  
+  clone : ()->
+    ret = new module.Struct_init
+    ret.fn    = @fn
+    for v,idx in @val_list
+      ret.val_list[idx] = v.clone()
+    for v,idx in @arg_names
+      ret.arg_names[idx] = v
     ret.line  = @line
     ret.pos   = @pos
     ret

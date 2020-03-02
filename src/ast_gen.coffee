@@ -36,11 +36,15 @@ module.exports = (code, opt={})->
   
   if auto_version and !solc_version?
     # HACKY WAY
-    header = code.trim().split("\n")[0].trim()
-    if reg_ret = /^pragma solidity \^?([.0-9]+);/.exec header
-      pick_version reg_ret[1]
-    else if reg_ret = /^pragma solidity >=([.0-9]+)/.exec header
-      pick_version reg_ret[1]
+    strings = code.trim().split("\n")
+    for str in strings
+      header = str.trim()
+      if reg_ret = /^pragma solidity \^?([.0-9]+);/.exec header
+        pick_version reg_ret[1]
+        break
+      else if reg_ret = /^pragma solidity >=([.0-9]+)/.exec header
+        pick_version reg_ret[1]
+        break
   else if solc_version
     pick_version solc_version
   

@@ -35,16 +35,18 @@ module = @
       ret.field_hash["encodePacked"] = new Type "function2_pure<function<bytes>,function<bytes>>"
       ret
     )()
-    now       : new Type "uint256"
-    require   : new Type "function2_pure<function<bool>,function<>>"
-    require2  : new Type "function2_pure<function<bool, string>,function<>>"
-    assert    : new Type "function2_pure<function<bool>,function<>>"
-    revert    : new Type "function2_pure<function<string>,function<>>"
-    sha256    : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    sha3      : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    keccak256 : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    ripemd160 : new Type "function2_pure<function<bytes>,function<bytes20>>"
-    ecrecover : new Type "function2_pure<function<bytes, uint8, bytes32, bytes32>,function<address>>"
+    now           : new Type "uint256"
+    require       : new Type "function2_pure<function<bool>,function<>>"
+    require2      : new Type "function2_pure<function<bool, string>,function<>>"
+    assert        : new Type "function2_pure<function<bool>,function<>>"
+    revert        : new Type "function2_pure<function<string>,function<>>"
+    sha256        : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    sha3          : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    selfdestruct  : new Type "function2_pure<function<address>,function<>>"
+    blockhash     : new Type "function2_pure<function<address>,function<bytes32>>"
+    keccak256     : new Type "function2_pure<function<bytes>,function<bytes32>>"
+    ripemd160     : new Type "function2_pure<function<bytes>,function<bytes20>>"
+    ecrecover     : new Type "function2_pure<function<bytes, uint8, bytes32, bytes32>,function<address>>"
   }
 
 array_field_hash =
@@ -208,11 +210,17 @@ class Ti_context
     ret
   
   type_proxy : (cls)->
-    ret = new Type "struct"
-    for k,v of cls._prepared_field2type
-      continue unless v.main in ["function2", "function2_pure"]
-      ret.field_hash[k] = v
-    ret
+    if cls.constructor.name == "Enum_decl"
+      ret = new Type "enum"
+      for v in cls.value_list
+        ret.field_hash[v.name] = new Type "int"
+      ret
+    else
+      ret = new Type "struct"
+      for k,v of cls._prepared_field2type
+        continue unless v.main in ["function2", "function2_pure"]
+        ret.field_hash[k] = v
+      ret
   
   check_id : (id)->
     if id == "this"
@@ -355,7 +363,8 @@ get_list_sign = (list)->
       
       if is_composite_type a_type
         if !is_composite_type b_type
-          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          perr "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          return a_type
         
         # composite
         if a_type.main != b_type.main
@@ -373,7 +382,8 @@ get_list_sign = (list)->
         # TODO struct? but we don't need it? (field_hash)
       else
         if is_composite_type b_type
-          throw new Error "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          perr "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
+          return a_type
         # scalar
         if is_number_type(a_type) and is_number_type(b_type)
           return a_type
@@ -390,7 +400,7 @@ get_list_sign = (list)->
           perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
           return a_type
         
-        throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
+        # throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"
     
     return a_type
   
@@ -475,13 +485,16 @@ get_list_sign = (list)->
             when "struct"
               field_hash = root_type.field_hash
             
+            when "enum"
+              field_hash = root_type.field_hash
+            
             else
               if config.bytes_type_hash.hasOwnProperty root_type.main
                 field_hash = bytes_field_hash
               else
                 class_decl = ctx.check_type root_type.main
                 field_hash = class_decl._prepared_field2type
-        
+
         if !field_hash.hasOwnProperty root.name
           # perr root.t
           # perr field_hash
@@ -540,6 +553,16 @@ get_list_sign = (list)->
           root.type = type_spread_left root.type, root_type, ctx
         else
           root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
+
+      when "Struct_init"        
+        root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Struct_init"
+          return root.type
+        for arg,i in root.val_list
+          walk arg, ctx
+        root.type
       
       # ###################################################################################################
       #    stmt
@@ -599,7 +622,7 @@ get_list_sign = (list)->
         
         ctx_nest = ctx.mk_nest()
         ctx_nest.current_class = root
-        
+
         for k,v of root._prepared_field2type
           ctx_nest.var_hash[k] = v
         
@@ -641,7 +664,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx
@@ -957,6 +984,9 @@ get_list_sign = (list)->
             when "struct"
               field_hash = root_type.field_hash
             
+            when "enum"
+              field_hash = root_type.field_hash
+            
             else
               class_decl = ctx.check_type root_type.main
               field_hash = class_decl._prepared_field2type
@@ -1020,6 +1050,16 @@ get_list_sign = (list)->
           root.type = type_spread_left root.type, root_type, ctx
         else
           root.type = type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
+      
+      when "Struct_init"        
+        root_type = walk root.fn, ctx
+        root_type = type_resolve root_type, ctx
+        if !root_type
+          perr "CRITICAL WARNING can't resolve function type for Struct_init"
+          return root.type
+        for arg,i in root.val_list
+          walk arg, ctx
+        root.type
       
       # ###################################################################################################
       #    stmt
@@ -1123,7 +1163,11 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        null
+        ctx.type_hash[root.name] = root
+        for decl in root.value_list
+          ctx.var_hash[decl.name] = decl.type
+          
+        new Type "enum"
       
       when "Type_cast"
         walk root.t, ctx

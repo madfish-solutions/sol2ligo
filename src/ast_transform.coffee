@@ -38,6 +38,13 @@ do ()=>
         for v,idx in root.arg_list
           root.arg_list[idx] = walk v, ctx
         root
+
+      when "Struct_init"
+        root.fn =  root.fn
+        if ctx.class_hash and root.arg_names.length == 0
+          for v, idx in ctx.class_hash[root.fn.name].scope.list
+            root.arg_names.push v.name
+        root
       
       when "New"
         for v,idx in root.arg_list
@@ -194,7 +201,8 @@ do ()=>
           if ctx.emit_decl_hash.hasOwnProperty root.fn.name
             perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
             ret = new ast.Comment
-            ret.text = "EmitStatement"
+            args = root.arg_list.map (arg) -> arg.name
+            ret.text = "EmitStatement #{root.fn.name}(#{args.join(", ")})"
             return ret
         ctx.next_gen root, ctx
       
@@ -399,7 +407,15 @@ do ()=>
     walk root, {walk, next_gen: module.default_walk}
 
 # ###################################################################################################
-
+check_external_ops = (scope)->
+  if scope.constructor.name == "Scope"
+    for v in scope.list
+        if v.constructor.name == "Fn_call" and v.fn.constructor.name == "Field_access"
+          is_external_call = v.fn.name in ["transfer", "send", "call", "built_in_pure_callback", "delegatecall"]
+          return true if is_external_call
+        if v.constructor.name == "Scope"
+          return true if check_external_ops v
+  return false
 do ()=>
   walk = (root, ctx)->
     {walk} = ctx
@@ -411,30 +427,38 @@ do ()=>
         for v,idx in root.t_list
           root.t_list[idx] = walk v, ctx
         
-        if ctx.state_mutability != "pure"
+        if ctx.should_modify_storage
           root.t_list.unshift inject = new ast.Var
           inject.name = config.contract_storage
           inject.name_translate = false
-          
-          root.t_list.unshift inject = new ast.Var
-          inject.name = config.op_list
-          inject.name_translate = false
         
+        if ctx.should_ret_op_list
+          root.t_list.unshift inject = new ast.Const
+          inject.type = new Type "built_in_op_list"
+          if ctx.has_op_list_decl
+            inject.val = config.op_list
         root
       
       when "Fn_decl_multiret"
         ctx.state_mutability = root.state_mutability
+        ctx.should_ret_op_list = root.should_ret_op_list
+        ctx.should_modify_storage = root.should_modify_storage
         root.scope = walk root.scope, ctx
+        ctx.has_op_list_decl = check_external_ops root.scope
         
-        if root.state_mutability != "pure"
+        state_name = config.storage
+        state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
+
+        if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
-          root.arg_name_list.unshift config.op_list
-          root.type_i.nest_list.unshift new Type config.storage
-          root.type_i.nest_list.unshift new Type "built_in_op_list"
-          
-          root.type_o.nest_list.unshift new Type config.storage
+          root.type_i.nest_list.unshift new Type state_name
+        if ctx.should_modify_storage
+          root.type_o.nest_list.unshift new Type state_name
+        if ctx.should_ret_op_list
           root.type_o.nest_list.unshift new Type "built_in_op_list"
-        
+        if root.type_o.nest_list.length == 0
+          root.type_o.nest_list.unshift new Type "Unit"
+
         last = root.scope.list.last()
         if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
@@ -459,18 +483,19 @@ do ()=>
       when "Class_decl"
         return root if root.need_skip
         return root if root.is_library
+        ctx.inheritance_list = root.inheritance_list
         ctx.next_gen root, ctx
       
       when "Fn_decl_multiret"
-        unless root.visibility in ["private", "internal"]
+        if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract or ctx.inheritance_list?[ctx.contract])
           ctx.router_func_list.push root
         root
       
       else
         ctx.next_gen root, ctx
   
-  @router_collector = (root)->
-    walk root, ctx = {walk, next_gen: module.default_walk, router_func_list: []}
+  @router_collector = (root, opt)-> 
+    walk root, ctx = obj_merge({walk, next_gen: module.default_walk, router_func_list: []}, opt)
     ctx.router_func_list
 
 # ###################################################################################################
@@ -498,20 +523,20 @@ do ()=>
           # ###################################################################################################
           #    patch state
           # ###################################################################################################
-          root.scope.list.push initialized = new ast.Var_decl
-          initialized.name = config.initialized
-          initialized.type = new Type "bool"
-          initialized.name_translate = false
+
           
           # ###################################################################################################
           #    add struct for each endpoint
           # ###################################################################################################
+          return ctx.next_gen root, ctx if ctx.contract and root.name != ctx.contract
+
           for func in ctx.router_func_list
             root.scope.list.push record = new ast.Class_decl
             record.name = func2args_struct func.name
             record.namespace_name = false
             for value,idx in func.arg_name_list
-              continue if idx <= 1 # skip contract_storage, op_list
+              if func.state_mutability != "pure"
+                continue if idx < 1
               record.scope.list.push arg = new ast.Var_decl
               arg.name = value
               arg.type = func.type_i.nest_list[idx]
@@ -520,14 +545,10 @@ do ()=>
               record.scope.list.push arg = new ast.Var_decl
               arg.name = config.callback_address
               arg.type = new Type "address"
-            
-            if record.scope.list.length == 0
-              record.scope.list.push arg = new ast.Var_decl
-              arg.name = config.empty_state
-              arg.type = new Type "int"
           
           root.scope.list.push _enum = new ast.Enum_decl
           _enum.name = "router_enum"
+          _enum.int_type = false
           for func in ctx.router_func_list
             _enum.value_list.push decl = new ast.Var_decl
             decl.name = func2struct func.name
@@ -550,27 +571,10 @@ do ()=>
           
           _main.type_o.nest_list.push new Type "built_in_op_list"
           _main.type_o.nest_list.push new Type config.storage
+          _main.scope.need_nest = false
+          _main.scope.list.push ret = new ast.Tuple
           
-          _main.scope.list.push op_list_decl = new ast.Var_decl
-          op_list_decl.name = config.op_list
-          op_list_decl.type = new Type "built_in_op_list"
-          op_list_decl.name_translate = false
-          
-          _main.scope.list.push _if = new ast.If
-          _if.cond = new ast.Var
-          _if.cond.name = config.initialized
-          _if.name_translate = false
-          
-          _if.f.list.push assign = new ast.Bin_op
-          assign.op = "ASSIGN"
-          assign.a = new ast.Var
-          assign.a.name = config.initialized
-          assign.a.name_translate = false
-          assign.b = new ast.Const
-          assign.b.val = "true"
-          assign.b.type = new Type "bool"
-          
-          _if.t.list.push _switch = new ast.PM_switch
+          ret.list.push _switch = new ast.PM_switch
           _switch.cond = new ast.Var
           _switch.cond.name = "action"
           _switch.cond.type = new Type "string" # TODO proper type
@@ -583,12 +587,13 @@ do ()=>
             
             call = new ast.Fn_call
             call.fn = new ast.Var
+            call.fn.left_unpack = true
             call.fn.name = func.name # TODO word "constructor" gets corruped here
             # NOTE that PM_switch is ignored by type inference
             # BUG. Type inference should resolve this fn properly
             
             # NETE. will be changed in type inference
-            if func.state_mutability == "pure"
+            if func.state_mutability == 'pure'
               call.fn.type = new Type "function2_pure"
               # BUG only 1 ret value supported
               call.type = func.type_o.nest_list[0]
@@ -598,44 +603,30 @@ do ()=>
             call.fn.type.nest_list[1] = func.type_o
             for arg_name,idx in func.arg_name_list
               if func.state_mutability != "pure"
-                continue if idx <= 1 # skip contract_storage, op_list
+                continue if idx < 1
               call.arg_list.push arg = new ast.Field_access
               arg.t = new ast.Var
               arg.t.name = _case.var_decl.name
               arg.t.type = _case.var_decl.type
               arg.name = arg_name
             
-            if func.state_mutability == "pure"
-              transfer_call = new ast.Fn_call
-              transfer_call.fn = fn = new ast.Field_access
-              
-              callback_address = new ast.Field_access
-              callback_address.t = new ast.Var
-              callback_address.t.name = _case.var_decl.name
-              callback_address.t.type = _case.var_decl.type
-              callback_address.name = config.callback_address
-              callback_address.type = new Type "address"
-              
-              fn.t = callback_address
-              fn.name = "built_in_pure_callback"
-              
-              fn.type = new Type "function2<function<>,#{func.type_o}>"
-              
-              transfer_call.arg_list.push call
-              
-              _case.scope.list.push transfer_call
+            if !func.should_ret_op_list and func.should_modify_storage
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push _var = new ast.Const
+              _var.type = new Type "built_in_op_list"
+              ret.list.push call 
+            else if !func.should_modify_storage
+              _case.scope.need_nest = false
+              _case.scope.list.push ret = new ast.Tuple
+              ret.list.push call 
+              ret.list.push _var = new ast.Var
+              _var.type = new Type config.storage
+              _var.name = config.contract_storage
+              _var.name_translate = false
             else
-              _case.scope.list.push call
-          _main.scope.list.push ret = new ast.Ret_multi
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.op_list
-          _var.name_translate = false
-          
-          ret.t_list.push _var = new ast.Var
-          _var.name = config.contract_storage
-          _var.name_translate = false
-          
+              _case.scope.need_nest = false
+              _case.scope.list.push call  
           root
         else
           ctx.next_gen root, ctx
@@ -831,12 +822,13 @@ do ()=>
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list
+      continue if arg.name == mod_decl.arg_name_list[idx]
       prepend_list.push var_decl = new ast.Var_decl
       # TODO search **fn** for this_var name and replace in **ret** with tmp
       var_decl.name = mod_decl.arg_name_list[idx]
+
       var_decl.assign_value = arg.clone()
       var_decl.type = mod_decl.type_i.nest_list[idx]
-    
     ret = module.placeholder_replace ret, fn
     ret.list = arr_merge prepend_list, ret.list
     ret
@@ -852,14 +844,16 @@ do ()=>
           ret = new ast.Comment
           ret.text = "modifier #{root.name} inlined"
           ret
-        else
+        else 
+          if root.is_constructor
+            ctx.modifier_hash[root.contract_name] = root
           return root if root.modifier_list.length == 0
           inner = root.scope.clone()
-          inner.need_nest = false
           # TODO clarify modifier's order
-          for mod in root.modifier_list
+          for mod, idx in root.modifier_list
+            inner.need_nest = false
             inner = fn_apply_modifier inner, mod, ctx
-          
+          inner.need_nest = true
           ret = root.clone()
           ret.modifier_list.clear()
           ret.scope = inner
@@ -886,6 +880,6 @@ do ()=>
   root = module.inheritance_unpack root
   root = module.contract_storage_fn_decl_fn_call_ret_inject root, opt
   if opt.router
-    router_func_list = module.router_collector root
+    router_func_list = module.router_collector root, opt
     root = module.add_router root, obj_merge {router_func_list}, opt
   root

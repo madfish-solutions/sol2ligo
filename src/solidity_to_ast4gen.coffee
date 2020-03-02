@@ -208,6 +208,8 @@ walk = (root, ctx)->
           throw new Error "unknown contractKind #{root.contractKind}"
       
       ret.inheritance_list = []
+      ctx.contract_name = root.name
+      ctx.contract_type = root.contractKind
       for v in root.baseContracts
         arg_list = []
         if v.arguments
@@ -243,6 +245,7 @@ walk = (root, ctx)->
     when "StructDefinition"
       ret = new ast.Class_decl
       ret.name = root.name
+      ret.is_struct = true
       for v in root.members
         ret.scope.list.push walk v, ctx
       ret
@@ -257,12 +260,17 @@ walk = (root, ctx)->
       perr "WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Event_decl
       ret.name = root.name
+      ret.arg_list = walk_param root.parameters, ctx
       ret
     
     when "EmitStatement"
       perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
-      ret.text = "EmitStatement"
+      args = []
+      name = root.fn?.name || root.eventCall.name
+      args = root.arg_list || root.eventCall.arguments
+      arg_names = args.map (arg) -> arg.name
+      ret.text = "EmitStatement #{name}(#{arg_names.join(", ")})"
       ret
     
     when "PlaceholderStatement"
@@ -352,6 +360,10 @@ walk = (root, ctx)->
       ret = new ast.Var_decl
       ret._const = root.constant
       ret.name = root.name
+      ret.contract_name = ctx.contract_name
+      ret.contract_type = ctx.contract_type
+      if root.typeName.nodeType == 'UserDefinedTypeName'
+        ret.special_type = true
       ret.type = walk_type root.typeName, ctx
       # ret.type = new Type root.typeDescriptions.typeIdentifier
       if root.value
@@ -426,9 +438,16 @@ walk = (root, ctx)->
           ret.t = arg_list[0]
         
         else
-          ret = new ast.Fn_call
-          ret.fn = fn
-          ret.arg_list = arg_list
+          if root.kind == "structConstructorCall"
+            ret = new ast.Struct_init
+            ret.fn = fn
+            ret.val_list = arg_list
+            if root.names
+              ret.arg_names = root.names
+          else
+            ret = new ast.Fn_call
+            ret.fn = fn
+            ret.arg_list = arg_list
       
       ret
     
@@ -558,7 +577,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Return"
       ret = new ast.Ret_multi
-      if root.expression
+      if root.expression and ctx.current_function.should_ret_args
         ret.t_list.push walk root.expression, ctx
       ret
     
@@ -584,12 +603,24 @@ walk = (root, ctx)->
     when "FunctionDefinition", "ModifierDefinition"
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
-      ret.name = root.name or "constructor"
-      
+      ret.is_constructor = root.isConstructor
+      ret.name = root.name or "fallback"
+      ret.name = "constructor" if root.isConstructor
+      ret.contract_name = ctx.contract_name
+      ret.contract_type = ctx.contract_type
+
       ret.type_i =  new Type "function"
       ret.type_o =  new Type "function"
+      ret.visibility = root.visibility
+      ret.state_mutability = root.stateMutability
+      ret.should_ret_args = (ret.state_mutability in ['pure', 'view'] and ret.visibility == 'private') or ret.visibility == 'internal' or (ret.state_mutability == 'pure' and ret.visibility == 'public')
+      ret.should_ret_op_list = !ret.should_ret_args or ret.visibility == 'public'
+      ret.should_modify_storage = ret.state_mutability not in ['pure', 'view']
+
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
+      if !ret.should_ret_args and !ret.should_modify_storage
+        root.returnParameters.parameters = []
       unless ret.is_modifier
         list = walk_param root.returnParameters, ctx
         if list.length <= 1
@@ -610,6 +641,7 @@ walk = (root, ctx)->
       for v in ret.type_i.nest_list
         ret.arg_name_list.push v._name
       
+
       if !ret.is_modifier
         for modifier in root.modifiers
           ast_mod = new ast.Fn_call
@@ -644,9 +676,6 @@ walk = (root, ctx)->
                 _var.name = v.name
               
               ret_multi.t_list.push tuple
-        
-      ret.visibility = root.visibility
-      ret.state_mutability = root.stateMutability
       ret
     
     when "EnumDefinition"

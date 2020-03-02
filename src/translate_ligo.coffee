@@ -31,7 +31,7 @@ string2bytes = (val)->
     ret.push ch.charCodeAt(0).rjust 2, "0"
   
   if ret.length == 1
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   ret.join ""
 
 some2nat = (val, type)->
@@ -151,6 +151,9 @@ number2bytes = (val, precision = 32)->
     # ###################################################################################################
     when "bool"
       "bool"
+
+    when "Unit"
+      "Unit"
         
     when "string"
       "string"
@@ -190,6 +193,12 @@ number2bytes = (val, precision = 32)->
     else
       if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
+        is_struct = (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
+        is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
+        if is_struct 
+          name = "#{ctx.current_class.name}_#{name}"
+        if name != "router_enum" and is_enum
+          name = "nat"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
@@ -198,6 +207,9 @@ number2bytes = (val, precision = 32)->
         "nat"
       else if config.int_type_hash.hasOwnProperty type.main
         "int"
+      # temporary hack for state
+      else if type.main.match ///^#{config.storage}_///
+        type.main
       else
         perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
@@ -210,7 +222,7 @@ number2bytes = (val, precision = 32)->
     return "0"
   
   if config.bytes_type_hash.hasOwnProperty type.main
-    return "bytes_pack(unit)"
+    return "(\"00\": bytes)"
   
   switch type.main
     when "bool"
@@ -229,6 +241,24 @@ number2bytes = (val, precision = 32)->
       '""'
     
     else
+      if ctx.type_decl_hash.hasOwnProperty type.main
+        t = ctx.type_decl_hash[type.main]
+        # take very first value in enum as default
+        if t.constructor.name == "Enum_decl"
+          name = t.value_list[0].name
+          if ctx.current_class.name and t.name != "router_enum"
+            prefix = ""
+            if ctx.current_class.name
+              prefix = "#{ctx.current_class.name}_"
+            return "#{translate_var_name prefix + t.name}_#{name}"
+          else
+            return "#{name}(unit)"
+        if t.constructor.name == "Class_decl"
+          name = type.main
+          if ctx.current_class.name
+            name = "#{ctx.current_class.name}_#{type.main}"
+          return "#{translate_var_name name}_default"
+
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
@@ -249,9 +279,9 @@ bad_spec_id_trans_hash =
   "block.difficulty": "0n"
   "block.gaslimit"  : "0n"
   "block.number"    : "0n"
-  "msg.data"        : "bytes_pack(unit)"
+  "msg.data"        : "(\"00\": bytes)"
   "msg.gas"         : "0n"
-  "msg.sig"         : "bytes_pack(unit)"
+  "msg.sig"         : "(\"00\": bytes)"
   "tx.gasprice"     : "0n"
 
 warning_once_hash = {}
@@ -278,18 +308,24 @@ class @Gen_context
   type_decl_hash    : {}
   contract_var_hash : {}
   
+  contract          : false
   trim_expr         : ""
-  storage_sink_list : []
+  storage_sink_list : {}
   sink_list         : []
   type_decl_sink_list: []
+  structs_default_list: []
+  enum_list: []
   tmp_idx           : 0
   
   constructor:()->
     @type_decl_hash   = {}
     @contract_var_hash= {}
-    @storage_sink_list= []
+    @storage_sink_list= {}
     @sink_list        = []
     @type_decl_sink_list= []
+    @structs_default_list= []
+    @enum_list= []
+    @contract = false
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -298,6 +334,9 @@ class @Gen_context
     obj_set t.contract_var_hash, @contract_var_hash
     obj_set t.type_decl_hash, @type_decl_hash
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
+    t.structs_default_list = @structs_default_list
+    t.enum_list = @enum_list
+    t.contract = @contract
     t
 
 last_bracket_state = false
@@ -312,35 +351,55 @@ walk = (root, ctx)->
             code = walk v, ctx
             jl.push code if code
           
+          if ctx.structs_default_list.length
+            jl.unshift """
+              #{join_list ctx.structs_default_list}
+              """
           name = config.storage
           jl.unshift ""
-          if ctx.storage_sink_list.length == 0
-            ctx.storage_sink_list.push "#{config.empty_state} : int;"
-          
-          jl.unshift """
-            type #{name} is record
-              #{join_list ctx.storage_sink_list, '  '}
-            end;
-            """
-          ctx.storage_sink_list.clear()
-          
+          if Object.keys(ctx.storage_sink_list).length == 0
+            jl.unshift """
+              type #{name} is unit;
+              """
+          else
+            for k,v of ctx.storage_sink_list
+              if v.length == 0
+                jl.unshift """
+                  type #{k} is unit;
+                  """
+              else
+                jl.unshift """
+                  type #{k} is record
+                    #{join_list v, '  '}
+                  end;
+                  """
+          ctx.storage_sink_list = {} 
+
           if ctx.type_decl_sink_list.length
             type_decl_jl = []
             for type_decl in ctx.type_decl_sink_list
               {name, field_decl_jl} = type_decl
               if field_decl_jl.length == 0
-                field_decl_jl.push "#{config.empty_state} : int;"
-              type_decl_jl.push """
-                type #{name} is record
-                  #{join_list field_decl_jl, '  '}
-                end;
-                
-                """
+                type_decl_jl.push """
+                  type #{name} is unit;
+                  """
+              else
+                type_decl_jl.push """
+                  type #{name} is record
+                    #{join_list field_decl_jl, '  '}
+                  end;
+
+                  """
             
             jl.unshift """
               #{join_list type_decl_jl}
               """
-          
+            if ctx.enum_list.length 
+              jl.unshift ""
+              jl.unshift """
+                #{join_list ctx.enum_list}
+                """
+              ctx.enum_list = []
           join_list jl, ""
         
         else
@@ -357,9 +416,10 @@ walk = (root, ctx)->
                 ctx.trim_expr = ""
                 continue
               if code
-                code += ";" if !/;$/.test code
+                if v.constructor.name not in ["Comment", "Scope"]
+                  code += ";" if !/;$/.test code
                 jl.push code
-            
+
             ret = jl.pop() or ""
             if 0 != ret.indexOf "with"
               jl.push ret
@@ -372,6 +432,7 @@ walk = (root, ctx)->
                 body = join_list jl, ""
               else
                 body = ""
+              ret = ""
             else
               if jl.length
                 body = """
@@ -421,6 +482,8 @@ walk = (root, ctx)->
               "False"
             else
               throw new Error "can't translate bool constant '#{root.val}'"
+        when "Unit"
+          "unit"
         
         when "number"
           perr "WARNING number constant passed to translation stage. That's type inference mistake"
@@ -432,7 +495,11 @@ walk = (root, ctx)->
         
         when "string"
           JSON.stringify root.val
-        
+        when "built_in_op_list"
+          if root.val
+            "#{root.val}"
+          else
+            "(nil: list(operation))"
         else
           if config.bytes_type_hash.hasOwnProperty root.type.main
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
@@ -500,6 +567,17 @@ walk = (root, ctx)->
               
               else
                 throw new Error "unknown array field #{root.name}"
+          
+          when "enum"
+            name = translate_var_name root.name, ctx
+            if root.t?.name != "router_enum"
+              prefix = ""
+              if ctx.current_class.name
+                prefix = "#{ctx.current_class.name}_"
+              return "#{translate_var_name prefix + root.t.name}_#{root.name}"
+            else
+              name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
+              return "#{name}(unit)"
       
       # else
       if t == "" # this case
@@ -538,28 +616,46 @@ walk = (root, ctx)->
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
                   # TODO check balance
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 when "transfer"
                   perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
                   op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
+                
+                when "call"
+                  perr "CRITICAL WARNING call function willl be conveerted into transaction, it doesn't return any value so your code may be wrong."
+                  perr "CRITICAL WARNING we don't check balance in call function. So runtime error will be ignored and no throw"
+                  if root.arg_list[0]
+                    ret_type = translate_type root.arg_list[0].type, ctx
+                    ret = arg_list[0]
+                  else
+                    ret_type = "Unit"
+                    ret = "unit"
+                  op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"    
+
+
+                when "delegatecall"
+                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+                  op_code = "transaction(#{arg_list[1]}, 1mutez, (get_contract(#{t}) : contract(#{arg_list[0]})))"
                 
                 when "built_in_pure_callback"
                   # TODO check balance
                   ret_type = translate_type root.arg_list[0].type, ctx
                   ret = arg_list[0]
                   op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
-                  return "#{config.op_list} := cons(#{op_code}, #{config.op_list})"
                 
                 else
                   throw new Error "unknown address field #{root.fn.name}"
+              return "var #{config.op_list} : list(operation) := list #{op_code} end"
+
       if root.fn.constructor.name == "Var"
         switch root.fn.name
-          when "require", "require2", "assert"
+          when "require", "assert", "require2"
             cond= arg_list[0]
-            str = arg_list[1] or '"require fail"'
-            return "if #{cond} then {skip} else failwith(#{str})"
+            str = arg_list[1]
+            if str
+              return "assert(#{cond}) (* #{str} *)"
+            else 
+              return "assert(#{cond})"
           
           when "revert"
             str = arg_list[0] or '"revert"'
@@ -573,6 +669,16 @@ walk = (root, ctx)->
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
+
+          when "selfdestruct"
+            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo"
+            msg = arg_list[0]
+            return "selfdestruct(#{msg})"
+
+          when "blockhash"
+            msg = arg_list[0]
+            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo. Replaced with (\"#{msg}\" : bytes)."
+            return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
             perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
@@ -598,14 +704,13 @@ walk = (root, ctx)->
       
       if root.fn.type?.main == "struct"
         # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"
+        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
         perr "CRITICAL WARNING #{msg}"
-        return "(* #{msg} *)"
+        fn = "(* LIGO unsupported *)" + fn
       
       is_pure = root.fn.type?.main == "function2_pure"
       if !is_pure
         arg_list.unshift config.contract_storage
-        arg_list.unshift config.op_list
       
       if arg_list.length == 0
         arg_list.push "unit"
@@ -621,18 +726,20 @@ walk = (root, ctx)->
       if is_pure and type_jl.length == 0
         perr root
         throw new Error "Bad call of pure function that returns nothing"
-      if type_jl.length == 1
-        ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+      if not root.left_unpack
+        "#{call_expr}"
       else
-        ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
-      
-      if !is_pure
-        ctx.sink_list.push "#{config.op_list} := #{tmp_var}.0"
-        ctx.sink_list.push "#{config.contract_storage} := #{tmp_var}.1"
-        ctx.trim_expr = "#{tmp_var}.2"
-      else
-        ctx.trim_expr = "#{tmp_var}"
+        if type_jl.length == 1
+          ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+        else
+          ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
     
+    when "Struct_init"
+      arg_list = []
+      for i in [0..root.val_list.length-1]
+        arg_list.push "#{root.arg_names[i]} = #{walk root.val_list[i], ctx}"
+      "record [ #{arg_list.join ";\n\t"} ]"
+
     when "Type_cast"
       # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
@@ -673,11 +780,18 @@ walk = (root, ctx)->
       name = root.name
       name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
+      prefix = ""
       if ctx.is_class_scope
+        if root.special_type
+          type = "#{ctx.current_class.name}_#{root.type.main}"
+        type = translate_var_name type, ctx
         ctx.contract_var_hash[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
+          if root.assign_value?.constructor.name == "Struct_init"
+            type = "#{ctx.current_class.name}_#{root.type.main}"
+            type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
           if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
@@ -761,11 +875,9 @@ walk = (root, ctx)->
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
-      for _case in root.scope.list
-        # register
-        ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl # at least it's better than true
-        
+      for _case in root.scope.list        
         case_scope = walk _case.scope, ctx
+        case_scope = case_scope[0..-2] if /;$/.test case_scope
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
       
@@ -780,7 +892,9 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        v = translate_var_name v, ctx unless idx <= 1 # storage, op_list
+        is_state_in_main = root.name == "@main" and idx == 1
+        if root.visibility != 'pure' and idx > 0 and !is_state_in_main
+          v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
@@ -808,7 +922,6 @@ walk = (root, ctx)->
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
       orig_ctx = ctx
-      ctx.type_decl_hash[root.name] = root
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
         ctx.parent.type_decl_hash["#{ctx.current_class.name}.#{root.name}"] = root
@@ -818,12 +931,23 @@ walk = (root, ctx)->
       ctx.current_class = root
       ctx.is_class_scope = true
       
+      # stage 0 collect types
+      for v in root.scope.list
+        switch v.constructor.name
+          when "Enum_decl", "Class_decl"
+            ctx.type_decl_hash[v.name] = v
+          when "PM_switch"
+            for _case in root.scope.list
+              ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl
+      
+          else
+            "skip"
       # stage 1 collect declarations
       field_decl_jl = []
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+              field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_hash[v.name] = v
@@ -854,7 +978,13 @@ walk = (root, ctx)->
           when "Var_decl"
             "skip"
           
-          when "Fn_decl_multiret", "Enum_decl"
+          when "Enum_decl"
+            if v.name != "router_enum"
+              ctx.enum_list.push walk v, ctx
+            else
+              jl.unshift walk v, ctx
+
+          when "Fn_decl_multiret"
             jl.push walk v, ctx
           
           when "Class_decl", "Comment", "Event_decl"
@@ -864,13 +994,21 @@ walk = (root, ctx)->
             throw new Error "unknown v.constructor.name #{v.constructor.name}"
       
       if root.is_contract or root.is_library
-        orig_ctx.storage_sink_list.append field_decl_jl
+        state_name = config.storage
+        if ctx.contract and ctx.contract != root.name
+          state_name = "#{state_name}_#{root.name}"
+        orig_ctx.storage_sink_list[state_name] ?= []
+        orig_ctx.storage_sink_list[state_name].append field_decl_jl
       else
         name = root.name
         if prefix
           name = "#{prefix}_#{name}"
         name = translate_var_name name, ctx
-        
+        if root.is_struct 
+          arg_list = []
+          for v in root.scope.list
+            arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
+          ctx.structs_default_list.push "const #{name}_default : #{name} = record [ #{arg_list.join ";\n\t"} ];\n"
         ctx.type_decl_sink_list.push {
           name
           field_decl_jl
@@ -881,24 +1019,34 @@ walk = (root, ctx)->
     when "Enum_decl"
       jl = []
       # register global type
-      ctx.type_decl_hash[root.name] = root
-      for v in root.value_list
+      prefix = ""
+      if ctx.current_class.name and root.int_type
+        prefix = "#{ctx.current_class.name}_"
+      for v, idx in root.value_list
         # register global value
         ctx.contract_var_hash[v.name] = v
         
         # not covered by tests yet
         aux = ""
-        if v.type
-          type = translate_type v.type, ctx
-          aux = " of #{translate_var_name type, ctx}"
-        
-        jl.push "| #{v.name}#{aux}"
+        if root.int_type
+          if v.type
+            type = translate_type v.type, ctx
+            aux = "#{translate_var_name type, ctx}"
+          jl.push "const #{translate_var_name prefix + root.name}_#{v.name}#{aux} : nat = #{idx}n;"
+        else
+          if v.type
+            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
+          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
         # jl.push "| #{v.name}"
-      
-      """
-      type #{translate_var_name root.name, ctx} is
-        #{join_list jl, '  '};
-      """
+      if root.int_type
+        """
+        #{join_list jl}
+        """
+      else
+        """
+        type #{translate_var_name prefix + root.name, ctx} is
+          #{join_list jl, '  '};
+        """
     
     when "Ternary"
       cond = walk root.cond,  ctx
@@ -920,7 +1068,7 @@ walk = (root, ctx)->
       if root.cls.main == "array"
         """map end (* args: #{args} *)"""
       else if translated_type == "bytes"
-        """bytes_pack(unit) (* args: #{args} *)"""
+        """(\"00\": bytes) (* args: #{args} *)"""
       else
         """
         #{translated_type}(#{args})
@@ -948,8 +1096,13 @@ walk = (root, ctx)->
       """
     
     when "Event_decl"
+      args = []
+      for arg in root.arg_list
+        name = translate_var_name arg._name, ctx
+        type = translate_type arg, ctx
+        args.push "#{name} : #{type}"
       """
-      (* EventDefinition #{root.name} *)
+      (* EventDefinition #{root.name}(#{args.join('; ')}) *)
       """
     
     else
@@ -963,4 +1116,5 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
+  ctx.contract = opt.contract if opt.contract
   walk root, ctx

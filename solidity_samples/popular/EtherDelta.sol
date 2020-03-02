@@ -2,7 +2,7 @@
  *Submitted for verification at Etherscan.io on 2017-02-09
 */
 
-pragma solidity ^0.4.9;
+pragma solidity ^0.4.26;
 
 contract SafeMath {
   function safeMul(uint a, uint b) internal returns (uint) {
@@ -223,7 +223,8 @@ contract EtherDelta is SafeMath {
   function withdraw(uint amount) {
     if (tokens[0][msg.sender] < amount) throw;
     tokens[0][msg.sender] = safeSub(tokens[0][msg.sender], amount);
-    if (!msg.sender.call.value(amount)()) throw;
+    //contruction unsupported by sol2ligo yet
+    // if (!msg.sender.call.value(amount)()) throw;
     Withdraw(0, msg.sender, amount, tokens[0][msg.sender]);
   }
 
