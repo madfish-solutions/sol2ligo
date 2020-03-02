@@ -292,27 +292,27 @@ function getNameDigest (const name : string) : (list(operation) * bytes) is
     skip
   } with ((nil: list(operation)), sha_256((name)));
 
-function getDebitNonce (const self : state; const walletID : bytes) : (list(operation) * nat) is
+function getDebitNonce (const self : state; const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getWithdrawNonce (const self : state; const walletID : bytes) : (list(operation) * nat) is
+function getWithdrawNonce (const self : state; const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getLinkStatus (const self : state; const walletID : bytes; const member : address) : (list(operation) * bool) is
+function getLinkStatus (const self : state; const walletID : bytes; const member : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getBalance (const self : state; const walletID : bytes) : (list(operation) * nat) is
+function getBalance (const self : state; const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getEscrowBalance (const self : state) : (list(operation) * nat) is
+function getEscrowBalance (const self : state) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));

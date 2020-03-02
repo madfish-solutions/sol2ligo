@@ -466,7 +466,13 @@ do ()=>
           root.type_o.nest_list.unshift new Type "Unit"
 
         last = root.scope.list.last()
-        if !last or last.constructor.name != "Ret_multi"
+        if last and last.constructor.name == "Ret_multi" and last.t_list.length != root.type_o.nest_list.length
+          last = root.scope.list.pop()
+          while last.t_list.length > root.type_o.nest_list.length
+            last.t_list.pop()
+          while root.type_o.nest_list.length > last.t_list.length
+            root.type_o.nest_list.pop()
+        else if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
           last = walk last, ctx
           root.scope.list.push last

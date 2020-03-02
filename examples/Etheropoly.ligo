@@ -1,13 +1,3 @@
-type constructor_args is record
-  tokenContract_ : address;
-end;
-
-type tokenFallback_args is record
-  from_ : address;
-  value_ : nat;
-  data_ : bytes;
-end;
-
 type constructor_args is unit;
 type myTokens_args is unit;
 type myDividends_args is record
@@ -82,92 +72,8 @@ type calculateEthereumReceived_args is record
 end;
 
 type etherToSendCharity_args is unit;
-type constructor_args is record
-  tokenContract_ : address;
-end;
-
-type tokenFallback_args is record
-  from_ : address;
-  value_ : nat;
-  data_ : bytes;
-end;
-
-type constructor_args is unit;
-type myTokens_args is unit;
-type myDividends_args is record
-  includeReferralBonus_ : bool;
-end;
-
-type totalEthereumBalance_args is unit;
-type buy_args is record
-  referredBy_ : address;
-end;
-
-type fallback_args is unit;
-type payCharity_args is unit;
-type reinvest_args is unit;
-type sell_args is record
-  amountOfTokens_ : nat;
-end;
-
-type withdraw_args is unit;
-type exit_args is unit;
-type transfer_args is record
-  toAddress_ : address;
-  amountOfTokens_ : nat;
-end;
-
-type transferAndCall_args is record
-  to_ : address;
-  value_ : nat;
-  data_ : bytes;
-end;
-
-type disableInitialStage_args is unit;
-type setAdministrator_args is record
-  identifier_ : address;
-  status_ : bool;
-end;
-
-type setStakingRequirement_args is record
-  amountOfTokens_ : nat;
-end;
-
-type setCanAcceptTokens_args is record
-  address_ : address;
-  value_ : bool;
-end;
-
-type setName_args is record
-  name_ : string;
-end;
-
-type setSymbol_args is record
-  symbol_ : string;
-end;
-
-type totalSupply_args is unit;
-type balanceOf_args is record
-  customerAddress_ : address;
-end;
-
-type dividendsOf_args is record
-  customerAddress_ : address;
-end;
-
-type sellPrice_args is unit;
-type buyPrice_args is unit;
-type calculateTokensReceived_args is record
-  ethereumToSpend_ : nat;
-end;
-
-type calculateEthereumReceived_args is record
-  tokensToSell_ : nat;
-end;
-
-type etherToSendCharity_args is unit;
+type state_SafeMath is unit;
 type state is record
-  tokenContract : acceptsEtheropoly_Etheropoly;
   name : string;
   symbol : string;
   decimals : nat;
@@ -193,85 +99,22 @@ type state is record
   onlyAmbassadors : bool;
   canAcceptTokens_ : map(address, bool);
 end;
-
-type router_enum is
-  | Constructor of constructor_args
-  | TokenFallback of tokenFallback_args
-  | Constructor of constructor_args
-  | MyTokens of myTokens_args
-  | MyDividends of myDividends_args
-  | TotalEthereumBalance of totalEthereumBalance_args
-  | Buy of buy_args
-  | Fallback of fallback_args
-  | PayCharity of payCharity_args
-  | Reinvest of reinvest_args
-  | Sell of sell_args
-  | Withdraw of withdraw_args
-  | Exit of exit_args
-  | Transfer of transfer_args
-  | TransferAndCall of transferAndCall_args
-  | DisableInitialStage of disableInitialStage_args
-  | SetAdministrator of setAdministrator_args
-  | SetStakingRequirement of setStakingRequirement_args
-  | SetCanAcceptTokens of setCanAcceptTokens_args
-  | SetName of setName_args
-  | SetSymbol of setSymbol_args
-  | TotalSupply of totalSupply_args
-  | BalanceOf of balanceOf_args
-  | DividendsOf of dividendsOf_args
-  | SellPrice of sellPrice_args
-  | BuyPrice of buyPrice_args
-  | CalculateTokensReceived of calculateTokensReceived_args
-  | CalculateEthereumReceived of calculateEthereumReceived_args
-  | EtherToSendCharity of etherToSendCharity_args;
+type state_AcceptsEtheropoly is record
+  tokenContract : acceptsEtheropoly_Etheropoly;
+end;
 
 (* modifier onlyTokenContract inlined *)
 
-function constructor (const self : state; const tokenContract_ : address) : (list(operation) * state) is
+function constructor (const self : state_AcceptsEtheropoly; const tokenContract_ : address) : (list(operation) * state_AcceptsEtheropoly) is
   block {
     self.tokenContract := (* LIGO unsupported *)etheropoly(self, tokenContract_);
   } with ((nil: list(operation)), self);
 
-function tokenFallback (const self : state; const from_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state * bool) is
+function tokenFallback (const self : state_AcceptsEtheropoly; const from_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state_AcceptsEtheropoly * bool) is
   block {
     skip
   } with ((nil: list(operation)), self);
-
-function main (const action : router_enum; const self : state) : (list(operation) * state) is
-  (case action of
-  | Constructor(match_action) -> constructor(self, match_action.tokenContract_)
-  | TokenFallback(match_action) -> tokenFallback(self, match_action.from_, match_action.value_, match_action.data_)
-  | Constructor(match_action) -> constructor(self)
-  | MyTokens(match_action) -> (myTokens(self), self)
-  | MyDividends(match_action) -> (myDividends(self, match_action.includeReferralBonus_), self)
-  | TotalEthereumBalance(match_action) -> (totalEthereumBalance(self), self)
-  | Buy(match_action) -> buy(self, match_action.referredBy_)
-  | Fallback(match_action) -> fallback(self)
-  | PayCharity(match_action) -> payCharity(self)
-  | Reinvest(match_action) -> reinvest(self)
-  | Sell(match_action) -> sell(self, match_action.amountOfTokens_)
-  | Withdraw(match_action) -> 
-  | Exit(match_action) -> exit(self)
-  | Transfer(match_action) -> transfer(self, match_action.toAddress_, match_action.amountOfTokens_)
-  | TransferAndCall(match_action) -> transferAndCall(self, match_action.to_, match_action.value_, match_action.data_)
-  | DisableInitialStage(match_action) -> disableInitialStage(self)
-  | SetAdministrator(match_action) -> setAdministrator(self, match_action.identifier_, match_action.status_)
-  | SetStakingRequirement(match_action) -> setStakingRequirement(self, match_action.amountOfTokens_)
-  | SetCanAcceptTokens(match_action) -> setCanAcceptTokens(self, match_action.address_, match_action.value_)
-  | SetName(match_action) -> setName(self, match_action.name_)
-  | SetSymbol(match_action) -> setSymbol(self, match_action.symbol_)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.customerAddress_), self)
-  | DividendsOf(match_action) -> (dividendsOf(self, match_action.customerAddress_), self)
-  | SellPrice(match_action) -> (sellPrice(self), self)
-  | BuyPrice(match_action) -> (buyPrice(self), self)
-  | CalculateTokensReceived(match_action) -> (calculateTokensReceived(self, match_action.ethereumToSpend_), self)
-  | CalculateEthereumReceived(match_action) -> (calculateEthereumReceived(self, match_action.tokensToSell_), self)
-  | EtherToSendCharity(match_action) -> (etherToSendCharity(self), self)
-  end);
 type router_enum is
-  | Constructor of constructor_args
-  | TokenFallback of tokenFallback_args
   | Constructor of constructor_args
   | MyTokens of myTokens_args
   | MyDividends of myDividends_args
@@ -330,17 +173,17 @@ function constructor (const self : state) : (list(operation) * state) is
     self.ambassadors_[0xfE8D614431E5fea2329B05839f29B553b1Cb99A2] := True;
   } with ((nil: list(operation)), self);
 
-function myTokens (const self : state) : (list(operation) * nat) is
+function myTokens (const self : state) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
   } with ((nil: list(operation)));
 
-function myDividends (const self : state; const includeReferralBonus_ : bool) : (list(operation) * nat) is
+function myDividends (const self : state; const includeReferralBonus_ : bool) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
   } with ((nil: list(operation)));
 
-function totalEthereumBalance (const self : state) : (list(operation) * nat) is
+function totalEthereumBalance (const self : state) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -563,7 +406,7 @@ function isContract (const self : state; const addr_ : address) : (bool) is
     } *)
   } with ((length > 0n));
 
-function transferAndCall (const self : state; const to_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state * bool) is
+function transferAndCall (const self : state; const to_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state) is
   block {
     assert((to_ =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)));
     assert(bitwise_not(bitwise_xor((case self.canAcceptTokens_[to_] of | None -> False | Some(x) -> x end), True)));
@@ -574,7 +417,7 @@ function transferAndCall (const self : state; const to_ : address; const value_ 
     } else block {
       skip
     };
-  } with ((nil: list(operation)), self);
+  }
 
 function disableInitialStage (const self : state) : (list(operation) * state) is
   block {
@@ -618,22 +461,22 @@ function setSymbol (const self : state; const symbol_ : string) : (list(operatio
     self.symbol := symbol_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state) : (list(operation) * nat) is
+function totalSupply (const self : state) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function balanceOf (const self : state; const customerAddress_ : address) : (list(operation) * nat) is
+function balanceOf (const self : state; const customerAddress_ : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function dividendsOf (const self : state; const customerAddress_ : address) : (list(operation) * nat) is
+function dividendsOf (const self : state; const customerAddress_ : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function sellPrice (const self : state) : (list(operation) * nat) is
+function sellPrice (const self : state) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
       skip
@@ -645,7 +488,7 @@ function sellPrice (const self : state) : (list(operation) * nat) is
     } with ((nil: list(operation)));;
   } with ((nil: list(operation)));
 
-function buyPrice (const self : state) : (list(operation) * nat) is
+function buyPrice (const self : state) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
       skip
@@ -657,7 +500,7 @@ function buyPrice (const self : state) : (list(operation) * nat) is
     } with ((nil: list(operation)));;
   } with ((nil: list(operation)));
 
-function calculateTokensReceived (const self : state; const ethereumToSpend_ : nat) : (list(operation) * nat) is
+function calculateTokensReceived (const self : state; const ethereumToSpend_ : nat) : (list(operation)) is
   block {
     const dividends_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.dividendFee_), 100n);
     const charityPayout_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.charityFee_), 100n);
@@ -665,7 +508,7 @@ function calculateTokensReceived (const self : state; const ethereumToSpend_ : n
     const amountOfTokens_ : nat = ethereumToTokens_(self, taxedEthereum_);
   } with ((nil: list(operation)));
 
-function calculateEthereumReceived (const self : state; const tokensToSell_ : nat) : (list(operation) * nat) is
+function calculateEthereumReceived (const self : state; const tokensToSell_ : nat) : (list(operation)) is
   block {
     assert((tokensToSell_ <= self.tokenSupply_));
     const ethereum_ : nat = tokensToEthereum_(self, tokensToSell_);
@@ -674,15 +517,13 @@ function calculateEthereumReceived (const self : state; const tokensToSell_ : na
     const taxedEthereum_ : nat = safeMath.sub(safeMath.sub(ethereum_, dividends_), charityPayout_);
   } with ((nil: list(operation)));
 
-function etherToSendCharity (const self : state) : (list(operation) * nat) is
+function etherToSendCharity (const self : state) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
-  | Constructor(match_action) -> constructor(self, match_action.tokenContract_)
-  | TokenFallback(match_action) -> tokenFallback(self, match_action.from_, match_action.value_, match_action.data_)
   | Constructor(match_action) -> constructor(self)
   | MyTokens(match_action) -> (myTokens(self), self)
   | MyDividends(match_action) -> (myDividends(self, match_action.includeReferralBonus_), self)
