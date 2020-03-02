@@ -160,9 +160,6 @@ number2bytes = (val, precision = 32)->
     
     when "address"
       "address"
-
-    when "contract"
-      "contract(unit)"
     
     when "built_in_op_list"
       "list(operation)"
@@ -194,7 +191,9 @@ number2bytes = (val, precision = 32)->
     # when config.storage
     #   config.storage
     else
-      if ctx.type_decl_hash.hasOwnProperty type.main
+      if type.main.match /^contract/
+        type.main
+      else if ctx.type_decl_hash.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
         is_struct = ((ctx.current_class and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
         is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 

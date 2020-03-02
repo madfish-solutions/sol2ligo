@@ -448,6 +448,12 @@ do ()=>
         
         state_name = config.storage
         state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
+        if !root.should_ret_args and ctx.should_ret_op_list and ctx.state_mutability in ['pure', 'view']
+          root.arg_name_list.unshift config.reseiver_name
+          ret_types = []
+          for t in root.type_o.nest_list
+            ret_types.push t
+          root.type_i.nest_list.unshift new Type "contract((#{join_list ret_types, '*'}))"
         if !root.should_ret_args and !root.should_modify_storage
           root.type_o.nest_list = []
           last = root.scope.list.last()
@@ -455,9 +461,6 @@ do ()=>
             last = root.scope.list.pop()
             last.t_list = [last.t_list[0]] # op_list only
             root.scope.list.push last
-        if !root.should_ret_args and ctx.should_ret_op_list and ctx.state_mutability in ['pure', 'view']
-          root.arg_name_list.unshift config.reseiver_name
-          root.type_i.nest_list.unshift new Type "contract"
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type state_name
