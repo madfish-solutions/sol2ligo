@@ -181,7 +181,7 @@ function transfer (const self : state; const to_ : address; const value_ : nat) 
     self.balances[sender] := abs((case self.balances[sender] of | None -> 0n | Some(x) -> x end) - value_);
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (* EmitStatement Transfer(sender, _to, _value) *)
-  }
+  } with ((nil: list(operation)), self);
 
 function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state) is
   block {
@@ -193,7 +193,7 @@ function approve (const self : state; const spender_ : address; const value_ : n
     };
     (case self.allowances[sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] := value_;
     (* EmitStatement Approval(sender, _spender, _value) *)
-  }
+  } with ((nil: list(operation)), self);
 
 function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state) is
   block {
@@ -201,7 +201,7 @@ function approveAndCall (const self : state; const spender_ : address; const val
     const spender : UNKNOWN_TYPE_tokenRecipient = (* LIGO unsupported *)tokenRecipient(self, spender_);
     approve(self, spender_, value_);
     spender.receiveApproval(self, sender, value_, , extraData_);
-  }
+  } with ((nil: list(operation)), self);
 
 function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state) is
   block {
@@ -235,7 +235,7 @@ function transferFrom (const self : state; const from_ : address; const to_ : ad
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] := abs((case (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] of | None -> 0n | Some(x) -> x end) - value_);
     (* EmitStatement Transfer(_from, _to, _value) *)
-  }
+  } with ((nil: list(operation)), self);
 
 function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation)) is
   block {

@@ -165,18 +165,18 @@ function safeMul (const self : state; const a : nat; const b : nat) : (list(oper
   block {
     const c : nat = (a * b);
     assert(((a = 0n) or ((c / a) = b)));
-  }
+  } with ((nil: list(operation)), self);
 
 function safeSub (const self : state; const a : nat; const b : nat) : (list(operation) * state) is
   block {
     assert((b <= a));
-  }
+  } with ((nil: list(operation)), self);
 
 function safeAdd (const self : state; const a : nat; const b : nat) : (list(operation) * state) is
   block {
     const c : nat = (a + b);
     assert(((c >= a) and (c >= b)));
-  }
+  } with ((nil: list(operation)), self);
 
 function setOwner (const self : state; const newOwner : address) : (list(operation) * state) is
   block {
@@ -188,7 +188,7 @@ function setOwner (const self : state; const newOwner : address) : (list(operati
 function getOwner (const self : state) : (list(operation) * state) is
   block {
     const out : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-  }
+  } with ((nil: list(operation)), self);
 
 function constructor (const self : state; const feeAccount_ : address) : (list(operation) * state) is
   block {

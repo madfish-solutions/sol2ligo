@@ -223,7 +223,7 @@ function approve (const self : state_StandardToken; const spender_ : address; co
     const success : bool = False;
     (case self.allowed[sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] := value_;
     (* EmitStatement Approval(sender, _spender, _value) *)
-  }
+  } with ((nil: list(operation)), self);
 
 function allowance (const self : state_StandardToken; const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
@@ -269,7 +269,7 @@ function approve (const self : state_StandardToken; const spender_ : address; co
     const success : bool = False;
     (case self.allowed[sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] := value_;
     (* EmitStatement Approval(sender, _spender, _value) *)
-  }
+  } with ((nil: list(operation)), self);
 
 function balanceOf (const self : state_StandardToken; const owner_ : address) : (list(operation)) is
   block {

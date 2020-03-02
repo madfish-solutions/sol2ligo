@@ -417,7 +417,7 @@ function transferAndCall (const self : state; const to_ : address; const value_ 
     } else block {
       skip
     };
-  }
+  } with ((nil: list(operation)), self);
 
 function disableInitialStage (const self : state) : (list(operation) * state) is
   block {
