@@ -472,11 +472,11 @@ do ()=>
             last.t_list.pop()
           while root.type_o.nest_list.length > last.t_list.length
             root.type_o.nest_list.pop()
-        else if !last or last.constructor.name != "Ret_multi"
+        last = root.scope.list.last()
+        if !last or last.constructor.name != "Ret_multi"
           last = new ast.Ret_multi
           last = walk last, ctx
           root.scope.list.push last
-
         root
       
       else
