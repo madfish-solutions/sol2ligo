@@ -4,19 +4,17 @@
     <meta charset="utf-8" />
     <title>Solidity to LIGO compiler</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.25.0/slimselect.min.css" rel="stylesheet"></link>
   </head>
   <body>
     <div class="nav">
-      <a
-        href="https://madfish-solutions.github.io/sol2ligo/"
-        class="nav_selected"
-        >Ligo</a
-      >
+      <div class="logo">Sol2Ligo</div>
+      <select id="single" style='display: none'>
+      </select>
       <div class="example_selector">
         <span id="load_msg">
           Need some time to load. Loading...
         </span>
-        <select id="src_select"> </select>
       </div>
     </div>
     <div class="code">
@@ -28,8 +26,6 @@
         </div>
         <div class="code-inner" id="solidity_container"></div>
       </div>
-      <!-- <div class="divider"></div> -->
-      <!-- <div id="ligo_dst_wrap"> -->
       <div class="code-wrapper">
         <div class="code-tabs" id="outputs">
           <div class="code-tab active" id="pascaligo">
@@ -52,6 +48,8 @@
       <!-- </div> -->
       <!-- <div class="minibutton" id="compile_btn">Compiling...</div> -->
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.25.0/slimselect.min.js"></script>
+
     <script src="web/solc/soljson.js"></script>
     <script src="web/solc/sol_wrapper.js"></script>
     <script src="web/common/fy.js"></script>
@@ -74,9 +72,6 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/loader.min.js"
     ></script>
     <script>
-      // const outputNode = document.querySelector("#ligo_dst");
-      const compileBtnNode = document.querySelector("#compile_btn");
-
       document.querySelector("#load_msg").innerText =
         "Very experimental. Use it at your own RISK.";
 
@@ -201,15 +196,43 @@
 
         solidityEditor.addOverlayWidget(overlayWidget);
 
-        const selectNode = document.querySelector("#src_select");
-        const jl_list = example_list.map(
-          ({ title }) => `<option>${title}</option>`
-        );
-        selectNode.innerHTML = jl_list.join("");
-        selectNode.onchange = e => {
-          const example = example_list.find(ex => ex.title === e.target.value);
-          data.sol.model.setValue(example.code);
-        };
+        const slimData = example_list.reduce((acc, example) => {
+          const {title, code} = example;
+          if(code) {
+            acc.currentObject.options.push(({text: title}))
+            return acc
+          } else {
+            const newObj = { label: title, options: [] }
+            acc.currentObject = newObj;
+            acc.data.push(newObj)
+            return acc
+          }
+
+        }, {currentObject: null, data: []})
+
+        const initSelect = () => {
+          const onChange = val => {
+
+            const example = example_list.find(ex => ex.title === val);
+            data.sol.model.setValue(example.code);
+          }
+
+
+          onChange(slimData.data[0].options[0].text)
+
+
+          const selectNode = document.querySelector('#single');
+          selectNode.style.display = 'block';
+
+          new SlimSelect({
+            select: '#single',
+            showSearch: false,
+            data: slimData.data,
+            onChange: data => onChange(data.value)
+          })
+        }
+
+        initSelect()
 
         let timeout = null;
         function onChange(code) {

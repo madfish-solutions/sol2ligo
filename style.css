@@ -12,8 +12,17 @@ body {
   max-height: 100vh;
 }
 .nav {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   margin: 0px;
   padding: 0px;
+  background: #161616;
+  border-bottom: 1px solid black;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 15px;
 }
 .nav a {
   font-size: 14px;
@@ -22,10 +31,21 @@ body {
   background: #0091b9;
   padding: 15px 20px;
   font-weight: 300;
-  border-radius: 10px;
-  margin: 15px 15px 0 0;
-  float: left;
+  border-radius: 3px;
+  margin-right: 15px;
   cursor: pointer;
+}
+
+.logo {
+  color: #ffd800;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  margin-right: 15px;
+  border-radius: 3px;
+  /* border: 1px solid black; */
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .nav_selected {
@@ -33,10 +53,11 @@ body {
   font-weight: 600 !important;
   text-decoration: none;
   background: #ffd800 !important;
+  line-height: 1;
 }
 
 .example_selector {
-  padding: 25px 20px;
+  /* padding: 25px 20px; */
 }
 
 .code {
@@ -46,6 +67,7 @@ body {
   max-height: 100%;
   overflow: hidden;
   flex: 1;
+  /* border-top: 1px solid black; */
 }
 
 .code-wrapper {
@@ -61,11 +83,13 @@ body {
   display: flex;
   z-index: 5;
   border-bottom: 1px solid black;
+  background: #161616;
 }
 
 .code-tab {
   padding: 10px 15px;
   border: 1px solid black;
+  border-top: 0;
   margin-bottom: -1px;
   color: white;
   font-size: 14px;
@@ -121,4 +145,36 @@ body {
 
 .minibutton:hover {
   background: #2bbd70;
+}
+
+.ss-main {
+  max-width: 300px;
+  margin-right: 15px;
+}
+
+.ss-main .ss-single-selected {
+  background: #101010 !important;
+  border-color: black !important;
+  border-radius: 3px !important;
+  color: white;
+}
+
+.ss-content {
+  border-color: black !important;
+}
+
+.ss-content .ss-list .ss-option.ss-highlighted,
+.ss-content .ss-list .ss-option:hover {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+.ss-content .ss-list .ss-option.ss-disabled {
+  background-color: inherit !important;
+  opacity: 50% !important;
+}
+
+.ss-list {
+  background: #101010 !important;
+  border-color: black !important;
+  color: #fff !important;
 }
