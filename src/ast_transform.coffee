@@ -455,6 +455,10 @@ do ()=>
             last = root.scope.list.pop()
             last.t_list = [last.t_list[0]] # op_list only
             root.scope.list.push last
+        if !root.should_ret_args and ctx.should_ret_op_list and ctx.state_mutability in ['pure', 'view']
+          p root.should_ret_args
+          root.arg_name_list.unshift config.reseiver_name
+          root.type_i.nest_list.unshift new Type "contract"
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type state_name

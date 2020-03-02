@@ -160,6 +160,9 @@ number2bytes = (val, precision = 32)->
     
     when "address"
       "address"
+
+    when "contract"
+      "contract(unit)"
     
     when "built_in_op_list"
       "list(operation)"
@@ -233,6 +236,9 @@ number2bytes = (val, precision = 32)->
     
     when "built_in_op_list"
       "(nil: list(operation))"
+
+    when "contract"
+      "contract(unit)"
     
     when "map", "array"
       "(map end : #{translate_type type, ctx})"
