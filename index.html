@@ -20,10 +20,34 @@
       </div>
     </div>
     <div class="code">
-      <div id="solidity_container"></div>
-      <div class="divider"></div>
+      <div class="code-wrapper">
+        <div class="code-tabs">
+          <div class="code-tab active" style="border-left: 0;">
+            Solidity
+          </div>
+        </div>
+        <div class="code-inner" id="solidity_container"></div>
+      </div>
+      <!-- <div class="divider"></div> -->
       <!-- <div id="ligo_dst_wrap"> -->
-      <div id="ligo_container"></div>
+      <div class="code-wrapper">
+        <div class="code-tabs" id="outputs">
+          <div class="code-tab active" id="pascaligo">
+            Pascaligo
+          </div>
+          <div class="code-tab" id="output">
+            Output 2
+          </div>
+          <div class="code-tab" id="logs">
+            Errors
+          </div>
+        </div>
+        <div
+          style="border-left: 1px solid black"
+          class="code-inner"
+          id="ligo_container"
+        ></div>
+      </div>
       <!-- <pre id="ligo_dst"></pre> -->
       <!-- </div> -->
       <!-- <div class="minibutton" id="compile_btn">Compiling...</div> -->
@@ -107,8 +131,9 @@
               this.domNode = document.createElement("div");
               this.domNode.classList.add("minibutton");
               this.domNode.innerHTML = "Compiling...";
-              this.domNode.style.right = "120px";
-              this.domNode.style.top = "20px";
+              this.domNode.style.position = "absolute";
+              this.domNode.style.right = "20px";
+              this.domNode.style.top = "10px";
               this.domNode.style.zIndex = "20";
             }
             return this.domNode;
@@ -135,26 +160,46 @@
           }
         };
 
+        const data = {
+          sol: { model: null, state: null },
+          pascaligo: { model: null, state: null },
+          output: { model: null, state: null },
+          logs: { model: null, state: null }
+        };
+
+        data.sol.model = monaco.editor.createModel(example_list[0].code, "sol");
+        data.pascaligo.model = monaco.editor.createModel("", "pascaligo");
+        data.output.model = monaco.editor.createModel("OUTPUTS", "text");
+        data.logs.model = monaco.editor.createModel("LOGS", "text");
+
+        const opts = {
+          tabSize: "2",
+          automaticLayout: true,
+          theme: "vs-dark",
+          wordWrap: "on",
+          minimap: {
+            enabled: false
+          }
+        };
+
         const solidityEditor = monaco.editor.create(
           document.getElementById("solidity_container"),
           {
-            value: example_list[0].code,
-            language: "sol",
-            tabSize: "2"
+            model: data.sol.model,
+            ...opts
           }
         );
 
-        const ligoEditor = monaco.editor.create(
+        const outputEditor = monaco.editor.create(
           document.getElementById("ligo_container"),
           {
-            readOnly: true,
-            language: "pascaligo",
-            tabSize: "2",
-            value: ""
+            model: data.pascaligo.model,
+            ...opts,
+            readOnly: true
           }
         );
 
-        ligoEditor.addOverlayWidget(overlayWidget);
+        solidityEditor.addOverlayWidget(overlayWidget);
 
         const selectNode = document.querySelector("#src_select");
         const jl_list = example_list.map(
@@ -163,7 +208,7 @@
         selectNode.innerHTML = jl_list.join("");
         selectNode.onchange = e => {
           const example = example_list.find(ex => ex.title === e.target.value);
-          solidityEditor.setValue(example.code);
+          data.sol.model.setValue(example.code);
         };
 
         let timeout = null;
@@ -175,10 +220,13 @@
 
             compile(code)
               .then(c => {
-                ligoEditor.setValue(c);
+                data.pascaligo.model.setValue(c);
+                data.logs.model.setValue("");
                 overlayWidget.success();
               })
               .catch(err => {
+                console.dir(err);
+                if (data.logs.model) data.logs.model.setValue(err.stack);
                 overlayWidget.error();
               });
           }, 100);
@@ -190,6 +238,32 @@
           const code = solidityEditor.getValue();
 
           onChange(code);
+        });
+
+        function onChangeTab(fromId, toId) {
+          console.log(event);
+        }
+
+        const outputsNode = document.getElementById("outputs");
+        Array.from(outputsNode.children).forEach(node => {
+          node.onclick = () => {
+            outputsNode.querySelector(".active").classList.remove("active");
+            node.classList.add("active");
+
+            const currentState = outputEditor.saveViewState();
+            const currentModel = outputEditor.getModel();
+
+            if (currentModel === data.pascaligo.model) {
+              data.pascaligo.state = currentState;
+            } else if (currentModel === data.output.state) {
+              data.output.state = currentState;
+            } else if (currentModel === data.logs.state) {
+              data.logs.state = currentState;
+            }
+
+            outputEditor.setModel(data[node.id].model);
+            outputEditor.restoreViewState(data[node.id].state);
+          };
         });
       });
     </script>
