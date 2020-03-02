@@ -619,8 +619,6 @@ walk = (root, ctx)->
 
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
-      if !ret.should_ret_args and !ret.should_modify_storage
-        root.returnParameters.parameters = []
       unless ret.is_modifier
         list = walk_param root.returnParameters, ctx
         if list.length <= 1
