@@ -64,6 +64,7 @@ type adminWithdraw_args is record
 end;
 
 type balanceOf_args is record
+  receiver : contract(unit);
   token : address;
   user : address;
 end;
@@ -338,7 +339,7 @@ function adminWithdraw (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, user, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const token : address; const user : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(unit); const token : address; const user : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -427,6 +428,6 @@ function main (const action : router_enum; const self : state) : (list(operation
   | Deposit(match_action) -> deposit(self)
   | Withdraw(match_action) -> 
   | AdminWithdraw(match_action) -> adminWithdraw(self, match_action.token, match_action.res__amount, match_action.user, match_action.nonce, match_action.v, match_action.r, match_action.s, match_action.feeWithdrawal)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.token, match_action.user), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.token, match_action.user), self)
   | Trade(match_action) -> trade(self, match_action.tradeValues, match_action.tradeAddresses, match_action.v, match_action.rs)
   end);

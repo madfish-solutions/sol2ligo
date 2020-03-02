@@ -1,10 +1,17 @@
 type constructor_args is unit;
-type myTokens_args is unit;
+type myTokens_args is record
+  receiver : contract(unit);
+end;
+
 type myDividends_args is record
+  receiver : contract(unit);
   includeReferralBonus_ : bool;
 end;
 
-type totalEthereumBalance_args is unit;
+type totalEthereumBalance_args is record
+  receiver : contract(unit);
+end;
+
 type buy_args is record
   referredBy_ : address;
 end;
@@ -52,26 +59,42 @@ type setSymbol_args is record
   symbol_ : string;
 end;
 
-type totalSupply_args is unit;
+type totalSupply_args is record
+  receiver : contract(unit);
+end;
+
 type balanceOf_args is record
+  receiver : contract(unit);
   customerAddress_ : address;
 end;
 
 type dividendsOf_args is record
+  receiver : contract(unit);
   customerAddress_ : address;
 end;
 
-type sellPrice_args is unit;
-type buyPrice_args is unit;
+type sellPrice_args is record
+  receiver : contract(unit);
+end;
+
+type buyPrice_args is record
+  receiver : contract(unit);
+end;
+
 type calculateTokensReceived_args is record
+  receiver : contract(unit);
   ethereumToSpend_ : nat;
 end;
 
 type calculateEthereumReceived_args is record
+  receiver : contract(unit);
   tokensToSell_ : nat;
 end;
 
-type etherToSendCharity_args is unit;
+type etherToSendCharity_args is record
+  receiver : contract(unit);
+end;
+
 type state_SafeMath is unit;
 type state is record
   name : string;
@@ -173,17 +196,17 @@ function constructor (const self : state) : (list(operation) * state) is
     self.ambassadors_[0xfE8D614431E5fea2329B05839f29B553b1Cb99A2] := True;
   } with ((nil: list(operation)), self);
 
-function myTokens (const self : state) : (list(operation)) is
+function myTokens (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
   } with ((nil: list(operation)));
 
-function myDividends (const self : state; const includeReferralBonus_ : bool) : (list(operation)) is
+function myDividends (const self : state; const receiver : contract(unit); const includeReferralBonus_ : bool) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
   } with ((nil: list(operation)));
 
-function totalEthereumBalance (const self : state) : (list(operation)) is
+function totalEthereumBalance (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -461,22 +484,22 @@ function setSymbol (const self : state; const symbol_ : string) : (list(operatio
     self.symbol := symbol_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state) : (list(operation)) is
+function totalSupply (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function balanceOf (const self : state; const customerAddress_ : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(unit); const customerAddress_ : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function dividendsOf (const self : state; const customerAddress_ : address) : (list(operation)) is
+function dividendsOf (const self : state; const receiver : contract(unit); const customerAddress_ : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function sellPrice (const self : state) : (list(operation)) is
+function sellPrice (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
       skip
@@ -488,7 +511,7 @@ function sellPrice (const self : state) : (list(operation)) is
     } with ((nil: list(operation)));;
   } with ((nil: list(operation)));
 
-function buyPrice (const self : state) : (list(operation)) is
+function buyPrice (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
       skip
@@ -500,7 +523,7 @@ function buyPrice (const self : state) : (list(operation)) is
     } with ((nil: list(operation)));;
   } with ((nil: list(operation)));
 
-function calculateTokensReceived (const self : state; const ethereumToSpend_ : nat) : (list(operation)) is
+function calculateTokensReceived (const self : state; const receiver : contract(unit); const ethereumToSpend_ : nat) : (list(operation)) is
   block {
     const dividends_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.dividendFee_), 100n);
     const charityPayout_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.charityFee_), 100n);
@@ -508,7 +531,7 @@ function calculateTokensReceived (const self : state; const ethereumToSpend_ : n
     const amountOfTokens_ : nat = ethereumToTokens_(self, taxedEthereum_);
   } with ((nil: list(operation)));
 
-function calculateEthereumReceived (const self : state; const tokensToSell_ : nat) : (list(operation)) is
+function calculateEthereumReceived (const self : state; const receiver : contract(unit); const tokensToSell_ : nat) : (list(operation)) is
   block {
     assert((tokensToSell_ <= self.tokenSupply_));
     const ethereum_ : nat = tokensToEthereum_(self, tokensToSell_);
@@ -517,7 +540,7 @@ function calculateEthereumReceived (const self : state; const tokensToSell_ : na
     const taxedEthereum_ : nat = safeMath.sub(safeMath.sub(ethereum_, dividends_), charityPayout_);
   } with ((nil: list(operation)));
 
-function etherToSendCharity (const self : state) : (list(operation)) is
+function etherToSendCharity (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -525,9 +548,9 @@ function etherToSendCharity (const self : state) : (list(operation)) is
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
   | Constructor(match_action) -> constructor(self)
-  | MyTokens(match_action) -> (myTokens(self), self)
-  | MyDividends(match_action) -> (myDividends(self, match_action.includeReferralBonus_), self)
-  | TotalEthereumBalance(match_action) -> (totalEthereumBalance(self), self)
+  | MyTokens(match_action) -> (myTokens(self, match_action.receiver), self)
+  | MyDividends(match_action) -> (myDividends(self, match_action.receiver, match_action.includeReferralBonus_), self)
+  | TotalEthereumBalance(match_action) -> (totalEthereumBalance(self, match_action.receiver), self)
   | Buy(match_action) -> buy(self, match_action.referredBy_)
   | Fallback(match_action) -> fallback(self)
   | PayCharity(match_action) -> payCharity(self)
@@ -543,14 +566,14 @@ function main (const action : router_enum; const self : state) : (list(operation
   | SetCanAcceptTokens(match_action) -> setCanAcceptTokens(self, match_action.address_, match_action.value_)
   | SetName(match_action) -> setName(self, match_action.name_)
   | SetSymbol(match_action) -> setSymbol(self, match_action.symbol_)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.customerAddress_), self)
-  | DividendsOf(match_action) -> (dividendsOf(self, match_action.customerAddress_), self)
-  | SellPrice(match_action) -> (sellPrice(self), self)
-  | BuyPrice(match_action) -> (buyPrice(self), self)
-  | CalculateTokensReceived(match_action) -> (calculateTokensReceived(self, match_action.ethereumToSpend_), self)
-  | CalculateEthereumReceived(match_action) -> (calculateEthereumReceived(self, match_action.tokensToSell_), self)
-  | EtherToSendCharity(match_action) -> (etherToSendCharity(self), self)
+  | TotalSupply(match_action) -> (totalSupply(self, match_action.receiver), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.customerAddress_), self)
+  | DividendsOf(match_action) -> (dividendsOf(self, match_action.receiver, match_action.customerAddress_), self)
+  | SellPrice(match_action) -> (sellPrice(self, match_action.receiver), self)
+  | BuyPrice(match_action) -> (buyPrice(self, match_action.receiver), self)
+  | CalculateTokensReceived(match_action) -> (calculateTokensReceived(self, match_action.receiver, match_action.ethereumToSpend_), self)
+  | CalculateEthereumReceived(match_action) -> (calculateEthereumReceived(self, match_action.receiver, match_action.tokensToSell_), self)
+  | EtherToSendCharity(match_action) -> (etherToSendCharity(self, match_action.receiver), self)
   end);
 function safeMath_mul (const a : nat; const b : nat) : (nat) is
   block {

@@ -3,8 +3,14 @@ type constructor_args is record
   data_ : bytes;
 end;
 
-type admin_args is unit;
-type implementation_args is unit;
+type admin_args is record
+  receiver : contract(unit);
+end;
+
+type implementation_args is record
+  receiver : contract(unit);
+end;
+
 type changeAdmin_args is record
   newAdmin : address;
 end;
@@ -220,7 +226,7 @@ function constructor (const self : state; const implementation_ : address; const
     };
   } with ((nil: list(operation)), self);
 
-function admin (const self : state) : (list(operation)) is
+function admin (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     if (sender = admin_(self)) then block {
       skip
@@ -229,7 +235,7 @@ function admin (const self : state) : (list(operation)) is
     };
   } with ((nil: list(operation)));
 
-function implementation (const self : state) : (list(operation)) is
+function implementation (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     if (sender = admin_(self)) then block {
       skip
@@ -277,8 +283,8 @@ function willFallback_ (const self : state) : (state) is
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
   | Constructor(match_action) -> constructor(self, match_action.implementation_, match_action.data_)
-  | Admin(match_action) -> (admin(self), self)
-  | Implementation(match_action) -> (implementation(self), self)
+  | Admin(match_action) -> (admin(self, match_action.receiver), self)
+  | Implementation(match_action) -> (implementation(self, match_action.receiver), self)
   | ChangeAdmin(match_action) -> changeAdmin(self, match_action.newAdmin)
   | UpgradeTo(match_action) -> upgradeTo(self, match_action.newImplementation)
   | UpgradeToAndCall(match_action) -> upgradeToAndCall(self, match_action.newImplementation, match_action.data)

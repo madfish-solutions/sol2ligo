@@ -19,6 +19,7 @@ type add_args is record
 end;
 
 type getCreature_args is record
+  receiver : contract(unit);
   id : nat;
 end;
 
@@ -80,17 +81,17 @@ function transferOwnership (const self : state_Permissions; const newOwner : add
     };
   } with ((nil: list(operation)), self);
 
-function getCaller (const self : state_Permissions) : (list(operation)) is
+function getCaller (const self : state_Permissions; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getStorageAddress (const self : state_Permissions) : (list(operation)) is
+function getStorageAddress (const self : state_Permissions; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getOwner (const self : state_Permissions) : (list(operation)) is
+function getOwner (const self : state_Permissions; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -126,7 +127,7 @@ function add (const self : state; const owner_ : address; const species_ : nat; 
     (* EmitStatement CreateCreature(newCreatureID, _owner) *)
   } with ((nil: list(operation)), self);
 
-function getCreature (const self : state; const id : nat) : (list(operation)) is
+function getCreature (const self : state; const receiver : contract(unit); const id : nat) : (list(operation)) is
   block {
     const c : creatures_Creature = (case self.creatures[id] of | None -> creatures_Creature_default | Some(x) -> x end);
     const owner : address = (case self.creatureIndexToOwner[id] of | None -> ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address) | Some(x) -> x end);
@@ -136,5 +137,5 @@ function main (const action : router_enum; const self : state) : (list(operation
   (case action of
   | Transfer(match_action) -> transfer(self, match_action.from_, match_action.to_, match_action.tokenId_)
   | Add(match_action) -> add(self, match_action.owner_, match_action.species_, match_action.subSpecies_, match_action.eyeColor_)
-  | GetCreature(match_action) -> (getCreature(self, match_action.id), self)
+  | GetCreature(match_action) -> (getCreature(self, match_action.receiver, match_action.id), self)
   end);

@@ -4,6 +4,7 @@ type transfer_args is record
 end;
 
 type balanceOf_args is record
+  receiver : contract(unit);
   account : address;
 end;
 
@@ -21,7 +22,7 @@ function transfer (const self : state; const recipient : address; const value : 
     self.balances[recipient] := ((case self.balances[recipient] of | None -> 0n | Some(x) -> x end) + value);
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const account : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(unit); const account : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -29,5 +30,5 @@ function balanceOf (const self : state; const account : address) : (list(operati
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
   | Transfer(match_action) -> transfer(self, match_action.recipient, match_action.value)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.account), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.account), self)
   end);

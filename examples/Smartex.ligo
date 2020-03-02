@@ -8,11 +8,13 @@ end;
 
 type fallback_args is unit;
 type getUserLevelExpiresAt_args is record
+  receiver : contract(unit);
   user_ : address;
   level_ : nat;
 end;
 
 type getUserUpline_args is record
+  receiver : contract(unit);
   user_ : address;
   height : nat;
 end;
@@ -22,6 +24,7 @@ type buyLevel_args is record
 end;
 
 type findReferrer_args is record
+  receiver : contract(unit);
   user_ : address;
 end;
 
@@ -31,6 +34,7 @@ end;
 
 type fallback_args is unit;
 type getUserReferrals_args is record
+  receiver : contract(unit);
   user_ : address;
 end;
 
@@ -102,12 +106,12 @@ function addressToPayable (const _addr : address) : (address) is
     skip
   } with ((abs(addr_) : address));
 
-function getUserLevelExpiresAt (const self : state; const user_ : address; const level_ : nat) : (list(operation)) is
+function getUserLevelExpiresAt (const self : state; const receiver : contract(unit); const user_ : address; const level_ : nat) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getUserUpline (const self : state; const user_ : address; const height : nat) : (list(operation)) is
+function getUserUpline (const self : state; const receiver : contract(unit); const user_ : address; const height : nat) : (list(operation)) is
   block {
     if ((height <= 0n) or (user_ = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) then block {
       skip
@@ -164,7 +168,7 @@ function createNewUser (const self : state; const referrerID_ : nat) : (smartex_
   	referrerID = referrerID_;
   	referrals = map end (* args: 0 *) ]);
 
-function findReferrer (const self : state; const user_ : address) : (list(operation)) is
+function findReferrer (const self : state; const receiver : contract(unit); const user_ : address) : (list(operation)) is
   block {
     if (size((case self.users[user_] of | None -> smartex_User_default | Some(x) -> x end).referrals) < self.REFERRALS_LIMIT) then block {
       skip
@@ -250,7 +254,7 @@ function fallback (const self : state) : (list(operation) * state) is
     registerUser(self, (case self.users[referrer] of | None -> smartex_User_default | Some(x) -> x end).id);
   } with ((nil: list(operation)), self);
 
-function getUserReferrals (const self : state; const user_ : address) : (list(operation)) is
+function getUserReferrals (const self : state; const receiver : contract(unit); const user_ : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -258,11 +262,11 @@ function getUserReferrals (const self : state; const user_ : address) : (list(op
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
   | Fallback(match_action) -> fallback(self)
-  | GetUserLevelExpiresAt(match_action) -> (getUserLevelExpiresAt(self, match_action.user_, match_action.level_), self)
-  | GetUserUpline(match_action) -> (getUserUpline(self, match_action.user_, match_action.height), self)
+  | GetUserLevelExpiresAt(match_action) -> (getUserLevelExpiresAt(self, match_action.receiver, match_action.user_, match_action.level_), self)
+  | GetUserUpline(match_action) -> (getUserUpline(self, match_action.receiver, match_action.user_, match_action.height), self)
   | BuyLevel(match_action) -> buyLevel(self, match_action.level_)
-  | FindReferrer(match_action) -> (findReferrer(self, match_action.user_), self)
+  | FindReferrer(match_action) -> (findReferrer(self, match_action.receiver, match_action.user_), self)
   | RegisterUser(match_action) -> registerUser(self, match_action.referrerID_)
   | Fallback(match_action) -> fallback(self)
-  | GetUserReferrals(match_action) -> (getUserReferrals(self, match_action.user_), self)
+  | GetUserReferrals(match_action) -> (getUserReferrals(self, match_action.receiver, match_action.user_), self)
   end);

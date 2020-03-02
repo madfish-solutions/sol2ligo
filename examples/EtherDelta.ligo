@@ -48,6 +48,7 @@ type withdrawToken_args is record
 end;
 
 type balanceOf_args is record
+  receiver : contract(unit);
   token : address;
   user : address;
 end;
@@ -76,6 +77,7 @@ type trade_args is record
 end;
 
 type availableVolume_args is record
+  receiver : contract(unit);
   tokenGet : address;
   amountGet : nat;
   tokenGive : address;
@@ -89,6 +91,7 @@ type availableVolume_args is record
 end;
 
 type testTrade_args is record
+  receiver : contract(unit);
   tokenGet : address;
   amountGet : nat;
   tokenGive : address;
@@ -104,6 +107,7 @@ type testTrade_args is record
 end;
 
 type amountFilled_args is record
+  receiver : contract(unit);
   tokenGet : address;
   amountGet : nat;
   tokenGive : address;
@@ -158,7 +162,7 @@ type state_StandardToken is record
   totalSupply : nat;
 end;
 
-function allowance (const self : state_Token; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state_Token; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
   } with ((nil: list(operation)));
@@ -178,12 +182,12 @@ function transfer (const self : state_Token; const to_ : address; const value_ :
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function balanceOf (const self : state_Token; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state_Token; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
   } with ((nil: list(operation)));
 
-function totalSupply (const self : state_Token) : (list(operation)) is
+function totalSupply (const self : state_Token; const receiver : contract(unit)) : (list(operation)) is
   block {
     const supply : nat = 0n;
   } with ((nil: list(operation)));
@@ -213,7 +217,7 @@ function transferFrom (const self : state_StandardToken; const from_ : address; 
     } with ((nil: list(operation)), self);;
   } with ((nil: list(operation)), self, success);
 
-function balanceOf (const self : state_StandardToken; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state_StandardToken; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
   } with ((nil: list(operation)));
@@ -225,11 +229,11 @@ function approve (const self : state_StandardToken; const spender_ : address; co
     (* EmitStatement Approval(sender, _spender, _value) *)
   } with ((nil: list(operation)), self);
 
-function allowance (const self : state_StandardToken; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state_StandardToken; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
   } with ((nil: list(operation)));
-function allowance (const self : state_Token; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state_Token; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
   } with ((nil: list(operation)));
@@ -249,17 +253,17 @@ function transfer (const self : state_Token; const to_ : address; const value_ :
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function balanceOf (const self : state_Token; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state_Token; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
   } with ((nil: list(operation)));
 
-function totalSupply (const self : state_Token) : (list(operation)) is
+function totalSupply (const self : state_Token; const receiver : contract(unit)) : (list(operation)) is
   block {
     const supply : nat = 0n;
   } with ((nil: list(operation)));
 
-function allowance (const self : state_StandardToken; const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state_StandardToken; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
   } with ((nil: list(operation)));
@@ -271,7 +275,7 @@ function approve (const self : state_StandardToken; const spender_ : address; co
     (* EmitStatement Approval(sender, _spender, _value) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state_StandardToken; const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state_StandardToken; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
   } with ((nil: list(operation)));
@@ -358,7 +362,7 @@ function destroy (const self : state_ReserveToken; const account : address; cons
     self.balances[account] := safeSub(self, (case self.balances[account] of | None -> 0n | Some(x) -> x end), res__amount);
     self.totalSupply := safeSub(self, self.totalSupply, res__amount);
   } with ((nil: list(operation)), self);
-function accountLevel (const self : state_AccountLevels; const user : address) : (list(operation)) is
+function accountLevel (const self : state_AccountLevels; const receiver : contract(unit); const user : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -368,7 +372,7 @@ function setAccountLevel (const self : state_AccountLevelsTest; const user : add
     self.accountLevels[user] := level;
   } with ((nil: list(operation)), self);
 
-function accountLevel (const self : state_AccountLevelsTest; const user : address) : (list(operation)) is
+function accountLevel (const self : state_AccountLevelsTest; const receiver : contract(unit); const user : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -573,7 +577,7 @@ function withdrawToken (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, sender, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const token : address; const user : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(unit); const token : address; const user : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -625,7 +629,7 @@ function trade (const self : state; const tokenGet : address; const amountGet : 
     (* EmitStatement Trade(tokenGet, amount, tokenGive, , user, sender) *)
   } with ((nil: list(operation)), self);
 
-function availableVolume (const self : state; const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes) : (list(operation)) is
+function availableVolume (const self : state; const receiver : contract(unit); const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes) : (list(operation)) is
   block {
     const hash : bytes = sha_256();
     if not ((((case (case self.orders[user] of | None -> (map end : map(bytes, bool)) | Some(x) -> x end)[hash] of | None -> False | Some(x) -> x end) or (ecrecover(sha_256("\u0019Ethereum Signed Message:\n32"), v, r, s) = user)) and (0n <= expires))) then block {
@@ -642,7 +646,7 @@ function availableVolume (const self : state; const tokenGet : address; const am
     };
   } with ((nil: list(operation)));
 
-function testTrade (const self : state; const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes; const res__amount : nat; const res__sender : address) : (list(operation)) is
+function testTrade (const self : state; const receiver : contract(unit); const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes; const res__amount : nat; const res__sender : address) : (list(operation)) is
   block {
     if not ((((case (case self.tokens[tokenGet] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[res__sender] of | None -> 0n | Some(x) -> x end) >= res__amount) and (availableVolume(self, tokenGet, amountGet, tokenGive, amountGive, expires, nonce, user, v, r, s) >= res__amount))) then block {
       skip
@@ -651,7 +655,7 @@ function testTrade (const self : state; const tokenGet : address; const amountGe
     };
   } with ((nil: list(operation)));
 
-function amountFilled (const self : state; const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes) : (list(operation)) is
+function amountFilled (const self : state; const receiver : contract(unit); const tokenGet : address; const amountGet : nat; const tokenGive : address; const amountGive : nat; const expires : nat; const nonce : nat; const user : address; const v : nat; const r : bytes; const s : bytes) : (list(operation)) is
   block {
     const hash : bytes = sha_256();
   } with ((nil: list(operation)));
@@ -682,11 +686,11 @@ function main (const action : router_enum; const self : state) : (list(operation
   | Withdraw(match_action) -> 
   | DepositToken(match_action) -> depositToken(self, match_action.token, match_action.res__amount)
   | WithdrawToken(match_action) -> 
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.token, match_action.user), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.token, match_action.user), self)
   | Order(match_action) -> order(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce)
   | Trade(match_action) -> trade(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s, match_action.res__amount)
-  | AvailableVolume(match_action) -> (availableVolume(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s), self)
-  | TestTrade(match_action) -> (testTrade(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s, match_action.res__amount, match_action.res__sender), self)
-  | AmountFilled(match_action) -> (amountFilled(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s), self)
+  | AvailableVolume(match_action) -> (availableVolume(self, match_action.receiver, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s), self)
+  | TestTrade(match_action) -> (testTrade(self, match_action.receiver, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s, match_action.res__amount, match_action.res__sender), self)
+  | AmountFilled(match_action) -> (amountFilled(self, match_action.receiver, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.user, match_action.v, match_action.r, match_action.s), self)
   | CancelOrder(match_action) -> cancelOrder(self, match_action.tokenGet, match_action.amountGet, match_action.tokenGive, match_action.amountGive, match_action.expires, match_action.nonce, match_action.v, match_action.r, match_action.s)
   end);

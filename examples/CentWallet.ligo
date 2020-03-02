@@ -85,23 +85,30 @@ type getNameDigest_args is record
 end;
 
 type getDebitNonce_args is record
+  receiver : contract(unit);
   walletID : bytes;
 end;
 
 type getWithdrawNonce_args is record
+  receiver : contract(unit);
   walletID : bytes;
 end;
 
 type getLinkStatus_args is record
+  receiver : contract(unit);
   walletID : bytes;
   member : address;
 end;
 
 type getBalance_args is record
+  receiver : contract(unit);
   walletID : bytes;
 end;
 
-type getEscrowBalance_args is unit;
+type getEscrowBalance_args is record
+  receiver : contract(unit);
+end;
+
 type addAdmin_args is record
   newAdmin : address;
 end;
@@ -292,27 +299,27 @@ function getNameDigest (const name : string) : (list(operation) * bytes) is
     skip
   } with ((nil: list(operation)), sha_256((name)));
 
-function getDebitNonce (const self : state; const walletID : bytes) : (list(operation)) is
+function getDebitNonce (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getWithdrawNonce (const self : state; const walletID : bytes) : (list(operation)) is
+function getWithdrawNonce (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getLinkStatus (const self : state; const walletID : bytes; const member : address) : (list(operation)) is
+function getLinkStatus (const self : state; const receiver : contract(unit); const walletID : bytes; const member : address) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getBalance (const self : state; const walletID : bytes) : (list(operation)) is
+function getBalance (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
 
-function getEscrowBalance (const self : state) : (list(operation)) is
+function getEscrowBalance (const self : state; const receiver : contract(unit)) : (list(operation)) is
   block {
     skip
   } with ((nil: list(operation)));
@@ -375,11 +382,11 @@ function main (const action : router_enum; const self : state) : (list(operation
   | Withdraw(match_action) -> 
   | Settle(match_action) -> settle(self, match_action.walletIDs, match_action.requestIDs, match_action.values)
   | GetNameDigest(match_action) -> (getNameDigest(match_action.name), self)
-  | GetDebitNonce(match_action) -> (getDebitNonce(self, match_action.walletID), self)
-  | GetWithdrawNonce(match_action) -> (getWithdrawNonce(self, match_action.walletID), self)
-  | GetLinkStatus(match_action) -> (getLinkStatus(self, match_action.walletID, match_action.member), self)
-  | GetBalance(match_action) -> (getBalance(self, match_action.walletID), self)
-  | GetEscrowBalance(match_action) -> (getEscrowBalance(self), self)
+  | GetDebitNonce(match_action) -> (getDebitNonce(self, match_action.receiver, match_action.walletID), self)
+  | GetWithdrawNonce(match_action) -> (getWithdrawNonce(self, match_action.receiver, match_action.walletID), self)
+  | GetLinkStatus(match_action) -> (getLinkStatus(self, match_action.receiver, match_action.walletID, match_action.member), self)
+  | GetBalance(match_action) -> (getBalance(self, match_action.receiver, match_action.walletID), self)
+  | GetEscrowBalance(match_action) -> (getEscrowBalance(self, match_action.receiver), self)
   | AddAdmin(match_action) -> addAdmin(self, match_action.newAdmin)
   | RemoveAdmin(match_action) -> removeAdmin(self, match_action.oldAdmin)
   | ChangeRootAdmin(match_action) -> changeRootAdmin(self, match_action.newRootAdmin)
