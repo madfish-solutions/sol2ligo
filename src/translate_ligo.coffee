@@ -695,6 +695,9 @@ walk = (root, ctx)->
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
+          when "@respond"
+            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+            return "var #{config.op_list} : list(operation) := list transaction(#{t}, 0mutez, #{join_list arg_list, "*"}) end"
           else
             name = root.fn.name
             if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]

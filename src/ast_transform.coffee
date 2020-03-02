@@ -459,8 +459,13 @@ do ()=>
           last = root.scope.list.last()
           if last and last.constructor.name == "Ret_multi"
             last = root.scope.list.pop()
+            root.scope.list.push inject = new ast.Fn_call
+            inject.fn = new ast.Var
+            inject.fn.name = "@respond"
+            inject.arg_list = last.t_list
             last.t_list = [last.t_list[0]] # op_list only
             root.scope.list.push last
+            ctx.has_op_list_decl = true #  doesn't work
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type state_name
