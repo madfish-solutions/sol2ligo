@@ -11,7 +11,7 @@ window.example_list = [
     contract Arith {
       int public value;
       
-      function arith() public returns (int yourMom) {
+      function arith() public returns (int ret_val) {
         int a = 0;
         int b = 0;
         int c = 0;
@@ -33,7 +33,7 @@ window.example_list = [
     contract Arith {
       uint public value;
       
-      function arith() public returns (uint yourMom) {
+      function arith() public returns (uint ret_val) {
         uint a = 0;
         uint b = 0;
         uint c = 0;
@@ -83,7 +83,7 @@ window.example_list = [
     contract Forer {
       uint public value;
       
-      function forer() public returns (uint yourMom) {
+      function forer() public returns (uint ret_val) {
         uint y = 0;
         for (uint i=0; i<5; i+=1) {
             y += 1;
@@ -101,7 +101,7 @@ window.example_list = [
     contract Whiler {
       uint public value;
       
-      function whiler() public returns (uint yourMom) {
+      function whiler() public returns (uint ret_val) {
         uint y = 0;
         while (y != 2) {
             y += 1;
@@ -123,11 +123,11 @@ window.example_list = [
     contract Fn_call {
       int public value;
       
-      function fn1(int a) public returns (int yourMom) {
+      function fn1(int a) public returns (int ret_val) {
         value += 1;
         return a;
       }
-      function fn2() public returns (int yourMom) {
+      function fn2() public returns (int ret_val) {
         fn1(1);
         int res = 1;
         return res;
