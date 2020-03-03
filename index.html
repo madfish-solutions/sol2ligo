@@ -8,14 +8,20 @@
   </head>
   <body>
     <div class="nav">
-      <div class="logo">Sol2Ligo</div>
-      <select id="single" style='display: none'>
-      </select>
-      <div class="example_selector">
-        <span id="load_msg">
-          Need some time to load. Loading...
-        </span>
+      <div style='display:flex; align-items: center; flex: 1;'>
+
+        <div class="logo">Sol2Ligo</div>
+        <select id="single" style='display: none'>
+        </select>
+        <div class="example_selector">
+          <span id="load_msg">
+            Need some time to load. Loading...
+          </span>
+        </div>
       </div>
+      <span>
+        <a style="background: transparent;" href="https://github.com/madfish-solutions/sol2ligo/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/madfish-solutions/sol2ligo?label=Github%20Stars&logo=github&style=flat-square"></a>
+      </span>
     </div>
     <div class="code">
       <div class="code-wrapper">
@@ -48,6 +54,24 @@
       <!-- </div> -->
       <!-- <div class="minibutton" id="compile_btn">Compiling...</div> -->
     </div>
+    <footer>
+      <div class='social-icons'>
+        <a href='https://medium.com/@madfishsolutions' target="_blanc">
+          <svg fill='#fff' width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm-2.426 14.741h-3.574v-.202l1.261-1.529c.134-.139.195-.335.162-.526v-5.304c.015-.147-.041-.293-.151-.392l-1.121-1.35v-.201h3.479l2.689 5.897 2.364-5.897h3.317v.201l-.958.919c-.083.063-.124.166-.106.269v6.748c-.018.103.023.206.106.269l.936.919v.201h-4.706v-.201l.969-.941c.095-.095.095-.123.095-.269v-5.455l-2.695 6.844h-.364l-3.137-6.844v4.587c-.026.193.038.387.174.526l1.26 1.529v.202z"/></svg>
+        </a>
+        <a href='https://twitter.com/madfishofficial' target="_blanc">
+          <svg xmlns="http://www.w3.org/2000/svg" fill='#fff' width="24" height="24" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6.5 8.778c-.441.196-.916.328-1.414.388.509-.305.898-.787 1.083-1.362-.476.282-1.003.487-1.564.597-.448-.479-1.089-.778-1.796-.778-1.59 0-2.758 1.483-2.399 3.023-2.045-.103-3.86-1.083-5.074-2.572-.645 1.106-.334 2.554.762 3.287-.403-.013-.782-.124-1.114-.308-.027 1.14.791 2.207 1.975 2.445-.346.094-.726.116-1.112.042.313.978 1.224 1.689 2.3 1.709-1.037.812-2.34 1.175-3.647 1.021 1.09.699 2.383 1.106 3.773 1.106 4.572 0 7.154-3.861 6.998-7.324.482-.346.899-.78 1.229-1.274z"/></svg>
+        </a>
+        <a href='https://www.facebook.com/madfishofficial/' target="_blanc">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" fill='#fff' height="24" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 10h-2v2h2v6h3v-6h1.82l.18-2h-2v-.833c0-.478.096-.667.558-.667h1.442v-2.5h-2.404c-1.798 0-2.596.792-2.596 2.308v1.692z"/></svg>
+        </a>
+      </div>
+      <span class='madfish'>
+        <span style="color: #fff">Made with ❤️ by&nbsp;</span>
+        <a href='https://madfish.solutions' target="_blanc" style='text-decoration: underline; color: inherit'>Madfish.Solutions</a>
+      </span>
+    
+    </footer> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.25.0/slimselect.min.js"></script>
 
     <script src="web/solc/soljson.js"></script>

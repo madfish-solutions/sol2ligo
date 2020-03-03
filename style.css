@@ -11,6 +11,45 @@ body {
   flex-direction: column;
   max-height: 100vh;
 }
+
+footer {
+  background: #161616;
+  padding: 15px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  color: #fff;
+  border-top: 1px solid black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.social-icons {
+  display: flex;
+}
+
+.social-icons a {
+  display: block;
+  margin: 0;
+  line-height: 1;
+}
+.social-icons a + a {
+  margin-left: 10px;
+}
+
+.madfish {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  color: #98c630;
+}
+
+.madfish img {
+  margin-right: 10px;
+  display: block;
+}
+
 .nav {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
@@ -24,18 +63,6 @@ body {
   align-items: center;
   padding: 15px;
 }
-.nav a {
-  font-size: 14px;
-  line-height: 14px;
-  color: #fff;
-  background: #0091b9;
-  padding: 15px 20px;
-  font-weight: 300;
-  border-radius: 3px;
-  margin-right: 15px;
-  cursor: pointer;
-}
-
 .logo {
   color: #ffd800;
   font-weight: 700;
