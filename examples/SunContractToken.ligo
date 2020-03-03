@@ -3,11 +3,11 @@ type constructor_args is record
 end;
 
 type totalSupply_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
 end;
 
 type balanceOf_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   owner_ : address;
 end;
 
@@ -34,7 +34,7 @@ type transferFrom_args is record
 end;
 
 type allowance_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   owner_ : address;
   spender_ : address;
 end;
@@ -54,7 +54,7 @@ type freezeTransfersUntil_args is record
 end;
 
 type isRestrictedAddress_args is record
-  receiver : contract(unit);
+  receiver : contract((bool));
   querryAddress_ : address;
 end;
 
@@ -97,15 +97,16 @@ type router_enum is
 
 (* EventDefinition TokenFrozen(frozenUntilBlock_ : nat; reason_ : string) *)
 
-function allowance (const self : state_IERC20Token; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state_IERC20Token; const receiver : contract((uint256)); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((remaining), 0mutez, receiver) end;
+  } with (opList);
 
 function approve (const self : state_IERC20Token; const spender_ : address; const value_ : nat) : (list(operation) * state_IERC20Token * bool) is
   block {
     const success : bool = False;
-  } with ((nil: list(operation)), self, success);
+  } with (opList, self, success);
 
 function transferFrom (const self : state_IERC20Token; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state_IERC20Token * bool) is
   block {
@@ -117,15 +118,17 @@ function transfer (const self : state_IERC20Token; const to_ : address; const va
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function balanceOf (const self : state_IERC20Token; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state_IERC20Token; const receiver : contract((uint256)); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((res__balance), 0mutez, receiver) end;
+  } with (opList);
 
-function totalSupply (const self : state_IERC20Token; const receiver : contract(unit)) : (list(operation)) is
+function totalSupply (const self : state_IERC20Token; const receiver : contract((uint256))) : (list(operation)) is
   block {
     const totalSupply : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((self.totalSupply), 0mutez, receiver) end;
+  } with (opList);
 
 function transferOwnership (const self : state_owned; const newOwner : address) : (list(operation) * state_owned) is
   block {
@@ -151,17 +154,19 @@ function constructor (const self : state; const icoAddress_ : address) : (list(o
     self.icoContractAddress := icoAddress_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state; const receiver : contract(unit)) : (list(operation)) is
+function totalSupply (const self : state; const receiver : contract((uint256))) : (list(operation)) is
   block {
     const totalSupply : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((self.supply), 0mutez, receiver) end;
+  } with (opList);
 
-function balanceOf (const self : state; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract((uint256)); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.balances[owner_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
-function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state) is
+function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
     if (0n < self.tokenFrozenUntilBlock) then block {
@@ -187,9 +192,9 @@ function transfer (const self : state; const to_ : address; const value_ : nat) 
     self.balances[sender] := abs((case self.balances[sender] of | None -> 0n | Some(x) -> x end) - value_);
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (* EmitStatement Transfer(sender, _to, _value) *)
-  } with ((nil: list(operation)), self);
+  } with (opList, self, True);
 
-function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state) is
+function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
     if (0n < self.tokenFrozenUntilBlock) then block {
@@ -199,17 +204,17 @@ function approve (const self : state; const spender_ : address; const value_ : n
     };
     (case self.allowances[sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] := value_;
     (* EmitStatement Approval(sender, _spender, _value) *)
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, True);
 
-function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state) is
+function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
     const spender : UNKNOWN_TYPE_tokenRecipient = (* LIGO unsupported *)tokenRecipient(self, spender_);
     approve(self, spender_, value_);
     spender.receiveApproval(self, sender, value_, , extraData_);
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, True);
 
-function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state) is
+function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
     if (0n < self.tokenFrozenUntilBlock) then block {
@@ -241,12 +246,13 @@ function transferFrom (const self : state; const from_ : address; const to_ : ad
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] := abs((case (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] of | None -> 0n | Some(x) -> x end) - value_);
     (* EmitStatement Transfer(_from, _to, _value) *)
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, True);
 
-function allowance (const self : state; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state; const receiver : contract((uint256)); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.allowances[owner_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function mintTokens (const self : state; const to_ : address; const amount_ : nat) : (list(operation) * state) is
   block {
@@ -305,10 +311,11 @@ function freezeTransfersUntil (const self : state; const frozenUntilBlock_ : nat
     (* EmitStatement TokenFrozen(_frozenUntilBlock, _reason) *)
   } with ((nil: list(operation)), self);
 
-function isRestrictedAddress (const self : state; const receiver : contract(unit); const querryAddress_ : address) : (list(operation)) is
+function isRestrictedAddress (const self : state; const receiver : contract((bool)); const querryAddress_ : address) : (list(operation)) is
   block {
     const answer : bool = False;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.restrictedAddresses[querryAddress_] of | None -> False | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of

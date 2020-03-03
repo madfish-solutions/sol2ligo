@@ -85,28 +85,28 @@ type getNameDigest_args is record
 end;
 
 type getDebitNonce_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   walletID : bytes;
 end;
 
 type getWithdrawNonce_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   walletID : bytes;
 end;
 
 type getLinkStatus_args is record
-  receiver : contract(unit);
+  receiver : contract((bool));
   walletID : bytes;
   member : address;
 end;
 
 type getBalance_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   walletID : bytes;
 end;
 
 type getEscrowBalance_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
 end;
 
 type addAdmin_args is record
@@ -299,30 +299,30 @@ function getNameDigest (const name : string) : (list(operation) * bytes) is
     skip
   } with ((nil: list(operation)), sha_256((name)));
 
-function getDebitNonce (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
+function getDebitNonce (const self : state; const receiver : contract((uint256)); const walletID : bytes) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((((case self.wallets[walletID] of | None -> centWallet_Wallet_default | Some(x) -> x end).debitNonce + 1n)), 0mutez, receiver) end;
+  } with (opList);
 
-function getWithdrawNonce (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
+function getWithdrawNonce (const self : state; const receiver : contract((uint256)); const walletID : bytes) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((((case self.wallets[walletID] of | None -> centWallet_Wallet_default | Some(x) -> x end).withdrawNonce + 1n)), 0mutez, receiver) end;
+  } with (opList);
 
-function getLinkStatus (const self : state; const receiver : contract(unit); const walletID : bytes; const member : address) : (list(operation)) is
+function getLinkStatus (const self : state; const receiver : contract((bool)); const walletID : bytes; const member : address) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.wallets[walletID] of | None -> centWallet_Wallet_default | Some(x) -> x end).linked[member] of | None -> False | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
-function getBalance (const self : state; const receiver : contract(unit); const walletID : bytes) : (list(operation)) is
+function getBalance (const self : state; const receiver : contract((uint256)); const walletID : bytes) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.wallets[walletID] of | None -> centWallet_Wallet_default | Some(x) -> x end).res__balance), 0mutez, receiver) end;
+  } with (opList);
 
-function getEscrowBalance (const self : state; const receiver : contract(unit)) : (list(operation)) is
+function getEscrowBalance (const self : state; const receiver : contract((uint256))) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((self.escrowBalance), 0mutez, receiver) end;
+  } with (opList);
 
 function addAdmin (const self : state; const newAdmin : address) : (list(operation) * state) is
   block {

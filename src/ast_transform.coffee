@@ -3,7 +3,7 @@ Type  = require "type"
 config= require "./config"
 ast   = require "./ast"
 {translate_var_name} = require "./translate_var_name"
-
+{translate_type} = require "./translate_ligo"
 # ###################################################################################################
 
 do ()=>
@@ -443,18 +443,18 @@ do ()=>
         ctx.state_mutability = root.state_mutability
         ctx.should_ret_op_list = root.should_ret_op_list
         ctx.should_modify_storage = root.should_modify_storage
+        ctx.should_ret_args = root.should_ret_args
         root.scope = walk root.scope, ctx
         ctx.has_op_list_decl = check_external_ops root.scope
         
         state_name = config.storage
         state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
-        if !root.should_ret_args and ctx.should_ret_op_list and ctx.state_mutability in ['pure', 'view']
-          root.arg_name_list.unshift config.reseiver_name
+        if !root.should_ret_args and !root.should_modify_storage
+          root.arg_name_list.unshift config.receiver_name
           ret_types = []
           for t in root.type_o.nest_list
-            ret_types.push t
+            ret_types.push translate_type t, ctx
           root.type_i.nest_list.unshift new Type "contract((#{join_list ret_types, '*'}))"
-        if !root.should_ret_args and !root.should_modify_storage
           root.type_o.nest_list = []
           last = root.scope.list.last()
           if last and last.constructor.name == "Ret_multi"
@@ -462,10 +462,32 @@ do ()=>
             root.scope.list.push inject = new ast.Fn_call
             inject.fn = new ast.Var
             inject.fn.name = "@respond"
-            inject.arg_list = last.t_list
-            last.t_list = [last.t_list[0]] # op_list only
+            inject.arg_list = last.t_list[1..]
+            ctx.has_op_list_decl = true
+            last = new ast.Ret_multi
+            last = walk last, ctx
             root.scope.list.push last
-            ctx.has_op_list_decl = true #  doesn't work
+          else if last and last.constructor.name == "If" # hack
+            last = root.scope.list.pop()
+            l = last.t.list.last()
+            if l and l.constructor.name == "Ret_multi"
+              l = last.t.list.pop()
+              last.t.list.push inject = new ast.Fn_call
+              inject.fn = new ast.Var
+              inject.fn.name = "@respond"
+              inject.arg_list = l.t_list[1..]
+            f = last.f.list.last()
+            if f and f.constructor.name == "Ret_multi"
+              f = last.f.list.pop()
+              last.f.list.push inject = new ast.Fn_call
+              inject.fn = new ast.Var
+              inject.fn.name = "@respond"
+              inject.arg_list = f.t_list[1..]
+            ctx.has_op_list_decl = true
+            root.scope.list.push last
+            right_last = new ast.Ret_multi
+            right_last = walk right_last, ctx
+            last.f.list.push right_last
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type state_name
@@ -477,16 +499,17 @@ do ()=>
           root.type_o.nest_list.unshift new Type "Unit"
 
         last = root.scope.list.last()
+        if !last or last.constructor.name != "Ret_multi"
+          last = new ast.Ret_multi
+          last = walk last, ctx
+          root.scope.list.push last
+        last = root.scope.list.last()
         if last and last.constructor.name == "Ret_multi" and last.t_list.length != root.type_o.nest_list.length
           last = root.scope.list.pop()
           while last.t_list.length > root.type_o.nest_list.length
             last.t_list.pop()
           while root.type_o.nest_list.length > last.t_list.length
             root.type_o.nest_list.pop()
-        last = root.scope.list.last()
-        if !last or last.constructor.name != "Ret_multi"
-          last = new ast.Ret_multi
-          last = walk last, ctx
           root.scope.list.push last
         root
       

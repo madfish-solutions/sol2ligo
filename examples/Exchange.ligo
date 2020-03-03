@@ -64,7 +64,7 @@ type adminWithdraw_args is record
 end;
 
 type balanceOf_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   token : address;
   user : address;
 end;
@@ -162,22 +162,22 @@ function assert (const self : state; const assertion : bool) : (list(operation) 
     };
   } with ((nil: list(operation)), self);
 
-function safeMul (const self : state; const a : nat; const b : nat) : (list(operation) * state) is
+function safeMul (const self : state; const a : nat; const b : nat) : (list(operation) * state * nat) is
   block {
     const c : nat = (a * b);
     assert(((a = 0n) or ((c / a) = b)));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, c);
 
-function safeSub (const self : state; const a : nat; const b : nat) : (list(operation) * state) is
+function safeSub (const self : state; const a : nat; const b : nat) : (list(operation) * state * nat) is
   block {
     assert((b <= a));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, abs(a - b));
 
-function safeAdd (const self : state; const a : nat; const b : nat) : (list(operation) * state) is
+function safeAdd (const self : state; const a : nat; const b : nat) : (list(operation) * state * nat) is
   block {
     const c : nat = (a + b);
     assert(((c >= a) and (c >= b)));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, c);
 
 function setOwner (const self : state; const newOwner : address) : (list(operation) * state) is
   block {
@@ -186,10 +186,10 @@ function setOwner (const self : state; const newOwner : address) : (list(operati
     self.owner := newOwner;
   } with ((nil: list(operation)), self);
 
-function getOwner (const self : state) : (list(operation) * state) is
+function getOwner (const self : state) : (list(operation) * state * address) is
   block {
     const out : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, self.owner);
 
 function constructor (const self : state; const feeAccount_ : address) : (list(operation) * state) is
   block {
@@ -339,10 +339,10 @@ function adminWithdraw (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, user, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const receiver : contract(unit); const token : address; const user : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract((uint256)); const token : address; const user : address) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.tokens[token] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[user] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function trade (const self : state; const tradeValues : map(nat, nat); const tradeAddresses : map(nat, address); const v : map(nat, nat); const rs : map(nat, bytes)) : (list(operation) * state * bool) is
   block {

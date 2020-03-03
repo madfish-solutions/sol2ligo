@@ -3,11 +3,11 @@ type constructor_args is record
 end;
 
 type totalSupply_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
 end;
 
 type balanceOf_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   owner_ : address;
 end;
 
@@ -34,7 +34,7 @@ type approve_args is record
 end;
 
 type allowance_args is record
-  receiver : contract(unit);
+  receiver : contract((uint256));
   owner_ : address;
   spender_ : address;
 end;
@@ -220,22 +220,24 @@ end;
 function init_register_contract (const self : state_ContractResolver; const key_ : bytes; const contract_address_ : address) : (list(operation) * state_ContractResolver * bool) is
   block {
     const success_ : bool = False;
-  } with ((nil: list(operation)), self, success_);
+  } with (opList, self, success_);
 
 function unregister_contract (const self : state_ContractResolver; const key_ : bytes) : (list(operation) * state_ContractResolver * bool) is
   block {
     const success_ : bool = False;
   } with ((nil: list(operation)), self, success_);
 
-function res__get_contract (const self : state_ContractResolver; const receiver : contract(unit); const key_ : bytes) : (list(operation)) is
+function res__get_contract (const self : state_ContractResolver; const receiver : contract((address)); const key_ : bytes) : (list(operation)) is
   block {
     const contract_ : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-  } with ((nil: list(operation)));
-function res__get_contract (const self : state_ResolverClient; const receiver : contract(unit); const key_ : bytes) : (list(operation)) is
+    var opList : list(operation) := list transaction((contract_), 0mutez, receiver) end;
+  } with (opList);
+function res__get_contract (const self : state_ResolverClient; const receiver : contract((address)); const key_ : bytes) : (list(operation)) is
   block {
     const contract_ : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     contract_ := (* LIGO unsupported *)contractResolver(self, self.resolver).res__get_contract(self, key_);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((contract_), 0mutez, receiver) end;
+  } with (opList);
 
 function destroy (const self : state_ResolverClient) : (list(operation) * state_ResolverClient * bool) is
   block {
@@ -247,7 +249,7 @@ function destroy (const self : state_ResolverClient) : (list(operation) * state_
     success_ := (* LIGO unsupported *)contractResolver(self, self.resolver).unregister_contract(self, self.key);
     assert(success_);
     selfdestruct(owner_of_contract_resolver_);
-  } with ((nil: list(operation)), self, success_);
+  } with (opList, self, success_);
 
 function init (const self : state_ResolverClient; const key_ : bytes; const resolver_ : address) : (state_ResolverClient * bool) is
   block {
@@ -311,24 +313,27 @@ function log_approve (const self : state_TokenLoggerCallback; const owner_ : add
     const contract_ : bytes = self.CONTRACT_CONTROLLER_TOKEN_APPROVAL;
     assert((sender = (* LIGO unsupported *)contractResolver(self, self.resolver).res__get_contract(self, contract_)));
   } with ((nil: list(operation)), self);
-function get_total_supply (const self : state_TokenInfoController; const receiver : contract(unit)) : (list(operation)) is
+function get_total_supply (const self : state_TokenInfoController; const receiver : contract((uint256))) : (list(operation)) is
   block {
     const total_supply_ : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((total_supply_), 0mutez, receiver) end;
+  } with (opList);
 
-function get_allowance (const self : state_TokenInfoController; const receiver : contract(unit); const account_ : address; const spender_ : address) : (list(operation)) is
+function get_allowance (const self : state_TokenInfoController; const receiver : contract((uint256)); const account_ : address; const spender_ : address) : (list(operation)) is
   block {
     const allowance_ : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((allowance_), 0mutez, receiver) end;
+  } with (opList);
 
-function get_balance (const self : state_TokenInfoController; const receiver : contract(unit); const user_ : address) : (list(operation)) is
+function get_balance (const self : state_TokenInfoController; const receiver : contract((uint256)); const user_ : address) : (list(operation)) is
   block {
     const actual_balance_ : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((actual_balance_), 0mutez, receiver) end;
+  } with (opList);
 function put_transfer (const self : state_TokenTransferController; const sender_ : address; const recipient_ : address; const spender_ : address; const amount_ : nat; const transfer_from_ : bool) : (list(operation) * state_TokenTransferController * bool) is
   block {
     const success_ : bool = False;
-  } with ((nil: list(operation)), self, success_);
+  } with (opList, self, success_);
 function approve (const self : state_TokenApprovalController; const account_ : address; const spender_ : address; const amount_ : nat) : (list(operation) * state_TokenApprovalController * bool) is
   block {
     const success_ : bool = False;
@@ -347,11 +352,12 @@ type router_enum is
   | Approve of approve_args
   | Allowance of allowance_args;
 
-function res__get_contract (const self : state_ResolverClient; const receiver : contract(unit); const key_ : bytes) : (list(operation)) is
+function res__get_contract (const self : state_ResolverClient; const receiver : contract((address)); const key_ : bytes) : (list(operation)) is
   block {
     const contract_ : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     contract_ := (* LIGO unsupported *)contractResolver(self, self.resolver).res__get_contract(self, key_);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((contract_), 0mutez, receiver) end;
+  } with (opList);
 
 function destroy (const self : state_ResolverClient) : (list(operation) * state_ResolverClient * bool) is
   block {
@@ -363,7 +369,7 @@ function destroy (const self : state_ResolverClient) : (list(operation) * state_
     success_ := (* LIGO unsupported *)contractResolver(self, self.resolver).unregister_contract(self, self.key);
     assert(success_);
     selfdestruct(owner_of_contract_resolver_);
-  } with ((nil: list(operation)), self, success_);
+  } with (opList, self, success_);
 
 function init (const self : state_ResolverClient; const key_ : bytes; const resolver_ : address) : (state_ResolverClient * bool) is
   block {
@@ -433,23 +439,25 @@ function constructor (const self : state; const resolver_ : address) : (list(ope
     assert(init(self, self.CONTRACT_INTERACTIVE_TOKEN, resolver_));
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state; const receiver : contract(unit)) : (list(operation)) is
+function totalSupply (const self : state; const receiver : contract((uint256))) : (list(operation)) is
   block {
     const total_supply_ : nat = 0n;
     total_supply_ := (* LIGO unsupported *)tokenInfoController(self, res__get_contract(self, self.CONTRACT_CONTROLLER_TOKEN_INFO)).get_total_supply(self);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((total_supply_), 0mutez, receiver) end;
+  } with (opList);
 
-function balanceOf (const self : state; const receiver : contract(unit); const owner_ : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract((uint256)); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
     res__balance := (* LIGO unsupported *)tokenInfoController(self, res__get_contract(self, self.CONTRACT_CONTROLLER_TOKEN_INFO)).get_balance(self, owner_);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((res__balance), 0mutez, receiver) end;
+  } with (opList);
 
 function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
     const success : bool = False;
     success := (* LIGO unsupported *)tokenTransferController(self, res__get_contract(self, self.CONTRACT_CONTROLLER_TOKEN_TRANSFER)).put_transfer(self, sender, to_, 0x0n, value_, False);
-  } with ((nil: list(operation)), self, success);
+  } with (opList, self, success);
 
 function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
@@ -471,11 +479,12 @@ function approve (const self : state; const spender_ : address; const value_ : n
     success := (* LIGO unsupported *)tokenApprovalController(self, res__get_contract(self, self.CONTRACT_CONTROLLER_TOKEN_APPROVAL)).approve(self, sender, spender_, value_);
   } with ((nil: list(operation)), self, success);
 
-function allowance (const self : state; const receiver : contract(unit); const owner_ : address; const spender_ : address) : (list(operation)) is
+function allowance (const self : state; const receiver : contract((uint256)); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
     remaining := (* LIGO unsupported *)tokenInfoController(self, res__get_contract(self, self.CONTRACT_CONTROLLER_TOKEN_INFO)).get_allowance(self, owner_, spender_);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((remaining), 0mutez, receiver) end;
+  } with (opList);
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of

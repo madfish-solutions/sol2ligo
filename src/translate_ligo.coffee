@@ -193,7 +193,7 @@ number2bytes = (val, precision = 32)->
     else
       if type.main.match /^contract/
         type.main
-      else if ctx.type_decl_hash.hasOwnProperty type.main
+      else if ctx.type_decl_hash?.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
         is_struct = ((ctx.current_class and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
         is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
@@ -697,7 +697,8 @@ walk = (root, ctx)->
           
           when "@respond"
             perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-            return "var #{config.op_list} : list(operation) := list transaction(#{t}, 0mutez, #{join_list arg_list, "*"}) end"
+            # p root
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
           else
             name = root.fn.name
             if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]

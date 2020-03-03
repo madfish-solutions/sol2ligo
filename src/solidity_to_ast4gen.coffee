@@ -577,7 +577,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Return"
       ret = new ast.Ret_multi
-      if root.expression and ctx.current_function.should_ret_args
+      if root.expression # and ctx.current_function.should_ret_args
         ret.t_list.push walk root.expression, ctx
       ret
     
