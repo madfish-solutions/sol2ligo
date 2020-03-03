@@ -732,9 +732,10 @@ walk = (root, ctx)->
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
+
       if is_pure and type_jl.length == 0
-        perr root
-        throw new Error "Bad call of pure function that returns nothing"
+        perr "Bad call of pure function that returns nothing"
+        type_jl.push "unit"
       if not root.left_unpack
         "#{call_expr}"
       else
