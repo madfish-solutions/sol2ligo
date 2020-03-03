@@ -11,7 +11,7 @@
 
   translate_var_name = window.translate_var_name.translate_var_name;
 
-  translate_type = window.translate_type;
+  translate_type = window.translate_ligo.translate_type;
 
   (function(_this) {
     return (function() {

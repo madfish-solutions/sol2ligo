@@ -14,7 +14,7 @@ code = code.replace 'Type = require("type");', 'Type = window.Type'
 code = code.replace 'config = require("./config");', 'config = window.config'
 code = code.replace 'ast = require("./ast");', 'ast = window.mod_ast;'
 code = code.replace 'translate_var_name = require("./translate_var_name").translate_var_name;', 'translate_var_name = window.translate_var_name.translate_var_name;'
-code = code.replace 'translate_type = require("./translate_ligo").translate_type;', 'translate_type = window.translate_type;'
+code = code.replace 'translate_type = require("./translate_ligo").translate_type;', 'translate_type = window.translate_ligo.translate_type;'
 code = code.replace '}).call(this);', '}).call(window.ast_transform = {});'
 fs.writeFileSync "web/lib/ast_transform.js", code
 
