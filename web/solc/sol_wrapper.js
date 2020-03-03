@@ -46,7 +46,6 @@ window.ast_gen = function(code) {
   }
   
   var output = JSON.parse(solidity_compile_wrap(JSON.stringify(input)));
-  console.log("output", output)
 
   var error, is_ok, res, _i, _len, _ref;
 
@@ -56,7 +55,7 @@ window.ast_gen = function(code) {
   for (_i = 0, _len = _ref.length; _i < _len; _i++) {
     error = _ref[_i];
     if (error.type === "Warning") {
-      console.log("WARNING", error);
+      perr("WARNING", error);
       continue;
     }
     is_ok = false;
