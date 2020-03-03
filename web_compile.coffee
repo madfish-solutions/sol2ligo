@@ -4,6 +4,9 @@ require "fy"
 fs = require "fs"
 iced_compiler = require "iced-coffee-script"
 
+# ###################################################################################################
+#    source code
+# ###################################################################################################
 code = iced_compiler.compile fs.readFileSync "src/ast.coffee", "utf-8"
 code = code.replace 'ast = require("ast4gen");', 'ast = window.ast4gen;'
 code = code.replace '}).call(this);', '}).call(window.mod_ast = {});'
@@ -62,6 +65,26 @@ code = iced_compiler.compile fs.readFileSync "src/type_safe.coffee", "utf-8"
 code = code.replace 'Type = require("type");', 'Type = window.Type'
 fs.writeFileSync "web/lib/type_safe.js", code
 
+# ###################################################################################################
+#    examples
+# ###################################################################################################
 code = iced_compiler.compile fs.readFileSync "web/example_list.coffee", "utf-8"
 fs.writeFileSync "web/example_list.js", code
+# ###################################################################################################
+#    solc
+# ###################################################################################################
+solc_patch_code = (code, name)->
+  """
+  (function(){
+  #{code}
+  window._solc[#{JSON.stringify name}] = Module
+  })()
+  """
 
+solc_process = (file_name, name)->
+  code = fs.readFileSync "solc-bin/bin/#{file_name}", "utf-8"
+  code = solc_patch_code code, name
+  fs.writeFileSync "web/solc/#{file_name}", code
+
+solc_process "soljson-v0.4.26+commit.4563c3fc.js", "soljson-v0.4.26"
+solc_process "soljson-v0.5.11+commit.c082d0b4.js", "soljson-v0.5.11"
