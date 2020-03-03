@@ -690,7 +690,12 @@ do ()=>
     switch root.constructor.name
       when "Comment"
         return root if root.text != "COMPILER MSG PlaceholderStatement"
-        ctx.target_ast.clone()
+        ret = ctx.target_ast.clone()
+        unless ctx.need_nest
+          last = ret.list.last()
+          if last and last.constructor.name == "Ret_multi"
+            last = ret.list.pop()
+        ret
       else
         ctx.next_gen root, ctx
   

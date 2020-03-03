@@ -608,8 +608,6 @@ get_list_sign = (list)->
           v.type = type_spread_left v.type, ctx.parent_fn.type_o.nest_list[idx], ctx
           expected = ctx.parent_fn.type_o.nest_list[idx]
           real = v.type
-          p ctx.parent_fn
-          p root.t_list
           if !expected.cmp real
             perr root
             perr "fn_type=#{ctx.parent_fn.type_o}"
