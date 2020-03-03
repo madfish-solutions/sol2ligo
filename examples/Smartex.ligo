@@ -8,11 +8,13 @@ end;
 
 type fallback_args is unit;
 type getUserLevelExpiresAt_args is record
+  receiver : contract(nat);
   user_ : address;
   level_ : nat;
 end;
 
 type getUserUpline_args is record
+  receiver : contract(address);
   user_ : address;
   height : nat;
 end;
@@ -22,6 +24,7 @@ type buyLevel_args is record
 end;
 
 type findReferrer_args is record
+  receiver : contract(address);
   user_ : address;
 end;
 
@@ -31,6 +34,7 @@ end;
 
 type fallback_args is unit;
 type getUserReferrals_args is record
+  receiver : contract(map(nat, address));
   user_ : address;
 end;
 
@@ -102,19 +106,20 @@ function addressToPayable (const _addr : address) : (address) is
     skip
   } with ((abs(addr_) : address));
 
-function getUserLevelExpiresAt (const self : state; const user_ : address; const level_ : nat) : (list(operation) * nat) is
+function getUserLevelExpiresAt (const self : state; const receiver : contract(nat); const user_ : address; const level_ : nat) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.users[user_] of | None -> smartex_User_default | Some(x) -> x end).levelExpiresAt[level_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
-function getUserUpline (const self : state; const user_ : address; const height : nat) : (list(operation) * address) is
+function getUserUpline (const self : state; const receiver : contract(address); const user_ : address; const height : nat) : (list(operation)) is
   block {
     if ((height <= 0n) or (user_ = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) then block {
-      skip
-    } with ((nil: list(operation))); else block {
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    } else block {
       skip
     };
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((getUserUpline(self, (case self.userAddresses[(case self.users[user_] of | None -> smartex_User_default | Some(x) -> x end).referrerID] of | None -> ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address) | Some(x) -> x end), (height - 1n))), 0mutez, receiver) end;
+  } with (opList);
 
 function transferLevelPayment (const self : state; const level_ : nat; const user_ : address) : (state) is
   block {
@@ -128,7 +133,8 @@ function transferLevelPayment (const self : state; const level_ : nat; const use
     if (getUserLevelExpiresAt(self, referrer, level_) < abs(now - ("1970-01-01T00:00:00Z": timestamp))) then block {
       (* EmitStatement undefined(referrer, , _level, now) *)
       transferLevelPayment(self, level_, referrer);
-    } with (self); else block {
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    } else block {
       skip
     };
     if (var opList : list(operation) := list transaction(unit, (amount / 1mutez) * 1mutez, (get_contract(addressToPayable(referrer)) : contract(unit))) end) then block {
@@ -164,11 +170,11 @@ function createNewUser (const self : state; const referrerID_ : nat) : (smartex_
   	referrerID = referrerID_;
   	referrals = map end (* args: 0 *) ]);
 
-function findReferrer (const self : state; const user_ : address) : (list(operation) * address) is
+function findReferrer (const self : state; const receiver : contract(address); const user_ : address) : (list(operation)) is
   block {
     if (size((case self.users[user_] of | None -> smartex_User_default | Some(x) -> x end).referrals) < self.REFERRALS_LIMIT) then block {
-      skip
-    } with ((nil: list(operation))); else block {
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    } else block {
       skip
     };
     const referrals : map(nat, address) = (map end : map(nat, address));
@@ -193,7 +199,8 @@ function findReferrer (const self : state; const user_ : address) : (list(operat
       i := i + 1;
     };
     assert((referrer =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Referrer was not found" *);
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((referrer), 0mutez, receiver) end;
+  } with (opList);
 
 function registerUser (const self : state; const referrerID_ : nat) : (list(operation) * state) is
   block {
@@ -238,7 +245,8 @@ function fallback (const self : state) : (list(operation) * state) is
     assert((level > 0n)) (* "Invalid amount has sent" *);
     if ((case self.users[sender] of | None -> smartex_User_default | Some(x) -> x end).id =/= 0n) then block {
       buyLevel(self, level);
-    } with ((nil: list(operation)), self); else block {
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    } else block {
       skip
     };
     if (level =/= 1n) then block {
@@ -250,19 +258,19 @@ function fallback (const self : state) : (list(operation) * state) is
     registerUser(self, (case self.users[referrer] of | None -> smartex_User_default | Some(x) -> x end).id);
   } with ((nil: list(operation)), self);
 
-function getUserReferrals (const self : state; const user_ : address) : (list(operation) * map(nat, address)) is
+function getUserReferrals (const self : state; const receiver : contract(map(nat, address)); const user_ : address) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.users[user_] of | None -> smartex_User_default | Some(x) -> x end).referrals), 0mutez, receiver) end;
+  } with (opList);
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
   | Fallback(match_action) -> fallback(self)
-  | GetUserLevelExpiresAt(match_action) -> (getUserLevelExpiresAt(self, match_action.user_, match_action.level_), self)
-  | GetUserUpline(match_action) -> (getUserUpline(self, match_action.user_, match_action.height), self)
+  | GetUserLevelExpiresAt(match_action) -> (getUserLevelExpiresAt(self, match_action.receiver, match_action.user_, match_action.level_), self)
+  | GetUserUpline(match_action) -> (getUserUpline(self, match_action.receiver, match_action.user_, match_action.height), self)
   | BuyLevel(match_action) -> buyLevel(self, match_action.level_)
-  | FindReferrer(match_action) -> (findReferrer(self, match_action.user_), self)
+  | FindReferrer(match_action) -> (findReferrer(self, match_action.receiver, match_action.user_), self)
   | RegisterUser(match_action) -> registerUser(self, match_action.referrerID_)
   | Fallback(match_action) -> fallback(self)
-  | GetUserReferrals(match_action) -> (getUserReferrals(self, match_action.user_), self)
+  | GetUserReferrals(match_action) -> (getUserReferrals(self, match_action.receiver, match_action.user_), self)
   end);

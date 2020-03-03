@@ -6,6 +6,7 @@ TODO rename
 ###
 @storage = "state" # type
 @contract_storage = "self" # var name
+@receiver_name = "receiver" # var name
 @callback_address = "callbackAddress" # var name
 @default_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" # const
 @empty_state = "reserved__empty_state" # var name
