@@ -29,10 +29,12 @@ type expire_args is record
 end;
 
 type check_args is record
+  receiver : contract((nat * nat * address * bytes));
   swapID_ : bytes;
 end;
 
 type checkSecretKey_args is record
+  receiver : contract(bytes);
   swapID_ : bytes;
 end;
 
@@ -106,16 +108,17 @@ function expire (const self : state; const swapID_ : bytes) : (list(operation) *
     (* EmitStatement Expire(_swapID) *)
   } with (opList, self);
 
-function check (const self : state; const swapID_ : bytes) : (list(operation) * (nat * nat * address * bytes)) is
+function check (const self : state; const receiver : contract((nat * nat * address * bytes)); const swapID_ : bytes) : (list(operation)) is
   block {
     const timelock : nat = 0n;
     const value : nat = 0n;
     const withdrawTrader : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     const secretLock : bytes = ("00": bytes);
     const swap : atomicSwapEther_Swap = (case self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
+    var opList : list(operation) := list transaction(((swap.timelock, swap.value, swap.withdrawTrader, swap.secretLock)), 0mutez, receiver) end;
   } with (opList);
 
-function checkSecretKey (const self : state; const swapID_ : bytes) : (list(operation) * bytes) is
+function checkSecretKey (const self : state; const receiver : contract(bytes); const swapID_ : bytes) : (list(operation)) is
   block {
     assert(((case self.swapStates[swapID_] of | None -> atomicSwapEther_States_INVALID | Some(x) -> x end) = atomicSwapEther_States_CLOSED));
     const secretKey : bytes = ("00": bytes);
@@ -127,6 +130,6 @@ function main (const action : router_enum; const self : state) : (list(operation
   | Open(match_action) -> open(self, match_action.swapID_, match_action.withdrawTrader_, match_action.secretLock_, match_action.timelock_)
   | Close(match_action) -> close(self, match_action.swapID_, match_action.secretKey_)
   | Expire(match_action) -> expire(self, match_action.swapID_)
-  | Check(match_action) -> (check(self, match_action.swapID_), self)
-  | CheckSecretKey(match_action) -> (checkSecretKey(self, match_action.swapID_), self)
+  | Check(match_action) -> (check(self, match_action.receiver, match_action.swapID_), self)
+  | CheckSecretKey(match_action) -> (checkSecretKey(self, match_action.receiver, match_action.swapID_), self)
   end);

@@ -3,5 +3,6 @@
 mkdir -p examples
 for filename in solidity_samples/popular/*.sol
 do
-  ./manual_test.coffee --full --file $filename --print > examples/$(basename $filename .sol).ligo
+  echo $(basename $filename .sol)
+  ./manual_test.coffee --full --file $filename --print --contract $(basename $filename .sol) > examples/$(basename $filename .sol).ligo
 done

@@ -47,6 +47,7 @@ module = @
     keccak256     : new Type "function2_pure<function<bytes>,function<bytes32>>"
     ripemd160     : new Type "function2_pure<function<bytes>,function<bytes20>>"
     ecrecover     : new Type "function2_pure<function<bytes, uint8, bytes32, bytes32>,function<address>>"
+    "@respond"    : new Type "function2_pure<function<>,function<>>"
   }
 
 array_field_hash =
@@ -539,7 +540,6 @@ get_list_sign = (list)->
           offset = 0
         else
           offset = 2
-        
         for arg in root.arg_list
           walk arg, ctx
         
