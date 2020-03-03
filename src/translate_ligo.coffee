@@ -185,15 +185,14 @@ number2bytes = (val, precision = 32)->
     
     when config.storage
       config.storage
-    
+    when "contract"
+      "contract(#{type.val})"
     # when "t_bytes_memory_ptr"
     #   "bytes"
     # when config.storage
     #   config.storage
     else
-      if type.main.match /^contract/
-        type.main
-      else if ctx.type_decl_hash?.hasOwnProperty type.main
+      if ctx.type_decl_hash?.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
         is_struct = ((ctx.current_class and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
         is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
@@ -510,6 +509,13 @@ walk = (root, ctx)->
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
           else
             root.val
+
+    # when "Contract"
+    #   if !root.type
+    #     puts root
+    #     throw new Error "Can't type inference"
+      
+    #   "contract((#{root.type.main}))"
     
     when "Bin_op"
       # TODO lvalue ctx ???

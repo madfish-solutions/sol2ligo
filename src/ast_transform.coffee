@@ -469,10 +469,13 @@ do ()=>
         state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
         if !root.should_ret_args and !root.should_modify_storage
           root.arg_name_list.unshift config.receiver_name
+          root.type_i.nest_list.unshift contract = new Type "contract" 
           ret_types = []
           for t in root.type_o.nest_list
             ret_types.push translate_type t, ctx
-          root.type_i.nest_list.unshift new Type "contract((#{join_list ret_types, '*'}))"
+          type = ret_types.join ' * '
+          contract.name = config.receiver_name
+          contract.val = type
           root.type_o.nest_list = []
           last = root.scope.list.last()
           if last and last.constructor.name == "Ret_multi"
