@@ -1,25 +1,25 @@
 type constructor_args is unit;
 type balanceOf_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   customerAddress_ : address;
 end;
 
 type myTokens_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type dividendsOf_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   customerAddress_ : address;
 end;
 
 type myDividends_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   includeReferralBonus_ : bool;
 end;
 
 type totalEthereumBalance_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type buy_args is record
@@ -70,29 +70,29 @@ type setSymbol_args is record
 end;
 
 type totalSupply_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type sellPrice_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type buyPrice_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type calculateTokensReceived_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   ethereumToSpend_ : nat;
 end;
 
 type calculateEthereumReceived_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   tokensToSell_ : nat;
 end;
 
 type etherToSendCharity_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
 end;
 
 type state_SafeMath is unit;
@@ -133,7 +133,7 @@ function constructor (const self : state_AcceptsEtheropoly; const tokenContract_
     self.tokenContract := (* LIGO unsupported *)etheropoly(self, tokenContract_);
   } with ((nil: list(operation)), self);
 
-function tokenFallback (const self : state_AcceptsEtheropoly; const from_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state_AcceptsEtheropoly * bool) is
+function tokenFallback (const self : state_AcceptsEtheropoly; const from_ : address; const value_ : nat; const data_ : bytes) : (list(operation) * state_AcceptsEtheropoly) is
   block {
     skip
   } with ((nil: list(operation)), self);
@@ -196,29 +196,29 @@ function constructor (const self : state) : (list(operation) * state) is
     self.ambassadors_[0xfE8D614431E5fea2329B05839f29B553b1Cb99A2] := True;
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const receiver : contract((uint256)); const customerAddress_ : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(nat); const customerAddress_ : address) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction(((case self.tokenBalanceLedger_[customerAddress_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
   } with (opList);
 
-function myTokens (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function myTokens (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
     var opList : list(operation) := list transaction((balanceOf(self, customerAddress_)), 0mutez, receiver) end;
   } with (opList);
 
-function dividendsOf (const self : state; const receiver : contract((uint256)); const customerAddress_ : address) : (list(operation)) is
+function dividendsOf (const self : state; const receiver : contract(nat); const customerAddress_ : address) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction(((abs((int(abs((self.profitPerShare_ * (case self.tokenBalanceLedger_[customerAddress_] of | None -> 0n | Some(x) -> x end)))) - (case self.payoutsTo_[customerAddress_] of | None -> 0 | Some(x) -> x end))) / self.magnitude)), 0mutez, receiver) end;
   } with (opList);
 
-function myDividends (const self : state; const receiver : contract((uint256)); const includeReferralBonus_ : bool) : (list(operation)) is
+function myDividends (const self : state; const receiver : contract(nat); const includeReferralBonus_ : bool) : (list(operation)) is
   block {
     const customerAddress_ : address = sender;
     var opList : list(operation) := list transaction(((case includeReferralBonus_ of | True -> (dividendsOf(self, customerAddress_) + (case self.referralBalance_[customerAddress_] of | None -> 0n | Some(x) -> x end)) | False -> dividendsOf(self, customerAddress_) end)), 0mutez, receiver) end;
   } with (opList);
 
-function totalEthereumBalance (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function totalEthereumBalance (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction((res__balance), 0mutez, receiver) end;
   } with (opList);
@@ -240,7 +240,7 @@ function ethereumToTokens_ (const self : state; const ethereum_ : nat) : (nat) i
     const tokensReceived_ : nat = abs((safeMath.sub(sqrt(((((self.tokenPriceInitial_ LIGO_IMPLEMENT_ME_PLEASE_POW 2n) + ((2n * (self.tokenPriceIncremental_ * 1e18n)) * (ethereum_ * 1e18n))) + ((self.tokenPriceIncremental_ LIGO_IMPLEMENT_ME_PLEASE_POW 2n) * (self.tokenSupply_ LIGO_IMPLEMENT_ME_PLEASE_POW 2n))) + (((2n * self.tokenPriceIncremental_) * self.tokenPriceInitial_) * self.tokenSupply_))), self.tokenPriceInitial_) / self.tokenPriceIncremental_) - self.tokenSupply_);
   } with (tokensReceived_);
 
-function purchaseTokens (const self : state; const incomingEthereum_ : nat; const referredBy_ : address) : (state * nat) is
+function purchaseTokens (const self : state; const incomingEthereum_ : nat; const referredBy_ : address) : (state) is
   block {
     const amountOfEthereum_ : nat = incomingEthereum_;
     const customerAddress_ : address = sender;
@@ -304,7 +304,7 @@ function purchaseTokens (const self : state; const incomingEthereum_ : nat; cons
     };
   } with (self);
 
-function purchaseInternal (const self : state; const incomingEthereum_ : nat; const referredBy_ : address) : (state * nat) is
+function purchaseInternal (const self : state; const incomingEthereum_ : nat; const referredBy_ : address) : (state) is
   block {
     assert((sender = source));
     const purchaseEthereum : nat = incomingEthereum_;
@@ -327,7 +327,7 @@ function purchaseInternal (const self : state; const incomingEthereum_ : nat; co
     };
   } with (self);
 
-function buy (const self : state; const referredBy_ : address) : (list(operation) * state * nat) is
+function buy (const self : state; const referredBy_ : address) : (list(operation) * state) is
   block {
     purchaseInternal(self, (amount / 1mutez), referredBy_);
   } with ((nil: list(operation)), self);
@@ -415,7 +415,7 @@ function exit (const self : state) : (list(operation) * state) is
     withdraw(self);
   } with ((nil: list(operation)), self);
 
-function transfer (const self : state; const toAddress_ : address; const amountOfTokens_ : nat) : (list(operation) * state * bool) is
+function transfer (const self : state; const toAddress_ : address; const amountOfTokens_ : nat) : (list(operation) * state) is
   block {
     assert((myTokens(self) > 0));
     const customerAddress_ : address = sender;
@@ -452,7 +452,7 @@ function transferAndCall (const self : state; const to_ : address; const value_ 
     } else block {
       skip
     };
-  } with ((nil: list(operation)), self, True);
+  } with (opList, self, True);
 
 function disableInitialStage (const self : state) : (list(operation) * state) is
   block {
@@ -496,38 +496,38 @@ function setSymbol (const self : state; const symbol_ : string) : (list(operatio
     self.symbol := symbol_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function totalSupply (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction((self.tokenSupply_), 0mutez, receiver) end;
   } with (opList);
 
-function sellPrice (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function sellPrice (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
-      var opList : list(operation) := list transaction((abs(self.tokenPriceInitial_ - self.tokenPriceIncremental_)), 0mutez, receiver) end;
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
     } else block {
       const ethereum_ : nat = tokensToEthereum_(self, 1e18);
       const dividends_ : nat = safeMath.div(safeMath.mul(ethereum_, self.dividendFee_), 100n);
       const charityPayout_ : nat = safeMath.div(safeMath.mul(ethereum_, self.charityFee_), 100n);
       const taxedEthereum_ : nat = safeMath.sub(safeMath.sub(ethereum_, dividends_), charityPayout_);
-      var opList : list(operation) := list transaction((taxedEthereum_), 0mutez, receiver) end;
-    } with (opList);;
-  } with (opList);
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    };
+  } with ((nil: list(operation)));
 
-function buyPrice (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function buyPrice (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     if (self.tokenSupply_ = 0n) then block {
-      var opList : list(operation) := list transaction(((self.tokenPriceInitial_ + self.tokenPriceIncremental_)), 0mutez, receiver) end;
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
     } else block {
       const ethereum_ : nat = tokensToEthereum_(self, 1e18);
       const dividends_ : nat = safeMath.div(safeMath.mul(ethereum_, self.dividendFee_), 100n);
       const charityPayout_ : nat = safeMath.div(safeMath.mul(ethereum_, self.charityFee_), 100n);
       const taxedEthereum_ : nat = safeMath.add(safeMath.add(ethereum_, dividends_), charityPayout_);
-      var opList : list(operation) := list transaction((taxedEthereum_), 0mutez, receiver) end;
-    } with (opList);;
-  } with (opList);
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    };
+  } with ((nil: list(operation)));
 
-function calculateTokensReceived (const self : state; const receiver : contract((uint256)); const ethereumToSpend_ : nat) : (list(operation)) is
+function calculateTokensReceived (const self : state; const receiver : contract(nat); const ethereumToSpend_ : nat) : (list(operation)) is
   block {
     const dividends_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.dividendFee_), 100n);
     const charityPayout_ : nat = safeMath.div(safeMath.mul(ethereumToSpend_, self.charityFee_), 100n);
@@ -536,7 +536,7 @@ function calculateTokensReceived (const self : state; const receiver : contract(
     var opList : list(operation) := list transaction((amountOfTokens_), 0mutez, receiver) end;
   } with (opList);
 
-function calculateEthereumReceived (const self : state; const receiver : contract((uint256)); const tokensToSell_ : nat) : (list(operation)) is
+function calculateEthereumReceived (const self : state; const receiver : contract(nat); const tokensToSell_ : nat) : (list(operation)) is
   block {
     assert((tokensToSell_ <= self.tokenSupply_));
     const ethereum_ : nat = tokensToEthereum_(self, tokensToSell_);
@@ -546,7 +546,7 @@ function calculateEthereumReceived (const self : state; const receiver : contrac
     var opList : list(operation) := list transaction((taxedEthereum_), 0mutez, receiver) end;
   } with (opList);
 
-function etherToSendCharity (const self : state; const receiver : contract((uint256))) : (list(operation)) is
+function etherToSendCharity (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction((safeMath.sub(self.totalEthCharityCollected, self.totalEthCharityRecieved)), 0mutez, receiver) end;
   } with (opList);
@@ -584,8 +584,8 @@ function main (const action : router_enum; const self : state) : (list(operation
 function safeMath_mul (const a : nat; const b : nat) : (nat) is
   block {
     if (a = 0n) then block {
-      skip
-    } with (0n); else block {
+      var opList : list(operation) := list transaction((), 0mutez, receiver) end;
+    } else block {
       skip
     };
     const c : nat = (a * b);

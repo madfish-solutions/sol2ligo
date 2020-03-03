@@ -64,7 +64,7 @@ type adminWithdraw_args is record
 end;
 
 type balanceOf_args is record
-  receiver : contract((uint256));
+  receiver : contract(nat);
   token : address;
   user : address;
 end;
@@ -213,7 +213,7 @@ function invalidateOrdersBefore (const self : state; const user : address; const
     self.invalidOrder[user] := nonce;
   } with ((nil: list(operation)), self);
 
-function setInactivityReleasePeriod (const self : state; const expiry : nat) : (list(operation) * state * bool) is
+function setInactivityReleasePeriod (const self : state; const expiry : nat) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");
@@ -287,9 +287,9 @@ function withdraw (const self : state; const token : address; const res__amount 
       };
     };
     (* EmitStatement Withdraw(token, sender, amount, ) *)
-  } with ((nil: list(operation)), self, success);
+  } with (opList, self, success);
 
-function adminWithdraw (const self : state; const token : address; const res__amount : nat; const user : address; const nonce : nat; const v : nat; const r : bytes; const s : bytes; const feeWithdrawal : nat) : (list(operation) * state * bool) is
+function adminWithdraw (const self : state; const token : address; const res__amount : nat; const user : address; const nonce : nat; const v : nat; const r : bytes; const s : bytes; const feeWithdrawal : nat) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");
@@ -339,12 +339,12 @@ function adminWithdraw (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, user, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const receiver : contract((uint256)); const token : address; const user : address) : (list(operation)) is
+function balanceOf (const self : state; const receiver : contract(nat); const token : address; const user : address) : (list(operation)) is
   block {
     var opList : list(operation) := list transaction(((case (case self.tokens[token] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[user] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
   } with (opList);
 
-function trade (const self : state; const tradeValues : map(nat, nat); const tradeAddresses : map(nat, address); const v : map(nat, nat); const rs : map(nat, bytes)) : (list(operation) * state * bool) is
+function trade (const self : state; const tradeValues : map(nat, nat); const tradeAddresses : map(nat, address); const v : map(nat, nat); const rs : map(nat, bytes)) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");

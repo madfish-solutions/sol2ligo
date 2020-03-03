@@ -309,7 +309,7 @@ function settleBet (const self : state; const reveal : nat; const blockHash : by
     settleBetCommon(self, bet, reveal, blockHash);
   } with ((nil: list(operation)), self);
 
-function memcpy (const dest : nat; const src : nat; const len : nat) : (Unit) is
+function memcpy (const dest : nat; const src : nat; const len : nat) : () is
   block {
     while (len >= 32n) block {
       (* InlineAssembly {
@@ -402,7 +402,7 @@ function verifyMerkleProof (const seedHash : nat; const offset : nat) : ((bytes 
     } *)
   } with ((blockHash, uncleHash));
 
-function requireCorrectReceipt (const self : state; const offset : nat) : (Unit) is
+function requireCorrectReceipt (const self : state; const offset : nat) : () is
   block {
     const leafHeaderByte : nat = 0n;
     (* InlineAssembly {
