@@ -897,11 +897,14 @@ walk = (root, ctx)->
         
         jl.push "| #{_case.struct_name}(#{_case.var_decl.name}) -> #{case_scope}"
       
-      """
-      case #{cond} of
-      #{join_list jl, ''}
-      end
-      """
+      if jl.length
+        """
+        case #{cond} of
+        #{join_list jl, ''}
+        end
+        """
+      else
+        "unit"
     
     when "Fn_decl_multiret"
       orig_ctx = ctx
@@ -1059,9 +1062,13 @@ walk = (root, ctx)->
         #{join_list jl}
         """
       else
+        if jl.length
+          entry = join_list jl, ' '
+        else
+          entry = "unit"
         """
         type #{translate_var_name prefix + root.name, ctx} is
-          #{join_list jl, '  '};
+          #{entry};
         """
     
     when "Ternary"
