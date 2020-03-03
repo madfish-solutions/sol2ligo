@@ -185,17 +185,18 @@ number2bytes = (val, precision = 32)->
     
     when config.storage
       config.storage
-    
+    when "contract"
+      "contract(#{type.val})"
     # when "t_bytes_memory_ptr"
     #   "bytes"
     # when config.storage
     #   config.storage
     else
-      if ctx.type_decl_hash.hasOwnProperty type.main
+      if ctx.type_decl_hash?.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        is_struct = (ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"] or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
+        is_struct = ((ctx.current_class and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
         is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
-        if is_struct 
+        if ctx.current_class and is_struct 
           name = "#{ctx.current_class.name}_#{name}"
         if name != "router_enum" and is_enum
           name = "nat"
@@ -233,6 +234,9 @@ number2bytes = (val, precision = 32)->
     
     when "built_in_op_list"
       "(nil: list(operation))"
+
+    when "contract"
+      "contract(unit)"
     
     when "map", "array"
       "(map end : #{translate_type type, ctx})"
@@ -505,6 +509,13 @@ walk = (root, ctx)->
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
           else
             root.val
+
+    # when "Contract"
+    #   if !root.type
+    #     puts root
+    #     throw new Error "Can't type inference"
+      
+    #   "contract((#{root.type.main}))"
     
     when "Bin_op"
       # TODO lvalue ctx ???
@@ -690,6 +701,10 @@ walk = (root, ctx)->
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
+          when "@respond"
+            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+            # p root
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
           else
             name = root.fn.name
             if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
@@ -723,9 +738,10 @@ walk = (root, ctx)->
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
+
       if is_pure and type_jl.length == 0
-        perr root
-        throw new Error "Bad call of pure function that returns nothing"
+        perr "Bad call of pure function that returns nothing"
+        type_jl.push "unit"
       if not root.left_unpack
         "#{call_expr}"
       else

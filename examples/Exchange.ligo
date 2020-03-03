@@ -1,25 +1,3 @@
-type transfer_args is record
-  to_ : address;
-  value_ : nat;
-end;
-
-type approveAndCall_args is record
-  spender_ : address;
-  value_ : nat;
-  extraData_ : bytes;
-end;
-
-type approve_args is record
-  spender_ : address;
-  value_ : nat;
-end;
-
-type transferFrom_args is record
-  from_ : address;
-  to_ : address;
-  value_ : nat;
-end;
-
 type assert_args is record
   assertion : bool;
 end;
@@ -86,105 +64,7 @@ type adminWithdraw_args is record
 end;
 
 type balanceOf_args is record
-  token : address;
-  user : address;
-end;
-
-type trade_args is record
-  tradeValues : map(nat, nat);
-  tradeAddresses : map(nat, address);
-  v : map(nat, nat);
-  rs : map(nat, bytes);
-end;
-
-type transfer_args is record
-  to_ : address;
-  value_ : nat;
-end;
-
-type approveAndCall_args is record
-  spender_ : address;
-  value_ : nat;
-  extraData_ : bytes;
-end;
-
-type approve_args is record
-  spender_ : address;
-  value_ : nat;
-end;
-
-type transferFrom_args is record
-  from_ : address;
-  to_ : address;
-  value_ : nat;
-end;
-
-type assert_args is record
-  assertion : bool;
-end;
-
-type safeMul_args is record
-  a : nat;
-  b : nat;
-end;
-
-type safeSub_args is record
-  a : nat;
-  b : nat;
-end;
-
-type safeAdd_args is record
-  a : nat;
-  b : nat;
-end;
-
-type setOwner_args is record
-  newOwner : address;
-end;
-
-type getOwner_args is unit;
-type constructor_args is record
-  feeAccount_ : address;
-end;
-
-type invalidateOrdersBefore_args is record
-  user : address;
-  nonce : nat;
-end;
-
-type setInactivityReleasePeriod_args is record
-  expiry : nat;
-end;
-
-type setAdmin_args is record
-  admin : address;
-  isAdmin : bool;
-end;
-
-type fallback_args is unit;
-type depositToken_args is record
-  token : address;
-  res__amount : nat;
-end;
-
-type deposit_args is unit;
-type withdraw_args is record
-  token : address;
-  res__amount : nat;
-end;
-
-type adminWithdraw_args is record
-  token : address;
-  res__amount : nat;
-  user : address;
-  nonce : nat;
-  v : nat;
-  r : bytes;
-  s : bytes;
-  feeWithdrawal : nat;
-end;
-
-type balanceOf_args is record
+  receiver : contract(nat);
   token : address;
   user : address;
 end;
@@ -197,14 +77,6 @@ type trade_args is record
 end;
 
 type state is record
-  standard : bytes;
-  name : bytes;
-  symbol : bytes;
-  totalSupply : nat;
-  decimals : nat;
-  allowTransactions : bool;
-  balanceOf : map(address, nat);
-  allowance : map(address, map(address, nat));
   owner : address;
   invalidOrder : map(address, nat);
   tokens : map(address, map(address, nat));
@@ -216,79 +88,37 @@ type state is record
   traded : map(bytes, bool);
   withdrawn : map(bytes, bool);
 end;
+type state_Token is record
+  standard : bytes;
+  name : bytes;
+  symbol : bytes;
+  totalSupply : nat;
+  decimals : nat;
+  allowTransactions : bool;
+  balanceOf : map(address, nat);
+  allowance : map(address, map(address, nat));
+end;
 
+function transfer (const self : state_Token; const to_ : address; const value_ : nat) : (list(operation) * state_Token * bool) is
+  block {
+    const success : bool = False;
+  } with ((nil: list(operation)), self, success);
+
+function approveAndCall (const self : state_Token; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state_Token * bool) is
+  block {
+    const success : bool = False;
+  } with ((nil: list(operation)), self, success);
+
+function approve (const self : state_Token; const spender_ : address; const value_ : nat) : (list(operation) * state_Token * bool) is
+  block {
+    const success : bool = False;
+  } with ((nil: list(operation)), self, success);
+
+function transferFrom (const self : state_Token; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state_Token * bool) is
+  block {
+    const success : bool = False;
+  } with ((nil: list(operation)), self, success);
 type router_enum is
-  | Transfer of transfer_args
-  | ApproveAndCall of approveAndCall_args
-  | Approve of approve_args
-  | TransferFrom of transferFrom_args
-  | Assert of assert_args
-  | SafeMul of safeMul_args
-  | SafeSub of safeSub_args
-  | SafeAdd of safeAdd_args
-  | SetOwner of setOwner_args
-  | GetOwner of getOwner_args
-  | Constructor of constructor_args
-  | InvalidateOrdersBefore of invalidateOrdersBefore_args
-  | SetInactivityReleasePeriod of setInactivityReleasePeriod_args
-  | SetAdmin of setAdmin_args
-  | Fallback of fallback_args
-  | DepositToken of depositToken_args
-  | Deposit of deposit_args
-  | Withdraw of withdraw_args
-  | AdminWithdraw of adminWithdraw_args
-  | BalanceOf of balanceOf_args
-  | Trade of trade_args;
-
-function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
-  block {
-    const success : bool = False;
-  } with ((nil: list(operation)), self, success);
-
-function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state * bool) is
-  block {
-    const success : bool = False;
-  } with ((nil: list(operation)), self, success);
-
-function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state * bool) is
-  block {
-    const success : bool = False;
-  } with ((nil: list(operation)), self, success);
-
-function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
-  block {
-    const success : bool = False;
-  } with ((nil: list(operation)), self, success);
-
-function main (const action : router_enum; const self : state) : (list(operation) * state) is
-  (case action of
-  | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
-  | ApproveAndCall(match_action) -> approveAndCall(self, match_action.spender_, match_action.value_, match_action.extraData_)
-  | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
-  | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
-  | Assert(match_action) -> assert(match_action.assertion)
-  | SafeMul(match_action) -> safeMul(self, match_action.a, match_action.b)
-  | SafeSub(match_action) -> safeSub(self, match_action.a, match_action.b)
-  | SafeAdd(match_action) -> safeAdd(self, match_action.a, match_action.b)
-  | SetOwner(match_action) -> setOwner(self, match_action.newOwner)
-  | GetOwner(match_action) -> getOwner(self)
-  | Constructor(match_action) -> constructor(self, match_action.feeAccount_)
-  | InvalidateOrdersBefore(match_action) -> invalidateOrdersBefore(self, match_action.user, match_action.nonce)
-  | SetInactivityReleasePeriod(match_action) -> setInactivityReleasePeriod(self, match_action.expiry)
-  | SetAdmin(match_action) -> setAdmin(self, match_action.admin, match_action.isAdmin)
-  | Fallback(match_action) -> fallback(self)
-  | DepositToken(match_action) -> depositToken(self, match_action.token, match_action.res__amount)
-  | Deposit(match_action) -> deposit(self)
-  | Withdraw(match_action) -> 
-  | AdminWithdraw(match_action) -> adminWithdraw(self, match_action.token, match_action.res__amount, match_action.user, match_action.nonce, match_action.v, match_action.r, match_action.s, match_action.feeWithdrawal)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.token, match_action.user), self)
-  | Trade(match_action) -> trade(self, match_action.tradeValues, match_action.tradeAddresses, match_action.v, match_action.rs)
-  end);
-type router_enum is
-  | Transfer of transfer_args
-  | ApproveAndCall of approveAndCall_args
-  | Approve of approve_args
-  | TransferFrom of transferFrom_args
   | Assert of assert_args
   | SafeMul of safeMul_args
   | SafeSub of safeSub_args
@@ -336,18 +166,18 @@ function safeMul (const self : state; const a : nat; const b : nat) : (list(oper
   block {
     const c : nat = (a * b);
     assert(((a = 0n) or ((c / a) = b)));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, c);
 
 function safeSub (const self : state; const a : nat; const b : nat) : (list(operation) * state * nat) is
   block {
     assert((b <= a));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, abs(a - b));
 
 function safeAdd (const self : state; const a : nat; const b : nat) : (list(operation) * state * nat) is
   block {
     const c : nat = (a + b);
     assert(((c >= a) and (c >= b)));
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, c);
 
 function setOwner (const self : state; const newOwner : address) : (list(operation) * state) is
   block {
@@ -359,7 +189,7 @@ function setOwner (const self : state; const newOwner : address) : (list(operati
 function getOwner (const self : state) : (list(operation) * state * address) is
   block {
     const out : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, self.owner);
 
 function constructor (const self : state; const feeAccount_ : address) : (list(operation) * state) is
   block {
@@ -383,7 +213,7 @@ function invalidateOrdersBefore (const self : state; const user : address; const
     self.invalidOrder[user] := nonce;
   } with ((nil: list(operation)), self);
 
-function setInactivityReleasePeriod (const self : state; const expiry : nat) : (list(operation) * state * bool) is
+function setInactivityReleasePeriod (const self : state; const expiry : nat) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");
@@ -457,9 +287,9 @@ function withdraw (const self : state; const token : address; const res__amount 
       };
     };
     (* EmitStatement Withdraw(token, sender, amount, ) *)
-  } with ((nil: list(operation)), self, success);
+  } with (opList, self, success);
 
-function adminWithdraw (const self : state; const token : address; const res__amount : nat; const user : address; const nonce : nat; const v : nat; const r : bytes; const s : bytes; const feeWithdrawal : nat) : (list(operation) * state * bool) is
+function adminWithdraw (const self : state; const token : address; const res__amount : nat; const user : address; const nonce : nat; const v : nat; const r : bytes; const s : bytes; const feeWithdrawal : nat) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");
@@ -509,12 +339,12 @@ function adminWithdraw (const self : state; const token : address; const res__am
     (* EmitStatement Withdraw(token, user, amount, ) *)
   } with ((nil: list(operation)), self);
 
-function balanceOf (const self : state; const token : address; const user : address) : (list(operation) * nat) is
+function balanceOf (const self : state; const receiver : contract(nat); const token : address; const user : address) : (list(operation)) is
   block {
-    skip
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.tokens[token] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[user] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
-function trade (const self : state; const tradeValues : map(nat, nat); const tradeAddresses : map(nat, address); const v : map(nat, nat); const rs : map(nat, bytes)) : (list(operation) * state * bool) is
+function trade (const self : state; const tradeValues : map(nat, nat); const tradeAddresses : map(nat, address); const v : map(nat, nat); const rs : map(nat, bytes)) : (list(operation) * state) is
   block {
     if ((sender =/= self.owner) and not ((case self.admins[sender] of | None -> False | Some(x) -> x end))) then block {
       failwith("throw");
@@ -583,10 +413,6 @@ function trade (const self : state; const tradeValues : map(nat, nat); const tra
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
-  | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
-  | ApproveAndCall(match_action) -> approveAndCall(self, match_action.spender_, match_action.value_, match_action.extraData_)
-  | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
-  | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
   | Assert(match_action) -> assert(match_action.assertion)
   | SafeMul(match_action) -> safeMul(self, match_action.a, match_action.b)
   | SafeSub(match_action) -> safeSub(self, match_action.a, match_action.b)
@@ -602,6 +428,6 @@ function main (const action : router_enum; const self : state) : (list(operation
   | Deposit(match_action) -> deposit(self)
   | Withdraw(match_action) -> 
   | AdminWithdraw(match_action) -> adminWithdraw(self, match_action.token, match_action.res__amount, match_action.user, match_action.nonce, match_action.v, match_action.r, match_action.s, match_action.feeWithdrawal)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.token, match_action.user), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.token, match_action.user), self)
   | Trade(match_action) -> trade(self, match_action.tradeValues, match_action.tradeAddresses, match_action.v, match_action.rs)
   end);

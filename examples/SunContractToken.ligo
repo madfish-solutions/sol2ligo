@@ -1,46 +1,13 @@
-type receiveApproval_args is record
-  from_ : address;
-  value_ : nat;
-  token_ : address;
-  extraData_ : bytes;
-end;
-
-type allowance_args is record
-  owner_ : address;
-  spender_ : address;
-end;
-
-type approve_args is record
-  spender_ : address;
-  value_ : nat;
-end;
-
-type transferFrom_args is record
-  from_ : address;
-  to_ : address;
-  value_ : nat;
-end;
-
-type transfer_args is record
-  to_ : address;
-  value_ : nat;
-end;
-
-type balanceOf_args is record
-  owner_ : address;
-end;
-
-type totalSupply_args is unit;
-type transferOwnership_args is record
-  newOwner : address;
-end;
-
 type constructor_args is record
   icoAddress_ : address;
 end;
 
-type totalSupply_args is unit;
+type totalSupply_args is record
+  receiver : contract(nat);
+end;
+
 type balanceOf_args is record
+  receiver : contract(nat);
   owner_ : address;
 end;
 
@@ -67,6 +34,7 @@ type transferFrom_args is record
 end;
 
 type allowance_args is record
+  receiver : contract(nat);
   owner_ : address;
   spender_ : address;
 end;
@@ -86,97 +54,7 @@ type freezeTransfersUntil_args is record
 end;
 
 type isRestrictedAddress_args is record
-  querryAddress_ : address;
-end;
-
-type receiveApproval_args is record
-  from_ : address;
-  value_ : nat;
-  token_ : address;
-  extraData_ : bytes;
-end;
-
-type allowance_args is record
-  owner_ : address;
-  spender_ : address;
-end;
-
-type approve_args is record
-  spender_ : address;
-  value_ : nat;
-end;
-
-type transferFrom_args is record
-  from_ : address;
-  to_ : address;
-  value_ : nat;
-end;
-
-type transfer_args is record
-  to_ : address;
-  value_ : nat;
-end;
-
-type balanceOf_args is record
-  owner_ : address;
-end;
-
-type totalSupply_args is unit;
-type transferOwnership_args is record
-  newOwner : address;
-end;
-
-type constructor_args is record
-  icoAddress_ : address;
-end;
-
-type totalSupply_args is unit;
-type balanceOf_args is record
-  owner_ : address;
-end;
-
-type transfer_args is record
-  to_ : address;
-  value_ : nat;
-end;
-
-type approve_args is record
-  spender_ : address;
-  value_ : nat;
-end;
-
-type approveAndCall_args is record
-  spender_ : address;
-  value_ : nat;
-  extraData_ : bytes;
-end;
-
-type transferFrom_args is record
-  from_ : address;
-  to_ : address;
-  value_ : nat;
-end;
-
-type allowance_args is record
-  owner_ : address;
-  spender_ : address;
-end;
-
-type mintTokens_args is record
-  to_ : address;
-  amount_ : nat;
-end;
-
-type burnTokens_args is record
-  amount_ : nat;
-end;
-
-type freezeTransfersUntil_args is record
-  frozenUntilBlock_ : nat;
-  reason_ : string;
-end;
-
-type isRestrictedAddress_args is record
+  receiver : contract(bool);
   querryAddress_ : address;
 end;
 
@@ -193,66 +71,13 @@ type state is record
   allowances : map(address, map(address, nat));
   restrictedAddresses : map(address, bool);
 end;
+type state_tokenRecipient is unit;
 
-type router_enum is
-  | ReceiveApproval of receiveApproval_args
-  | Allowance of allowance_args
-  | Approve of approve_args
-  | TransferFrom of transferFrom_args
-  | Transfer of transfer_args
-  | BalanceOf of balanceOf_args
-  | TotalSupply of totalSupply_args
-  | TransferOwnership of transferOwnership_args
-  | Constructor of constructor_args
-  | TotalSupply of totalSupply_args
-  | BalanceOf of balanceOf_args
-  | Transfer of transfer_args
-  | Approve of approve_args
-  | ApproveAndCall of approveAndCall_args
-  | TransferFrom of transferFrom_args
-  | Allowance of allowance_args
-  | MintTokens of mintTokens_args
-  | BurnTokens of burnTokens_args
-  | FreezeTransfersUntil of freezeTransfersUntil_args
-  | IsRestrictedAddress of isRestrictedAddress_args;
-
-function receiveApproval (const self : state; const from_ : address; const value_ : nat; const token_ : address; const extraData_ : bytes) : (list(operation) * state) is
+function receiveApproval (const self : state_tokenRecipient; const from_ : address; const value_ : nat; const token_ : address; const extraData_ : bytes) : (list(operation) * state_tokenRecipient) is
   block {
     skip
   } with ((nil: list(operation)), self);
-
-function main (const action : router_enum; const self : state) : (list(operation) * state) is
-  (case action of
-  | ReceiveApproval(match_action) -> receiveApproval(self, match_action.from_, match_action.value_, match_action.token_, match_action.extraData_)
-  | Allowance(match_action) -> (allowance(self, match_action.owner_, match_action.spender_), self)
-  | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
-  | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
-  | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.owner_), self)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | TransferOwnership(match_action) -> transferOwnership(self, match_action.newOwner)
-  | Constructor(match_action) -> constructor(self, match_action.icoAddress_)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.owner_), self)
-  | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
-  | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
-  | ApproveAndCall(match_action) -> approveAndCall(self, match_action.spender_, match_action.value_, match_action.extraData_)
-  | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
-  | Allowance(match_action) -> (allowance(self, match_action.owner_, match_action.spender_), self)
-  | MintTokens(match_action) -> mintTokens(self, match_action.to_, match_action.amount_)
-  | BurnTokens(match_action) -> burnTokens(self, match_action.amount_)
-  | FreezeTransfersUntil(match_action) -> freezeTransfersUntil(self, match_action.frozenUntilBlock_, match_action.reason_)
-  | IsRestrictedAddress(match_action) -> (isRestrictedAddress(self, match_action.querryAddress_), self)
-  end);
 type router_enum is
-  | ReceiveApproval of receiveApproval_args
-  | Allowance of allowance_args
-  | Approve of approve_args
-  | TransferFrom of transferFrom_args
-  | Transfer of transfer_args
-  | BalanceOf of balanceOf_args
-  | TotalSupply of totalSupply_args
-  | TransferOwnership of transferOwnership_args
   | Constructor of constructor_args
   | TotalSupply of totalSupply_args
   | BalanceOf of balanceOf_args
@@ -272,37 +97,40 @@ type router_enum is
 
 (* EventDefinition TokenFrozen(frozenUntilBlock_ : nat; reason_ : string) *)
 
-function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation) * nat) is
+function allowance (const self : state_IERC20Token; const receiver : contract(nat); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
-  } with ((nil: list(operation)), remaining);
+    var opList : list(operation) := list transaction((remaining), 0mutez, receiver) end;
+  } with (opList);
 
-function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state * bool) is
+function approve (const self : state_IERC20Token; const spender_ : address; const value_ : nat) : (list(operation) * state_IERC20Token * bool) is
+  block {
+    const success : bool = False;
+  } with (opList, self, success);
+
+function transferFrom (const self : state_IERC20Token; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state_IERC20Token * bool) is
   block {
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
+function transfer (const self : state_IERC20Token; const to_ : address; const value_ : nat) : (list(operation) * state_IERC20Token * bool) is
   block {
     const success : bool = False;
   } with ((nil: list(operation)), self, success);
 
-function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
-  block {
-    const success : bool = False;
-  } with ((nil: list(operation)), self, success);
-
-function balanceOf (const self : state; const owner_ : address) : (list(operation) * nat) is
+function balanceOf (const self : state_IERC20Token; const receiver : contract(nat); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
-  } with ((nil: list(operation)), res__balance);
+    var opList : list(operation) := list transaction((res__balance), 0mutez, receiver) end;
+  } with (opList);
 
-function totalSupply (const self : state) : (list(operation) * nat) is
+function totalSupply (const self : state_IERC20Token; const receiver : contract(nat)) : (list(operation)) is
   block {
     const totalSupply : nat = 0n;
-  } with ((nil: list(operation)), self.totalSupply);
+    var opList : list(operation) := list transaction((self.totalSupply), 0mutez, receiver) end;
+  } with (opList);
 
-function transferOwnership (const self : state; const newOwner : address) : (list(operation) * state) is
+function transferOwnership (const self : state_owned; const newOwner : address) : (list(operation) * state_owned) is
   block {
     if (sender =/= self.owner) then block {
       failwith("throw");
@@ -312,7 +140,7 @@ function transferOwnership (const self : state; const newOwner : address) : (lis
     self.owner := newOwner;
   } with ((nil: list(operation)), self);
 
-function owned_constructor (const self : state) : (list(operation) * state) is
+function owned_constructor (const self : state_owned) : (list(operation) * state_owned) is
   block {
     self.owner := sender;
   } with ((nil: list(operation)), self);
@@ -326,15 +154,17 @@ function constructor (const self : state; const icoAddress_ : address) : (list(o
     self.icoContractAddress := icoAddress_;
   } with ((nil: list(operation)), self);
 
-function totalSupply (const self : state) : (list(operation) * nat) is
+function totalSupply (const self : state; const receiver : contract(nat)) : (list(operation)) is
   block {
     const totalSupply : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction((self.supply), 0mutez, receiver) end;
+  } with (opList);
 
-function balanceOf (const self : state; const owner_ : address) : (list(operation) * nat) is
+function balanceOf (const self : state; const receiver : contract(nat); const owner_ : address) : (list(operation)) is
   block {
     const res__balance : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.balances[owner_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function transfer (const self : state; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
@@ -362,7 +192,7 @@ function transfer (const self : state; const to_ : address; const value_ : nat) 
     self.balances[sender] := abs((case self.balances[sender] of | None -> 0n | Some(x) -> x end) - value_);
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (* EmitStatement Transfer(sender, _to, _value) *)
-  } with ((nil: list(operation)), self);
+  } with (opList, self, True);
 
 function approve (const self : state; const spender_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
@@ -374,7 +204,7 @@ function approve (const self : state; const spender_ : address; const value_ : n
     };
     (case self.allowances[sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] := value_;
     (* EmitStatement Approval(sender, _spender, _value) *)
-  } with ((nil: list(operation)), self);
+  } with (opList, self, True);
 
 function approveAndCall (const self : state; const spender_ : address; const value_ : nat; const extraData_ : bytes) : (list(operation) * state * bool) is
   block {
@@ -382,7 +212,7 @@ function approveAndCall (const self : state; const spender_ : address; const val
     const spender : UNKNOWN_TYPE_tokenRecipient = (* LIGO unsupported *)tokenRecipient(self, spender_);
     approve(self, spender_, value_);
     spender.receiveApproval(self, sender, value_, , extraData_);
-  } with ((nil: list(operation)), self);
+  } with ((nil: list(operation)), self, True);
 
 function transferFrom (const self : state; const from_ : address; const to_ : address; const value_ : nat) : (list(operation) * state * bool) is
   block {
@@ -416,12 +246,13 @@ function transferFrom (const self : state; const from_ : address; const to_ : ad
     self.balances[to_] := ((case self.balances[to_] of | None -> 0n | Some(x) -> x end) + value_);
     (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] := abs((case (case self.allowances[from_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[sender] of | None -> 0n | Some(x) -> x end) - value_);
     (* EmitStatement Transfer(_from, _to, _value) *)
-  } with ((nil: list(operation)), self);
+  } with (opList, self, True);
 
-function allowance (const self : state; const owner_ : address; const spender_ : address) : (list(operation) * nat) is
+function allowance (const self : state; const receiver : contract(nat); const owner_ : address; const spender_ : address) : (list(operation)) is
   block {
     const remaining : nat = 0n;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case (case self.allowances[owner_] of | None -> (map end : map(address, nat)) | Some(x) -> x end)[spender_] of | None -> 0n | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function mintTokens (const self : state; const to_ : address; const amount_ : nat) : (list(operation) * state) is
   block {
@@ -480,31 +311,24 @@ function freezeTransfersUntil (const self : state; const frozenUntilBlock_ : nat
     (* EmitStatement TokenFrozen(_frozenUntilBlock, _reason) *)
   } with ((nil: list(operation)), self);
 
-function isRestrictedAddress (const self : state; const querryAddress_ : address) : (list(operation) * bool) is
+function isRestrictedAddress (const self : state; const receiver : contract(bool); const querryAddress_ : address) : (list(operation)) is
   block {
     const answer : bool = False;
-  } with ((nil: list(operation)));
+    var opList : list(operation) := list transaction(((case self.restrictedAddresses[querryAddress_] of | None -> False | Some(x) -> x end)), 0mutez, receiver) end;
+  } with (opList);
 
 function main (const action : router_enum; const self : state) : (list(operation) * state) is
   (case action of
-  | ReceiveApproval(match_action) -> receiveApproval(self, match_action.from_, match_action.value_, match_action.token_, match_action.extraData_)
-  | Allowance(match_action) -> (allowance(self, match_action.owner_, match_action.spender_), self)
-  | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
-  | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
-  | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.owner_), self)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | TransferOwnership(match_action) -> transferOwnership(self, match_action.newOwner)
   | Constructor(match_action) -> constructor(self, match_action.icoAddress_)
-  | TotalSupply(match_action) -> (totalSupply(self), self)
-  | BalanceOf(match_action) -> (balanceOf(self, match_action.owner_), self)
+  | TotalSupply(match_action) -> (totalSupply(self, match_action.receiver), self)
+  | BalanceOf(match_action) -> (balanceOf(self, match_action.receiver, match_action.owner_), self)
   | Transfer(match_action) -> transfer(self, match_action.to_, match_action.value_)
   | Approve(match_action) -> approve(self, match_action.spender_, match_action.value_)
   | ApproveAndCall(match_action) -> approveAndCall(self, match_action.spender_, match_action.value_, match_action.extraData_)
   | TransferFrom(match_action) -> transferFrom(self, match_action.from_, match_action.to_, match_action.value_)
-  | Allowance(match_action) -> (allowance(self, match_action.owner_, match_action.spender_), self)
+  | Allowance(match_action) -> (allowance(self, match_action.receiver, match_action.owner_, match_action.spender_), self)
   | MintTokens(match_action) -> mintTokens(self, match_action.to_, match_action.amount_)
   | BurnTokens(match_action) -> burnTokens(self, match_action.amount_)
   | FreezeTransfersUntil(match_action) -> freezeTransfersUntil(self, match_action.frozenUntilBlock_, match_action.reason_)
-  | IsRestrictedAddress(match_action) -> (isRestrictedAddress(self, match_action.querryAddress_), self)
+  | IsRestrictedAddress(match_action) -> (isRestrictedAddress(self, match_action.receiver, match_action.querryAddress_), self)
   end);
