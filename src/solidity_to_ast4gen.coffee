@@ -267,7 +267,7 @@ walk = (root, ctx)->
       perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
       args = []
-      name = root.fn?.name || root.eventCall.name
+      name = root.fn?.name || root.eventCall.name || root.eventCall.expression.name
       args = root.arg_list || root.eventCall.arguments
       arg_names = args.map (arg) -> arg.name
       ret.text = "EmitStatement #{name}(#{arg_names.join(", ")})"
