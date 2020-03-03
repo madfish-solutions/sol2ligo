@@ -438,6 +438,24 @@ do ()=>
           if ctx.has_op_list_decl
             inject.val = config.op_list
         root
+
+      when "If"
+        l = root.t.list.last()
+        if l and l.constructor.name == "Ret_multi"
+          l = root.t.list.pop()
+          root.t.list.push inject = new ast.Fn_call
+          inject.fn = new ast.Var
+          inject.fn.name = "@respond"
+          inject.arg_list = l.t_list[1..]
+        f = root.f.list.last()
+        if f and f.constructor.name == "Ret_multi"
+          f = root.f.list.pop()
+          root.f.list.push inject = new ast.Fn_call
+          inject.fn = new ast.Var
+          inject.fn.name = "@respond"
+          inject.arg_list = f.t_list[1..]
+        ctx.has_op_list_decl = true
+        root
       
       when "Fn_decl_multiret"
         ctx.state_mutability = root.state_mutability
@@ -467,27 +485,6 @@ do ()=>
             last = new ast.Ret_multi
             last = walk last, ctx
             root.scope.list.push last
-          else if last and last.constructor.name == "If" # hack
-            last = root.scope.list.pop()
-            l = last.t.list.last()
-            if l and l.constructor.name == "Ret_multi"
-              l = last.t.list.pop()
-              last.t.list.push inject = new ast.Fn_call
-              inject.fn = new ast.Var
-              inject.fn.name = "@respond"
-              inject.arg_list = l.t_list[1..]
-            f = last.f.list.last()
-            if f and f.constructor.name == "Ret_multi"
-              f = last.f.list.pop()
-              last.f.list.push inject = new ast.Fn_call
-              inject.fn = new ast.Var
-              inject.fn.name = "@respond"
-              inject.arg_list = f.t_list[1..]
-            ctx.has_op_list_decl = true
-            root.scope.list.push last
-            right_last = new ast.Ret_multi
-            right_last = walk right_last, ctx
-            last.f.list.push right_last
         if ctx.state_mutability != 'pure'
           root.arg_name_list.unshift config.contract_storage
           root.type_i.nest_list.unshift new Type state_name
