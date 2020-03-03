@@ -108,9 +108,26 @@
     <script>
       document.querySelector("#load_msg").innerText =
         "Very experimental. Use it at your own RISK.";
-
+      var warning_list;
       function compile(code) {
         return new Promise((res, rej) => {
+          var perr_old = window.perr;
+          var puts_old = window.puts;
+          warning_list = [];
+          window.perr = function() {
+            var arg_list = Array.prototype.slice.call(arguments);
+            var str_list = arg_list.map((t)=>{
+              if (t.formattedMessage) { // solc errors
+                return t.formattedMessage;
+              } else {
+                return ''+t;
+              }
+            });
+            warning_list.push(str_list.join(" "));
+          }
+          window.puts = function() {
+            warning_list.push(Array.prototype.join.call(arguments, " "));
+          }
           try {
             const solidity_ast = ast_gen(code);
             let ast = solidity_to_ast4gen.gen(solidity_ast);
@@ -119,8 +136,11 @@
             const result = translate_ligo.gen(ast);
             res(result);
           } catch (err) {
+            warning_list.push(err.stack)
             rej(err);
           }
+          window.perr = perr_old;
+          window.puts = puts_old;
         });
       }
 
@@ -278,12 +298,12 @@
             compile(code)
               .then(c => {
                 data.pascaligo.model.setValue(c);
-                data.logs.model.setValue("");
+                if (data.logs.model) data.logs.model.setValue(warning_list.join("\n"));
                 overlayWidget.success();
               })
               .catch(err => {
                 console.dir(err);
-                if (data.logs.model) data.logs.model.setValue(err.stack);
+                if (data.logs.model) data.logs.model.setValue(warning_list.join("\n"));
                 overlayWidget.error();
               });
           }, 100);
