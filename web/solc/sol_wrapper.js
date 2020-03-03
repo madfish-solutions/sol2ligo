@@ -1,4 +1,8 @@
-var solidity_compile_wrap = cwrap("solidity_compile", "string", [
+var solidity_compile_wrap_0_4 = window._solc["soljson-v0.4.26"].cwrap("compileStandard", "string", [
+  "string",
+  "number"
+]);
+var solidity_compile_wrap_0_5 = window._solc["soljson-v0.5.11"].cwrap("solidity_compile", "string", [
   "string",
   "number"
 ]);
@@ -19,7 +23,30 @@ window.ast_gen = function(code) {
       }
     }
   };
+  var solidity_compile_wrap = solidity_compile_wrap_0_5;
+  var solc_full_name = null;
+  pick_version = function(candidate_version) {
+    // very hacky for front-end
+    if (/0\.4/.test(candidate_version)) {
+      solidity_compile_wrap = solidity_compile_wrap_0_4;
+    }
+  };
+  var _i, _len, header, reg_ret;
+  var strings = code.trim().split("\n");
+  for (_i = 0, _len = strings.length; _i < _len; _i++) {
+    str = strings[_i];
+    header = str.trim();
+    if (reg_ret = /^pragma solidity \^?([.0-9]+);/.exec(header)) {
+      pick_version(reg_ret[1]);
+      break;
+    } else if (reg_ret = /^pragma solidity >=([.0-9]+)/.exec(header)) {
+      pick_version(reg_ret[1]);
+      break;
+    }
+  }
+  
   var output = JSON.parse(solidity_compile_wrap(JSON.stringify(input)));
+  console.log("output", output)
 
   var error, is_ok, res, _i, _len, _ref;
 
