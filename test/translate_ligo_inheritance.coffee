@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section inheritance", ()->
   @timeout 10000
   it "basic", ()->
     text_i = """
@@ -26,24 +26,22 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function one (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function one (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         i := 1n;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
-    function sample (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
-    function #{config.reserved}__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -68,24 +66,22 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function ownable (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function ownable_constructor (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         i := 1n;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
-    function sample (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+      block {
+        ownable_constructor(self);
+      } with ((nil: list(operation)), #{config.contract_storage});
+    
+    function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
-    
-    function #{config.reserved}__some (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
-      block {
-        skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
   

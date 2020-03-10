@@ -4,7 +4,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section unsupported", ()->
   @timeout 10000
   # ###################################################################################################
   #    there are no support in LIGO
@@ -24,17 +24,15 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         while (False) block {
           (* CRITICAL WARNING break is not supported *);
           (* CRITICAL WARNING continue is not supported *);
         };
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o, allow_need_prevent_deploy:true
   
@@ -50,14 +48,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function recover (const hash : bytes; const v : nat; const r : bytes; const s : bytes) : (address) is
+    function recover (const hash : bytes; const v : nat; const r : bytes; const s : bytes) : (list(operation) * address) is
       block {
-        const tmp_0 : address = ecrecover(hash, v, r, s);
-      } with (tmp_0);
+        skip
+      } with ((nil: list(operation)), ecrecover(hash, v, r, s));
     """#"
     make_test text_i, text_o, no_ligo:true
   
@@ -79,13 +75,11 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function isAuthorized (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function isAuthorized (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        (* address contract to type_cast is not supported yet (we need enum action type for each contract) *);
-      } with (opList, contractStorage);
+        (* LIGO unsupported *)dSAuthority(self, 0);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o, no_ligo:true

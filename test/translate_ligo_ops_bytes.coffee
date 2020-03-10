@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section ops bytes", ()->
   @timeout 10000
   # ###################################################################################################
   #    expr
@@ -35,10 +35,10 @@ describe "translate ligo section", ()->
             value : bytes;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * bytes) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state * bytes) is
             block {
               const a : bytes = 0x#{'00'.repeat count};
-            } with (opList, contractStorage, a);
+            } with ((nil: list(operation)), #{config.contract_storage}, a);
         """
         make_test text_i, text_o
   
@@ -63,17 +63,15 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test0 (const opList : list(operation); const contractStorage : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes; const b4 : bytes; const b5 : bytes) : (list(operation) * state) is
+    function test0 (const #{config.contract_storage} : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes; const b4 : bytes; const b5 : bytes) : (list(operation) * state) is
       block {
-        if (b0 <= b1) then {skip} else failwith("require fail");
-        if (b2 > b3) then {skip} else failwith("require fail");
-        if (b4 >= b5) then {skip} else failwith("require fail");
-        if ((b4 : bytes) < b5) then {skip} else failwith("require fail");
-      } with (opList, contractStorage);
+        assert((b0 <= b1));
+        assert((b2 > b3));
+        assert((b4 >= b5));
+        assert(((b4 : bytes) < b5));
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -97,16 +95,14 @@ describe "translate ligo section", ()->
     """#"
     
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test2 (const opList : list(operation); const contractStorage : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes) : (list(operation) * state) is
+    function test2 (const #{config.contract_storage} : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes) : (state) is
       block {
-        const bts : bytes = bytes_pack(unit) (* args: 0 *);
+        const bts : bytes = ("00": bytes) (* args: 0 *);
         b0 := b1;
         b2 := b3;
-        b3 := bytes_pack(unit) (* args: 15 *);
-      } with (opList, contractStorage);
+        b3 := ("00": bytes) (* args: 15 *);
+      } with (#{config.contract_storage});
     """
     make_test text_i, text_o

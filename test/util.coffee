@@ -27,10 +27,10 @@ cache_content_hash = {}
     if !opt.router
       text_o_real = """
       #{text_o_real}
-      function main (const action : nat; const contractStorage : state) : (list(operation) * state) is
+      function main (const action : nat; const #{config.contract_storage} : state) : (list(operation) * state) is
         block {
           const opList : list(operation) = (nil: list(operation));
-        } with (opList, contractStorage);
+        } with (opList, #{config.contract_storage});
       
       """
     
