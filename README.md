@@ -40,7 +40,10 @@ https://github.com/madfish-solutions/sol2ligo/tree/pretty-ligo/examples
 
 
 ## 🏗️ Installation
-You need some nodejs (should work at least in range 6.* -- 12.* ). We suggest you [nvm](https://github.com/nvm-sh/nvm)
+You need to have NodeJS installed on your machine.
+It was tested and developed using NodeJS v.10.13.0, but it’s expected to work on versions starting from v6.x.x up to v12.x.x
+
+We suggest using node version manger (like [nvm](https://github.com/nvm-sh/nvm))
 ```
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 # relogin or source ~/.bashrc
