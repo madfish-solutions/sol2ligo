@@ -56,6 +56,12 @@ sol2ligo <filename>
 After transpiling you are likely gonna need to modify and thorougly audit the generated code. Follow transpiler warnings and comments inside the code to get more insight on what has to be done.
 
 ## 🏥️ Tests
+In order to run tests you need to install dependecies first
+
+```sh
+npm i
+```
+
 For full test run
 ```sh
 npm test 
