@@ -3,7 +3,7 @@ config = require("../src/config")
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section address", ()->
   @timeout 10000
   # ###################################################################################################
   #    address
@@ -20,14 +20,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state; const target : address) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state; const target : address) : (list(operation) * state) is
       block {
-        opList := cons(transaction(unit, 1n * 1mutez, (get_contract(target) : contract(unit))), opList);
-      } with (opList, contractStorage);
+        var opList : list(operation) := list transaction(unit, 1n * 1mutez, (get_contract(target) : contract(unit))) end;
+      } with (opList, #{config.contract_storage});
     """
     make_test text_i, text_o
   

@@ -1,8 +1,9 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section interface", ()->
   @timeout 10000
   # ###################################################################################################
   #    interface
@@ -26,19 +27,17 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function sample (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
-    function one (const opList : list(operation); const contractStorage : state; const i : nat) : (list(operation) * state) is
+    function one (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

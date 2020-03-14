@@ -3,7 +3,7 @@ config = require("../src/config")
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section map", ()->
   @timeout 10000
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Mappings.ligo
   # https://github.com/madfish-solutions/Solidity-Dry-Runner/blob/master/contracts/Mappings.sol
@@ -29,11 +29,11 @@ describe "translate ligo section", ()->
       allowedIntegers : map(nat, bool);
     end;
     
-    function #{config.reserved}__map (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+    function #{config.reserved}__map (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
       block {
-        contractStorage.allowedIntegers[0n] := True;
-        remove 0n from map contractStorage.allowedIntegers;
-      } with (opList, contractStorage, 0n);
+        #{config.contract_storage}.allowedIntegers[0n] := True;
+        remove 0n from map #{config.contract_storage}.allowedIntegers;
+      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
     
     """
     make_test text_i, text_o
@@ -41,7 +41,7 @@ describe "translate ligo section", ()->
   # TODO
   it "nested map"
   ###
-  (case contractStorage.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
+  (case #{config.contract_storage}.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
   this is not proper assign...
   TODO FIXME
   ###
@@ -63,10 +63,10 @@ describe "translate ligo section", ()->
   #     allowedIntegers : map(int, bool);
   #   end;
     
-  #   function #{config.reserved}__map (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+  #   function #{config.reserved}__map (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
   #     block {
-  #       contractStorage.allowedIntegers[0][0n] := 0n;
-  #     } with (opList, contractStorage, 0);
+  #       #{config.contract_storage}.allowedIntegers[0][0n] := 0n;
+  #     } with ((nil: list(operation)), #{config.contract_storage}, 0);
     
   #   """ #"
   #   make_test text_i, text_o
@@ -86,7 +86,7 @@ describe "translate ligo section", ()->
       foo0 : map(address, map(nat, bool));
     end;
     
-    function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const foo1 : map(nat, map(nat, nat)) = map
           0n -> map
@@ -96,7 +96,7 @@ describe "translate ligo section", ()->
             0n -> 0n;
           end;
         end;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """ #"
     make_test text_i, text_o

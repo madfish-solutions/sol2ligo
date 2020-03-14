@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section var type", ()->
   @timeout 10000
   # ###################################################################################################
   #    basic types
@@ -31,10 +31,10 @@ describe "translate ligo section", ()->
       value_string : string;
     end;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -77,10 +77,10 @@ describe "translate ligo section", ()->
       value_bytes32 : bytes;
     end;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -109,18 +109,16 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const value_bool : bool = False;
         const value_int : int = 0;
         const value_uint : nat = 0n;
         const value_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const value_string : string = "";
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -142,14 +140,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = 1n;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -164,14 +160,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : int = -(1);
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -186,14 +180,12 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : string = "1";
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -231,20 +223,20 @@ describe "translate ligo section", ()->
       timestamp : nat;
     end;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        contractStorage.#{config.reserved}__sender := sender;
-        contractStorage.#{config.reserved}__source := source;
-        contractStorage.value := (amount / 1mutez);
-        contractStorage.data := bytes_pack(unit);
-        contractStorage.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
-        contractStorage.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
-      } with (opList, contractStorage);
+        #{config.contract_storage}.#{config.reserved}__sender := sender;
+        #{config.contract_storage}.#{config.reserved}__source := source;
+        #{config.contract_storage}.value := (amount / 1mutez);
+        #{config.contract_storage}.data := ("00": bytes);
+        #{config.contract_storage}.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
+        #{config.contract_storage}.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
   
-  it "contractStorage conflict local", ()->
+  it "#{config.contract_storage} conflict local", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -256,20 +248,18 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const #{config.reserved}__#{config.contract_storage} : nat = 1n;
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
   
-  it "contractStorage conflict arg", ()->
+  it "#{config.contract_storage} conflict arg", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -280,19 +270,17 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state; const #{config.reserved}__#{config.contract_storage} : nat) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state; const #{config.reserved}__#{config.contract_storage} : nat) : (list(operation) * state) is
       block {
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
   
-  it "contractStorage conflict state", ()->
+  it "#{config.contract_storage} conflict state", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -308,10 +296,10 @@ describe "translate ligo section", ()->
       #{config.reserved}__#{config.contract_storage} : nat;
     end;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        const a : nat = contractStorage.#{config.reserved}__#{config.contract_storage};
-      } with (opList, contractStorage);
+        const a : nat = #{config.contract_storage}.#{config.reserved}__#{config.contract_storage};
+      } with ((nil: list(operation)), #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -326,7 +314,7 @@ describe "translate ligo section", ()->
     """
     text_o = """
     type state is record
-      #{config.fix_underscore}__hi : nat;
+      hi_ : nat;
     end;
     """#"
     make_test text_i, text_o
@@ -347,15 +335,13 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        const bts0 : bytes = bytes_pack(unit);
-        const bts1 : bytes = bytes_pack(unit);
-      } with (opList, contractStorage);
+        const bts0 : bytes = ("00": bytes);
+        const bts1 : bytes = ("00": bytes);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -373,17 +359,15 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const bts0 : bytes = 0x00010203;
         const bts1 : bytes = 0x00;
         const bts2 : bytes = bts0;
         bts2 := 0x00;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

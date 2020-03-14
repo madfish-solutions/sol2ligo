@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section modifier", ()->
   # ###################################################################################################
   #    modifier
   # ###################################################################################################
@@ -35,16 +35,16 @@ describe "translate ligo section", ()->
     
     (* modifier lock inlined *)
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        if (not (contractStorage.locked)) then block {
-          contractStorage.locked := True;
-          contractStorage.a := True;
-          contractStorage.locked := False;
+        if (not (#{config.contract_storage}.locked)) then block {
+          #{config.contract_storage}.locked := True;
+          #{config.contract_storage}.a := True;
+          #{config.contract_storage}.locked := False;
         } else block {
           skip
         };
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -73,7 +73,7 @@ describe "translate ligo section", ()->
     
     (* modifier greaterThan inlined *)
     
-    function test (const opList : list(operation); const contractStorage : state; const a : nat) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state; const a : nat) : (list(operation) * state) is
       block {
         const value : nat = a;
         const limit : nat = 10n;
@@ -82,8 +82,8 @@ describe "translate ligo section", ()->
         } else block {
           skip
         };
-        contractStorage.val := True;
-      } with (opList, contractStorage);
+        #{config.contract_storage}.val := True;
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
