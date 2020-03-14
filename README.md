@@ -40,6 +40,13 @@ https://github.com/madfish-solutions/sol2ligo/tree/pretty-ligo/examples
 
 
 ## 🏗️ Installation
+You need some nodejs (should work at least in range 6.* -- 12.* ). We suggest you [nvm](https://github.com/nvm-sh/nvm)
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+# relogin or source ~/.bashrc
+nvm i 12
+```
+
 To try it out you will need Node.js, NPM and Iced Coffee Script
 
 ```sh
@@ -56,6 +63,13 @@ sol2ligo <filename>
 After transpiling you are likely gonna need to modify and thorougly audit the generated code. Follow transpiler warnings and comments inside the code to get more insight on what has to be done.
 
 ## 🏥️ Tests
+You need clone github repository and install packages
+```
+git clone https://github.com/madfish-solutions/sol2ligo
+cd sol2ligo
+npm i
+```
+
 For full test run
 ```sh
 npm test 
