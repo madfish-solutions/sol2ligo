@@ -76,4 +76,4 @@ npm run test-specific <test-name>
 Check out [wiki](https://github.com/madfish-solutions/sol2ligo/wiki) for the knowledge base
 
 ## Licensing
-TBD
+MIT
