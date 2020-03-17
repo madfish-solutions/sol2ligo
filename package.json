@@ -27,7 +27,7 @@
   "dependencies": {
     "ast4gen": "github:hu2prod/ast4gen",
     "fy": "github:hu2prod/fy",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.2",
     "solc": "^0.5.14",
     "type": "github:hu2prod/type"
   },
