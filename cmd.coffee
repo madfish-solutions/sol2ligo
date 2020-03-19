@@ -40,6 +40,7 @@ process_file = (file)->
   }
   new_ast = type_inference new_ast
   code = translate new_ast
+  code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
   puts code
   
   if argv.ds
