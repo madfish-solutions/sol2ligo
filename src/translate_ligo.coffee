@@ -53,7 +53,7 @@ number2bytes = (val, precision = 32)->
 
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
-    if config.bytes_type_hash.hasOwnProperty(ast.a.type.main) and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
+    if config.bytes_type_map.hasOwnProperty(ast.a.type.main) and ast.b.type.main == "string" and ast.b.constructor.name == "Const"
       b = string2bytes ast.b.val
     "#{a} := #{b}"
   BIT_AND : (a, b, ctx, ast) ->
@@ -87,7 +87,7 @@ number2bytes = (val, precision = 32)->
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
-    if config.uint_type_hash.hasOwnProperty(ast.a.type.main) and config.uint_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.uint_type_map.hasOwnProperty(ast.a.type.main) and config.uint_type_map.hasOwnProperty(ast.b.type.main)
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
@@ -99,7 +99,7 @@ number2bytes = (val, precision = 32)->
     if !ast.type
       perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
       module.warning_counter++
-    if ast.type and config.uint_type_hash.hasOwnProperty ast.type.main
+    if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
     else
       "not (#{a})"
@@ -192,10 +192,10 @@ number2bytes = (val, precision = 32)->
     # when config.storage
     #   config.storage
     else
-      if ctx.type_decl_hash?.hasOwnProperty type.main
+      if ctx.type_decl_map?.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
-        is_struct = ((ctx.current_class and ctx.type_decl_hash["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_hash[name]) and ctx.type_decl_hash[name]?.constructor.name == "Class_decl"
-        is_enum = ctx.type_decl_hash[name]?.constructor.name == "Enum_decl" 
+        is_struct = ((ctx.current_class and ctx.type_decl_map["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_map[name]) and ctx.type_decl_map[name]?.constructor.name == "Class_decl"
+        is_enum = ctx.type_decl_map[name]?.constructor.name == "Enum_decl" 
         if ctx.current_class and is_struct 
           name = "#{ctx.current_class.name}_#{name}"
         if name != "router_enum" and is_enum
@@ -204,9 +204,9 @@ number2bytes = (val, precision = 32)->
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
         "bytes"
-      else if config.uint_type_hash.hasOwnProperty type.main
+      else if config.uint_type_map.hasOwnProperty type.main
         "nat"
-      else if config.int_type_hash.hasOwnProperty type.main
+      else if config.int_type_map.hasOwnProperty type.main
         "int"
       # temporary hack for state
       else if type.main.match ///^#{config.storage}_///
@@ -216,13 +216,13 @@ number2bytes = (val, precision = 32)->
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
-  if config.uint_type_hash.hasOwnProperty type.main
+  if config.uint_type_map.hasOwnProperty type.main
     return "0n"
   
-  if config.int_type_hash.hasOwnProperty type.main
+  if config.int_type_map.hasOwnProperty type.main
     return "0"
   
-  if config.bytes_type_hash.hasOwnProperty type.main
+  if config.bytes_type_map.hasOwnProperty type.main
     return "(\"00\": bytes)"
   
   switch type.main
@@ -245,8 +245,8 @@ number2bytes = (val, precision = 32)->
       '""'
     
     else
-      if ctx.type_decl_hash.hasOwnProperty type.main
-        t = ctx.type_decl_hash[type.main]
+      if ctx.type_decl_map.hasOwnProperty type.main
+        t = ctx.type_decl_map[type.main]
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           name = t.value_list[0].name
@@ -270,7 +270,7 @@ number2bytes = (val, precision = 32)->
 # ###################################################################################################
 #    special id, field access
 # ###################################################################################################
-spec_id_trans_hash =
+spec_id_trans_map =
   "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
   "msg.sender"      : "sender"
   "tx.origin"       : "source"
@@ -278,7 +278,7 @@ spec_id_trans_hash =
   "msg.value"       : "(amount / 1mutez)"
   "abi.encodePacked": ""
 
-bad_spec_id_trans_hash =
+bad_spec_id_trans_map =
   "block.coinbase"  : config.default_address
   "block.difficulty": "0n"
   "block.gaslimit"  : "0n"
@@ -288,14 +288,14 @@ bad_spec_id_trans_hash =
   "msg.sig"         : "(\"00\": bytes)"
   "tx.gasprice"     : "0n"
 
-warning_once_hash = {}
+warning_once_map = {}
 spec_id_translate = (t, name)->
-  if spec_id_trans_hash.hasOwnProperty t
-    spec_id_trans_hash[t]
-  else if bad_spec_id_trans_hash.hasOwnProperty t
-    val = bad_spec_id_trans_hash[t]
-    if !warning_once_hash.hasOwnProperty t
-      warning_once_hash.hasOwnProperty[t] = true
+  if spec_id_trans_map.hasOwnProperty t
+    spec_id_trans_map[t]
+  else if bad_spec_id_trans_map.hasOwnProperty t
+    val = bad_spec_id_trans_map[t]
+    if !warning_once_map.hasOwnProperty t
+      warning_once_map.hasOwnProperty[t] = true
       perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
     val
   else
@@ -309,8 +309,8 @@ class @Gen_context
   current_class     : null
   is_class_scope    : false
   lvalue            : false
-  type_decl_hash    : {}
-  contract_var_hash : {}
+  type_decl_map    : {}
+  contract_var_map : {}
   
   contract          : false
   trim_expr         : ""
@@ -322,8 +322,8 @@ class @Gen_context
   tmp_idx           : 0
   
   constructor:()->
-    @type_decl_hash   = {}
-    @contract_var_hash= {}
+    @type_decl_map   = {}
+    @contract_var_map= {}
     @storage_sink_list= {}
     @sink_list        = []
     @type_decl_sink_list= []
@@ -335,8 +335,8 @@ class @Gen_context
     t = new module.Gen_context
     t.parent = @
     t.current_class = @current_class
-    obj_set t.contract_var_hash, @contract_var_hash
-    obj_set t.type_decl_hash, @type_decl_hash
+    obj_set t.contract_var_map, @contract_var_map
+    obj_set t.type_decl_map, @type_decl_map
     t.type_decl_sink_list = @type_decl_sink_list # Common. All will go to top
     t.structs_default_list = @structs_default_list
     t.enum_list = @enum_list
@@ -464,7 +464,7 @@ walk = (root, ctx)->
       name = root.name
       return "" if name == "this"
       name = translate_var_name name, ctx if root.name_translate
-      if ctx.contract_var_hash.hasOwnProperty name
+      if ctx.contract_var_map.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else
         spec_id_translate root.name, name
@@ -474,7 +474,7 @@ walk = (root, ctx)->
         puts root
         throw new Error "Can't type inference"
       
-      if config.uint_type_hash.hasOwnProperty root.type.main
+      if config.uint_type_map.hasOwnProperty root.type.main
         return "#{root.val}n"
       
       switch root.type.main
@@ -505,7 +505,7 @@ walk = (root, ctx)->
           else
             "(nil: list(operation))"
         else
-          if config.bytes_type_hash.hasOwnProperty root.type.main
+          if config.bytes_type_map.hasOwnProperty root.type.main
             number2bytes root.val, +root.type.main.replace(/bytes/, '')
           else
             root.val
@@ -597,7 +597,7 @@ walk = (root, ctx)->
       chk_ret = "#{t}.#{root.name}"
       ret = "#{t}.#{translate_var_name root.name, ctx}"
       if root.t.constructor.name == "Var"
-        if ctx.type_decl_hash[root.t.name]?.is_library
+        if ctx.type_decl_map[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
       
       spec_id_translate chk_ret, ret
@@ -801,7 +801,7 @@ walk = (root, ctx)->
         if root.special_type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
-        ctx.contract_var_hash[name] = root
+        ctx.contract_var_map[name] = root
         "#{name} : #{type};"
       else
         if root.assign_value
@@ -809,9 +809,9 @@ walk = (root, ctx)->
             type = "#{ctx.current_class.name}_#{root.type.main}"
             type = translate_var_name type, ctx
           val = walk root.assign_value, ctx
-          if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
+          if config.bytes_type_map.hasOwnProperty(root.type.main) and root.assign_value.type.main == "string" and root.assign_value.constructor.name == "Const"
             val = string2bytes root.assign_value.val
-          if config.bytes_type_hash.hasOwnProperty(root.type.main) and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
+          if config.bytes_type_map.hasOwnProperty(root.type.main) and root.assign_value.type.main == "number" and root.assign_value.constructor.name == "Const"
             val = number2bytes root.assign_value.val
           """
           const #{name} : #{type} = #{val}
@@ -943,7 +943,7 @@ walk = (root, ctx)->
       orig_ctx = ctx
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
-        ctx.parent.type_decl_hash["#{ctx.current_class.name}.#{root.name}"] = root
+        ctx.parent.type_decl_map["#{ctx.current_class.name}.#{root.name}"] = root
         prefix = ctx.current_class.name
       
       ctx = ctx.mk_nest()
@@ -954,10 +954,10 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Enum_decl", "Class_decl"
-            ctx.type_decl_hash[v.name] = v
+            ctx.type_decl_map[v.name] = v
           when "PM_switch"
             for _case in root.scope.list
-              ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl
+              ctx.type_decl_map[_case.var_decl.type.main] = _case.var_decl
       
           else
             "skip"
@@ -969,7 +969,7 @@ walk = (root, ctx)->
               field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
-            ctx.contract_var_hash[v.name] = v
+            ctx.contract_var_map[v.name] = v
           
           when "Enum_decl"
             "skip"
@@ -1043,7 +1043,7 @@ walk = (root, ctx)->
         prefix = "#{ctx.current_class.name}_"
       for v, idx in root.value_list
         # register global value
-        ctx.contract_var_hash[v.name] = v
+        ctx.contract_var_map[v.name] = v
         
         # not covered by tests yet
         aux = ""

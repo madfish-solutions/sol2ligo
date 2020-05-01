@@ -3,7 +3,7 @@ fs = require "fs"
 setupMethods = require "solc/wrapper"
 {execSync} = require "child_process"
 
-solc_hash = {}
+solc_map = {}
 
 module.exports = (code, opt={})->
   {
@@ -21,7 +21,7 @@ module.exports = (code, opt={})->
     execSync "mkdir -p #{target_dir}"
     execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js --output #{target_dir}/list.js"
   
-  release_hash = require("../solc-bin/bin/list.js").releases
+  release_map = require("../solc-bin/bin/list.js").releases
   
   solc_full_name = null
   auto_version ?= true
@@ -29,7 +29,7 @@ module.exports = (code, opt={})->
   pick_version = (candidate_version)->
     if debug
       perr "try pick_version #{candidate_version}" # DEBUG
-    if full_name = release_hash[candidate_version]
+    if full_name = release_map[candidate_version]
       solc_full_name = full_name
     else
       perr "unknown release version of solc #{candidate_version}; will take latest"
@@ -53,14 +53,14 @@ module.exports = (code, opt={})->
   
   solc_full_name ?= "soljson-latest.js"
   
-  if !(solc = solc_hash[solc_full_name])?
+  if !(solc = solc_map[solc_full_name])?
     path = "#{target_dir}/#{solc_full_name}"
     if allow_download and !fs.existsSync path
       perr "download #{solc_full_name}"
       execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/#{solc_full_name} --output #{target_dir}/#{solc_full_name}"
       
     perr "loading solc #{solc_full_name}"
-    solc_hash[solc_full_name] = solc = setupMethods require path
+    solc_map[solc_full_name] = solc = setupMethods require path
   
   if debug
     perr "use #{solc_full_name}" # DEBUG

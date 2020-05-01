@@ -41,8 +41,8 @@ do ()=>
 
       when "Struct_init"
         root.fn =  root.fn
-        if ctx.class_hash and root.arg_names.length == 0
-          for v, idx in ctx.class_hash[root.fn.name].scope.list
+        if ctx.class_map and root.arg_names.length == 0
+          for v, idx in ctx.class_map[root.fn.name].scope.list
             root.arg_names.push v.name
         root
       
@@ -193,12 +193,12 @@ do ()=>
     {walk} = ctx
     switch root.constructor.name
       when "Event_decl"
-        ctx.emit_decl_hash[root.name] = true
+        ctx.emit_decl_map[root.name] = true
         root
       
       when "Fn_call"
         if root.fn.constructor.name == "Var"
-          if ctx.emit_decl_hash.hasOwnProperty root.fn.name
+          if ctx.emit_decl_map.hasOwnProperty root.fn.name
             perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
             ret = new ast.Comment
             args = root.arg_list.map (arg) -> arg.name
@@ -211,7 +211,7 @@ do ()=>
     
   
   @fix_missing_emit = (root)->
-    walk root, {walk, next_gen: module.default_walk, emit_decl_hash: {}}
+    walk root, {walk, next_gen: module.default_walk, emit_decl_map: {}}
 # ###################################################################################################
 do ()=>
   walk = (root, ctx)->
@@ -226,12 +226,12 @@ do ()=>
       when "Fn_call"
         switch root.fn.constructor.name
           when "Var"
-            ctx.fn_hash[root.fn.name] = true
+            ctx.fn_map[root.fn.name] = true
           
           when "Field_access"
             if root.fn.t.constructor.name == "Var"
               if root.fn.t.name == "this"
-                ctx.fn_hash[root.fn.name] = true
+                ctx.fn_map[root.fn.name] = true
         
         ctx.next_gen root, ctx
       
@@ -240,9 +240,9 @@ do ()=>
     
   
   @collect_fn_call = (root)->
-    fn_hash = {}
-    walk root, {walk, next_gen: module.default_walk, fn_hash}
-    fn_hash
+    fn_map = {}
+    walk root, {walk, next_gen: module.default_walk, fn_map}
+    fn_map
 
 
 do ()=>
@@ -264,38 +264,38 @@ do ()=>
             continue if  v.constructor.name != "Fn_decl_multiret"
             fn_list.push v
           
-          fn_hash = {}
+          fn_map = {}
           for fn in fn_list
-            fn_hash[fn.name] = fn
+            fn_map[fn.name] = fn
           
           # phase 2 collect usage: modifiers, just Fn_call
-          fn_dep_hash_hash = {}
+          fn_dep_map_map = {}
           for fn in fn_list
-            fn_use_hash = module.collect_fn_call fn
-            fn_use_refined_hash = {}
-            for k,v of fn_use_hash
-              continue if !fn_hash.hasOwnProperty k
-              fn_use_refined_hash[k] = v
+            fn_use_map = module.collect_fn_call fn
+            fn_use_refined_map = {}
+            for k,v of fn_use_map
+              continue if !fn_map.hasOwnProperty k
+              fn_use_refined_map[k] = v
             
-            if fn_use_refined_hash.hasOwnProperty fn.name
-              delete fn_use_refined_hash[fn.name]
+            if fn_use_refined_map.hasOwnProperty fn.name
+              delete fn_use_refined_map[fn.name]
               perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
-            fn_dep_hash_hash[fn.name] = fn_use_refined_hash
+            fn_dep_map_map[fn.name] = fn_use_refined_map
           
           # phase 3 check no loops
           # remove empty usage until nothing to remove left
-          clone_fn_dep_hash_hash = deep_clone fn_dep_hash_hash
+          clone_fn_dep_map_map = deep_clone fn_dep_map_map
           fn_move_list = []
           for i in [0 ... 100] # hang protection
             change_count = 0
             
-            fn_left_name_list = Object.keys clone_fn_dep_hash_hash
+            fn_left_name_list = Object.keys clone_fn_dep_map_map
             for fn_name in fn_left_name_list
-              if 0 == h_count clone_fn_dep_hash_hash[fn_name]
+              if 0 == h_count clone_fn_dep_map_map[fn_name]
                 change_count++
                 use_list = []
-                delete clone_fn_dep_hash_hash[fn_name]
-                for k,v of clone_fn_dep_hash_hash
+                delete clone_fn_dep_map_map[fn_name]
+                for k,v of clone_fn_dep_map_map
                   if v[fn_name]
                     delete v[fn_name]
                     use_list.push k
@@ -308,8 +308,8 @@ do ()=>
             
             break if change_count == 0
           
-          if 0 != h_count clone_fn_dep_hash_hash
-            perr clone_fn_dep_hash_hash
+          if 0 != h_count clone_fn_dep_map_map
+            perr clone_fn_dep_map_map
             perr "CRITICAL WARNING Can't reorder methods. Loop detected. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             break
           
@@ -326,11 +326,11 @@ do ()=>
             } = move_entity
             min_idx = Infinity
             for name in use_list
-              fn = fn_hash[name]
+              fn = fn_map[name]
               idx = root.scope.list.idx fn
               min_idx = Math.min min_idx, idx
             
-            fn_decl = fn_hash[fn_name]
+            fn_decl = fn_map[fn_name]
             old_idx = root.scope.list.idx fn_decl
             if old_idx > min_idx
               # p "move #{fn_name} before #{root.scope.list[min_idx].name} #{old_idx} -> #{min_idx}" # DEBUG
@@ -728,7 +728,7 @@ do ()=>
           name == "constructor" or name == root.name
         
         root = ctx.next_gen root, ctx
-        ctx.class_hash[root.name] = root # store unmodified
+        ctx.class_map[root.name] = root # store unmodified
         return root if !root.inheritance_list.length # for coverage purposes
         
         # reverse order
@@ -740,9 +740,9 @@ do ()=>
           need_lookup_list = []
           for i in [inheritance_list.length-1 .. 0] by -1
             v = inheritance_list[i]
-            if !ctx.class_hash.hasOwnProperty v.name
+            if !ctx.class_map.hasOwnProperty v.name
               throw new Error "can't find parent class #{v.name}"
-            class_decl = ctx.class_hash[v.name]
+            class_decl = ctx.class_map[v.name]
             
             class_decl.need_skip = true
             inheritance_apply_list.push v
@@ -755,9 +755,9 @@ do ()=>
         root = root.clone()
         
         for parent in inheritance_apply_list
-          if !ctx.class_hash.hasOwnProperty parent.name
+          if !ctx.class_map.hasOwnProperty parent.name
             throw new Error "can't find parent class #{parent.name}"
-          class_decl = ctx.class_hash[parent.name]
+          class_decl = ctx.class_map[parent.name]
           
           continue if class_decl.is_interface
           look_list = class_decl.scope.list
@@ -808,7 +808,7 @@ do ()=>
     
   
   @inheritance_unpack = (root)->
-    walk root, {walk, next_gen: module.default_walk, class_hash: {}}
+    walk root, {walk, next_gen: module.default_walk, class_map: {}}
 
 # ###################################################################################################
 
@@ -867,9 +867,9 @@ do ()=>
     ###
     if mod.fn.constructor.name != "Var"
       throw new Error "unimplemented"
-    if !ctx.modifier_hash.hasOwnProperty mod.fn.name
+    if !ctx.modifier_map.hasOwnProperty mod.fn.name
       throw new Error "unknown modifier #{mod.fn.name}"
-    mod_decl = ctx.modifier_hash[mod.fn.name]
+    mod_decl = ctx.modifier_map[mod.fn.name]
     ret = mod_decl.scope.clone()
     prepend_list = []
     for arg, idx in mod.arg_list
@@ -889,7 +889,7 @@ do ()=>
     switch root.constructor.name
       when "Fn_decl_multiret"
         if root.is_modifier
-          ctx.modifier_hash[root.name] = root
+          ctx.modifier_map[root.name] = root
           
           # remove node
           ret = new ast.Comment
@@ -897,7 +897,7 @@ do ()=>
           ret
         else 
           if root.is_constructor
-            ctx.modifier_hash[root.contract_name] = root
+            ctx.modifier_map[root.contract_name] = root
           return root if root.modifier_list.length == 0
           inner = root.scope.clone()
           # TODO clarify modifier's order
@@ -914,7 +914,7 @@ do ()=>
     
   
   @modifier_unpack = (root)->
-    walk root, {walk, next_gen: module.default_walk, modifier_hash: {}}
+    walk root, {walk, next_gen: module.default_walk, modifier_map: {}}
 
 # ###################################################################################################
 

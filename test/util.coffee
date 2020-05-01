@@ -7,7 +7,7 @@ translate           = require("../src/translate_ligo").gen
 fs                  = require "fs"
 {execSync}          = require("child_process")
 
-cache_content_hash = {}
+cache_content_map = {}
 
 @translate_ligo_make_test = (text_i, text_o_expected, opt={})->
   opt.router ?= false
@@ -34,10 +34,10 @@ cache_content_hash = {}
       
       """
     
-    if cache_content_hash[text_o_real]
+    if cache_content_map[text_o_real]
       puts "LIGO check skipped. Reason: content was already checked"
       return
-    cache_content_hash[text_o_real] = true
+    cache_content_map[text_o_real] = true
     
     fs.writeFileSync "test.ligo", text_o_real
     

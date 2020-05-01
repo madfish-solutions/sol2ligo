@@ -4,35 +4,35 @@ require "./type_safe"
 module = @
 
 # NOTE. Type system. Each language should define its own
-@default_var_hash_gen = ()->
+@default_var_map_gen = ()->
   {
     msg : (()->
       ret = new Type "struct"
-      ret.field_hash.sender = new Type "address"
-      ret.field_hash.value  = new Type "uint256"
-      ret.field_hash.data   = new Type "bytes"
-      ret.field_hash.gas    = new Type "uint256"
-      ret.field_hash.sig    = new Type "bytes4"
+      ret.field_map.sender = new Type "address"
+      ret.field_map.value  = new Type "uint256"
+      ret.field_map.data   = new Type "bytes"
+      ret.field_map.gas    = new Type "uint256"
+      ret.field_map.sig    = new Type "bytes4"
       ret
     )()
     tx : (()->
       ret = new Type "struct"
-      ret.field_hash["origin"]  = new Type "address"
-      ret.field_hash["gasprice"]= new Type "uint256"
+      ret.field_map["origin"]  = new Type "address"
+      ret.field_map["gasprice"]= new Type "uint256"
       ret
     )()
     block : (()->
       ret = new Type "struct"
-      ret.field_hash["timestamp"] = new Type "uint256"
-      ret.field_hash["coinbase"]  = new Type "address"
-      ret.field_hash["difficulty"]= new Type "uint256"
-      ret.field_hash["gaslimit"]  = new Type "uint256"
-      ret.field_hash["number"]    = new Type "uint256"
+      ret.field_map["timestamp"] = new Type "uint256"
+      ret.field_map["coinbase"]  = new Type "address"
+      ret.field_map["difficulty"]= new Type "uint256"
+      ret.field_map["gaslimit"]  = new Type "uint256"
+      ret.field_map["number"]    = new Type "uint256"
       ret
     )()
     abi : (()->
       ret = new Type "struct"
-      ret.field_hash["encodePacked"] = new Type "function2_pure<function<bytes>,function<bytes>>"
+      ret.field_map["encodePacked"] = new Type "function2_pure<function<bytes>,function<bytes>>"
       ret
     )()
     now           : new Type "uint256"
@@ -50,21 +50,21 @@ module = @
     "@respond"    : new Type "function2_pure<function<>,function<>>"
   }
 
-array_field_hash =
+array_field_map =
   "length": new Type "uint256"
   "push"  : (type)->
     ret = new Type "function2_pure<function<>,function<>>"
     ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
-bytes_field_hash =
+bytes_field_map =
   "length": new Type "uint256"
 
-address_field_hash =
+address_field_map =
   "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
   "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
 
-@default_type_hash_gen = ()->
+@default_type_map_gen = ()->
   ret = {
     bool    : true
     array   : true
@@ -80,7 +80,7 @@ address_field_hash =
   
   ret
 
-@bin_op_ret_type_hash_list = {
+@bin_op_ret_type_map_list = {
   BOOL_AND: [["bool", "bool", "bool"]]
   BOOL_OR : [["bool", "bool", "bool"]]
   BOOL_GT : [["bool", "bool", "bool"]]
@@ -89,7 +89,7 @@ address_field_hash =
   BOOL_LTE : [["bool", "bool", "bool"]]
   ASSIGN  : [] # only cases a != b
 }
-@un_op_ret_type_hash_list = {
+@un_op_ret_type_map_list = {
   BOOL_NOT: [
     ["bool", "bool"]
   ]
@@ -98,42 +98,42 @@ address_field_hash =
 }
 
 for v in "ADD SUB MUL DIV MOD POW".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = []
+  @bin_op_ret_type_map_list[v] = []
 
 for v in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = []
+  @bin_op_ret_type_map_list[v] = []
 
 for v in "EQ NE GT LT GTE LTE".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = []
+  @bin_op_ret_type_map_list[v] = []
 
 for v in "SHL SHR POW".split  /\s+/g
-  @bin_op_ret_type_hash_list[v] = []
+  @bin_op_ret_type_map_list[v] = []
 
 for op in "RET_INC RET_DEC INC_RET DEC_RET".split  /\s+/g
-  @un_op_ret_type_hash_list[op] = []
+  @un_op_ret_type_map_list[op] = []
 
 # ###################################################################################################
 #    numeric operation type table
 # ###################################################################################################
 do ()=>
   for type in config.any_int_type_list
-    @un_op_ret_type_hash_list.BIT_NOT.push [type, type]
+    @un_op_ret_type_map_list.BIT_NOT.push [type, type]
   
   for type in config.int_type_list
-    @un_op_ret_type_hash_list.MINUS.push [type, type]
+    @un_op_ret_type_map_list.MINUS.push [type, type]
   
   for op in "RET_INC RET_DEC INC_RET DEC_RET".split  /\s+/g
     for type in config.any_int_type_list
-      @un_op_ret_type_hash_list[op].push [type, type]
+      @un_op_ret_type_map_list[op].push [type, type]
     
   for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
-    list = @bin_op_ret_type_hash_list[op]
+    list = @bin_op_ret_type_map_list[op]
     for type in config.any_int_type_list
       list.push [type, type, type]
   
   # non-equal types
   for op in "ADD SUB MUL DIV MOD POW".split  /\s+/g
-    list = @bin_op_ret_type_hash_list[op]
+    list = @bin_op_ret_type_map_list[op]
     for type1, idx1 in config.int_type_list
       for type2, idx2 in config.int_type_list
         continue if idx1 >= idx2
@@ -147,7 +147,7 @@ do ()=>
         list.push [type2, type1, type2]
   
   for op in "BIT_AND BIT_OR BIT_XOR".split  /\s+/g
-    list = @bin_op_ret_type_hash_list[op]
+    list = @bin_op_ret_type_map_list[op]
     for type in config.uint_type_list
       list.push [type, type, type]
     for type in config.int_type_list
@@ -156,13 +156,13 @@ do ()=>
       list.push [type, type, type]
   
   for op in "EQ NE GT LT GTE LTE".split  /\s+/g
-    list = @bin_op_ret_type_hash_list[op]
+    list = @bin_op_ret_type_map_list[op]
     for type in config.any_int_type_list
       list.push [type, type, "bool"]
   
   # special
   for op in "SHL SHR POW".split  /\s+/g
-    list = @bin_op_ret_type_hash_list[op]
+    list = @bin_op_ret_type_map_list[op]
     for type_main in config.uint_type_list
       for type_index in config.uint_type_list
         list.push [type_main, type_index, type_main]
@@ -173,19 +173,19 @@ do ()=>
 # ###################################################################################################
 do ()=>
   for type in config.bytes_type_list
-    @un_op_ret_type_hash_list.BIT_NOT.push [type, type]
+    @un_op_ret_type_map_list.BIT_NOT.push [type, type]
   
   for type_byte in config.bytes_type_list
     for type_int in config.any_int_type_list
-      @bin_op_ret_type_hash_list.ASSIGN.push [type_byte, type_int, type_int]
-      @bin_op_ret_type_hash_list.ASSIGN.push [type_int, type_byte, type_int]
+      @bin_op_ret_type_map_list.ASSIGN.push [type_byte, type_int, type_int]
+      @bin_op_ret_type_map_list.ASSIGN.push [type_int, type_byte, type_int]
   
   for op in "EQ NE GT LT GTE LTE".split  /\s+/g
     for type_byte in config.bytes_type_list
       for type_int in config.any_int_type_list
-        @bin_op_ret_type_hash_list[op].push [type_byte, type_int, "bool"]
-        @bin_op_ret_type_hash_list[op].push [type_int, type_byte, "bool"]
-      @bin_op_ret_type_hash_list[op].push [type_byte, type_byte, "bool"]
+        @bin_op_ret_type_map_list[op].push [type_byte, type_int, "bool"]
+        @bin_op_ret_type_map_list[op].push [type_int, type_byte, "bool"]
+      @bin_op_ret_type_map_list[op].push [type_byte, type_byte, "bool"]
   
   return
 
@@ -195,42 +195,42 @@ class Ti_context
   parent    : null
   parent_fn : null
   current_class : null
-  var_hash  : {}
-  type_hash : {}
+  var_map  : {}
+  type_map : {}
   
   constructor:()->
-    @var_hash = module.default_var_hash_gen()
-    @type_hash= module.default_type_hash_gen()
+    @var_map = module.default_var_map_gen()
+    @type_map= module.default_type_map_gen()
   
   mk_nest : ()->
     ret = new Ti_context
     ret.parent = @
     ret.parent_fn = @parent_fn
     ret.current_class = @current_class
-    obj_set ret.type_hash, @type_hash
+    obj_set ret.type_map, @type_map
     ret
   
   type_proxy : (cls)->
     if cls.constructor.name == "Enum_decl"
       ret = new Type "enum"
       for v in cls.value_list
-        ret.field_hash[v.name] = new Type "int"
+        ret.field_map[v.name] = new Type "int"
       ret
     else
       ret = new Type "struct"
       for k,v of cls._prepared_field2type
         continue unless v.main in ["function2", "function2_pure"]
-        ret.field_hash[k] = v
+        ret.field_map[k] = v
       ret
   
   check_id : (id)->
     if id == "this"
       return @type_proxy @current_class
-    if @type_hash.hasOwnProperty id
-      return @type_proxy @type_hash[id]
-    if @var_hash.hasOwnProperty id
-      return @var_hash[id]
-    if state_class = @type_hash[config.storage]
+    if @type_map.hasOwnProperty id
+      return @type_proxy @type_map[id]
+    if @var_map.hasOwnProperty id
+      return @var_map[id]
+    if state_class = @type_map[config.storage]
       return ret if ret = state_class._prepared_field2type[id]
     
     if @parent
@@ -238,16 +238,16 @@ class Ti_context
     throw new Error "can't find decl for id '#{id}'"
   
   check_type : (_type)->
-    if @type_hash.hasOwnProperty _type
-      return @type_hash[_type]
+    if @type_map.hasOwnProperty _type
+      return @type_map[_type]
     if @parent
       return @parent.check_type _type
     throw new Error "can't find type '#{_type}'"
 
 class_prepare = (root, ctx)->
-  ctx.type_hash[root.name] = root
+  ctx.type_map[root.name] = root
   if ctx.parent and ctx.current_class
-    ctx.parent.type_hash["#{ctx.current_class.name}.#{root.name}"] = root
+    ctx.parent.type_map["#{ctx.current_class.name}.#{root.name}"] = root
   for v in root.scope.list
     switch v.constructor.name
       when "Var_decl"
@@ -276,11 +276,11 @@ is_composite_type = (type)->
   type.main in ["array", "tuple", "map", "struct"]
 
 is_defined_number_or_byte_type = (type)->
-  config.any_int_type_hash[type.main] or config.bytes_type_hash[type.main]
+  config.any_int_type_map[type.main] or config.bytes_type_map[type.main]
 
 type_resolve = (type, ctx)->
   if type and type.main != "struct"
-    if ctx.type_hash[type.main]
+    if ctx.type_map[type.main]
       type = ctx.check_id type.main
   type
 
@@ -289,9 +289,9 @@ get_list_sign = (list)->
   has_unsigned = false
   has_wtf      = false
   for v in list
-    if config.int_type_hash.hasOwnProperty(v) or v == "signed_number"
+    if config.int_type_map.hasOwnProperty(v) or v == "signed_number"
       has_signed = true
-    else if config.uint_type_hash.hasOwnProperty(v) or v == "unsigned_number"
+    else if config.uint_type_map.hasOwnProperty(v) or v == "unsigned_number"
       has_unsigned = true
     else if v == "number"
       has_signed = true
@@ -346,14 +346,14 @@ get_list_sign = (list)->
     else
       return a_type if a_type.cmp b_type
       # not fully correct, but solidity will wipe all incorrect cases for us
-      if a_type.main == "bytes" and config.bytes_type_hash.hasOwnProperty b_type.main
+      if a_type.main == "bytes" and config.bytes_type_map.hasOwnProperty b_type.main
         return a_type
-      if config.bytes_type_hash.hasOwnProperty(a_type.main) and b_type.main == "bytes"
+      if config.bytes_type_map.hasOwnProperty(a_type.main) and b_type.main == "bytes"
         return a_type
         
-      if a_type.main == "string" and config.bytes_type_hash.hasOwnProperty b_type.main
+      if a_type.main == "string" and config.bytes_type_map.hasOwnProperty b_type.main
         return a_type
-      if config.bytes_type_hash.hasOwnProperty(a_type.main) and b_type.main == "string"
+      if config.bytes_type_map.hasOwnProperty(a_type.main) and b_type.main == "string"
         return a_type
       
       if a_type.main != "struct" and b_type.main == "struct"
@@ -380,7 +380,7 @@ get_list_sign = (list)->
           new_inner_a = type_spread_left inner_a, inner_b, ctx
           a_type.nest_list[idx] = new_inner_a
         
-        # TODO struct? but we don't need it? (field_hash)
+        # TODO struct? but we don't need it? (field_map)
       else
         if is_composite_type b_type
           perr "can't spread between '#{a_type}' '#{b_type}'. Reason: is_composite_type mismatch"
@@ -389,15 +389,15 @@ get_list_sign = (list)->
         if is_number_type(a_type) and is_number_type(b_type)
           return a_type
         
-        if a_type.main == "address" and config.any_int_type_hash.hasOwnProperty(b_type)
+        if a_type.main == "address" and config.any_int_type_map.hasOwnProperty(b_type)
           perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
           return a_type
         
-        if b_type.main == "address" and config.any_int_type_hash.hasOwnProperty(a_type)
+        if b_type.main == "address" and config.any_int_type_map.hasOwnProperty(a_type)
           perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
           return a_type
         
-        if config.bytes_type_hash.hasOwnProperty(a_type.main) and config.bytes_type_hash.hasOwnProperty(b_type.main)
+        if config.bytes_type_map.hasOwnProperty(a_type.main) and config.bytes_type_map.hasOwnProperty(b_type.main)
           perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
           return a_type
         
@@ -450,7 +450,7 @@ get_list_sign = (list)->
                 root.type   = type_spread_left root.type, root.a.type.nest_list[0], ctx
               
               else
-                if config.bytes_type_hash.hasOwnProperty root.a.type?.main
+                if config.bytes_type_map.hasOwnProperty root.a.type?.main
                   root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
                   root.type = type_spread_left root.type, new Type("bytes1"), ctx
         
@@ -474,34 +474,34 @@ get_list_sign = (list)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        field_hash = {}
+        field_map = {}
         if root_type
           switch root_type.main
             when "array"
-              field_hash = array_field_hash
+              field_map = array_field_map
             
             when "address"
-              field_hash = address_field_hash
+              field_map = address_field_map
             
             when "struct"
-              field_hash = root_type.field_hash
+              field_map = root_type.field_map
             
             when "enum"
-              field_hash = root_type.field_hash
+              field_map = root_type.field_map
             
             else
-              if config.bytes_type_hash.hasOwnProperty root_type.main
-                field_hash = bytes_field_hash
+              if config.bytes_type_map.hasOwnProperty root_type.main
+                field_map = bytes_field_map
               else
                 class_decl = ctx.check_type root_type.main
-                field_hash = class_decl._prepared_field2type
+                field_map = class_decl._prepared_field2type
 
-        if !field_hash.hasOwnProperty root.name
+        if !field_map.hasOwnProperty root.name
           # perr root.t
-          # perr field_hash
-          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          # perr field_map
+          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_map).join ', '}]"
           return root.type
-        field_type = field_hash[root.name]
+        field_type = field_map[root.name]
         
         # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
@@ -577,7 +577,7 @@ get_list_sign = (list)->
         if root.assign_value
           root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
-        ctx.var_hash[root.name] = root.type
+        ctx.var_map[root.name] = root.type
         null
       
       when "Var_decl_multi"
@@ -585,7 +585,7 @@ get_list_sign = (list)->
           root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
         for decl in root.list
-          ctx.var_hash[decl.name] = decl.type
+          ctx.var_map[decl.name] = decl.type
         null
       
       when "Throw"
@@ -624,9 +624,9 @@ get_list_sign = (list)->
         ctx_nest.current_class = root
 
         for k,v of root._prepared_field2type
-          ctx_nest.var_hash[k] = v
+          ctx_nest.var_map[k] = v
         
-        # ctx_nest.var_hash["this"] = new Type root.name
+        # ctx_nest.var_map["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type
       
@@ -637,12 +637,12 @@ get_list_sign = (list)->
           complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
-        ctx.var_hash[root.name] = complex_type
+        ctx.var_map[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
         ctx_nest.parent_fn = root
         for name,k in root.arg_name_list
           type = root.type_i.nest_list[k]
-          ctx_nest.var_hash[name] = type
+          ctx_nest.var_map[name] = type
         walk root.scope, ctx_nest
         root.type
       
@@ -664,9 +664,9 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        ctx.type_hash[root.name] = root
+        ctx.type_map[root.name] = root
         for decl in root.value_list
-          ctx.var_hash[decl.name] = decl.type
+          ctx.var_map[decl.name] = decl.type
 
         new Type "enum"
       
@@ -793,7 +793,7 @@ get_list_sign = (list)->
                 return root.type
               
               else
-                if config.bytes_type_hash.hasOwnProperty root.a.type?.main
+                if config.bytes_type_map.hasOwnProperty root.a.type?.main
                   root.b.type = type_spread_left root.b.type, new Type("uint256"), ctx
                   root.type = type_spread_left root.type, new Type("bytes1"), ctx
                   return root.type
@@ -805,7 +805,7 @@ get_list_sign = (list)->
         b   = (root.b.type or "").toString()
         ret = (root.type   or "").toString()
         
-        if !list = module.bin_op_ret_type_hash_list[root.op]
+        if !list = module.bin_op_ret_type_map_list[root.op]
           throw new Error "unknown bin_op #{root.op}"
           
         # filter for fully defined types
@@ -820,7 +820,7 @@ get_list_sign = (list)->
         if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash.hasOwnProperty tuple[0]
+            continue if !config.any_int_type_map.hasOwnProperty tuple[0]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -828,7 +828,7 @@ get_list_sign = (list)->
         if is_number_type root.b.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash.hasOwnProperty tuple[1]
+            continue if !config.any_int_type_map.hasOwnProperty tuple[1]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -836,7 +836,7 @@ get_list_sign = (list)->
         if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash.hasOwnProperty tuple[2]
+            continue if !config.any_int_type_map.hasOwnProperty tuple[2]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -905,7 +905,7 @@ get_list_sign = (list)->
         a   = (root.a.type or "").toString()
         ret = (root.type   or "").toString()
         
-        if !list = module.un_op_ret_type_hash_list[root.op]
+        if !list = module.un_op_ret_type_map_list[root.op]
           throw new Error "unknown un_op #{root.op}"
         # filter for fully defined types
         found_list = []
@@ -918,7 +918,7 @@ get_list_sign = (list)->
         if is_number_type root.a.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash.hasOwnProperty tuple[0]
+            continue if !config.any_int_type_map.hasOwnProperty tuple[0]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -926,7 +926,7 @@ get_list_sign = (list)->
         if is_number_type root.type
           filter_found_list = []
           for tuple in found_list
-            continue if !config.any_int_type_hash.hasOwnProperty tuple[1]
+            continue if !config.any_int_type_map.hasOwnProperty tuple[1]
             filter_found_list.push tuple
           
           found_list = filter_found_list
@@ -969,34 +969,34 @@ get_list_sign = (list)->
       when "Field_access"
         root_type = walk(root.t, ctx)
         
-        field_hash = {}
+        field_map = {}
         if root_type
           switch root_type.main
             when "array"
-              field_hash = array_field_hash
+              field_map = array_field_map
             
             when "bytes"
-              field_hash = bytes_field_hash
+              field_map = bytes_field_map
             
             when "address"
-              field_hash = address_field_hash
+              field_map = address_field_map
             
             when "struct"
-              field_hash = root_type.field_hash
+              field_map = root_type.field_map
             
             when "enum"
-              field_hash = root_type.field_hash
+              field_map = root_type.field_map
             
             else
               class_decl = ctx.check_type root_type.main
-              field_hash = class_decl._prepared_field2type
+              field_map = class_decl._prepared_field2type
         
-        if !field_hash.hasOwnProperty root.name
+        if !field_map.hasOwnProperty root.name
           # perr root.t
-          # perr field_hash
-          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_hash).join ', '}]"
+          # perr field_map
+          perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_map).join ', '}]"
           return root.type
-        field_type = field_hash[root.name]
+        field_type = field_map[root.name]
         # Seems to be useless
         # field_type = ast.type_actualize field_type, root.t.type
         if typeof field_type == "function"
@@ -1074,7 +1074,7 @@ get_list_sign = (list)->
         if root.assign_value
           root.assign_value.type = type_spread_left root.assign_value.type, root.type, ctx
           walk root.assign_value, ctx
-        ctx.var_hash[root.name] = root.type
+        ctx.var_map[root.name] = root.type
         null
       
       when "Var_decl_multi"
@@ -1083,7 +1083,7 @@ get_list_sign = (list)->
           walk root.assign_value, ctx
         
         for decl in root.list
-          ctx.var_hash[decl.name] = decl.type
+          ctx.var_map[decl.name] = decl.type
         
         null
       
@@ -1123,9 +1123,9 @@ get_list_sign = (list)->
         ctx_nest.current_class = root
         
         for k,v of root._prepared_field2type
-          ctx_nest.var_hash[k] = v
+          ctx_nest.var_map[k] = v
         
-        # ctx_nest.var_hash["this"] = new Type root.name
+        # ctx_nest.var_map["this"] = new Type root.name
         walk root.scope, ctx_nest
         root.type
       
@@ -1136,12 +1136,12 @@ get_list_sign = (list)->
           complex_type = new Type "function2"
         complex_type.nest_list.push root.type_i
         complex_type.nest_list.push root.type_o
-        ctx.var_hash[root.name] = complex_type
+        ctx.var_map[root.name] = complex_type
         ctx_nest = ctx.mk_nest()
         ctx_nest.parent_fn = root
         for name,k in root.arg_name_list
           type = root.type_i.nest_list[k]
-          ctx_nest.var_hash[name] = type
+          ctx_nest.var_map[name] = type
         walk root.scope, ctx_nest
         root.type
       
@@ -1163,9 +1163,9 @@ get_list_sign = (list)->
         null
       
       when "Enum_decl"
-        ctx.type_hash[root.name] = root
+        ctx.type_map[root.name] = root
         for decl in root.value_list
-          ctx.var_hash[decl.name] = decl.type
+          ctx.var_map[decl.name] = decl.type
           
         new Type "enum"
       

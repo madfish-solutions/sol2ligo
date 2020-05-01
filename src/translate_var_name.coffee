@@ -1,5 +1,5 @@
 config = require "./config"
-reserved_hash =
+reserved_map =
   # https://gitlab.com/ligolang/ligo/blob/dev/src/passes/operators/operators.ml
   "get_force"       : true
   "get_chain_id"    : true
@@ -22,7 +22,7 @@ reserved_hash =
   "string_concat"   : true
   "string_slice"    : true
   "crypto_check"    : true
-  "crypto_hash_key" : true
+  "crypto_map_key" : true
   "bytes_concat"    : true
   "bytes_slice"     : true
   "bytes_pack"      : true
@@ -77,8 +77,8 @@ reserved_hash =
   "some"            : true
   
 
-reserved_hash[config.contract_storage] = true
-reserved_hash[config.op_list] = true
+reserved_map[config.contract_storage] = true
+reserved_map[config.op_list] = true
 
 @translate_var_name = (name, ctx)->
   if name[0] == "_"
@@ -92,7 +92,7 @@ reserved_hash[config.op_list] = true
   
   if name == "@main"
     "main"
-  else if reserved_hash.hasOwnProperty name
+  else if reserved_map.hasOwnProperty name
     "#{config.reserved}__#{name}"
   else
     name

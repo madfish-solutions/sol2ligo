@@ -8,11 +8,11 @@ Type.prototype.clone = ()->
       ret.nest_list.push v
     else
       ret.nest_list.push v.clone()
-  for k,v of @field_hash
+  for k,v of @field_map
     if !v?
-      ret.field_hash[k] = v
+      ret.field_map[k] = v
     else
-      ret.field_hash[k] = v.clone()
+      ret.field_map[k] = v.clone()
   ret
 
 null_str = "\x1E"
@@ -29,7 +29,7 @@ Type.prototype.toString = ()->
     ret += "<#{jl.join ', '}>"
   
   jl = []
-  for k,v of @field_hash
+  for k,v of @field_map
     if !v?
       jl.push "#{k}: #{null_str}"
     else
@@ -46,13 +46,13 @@ Type.prototype.cmp = (t)->
     tv = t.nest_list[k]
     continue if tv == v
     return false if !tv?.cmp v
-  for k,v of @field_hash
-    continue if t.field_hash[k] == v
-    return false if !t.field_hash.hasOwnProperty k
-    tv = t.field_hash[k]
+  for k,v of @field_map
+    continue if t.field_map[k] == v
+    return false if !t.field_map.hasOwnProperty k
+    tv = t.field_map[k]
     return false if !tv?.cmp v
-  for k,v of t.field_hash
-    return false if !@field_hash.hasOwnProperty k
-    tv = @field_hash[k]
+  for k,v of t.field_map
+    return false if !@field_map.hasOwnProperty k
+    tv = @field_map[k]
     # return false if !tv.cmp v
   true
