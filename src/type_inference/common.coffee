@@ -219,6 +219,8 @@ class @Ti_context
   type_map : {}
 
   # external params
+  # we call ctx.walk so we can sometimes make calls to previous stage, but continue using current walk
+  walk : null
   first_stage_walk : null
   change_count : 0
   
@@ -231,6 +233,8 @@ class @Ti_context
     ret.parent = @
     ret.parent_fn = @parent_fn
     ret.current_class = @current_class
+    ret.first_stage_walk = @first_stage_walk
+    ret.walk = @walk
     obj_set ret.type_map, @type_map
     ret
   

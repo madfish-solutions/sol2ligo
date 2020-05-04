@@ -1,10 +1,9 @@
-# bottom-to-top @walk + type reference
+# bottom-to-top walk + type reference
 
 Type = require "type"
 config = require "../config"
 require "../type_safe"
 ti = require "./common"
-
 
 @walk = (root, ctx)->
   switch root.constructor.name
@@ -18,8 +17,8 @@ ti = require "./common"
       root.type
     
     when "Bin_op"
-      @walk root.a, ctx
-      @walk root.b, ctx
+      ctx.walk root.a, ctx
+      ctx.walk root.b, ctx
       
       switch root.op
         when "ASSIGN"
@@ -59,7 +58,7 @@ ti = require "./common"
       root.type
     
     when "Un_op"
-      a = @walk root.a, ctx
+      a = ctx.walk root.a, ctx
       
       if root.op == "DELETE"
         if root.a.constructor.name == "Bin_op"
@@ -72,7 +71,7 @@ ti = require "./common"
       root.type
     
     when "Field_access"
-      root_type = @walk(root.t, ctx)
+      root_type = ctx.walk(root.t, ctx)
       
       field_map = {}
       if root_type
@@ -117,7 +116,7 @@ ti = require "./common"
           if root.fn.name == "super"
             perr "CRITICAL WARNING skip super() call"
             for arg in root.arg_list
-              @walk arg, ctx
+              ctx.walk arg, ctx
             
             return root.type
         
@@ -126,11 +125,11 @@ ti = require "./common"
             if root.fn.t.name == "super"
               perr "CRITICAL WARNING skip super.fn call"
               for arg in root.arg_list
-                @walk arg, ctx
+                ctx.walk arg, ctx
               
               return root.type
       
-      root_type = @walk root.fn, ctx
+      root_type = ctx.walk root.fn, ctx
       root_type = ti.type_resolve root_type, ctx
       if !root_type
         perr "CRITICAL WARNING can't resolve function type for Fn_call"
@@ -141,7 +140,7 @@ ti = require "./common"
       else
         offset = 2
       for arg in root.arg_list
-        @walk arg, ctx
+        ctx.walk arg, ctx
       
       if root_type.main == "struct"
         # this is contract(address) case
@@ -155,13 +154,13 @@ ti = require "./common"
         root.type = ti.type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
 
     when "Struct_init"        
-      root_type = @walk root.fn, ctx
+      root_type = ctx.walk root.fn, ctx
       root_type = ti.type_resolve root_type, ctx
       if !root_type
         perr "CRITICAL WARNING can't resolve function type for Struct_init"
         return root.type
       for arg,i in root.val_list
-        @walk arg, ctx
+        ctx.walk arg, ctx
       root.type
     
     # ###################################################################################################
@@ -176,21 +175,21 @@ ti = require "./common"
     when "Var_decl"
       if root.assign_value
         root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
-        @walk root.assign_value, ctx
+        ctx.walk root.assign_value, ctx
       ctx.var_map[root.name] = root.type
       null
     
     when "Var_decl_multi"
       if root.assign_value
         root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
-        @walk root.assign_value, ctx
+        ctx.walk root.assign_value, ctx
       for decl in root.list
         ctx.var_map[decl.name] = decl.type
       null
     
     when "Throw"
       if root.t
-        @walk root.t, ctx
+        ctx.walk root.t, ctx
       null
     
     when "Scope"
@@ -199,7 +198,7 @@ ti = require "./common"
         if v.constructor.name == "Class_decl"
           ti.class_prepare v, ctx
       for v in root.list
-        @walk v, ctx_nest
+        ctx.walk v, ctx_nest
       
       null
     
@@ -214,7 +213,7 @@ ti = require "./common"
           perr v
           throw new Error "Ret_multi type mismatch [#{idx}] expected=#{expected} real=#{real} @fn=#{ctx.parent_fn.name}"
         
-        @walk v, ctx
+        ctx.walk v, ctx
       null
     
     when "Class_decl"
@@ -222,12 +221,12 @@ ti = require "./common"
       
       ctx_nest = ctx.mk_nest()
       ctx_nest.current_class = root
-
+      
       for k,v of root._prepared_field2type
         ctx_nest.var_map[k] = v
       
       # ctx_nest.var_map["this"] = new Type root.name
-      @walk root.scope, ctx_nest
+      ctx.walk root.scope, ctx_nest
       root.type
     
     when "Fn_decl_multiret"
@@ -243,7 +242,7 @@ ti = require "./common"
       for name,k in root.arg_name_list
         type = root.type_i.nest_list[k]
         ctx_nest.var_map[name] = type
-      @walk root.scope, ctx_nest
+      ctx.walk root.scope, ctx_nest
       root.type
     
     when "PM_switch"
@@ -253,14 +252,14 @@ ti = require "./common"
     #    control flow
     # ###################################################################################################
     when "If"
-      @walk(root.cond, ctx)
-      @walk(root.t, ctx.mk_nest())
-      @walk(root.f, ctx.mk_nest())
+      ctx.walk(root.cond, ctx)
+      ctx.walk(root.t, ctx.mk_nest())
+      ctx.walk(root.f, ctx.mk_nest())
       null
     
     when "While"
-      @walk root.cond, ctx.mk_nest()
-      @walk root.scope, ctx.mk_nest()
+      ctx.walk root.cond, ctx.mk_nest()
+      ctx.walk root.scope, ctx.mk_nest()
       null
     
     when "Enum_decl"
@@ -271,13 +270,13 @@ ti = require "./common"
       new Type "enum"
     
     when "Type_cast"
-      @walk root.t, ctx
+      ctx.walk root.t, ctx
       root.type
     
     when "Ternary"
-      @walk root.cond, ctx
-      t = @walk root.t, ctx
-      f = @walk root.f, ctx
+      ctx.walk root.cond, ctx
+      t = ctx.walk root.t, ctx
+      f = ctx.walk root.f, ctx
       root.t.type = ti.type_spread_left root.t.type, root.f.type, ctx
       root.f.type = ti.type_spread_left root.f.type, root.t.type, ctx
       root.type = ti.type_spread_left root.type, root.t.type, ctx
@@ -286,12 +285,12 @@ ti = require "./common"
     when "New"
       # TODO check suitable constructor
       for arg in root.arg_list
-        @walk arg, ctx
+        ctx.walk arg, ctx
       root.type
     
     when "Tuple"
       for v in root.list
-        @walk v, ctx
+        ctx.walk v, ctx
       
       # -> ret
       nest_list = []
@@ -312,7 +311,7 @@ ti = require "./common"
     
     when "Array_init"
       for v in root.list
-        @walk v, ctx
+        ctx.walk v, ctx
       
       nest_type = null
       if root.type
