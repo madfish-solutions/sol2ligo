@@ -730,25 +730,25 @@ walk = (root, ctx)->
       if arg_list.length == 0
         arg_list.push "unit"
       
-      type_jl = []
+      ret_types_list = []
       # type can be null
       # type can be contract name, so no nest_list
       for v in root.fn.type?.nest_list[1]?.nest_list or []
-        type_jl.push translate_type v, ctx
+        ret_types_list.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
 
-      if is_pure and type_jl.length == 0
+      if is_pure and ret_types_list.length == 0
         perr "Bad call of pure function that returns nothing"
-        type_jl.push "unit"
+        ret_types_list.push "unit"
       if not root.left_unpack
         "#{call_expr}"
       else
-        if type_jl.length == 1
-          ctx.sink_list.push "const #{tmp_var} : #{type_jl[0]} = #{call_expr}"
+        if ret_types_list.length == 1
+          ctx.sink_list.push "const #{tmp_var} : #{ret_types_list[0]} = #{call_expr}"
         else
-          ctx.sink_list.push "const #{tmp_var} : (#{type_jl.join ' * '}) = #{call_expr}"
+          ctx.sink_list.push "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
     
     when "Struct_init"
       arg_list = []
