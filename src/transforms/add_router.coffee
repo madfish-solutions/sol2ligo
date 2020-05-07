@@ -114,13 +114,13 @@ walk = (root, ctx)->
             arg.t.type = _case.var_decl.type
             arg.name = arg_name
           
-          if !func.should_ret_op_list and func.should_modify_storage
+          if !func.should_ret_op_list and func.modifies_storage
             _case.scope.need_nest = false
             _case.scope.list.push ret = new ast.Tuple
             ret.list.push _var = new ast.Const
             _var.type = new Type "built_in_op_list"
             ret.list.push call 
-          else if !func.should_modify_storage
+          else if !func.modifies_storage
             _case.scope.need_nest = false
             _case.scope.list.push ret = new ast.Tuple
             ret.list.push call 

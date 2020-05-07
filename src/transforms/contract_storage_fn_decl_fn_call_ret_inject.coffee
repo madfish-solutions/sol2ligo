@@ -21,7 +21,7 @@ walk = (root, ctx)->
       for v,idx in root.t_list
         root.t_list[idx] = walk v, ctx
       
-      if ctx.should_modify_storage
+      if ctx.modifies_storage
         root.t_list.unshift inject = new ast.Var
         inject.name = config.contract_storage
         inject.name_translate = false
@@ -53,15 +53,19 @@ walk = (root, ctx)->
     
     when "Fn_decl_multiret"
       ctx.state_mutability = root.state_mutability
-      ctx.should_ret_op_list = root.should_ret_op_list
-      ctx.should_modify_storage = root.should_modify_storage
-      ctx.should_ret_args = root.should_ret_args
+
+      should_ret_args = (root.state_mutability in ['pure', 'view'] and root.visibility == 'private') or root.visibility == 'internal' or (root.state_mutability == 'pure' and root.visibility == 'public')
+
+      ctx.should_ret_op_list = !should_ret_args or root.visibility == 'public'
+
+      ctx.modifies_storage = root.state_mutability not in ['pure', 'view']
+      
       root.scope = walk root.scope, ctx
       ctx.has_op_list_decl = check_external_ops root.scope
       
       state_name = config.storage
       state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
-      if !root.should_ret_args and !root.should_modify_storage
+      if !should_ret_args and !ctx.modifies_storage
         root.arg_name_list.unshift config.receiver_name
         root.type_i.nest_list.unshift contract = new Type "contract" 
         ret_types = []
@@ -85,7 +89,7 @@ walk = (root, ctx)->
       if ctx.state_mutability != 'pure'
         root.arg_name_list.unshift config.contract_storage
         root.type_i.nest_list.unshift new Type state_name
-      if ctx.should_modify_storage
+      if ctx.modifies_storage
         root.type_o.nest_list.unshift new Type state_name
       if ctx.should_ret_op_list
         root.type_o.nest_list.unshift new Type "built_in_op_list"
@@ -105,6 +109,10 @@ walk = (root, ctx)->
         while root.type_o.nest_list.length > last.t_list.length
           root.type_o.nest_list.pop()
         root.scope.list.push last
+
+      root.should_ret_op_list = ctx.should_ret_op_list
+      root.modifies_storage = ctx.modifies_storage
+
       root
     
     else

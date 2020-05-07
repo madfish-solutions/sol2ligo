@@ -116,9 +116,7 @@ class @Fn_decl_multiret
   state_mutability : ""
   contract_name : ""
   contract_type : ""
-  should_ret_op_list : false
-  should_modify_storage : false
-  should_ret_args : false
+  
   is_modifier: false
   is_constructor: false
   modifier_list : [] # array<Fn_call>
@@ -142,9 +140,7 @@ class @Fn_decl_multiret
     ret.pos   = @pos
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
-    ret.should_ret_op_list= @should_ret_op_list
-    ret.should_modify_storage= @should_modify_storage
-    ret.should_ret_args= @should_ret_args
+
     ret.contract_name = @contract_name
     ret.contract_type = @contract_type
     ret.is_modifier = @is_modifier

@@ -613,10 +613,6 @@ walk = (root, ctx)->
       ret.type_o =  new Type "function"
       ret.visibility = root.visibility
       ret.state_mutability = root.stateMutability
-      ret.should_ret_args = (ret.state_mutability in ['pure', 'view'] and ret.visibility == 'private') or ret.visibility == 'internal' or (ret.state_mutability == 'pure' and ret.visibility == 'public')
-      ret.should_ret_op_list = !ret.should_ret_args or ret.visibility == 'public'
-      ret.should_modify_storage = ret.state_mutability not in ['pure', 'view']
-
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
       unless ret.is_modifier
