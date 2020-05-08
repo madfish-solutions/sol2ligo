@@ -287,11 +287,7 @@ get_list_sign = (list)->
         perr "CRITICAL WARNING can't resolve function type for Fn_call"
         return root.type
       
-      if root_type.main == "function2_pure"
-        offset = 0
-      else
-        offset = 2
-      
+      offset = 0
       for arg,i in root.arg_list
         ctx.walk arg, ctx
         if root_type.main != "struct"

@@ -96,23 +96,24 @@ walk = (root, ctx)->
           # NOTE that PM_switch is ignored by type inference
           # BUG. Type inference should resolve this fn properly
           
-          # NETE. will be changed in type inference
-          if func.state_mutability == 'pure'
-            call.fn.type = new Type "function2_pure"
-            # BUG only 1 ret value supported
-            call.type = func.type_o.nest_list[0]
-          else
-            call.fn.type = new Type "function2"
+          # NOTE. will be changed in type inference
+          call.fn.type = new Type "function2"
           call.fn.type.nest_list[0] = func.type_i
           call.fn.type.nest_list[1] = func.type_o
           for arg_name,idx in func.arg_name_list
-            if func.state_mutability != "pure"
-              continue if idx < 1
-            call.arg_list.push arg = new ast.Field_access
-            arg.t = new ast.Var
-            arg.t.name = _case.var_decl.name
-            arg.t.type = _case.var_decl.type
-            arg.name = arg_name
+            if arg_name == "self"
+              arg = new ast.Var
+              arg.name = arg_name
+              arg.type = new Type config.storage
+              arg.name_translate = false
+              call.arg_list.push arg
+            else
+              arg = new ast.Var
+              arg.name = _case.var_decl.name
+              arg.type = _case.var_decl.type
+              call.arg_list.push match_shoulder = new ast.Field_access
+              match_shoulder.name = arg_name
+              match_shoulder.t = arg
           
           if !func.should_ret_op_list and func.modifies_storage
             _case.scope.need_nest = false

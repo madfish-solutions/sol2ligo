@@ -135,10 +135,7 @@ ti = require "./common"
         perr "CRITICAL WARNING can't resolve function type for Fn_call"
         return root.type
       
-      if root_type.main == "function2_pure"
-        offset = 0
-      else
-        offset = 2
+      offset = 0
       for arg in root.arg_list
         ctx.walk arg, ctx
       
@@ -230,10 +227,7 @@ ti = require "./common"
       root.type
     
     when "Fn_decl_multiret"
-      if root.state_mutability == "pure"
-        complex_type = new Type "function2_pure"
-      else
-        complex_type = new Type "function2"
+      complex_type = new Type "function2"
       complex_type.nest_list.push root.type_i
       complex_type.nest_list.push root.type_o
       ctx.var_map[root.name] = complex_type

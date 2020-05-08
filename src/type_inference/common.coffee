@@ -33,28 +33,28 @@ Type = require "type"
     )()
     abi : (()->
       ret = new Type "struct"
-      ret.field_map["encodePacked"] = new Type "function2_pure<function<bytes>,function<bytes>>"
+      ret.field_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
       ret
     )()
     now           : new Type "uint256"
-    require       : new Type "function2_pure<function<bool>,function<>>"
-    require2      : new Type "function2_pure<function<bool, string>,function<>>"
-    assert        : new Type "function2_pure<function<bool>,function<>>"
-    revert        : new Type "function2_pure<function<string>,function<>>"
-    sha256        : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    sha3          : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    selfdestruct  : new Type "function2_pure<function<address>,function<>>"
-    blockmap      : new Type "function2_pure<function<address>,function<bytes32>>"
-    keccak256     : new Type "function2_pure<function<bytes>,function<bytes32>>"
-    ripemd160     : new Type "function2_pure<function<bytes>,function<bytes20>>"
-    ecrecover     : new Type "function2_pure<function<bytes, uint8, bytes32, bytes32>,function<address>>"
-    "@respond"    : new Type "function2_pure<function<>,function<>>"
+    require       : new Type "function2<function<bool>,function<>>"
+    require2      : new Type "function2<function<bool, string>,function<>>"
+    assert        : new Type "function2<function<bool>,function<>>"
+    revert        : new Type "function2<function<string>,function<>>"
+    sha256        : new Type "function2<function<bytes>,function<bytes32>>"
+    sha3          : new Type "function2<function<bytes>,function<bytes32>>"
+    selfdestruct  : new Type "function2<function<address>,function<>>"
+    blockmap      : new Type "function2<function<address>,function<bytes32>>"
+    keccak256     : new Type "function2<function<bytes>,function<bytes32>>"
+    ripemd160     : new Type "function2<function<bytes>,function<bytes20>>"
+    ecrecover     : new Type "function2<function<bytes, uint8, bytes32, bytes32>,function<address>>"
+    "@respond"    : new Type "function2<function<>,function<>>"
   }
 
 @array_field_map =
   "length": new Type "uint256"
   "push"  : (type)->
-    ret = new Type "function2_pure<function<>,function<>>"
+    ret = new Type "function2<function<>,function<>>"
     ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
 
@@ -62,8 +62,8 @@ Type = require "type"
   "length": new Type "uint256"
 
 @address_field_map =
-  "send"    : new Type "function2_pure<function2<uint256>,function2<bool>>"
-  "transfer": new Type "function2_pure<function2<uint256>,function2<>>" # throws on false
+  "send"    : new Type "function2<function2<uint256>,function2<bool>>"
+  "transfer": new Type "function2<function2<uint256>,function2<>>" # throws on false
 
 @is_not_defined_type = (type)->
   !type or type.main in ["number", "unsigned_number", "signed_number"]
@@ -247,7 +247,7 @@ class @Ti_context
     else
       ret = new Type "struct"
       for k,v of cls._prepared_field2type
-        continue unless v.main in ["function2", "function2_pure"]
+        continue unless v.main == "function2"
         ret.field_map[k] = v
       ret
   
@@ -283,10 +283,7 @@ class @Ti_context
       
       when "Fn_decl_multiret"
         # BUG this is defined inside scope and it needs type
-        if v.state_mutability == "pure"
-          type = new Type "function2_pure<function,function>"
-        else
-          type = new Type "function2<function,function>"
+        type = new Type "function2<function,function>"
         type.nest_list[0] = v.type_i
         type.nest_list[1] = v.type_o
         root._prepared_field2type[v.name] = type

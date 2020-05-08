@@ -723,25 +723,19 @@ walk = (root, ctx)->
         perr "CRITICAL WARNING #{msg}"
         fn = "(* LIGO unsupported *)" + fn
       
-      is_pure = root.fn.type?.main == "function2_pure"
-      if !is_pure
-        arg_list.unshift config.contract_storage
-      
       if arg_list.length == 0
         arg_list.push "unit"
       
       ret_types_list = []
       # type can be null
       # type can be contract name, so no nest_list
-      for v in root.fn.type?.nest_list[1]?.nest_list or []
+      return_types = root.fn.type?.nest_list[1]
+      for v in return_types?.nest_list or []
         ret_types_list.push translate_type v, ctx
       
       tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
 
-      if is_pure and ret_types_list.length == 0
-        perr "Bad call of pure function that returns nothing"
-        ret_types_list.push "unit"
       if not root.left_unpack
         "#{call_expr}"
       else
@@ -911,9 +905,6 @@ walk = (root, ctx)->
       ctx = ctx.mk_nest()
       arg_jl = []
       for v,idx in root.arg_name_list
-        is_state_in_main = root.name == "@main" and idx == 1
-        if root.visibility != 'pure' and idx > 0 and !is_state_in_main
-          v = translate_var_name v, ctx
         type = translate_type root.type_i.nest_list[idx], ctx
         arg_jl.push "const #{v} : #{type}"
       
