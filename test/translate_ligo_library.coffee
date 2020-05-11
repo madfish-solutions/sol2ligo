@@ -40,7 +40,7 @@ describe "translate ligo section library", ()->
     function uintExactAddOverflowExample (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = abs(not (0));
-        exactMath.exactAdd(self, n, 1);
+        exactMath.exactAdd(self, n, 1n);
       } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
