@@ -29,7 +29,7 @@ ti = require "./common"
           root.a.type = ti.type_spread_left root.a.type, root.type, ctx
           root.b.type = ti.type_spread_left root.b.type, root.type, ctx
         
-        when "EQ", "NE"
+        when "EQ", "NE", "GT", "GTE", "LT", "LTE"
           root.type = ti.type_spread_left root.type, new Type("bool"), ctx
           root.a.type = ti.type_spread_left root.a.type, root.b.type, ctx
           root.b.type = ti.type_spread_left root.b.type, root.a.type, ctx
