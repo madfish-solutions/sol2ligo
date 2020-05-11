@@ -119,6 +119,6 @@ walk = (root, ctx)->
     else
       ctx.next_gen root, ctx
 
-@contract_storage_fn_decl_fn_call_ret_inject = (root, ctx)->
+@decl_storage_and_oplist_inject = (root, ctx)->
   walk root, obj_merge({walk, next_gen: default_walk})
   

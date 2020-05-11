@@ -9,13 +9,11 @@ module = @
 {ass_op_unpack} = require "./transforms/ass_op_unpack"
 {modifier_unpack} = require "./transforms/modifier_unpack"
 {inheritance_unpack} = require "./transforms/inheritance_unpack"
-{contract_storage_fn_decl_fn_call_ret_inject} = require "./transforms/contract_storage_fn_decl_fn_call_ret_inject"
+{decl_storage_and_oplist_inject} = require "./transforms/decl_storage_and_oplist_inject"
 {router_collector} = require "./transforms/router_collector"
 {add_router} = require "./transforms/add_router"
 {collect_fn_decl} = require "./transforms/collect_fn_decl"
 {call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
-
-decl_storage_and_oplist_inject = contract_storage_fn_decl_fn_call_ret_inject
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
