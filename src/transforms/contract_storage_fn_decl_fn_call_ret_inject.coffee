@@ -14,6 +14,7 @@ check_external_ops = (scope)->
           return true if check_external_ops v
     return false
 
+
 walk = (root, ctx)->
   {walk} = ctx
   switch root.constructor.name
@@ -26,7 +27,7 @@ walk = (root, ctx)->
         inject.name = config.contract_storage
         inject.name_translate = false
       
-      if ctx.should_ret_op_list
+      if ctx.returns_op_list
         root.t_list.unshift inject = new ast.Const
         inject.type = new Type "built_in_op_list"
         if ctx.has_op_list_decl
@@ -56,7 +57,7 @@ walk = (root, ctx)->
 
       should_ret_args = (root.state_mutability in ['pure', 'view'] and root.visibility == 'private') or root.visibility == 'internal' or (root.state_mutability == 'pure' and root.visibility == 'public')
 
-      ctx.should_ret_op_list = !should_ret_args or root.visibility == 'public'
+      ctx.returns_op_list = !should_ret_args or root.visibility == 'public'
 
       ctx.modifies_storage = root.state_mutability not in ['pure', 'view']
       
@@ -91,7 +92,7 @@ walk = (root, ctx)->
         root.type_i.nest_list.unshift new Type state_name
       if ctx.modifies_storage
         root.type_o.nest_list.unshift new Type state_name
-      if ctx.should_ret_op_list
+      if ctx.returns_op_list
         root.type_o.nest_list.unshift new Type "built_in_op_list"
       if root.type_o.nest_list.length == 0
         root.type_o.nest_list.unshift new Type "Unit"
@@ -110,14 +111,14 @@ walk = (root, ctx)->
           root.type_o.nest_list.pop()
         root.scope.list.push last
 
-      root.should_ret_op_list = ctx.should_ret_op_list
+      root.returns_op_list = ctx.returns_op_list
       root.modifies_storage = ctx.modifies_storage
 
       root
-    
+
     else
       ctx.next_gen root, ctx
 
 @contract_storage_fn_decl_fn_call_ret_inject = (root, ctx)->
-  walk root, obj_merge({walk, next_gen: default_walk}, ctx)
+  walk root, obj_merge({walk, next_gen: default_walk})
   

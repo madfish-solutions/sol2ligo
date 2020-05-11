@@ -115,7 +115,7 @@ walk = (root, ctx)->
               match_shoulder.name = arg_name
               match_shoulder.t = arg
           
-          if !func.should_ret_op_list and func.modifies_storage
+          if !func.returns_op_list and func.modifies_storage
             _case.scope.need_nest = false
             _case.scope.list.push ret = new ast.Tuple
             ret.list.push _var = new ast.Const

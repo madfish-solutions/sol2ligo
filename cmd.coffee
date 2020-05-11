@@ -34,11 +34,12 @@ process_file = (file)->
   if new_ast.need_prevent_deploy
     puts "CRITICAL WARNING. Generated code is not 100% correct. DO NOT DEPLOY IT! Otherwise YOU WILL BE FIRED"
   
-  new_ast = ast_transform.ligo_pack new_ast, {
+  new_ast = ast_transform.pre_ti new_ast
+  new_ast = type_inference new_ast
+  new_ast = ast_transform.post_ti new_ast, {
     router  : argv.router,
     contract : argv.contract
   }
-  new_ast = type_inference new_ast
   code = translate new_ast
   code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
   puts code

@@ -35,8 +35,9 @@ process_file = (file)->
       router  : argv.router,
       contract : argv.contract
     }
-    new_ast = ast_transform.ligo_pack new_ast, opt
+    new_ast = ast_transform.pre_ti new_ast
     new_ast = type_inference new_ast
+    new_ast = ast_transform.post_ti new_ast, opt
     code = translate new_ast, opt
     if argv.print
       puts code

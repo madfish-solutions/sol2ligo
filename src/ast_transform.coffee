@@ -12,13 +12,15 @@ module = @
 {contract_storage_fn_decl_fn_call_ret_inject} = require "./transforms/contract_storage_fn_decl_fn_call_ret_inject"
 {router_collector} = require "./transforms/router_collector"
 {add_router} = require "./transforms/add_router"
+{collect_fn_decl} = require "./transforms/collect_fn_decl"
+{call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
+
+decl_storage_and_oplist_inject = contract_storage_fn_decl_fn_call_ret_inject
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
 
-@ligo_pack = (root, opt={})->
-  opt.router ?= true
-  root = var_translate root
+@pre_ti = (root, opt={})->
   root = require_distinguish root
   root = fix_missing_emit root
   root = fix_modifier_order root
@@ -27,7 +29,14 @@ module = @
   root = ass_op_unpack root
   root = modifier_unpack root
   root = inheritance_unpack root
-  root = contract_storage_fn_decl_fn_call_ret_inject root, opt
+  root
+
+@post_ti = (root, opt={}) ->
+  opt.router ?= true
+  root = var_translate root
+  root = decl_storage_and_oplist_inject root, opt
+  func_decls = collect_fn_decl root
+  root = call_storage_and_oplist_inject root, {func_decls}
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
