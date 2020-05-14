@@ -6,7 +6,7 @@ do() =>
   walk = (root, ctx)->
     switch root.constructor.name
       when "Var"
-        root.name = translate_var_name root.name
+        root.name = translate_var_name root.name if root.name_translate
         root
       
       when "Var_decl"
