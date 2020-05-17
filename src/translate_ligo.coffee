@@ -496,6 +496,9 @@ walk = (root, ctx)->
         
         when "unsigned_number"
           "#{root.val}n"
+
+        when "mutez"
+          "#{root.val}mutez"
         
         when "string"
           JSON.stringify root.val

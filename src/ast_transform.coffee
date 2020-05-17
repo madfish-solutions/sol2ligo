@@ -14,6 +14,7 @@ module = @
 {add_router} = require "./transforms/add_router"
 {collect_fn_decl} = require "./transforms/collect_fn_decl"
 {call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
+{erc20_converter} = require "./transforms/erc20_converter"
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
@@ -32,6 +33,7 @@ module = @
 @post_ti = (root, opt={}) ->
   opt.router ?= true
   root = var_translate root
+  root = erc20_converter root
   root = decl_storage_and_oplist_inject root, opt
   func_decls = collect_fn_decl root
   root = call_storage_and_oplist_inject root, {func_decls}
