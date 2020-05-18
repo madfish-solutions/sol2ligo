@@ -35,7 +35,7 @@ describe "ast_gen section", ()->
       }
       """, silent:true
   
-  if !process.argv.has "--skip_solc"
+  if !process.env.SKIP_SOLC
     describe "solidity samples", ()->
       global.solidity_source_to_ast_hash = {}
       fs_tree.walk "solidity_samples", (path)->

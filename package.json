@@ -5,10 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
-    "test-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc && istanbul report",
-    "test-ext-compiler": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --ext_compiler && istanbul report",
-    "test-ext-compiler-fast": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -- --skip_solc --ext_compiler && istanbul report",
-    "test-specific": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -g"
+    "test-fast": "SKIP_SOLC=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test-ext-compiler": "EXT_COMPILER=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test-emulator": "npm run emulator-clear && EMULATOR=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test-ext-compiler-fast": "SKIP_SOLC=1 EXT_COMPILER=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test-emulator-fast": "npm run emulator-clear && SKIP_SOLC=1 EMULATOR=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test-specific": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -g",
+    "emulator-clear": "rm -rf ./build ./db || echo 1"
   },
   "bin": {
     "sol2ligo": "bin/sol2ligo"
@@ -32,6 +35,13 @@
     "type": "github:hu2prod/type"
   },
   "devDependencies": {
+    "@truffle/artifactor": "^4.0.60",
+    "@truffle/config": "^1.2.18",
+    "@truffle/environment": "^0.2.7",
+    "@truffle/resolver": "^6.0.1",
+    "truffle": "^5.1.26",
+    "truffle-hdwallet-provider": "^1.0.17",
+    "ganache-cli": "^6.9.1",
     "iced-coffee-coverage": "^1.0.21",
     "iced-coffee-script": "^108.0.14",
     "istanbul": "^0.4.5",
