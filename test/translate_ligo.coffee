@@ -46,6 +46,24 @@ describe "translate ligo section unsorted", ()->
     #   | TWO;
     # """
     # make_test text_i, text_o
+
+   
+  it "enum to nat conversion", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Enumeration {
+      enum SomeData {DEFAULT,ONE,TWO}
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const someData_DEFAULT : nat = 0n;
+    const someData_ONE : nat = 1n;
+    const someData_TWO : nat = 2n;
+    """
+    make_test text_i, text_o
   
   it "ternary", ()->
     text_i = """

@@ -14,6 +14,7 @@ module = @
 {add_router} = require "./transforms/add_router"
 {collect_fn_decl} = require "./transforms/collect_fn_decl"
 {call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
+{replace_enums_by_nat} = require "./transforms/replace_enums_by_nat"
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
@@ -31,11 +32,14 @@ module = @
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
+  root = replace_enums_by_nat root
   root = var_translate root
   root = decl_storage_and_oplist_inject root, opt
   func_decls = collect_fn_decl root
   root = call_storage_and_oplist_inject root, {func_decls}
+
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
+
   root

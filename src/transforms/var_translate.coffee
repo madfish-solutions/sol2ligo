@@ -81,7 +81,7 @@ do() =>
           prefix = "#{ctx.current_class.name}_" 
         root.name = prefix + root.name
         for value, idx in root.value_list
-          root.value_list[idx] = "#{root.name}_#{v.name}"
+          root.value_list[idx] = "#{root.name}_#{value.name}"
 
         root
 
