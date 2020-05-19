@@ -197,11 +197,8 @@ number2bytes = (val, precision = 32)->
       if ctx.type_decl_map?.hasOwnProperty type.main
         name = type.main.replace /\./g, "_"
         is_struct = ((ctx.current_class and ctx.type_decl_map["#{ctx.current_class.name}_#{name}"]) or ctx.type_decl_map[name]) and ctx.type_decl_map[name]?.constructor.name == "Class_decl"
-        is_enum = ctx.type_decl_map[name]?.constructor.name == "Enum_decl" 
         if ctx.current_class and is_struct 
           name = "#{ctx.current_class.name}_#{name}"
-        if name != "router_enum" and is_enum
-          name = "nat"
         name = translate_var_name name, ctx
         name
       else if type.main.match /^byte[s]?\d{0,2}$/
@@ -936,10 +933,7 @@ walk = (root, ctx)->
             "skip"
           
           when "Enum_decl"
-            if v.name != "router_enum"
-              ctx.enum_list.push walk v, ctx
-            else
-              jl.unshift walk v, ctx
+            jl.unshift walk v, ctx
 
           when "Fn_decl_multiret"
             jl.push walk v, ctx
@@ -975,39 +969,23 @@ walk = (root, ctx)->
     
     when "Enum_decl"
       jl = []
-      # register global type
-      prefix = ""
-      if ctx.current_class.name and root.int_type
-        prefix = "#{ctx.current_class.name}_"
       for v, idx in root.value_list
-        # register global value
         ctx.contract_var_map[v.name] = v
         
         # not covered by tests yet
         aux = ""
-        if root.int_type
-          if v.type
-            type = translate_type v.type, ctx
-            aux = "#{translate_var_name type, ctx}"
-          jl.push "const #{root.name}#{aux} : nat = #{idx}n;"
-        else
-          if v.type
-            aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
-          jl.push "| #{prefix.toUpperCase()}#{v.name}#{aux}"
-        # jl.push "| #{v.name}"
-      if root.int_type
-        """
-        #{join_list jl}
-        """
+        if v.type
+          aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
+        jl.push "| #{v.name}#{aux}"
+
+      if jl.length
+        entry = join_list jl, ' '
       else
-        if jl.length
-          entry = join_list jl, ' '
-        else
-          entry = "unit"
-        """
-        type #{root.name} is
-          #{entry};
-        """
+        entry = "unit"
+      """
+      type #{root.name} is
+        #{entry};
+      """
     
     when "Ternary"
       cond = walk root.cond,  ctx

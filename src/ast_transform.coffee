@@ -20,6 +20,7 @@ module = @
 {translate_type} = require "./translate_ligo"
 
 @pre_ti = (root, opt={})->
+  opt.replace_enums_by_nats ?= true
   root = require_distinguish root
   root = fix_missing_emit root
   root = fix_modifier_order root
@@ -28,7 +29,8 @@ module = @
   root = ass_op_unpack root
   root = modifier_unpack root
   root = inheritance_unpack root
-  root = replace_enums_by_nat root
+  if opt.replace_enums_by_nats
+    root = replace_enums_by_nat root
   root
 
 @post_ti = (root, opt={}) ->

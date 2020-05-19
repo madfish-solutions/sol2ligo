@@ -12,6 +12,7 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 argv = require("minimist")(process.argv.slice(2))
 argv.router ?= true
 argv.contract ?= false
+argv.disable_enums_to_nat ?= false
 
 process_file = (file)->
   code = import_resolver file
@@ -31,11 +32,13 @@ process_file = (file)->
       p "FLAG need_prevent_deploy"
   
   if argv.full
+    p argv
     opt = {
       router  : argv.router,
       contract : argv.contract
+      replace_enums_by_nats: not argv.disable_enums_to_nat
     }
-    new_ast = ast_transform.pre_ti new_ast
+    new_ast = ast_transform.pre_ti new_ast, opt
     new_ast = type_inference new_ast
     new_ast = ast_transform.post_ti new_ast, opt
     code = translate new_ast, opt

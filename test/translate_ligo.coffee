@@ -28,24 +28,24 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
-  it "enums (BROKEN)"
-    # text_i = """
-    # pragma solidity ^0.5.11;
-    # 
-    # contract Enumeration {
-    #   enum SomeData {DEFAULT,ONE,TWO}
-    # }
-    # """#"
-    # # please note that enum name should become lowercase!
-    # text_o = """
-    # type state is unit;
-    # 
-    # type someData is
-    #   | DEFAULT
-    #   | ONE
-    #   | TWO;
-    # """
-    # make_test text_i, text_o
+  it "enums", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Enumeration {
+      enum SomeData {DEFAULT,ONE,TWO}
+    }
+    """#"
+    # please note that enum name should become lowercase!
+    text_o = """
+    type state is unit;
+    
+    type someData is
+      | DEFAULT
+     | ONE
+     | TWO;
+    """
+    make_test text_i, text_o, replace_enums_by_nats: false
 
    
   it "enum to nat conversion", ()->

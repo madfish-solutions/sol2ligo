@@ -76,12 +76,9 @@ do() =>
         default_walk root, ctx
 
       when "Enum_decl"
-        prefix = ""
-        if ctx.current_class.name and root.int_type
-          prefix = "#{ctx.current_class.name}_" 
-        root.name = prefix + root.name
+        root.name = translate_var_name root.name
         for value, idx in root.value_list
-          root.value_list[idx] = "#{root.name}_#{value.name}"
+          root.value_list[idx].name = "#{value.name}"
 
         root
 
