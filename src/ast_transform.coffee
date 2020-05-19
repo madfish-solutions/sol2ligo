@@ -28,11 +28,11 @@ module = @
   root = ass_op_unpack root
   root = modifier_unpack root
   root = inheritance_unpack root
+  root = replace_enums_by_nat root
   root
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
-  root = replace_enums_by_nat root
   root = var_translate root
   root = decl_storage_and_oplist_inject root, opt
   func_decls = collect_fn_decl root

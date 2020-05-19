@@ -51,18 +51,31 @@ describe "translate ligo section unsorted", ()->
   it "enum to nat conversion", ()->
     text_i = """
     pragma solidity ^0.5.11;
-    
+
     contract Enumeration {
-      enum SomeData {DEFAULT,ONE,TWO}
+      enum EnumType {DEFAULT,ONE,TWO}
+
+      mapping (bytes32 => EnumType) private dataMap;
+
+      function ternary() private {
+        EnumType e = EnumType.ONE;
+      }
     }
     """
     text_o = """
-    type state is unit;
-    
-    const someData_DEFAULT : nat = 0n;
-    const someData_ONE : nat = 1n;
-    const someData_TWO : nat = 2n;
-    (* enum SomeData converted into list of nats *);
+    type state is record
+      dataMap : map(bytes, nat);
+    end;
+
+    const enumType_DEFAULT : nat = 0n;
+    const enumType_ONE : nat = 1n;
+    const enumType_TWO : nat = 2n;
+    (* enum EnumType converted into list of nats *)
+
+    function ternary (const self : state) : (list(operation) * state) is
+      block {
+        const e : nat = enumType_ONE;
+      } with ((nil: list(operation)), self);
     """
     make_test text_i, text_o
   
