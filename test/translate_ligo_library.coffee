@@ -40,12 +40,12 @@ describe "translate ligo section library", ()->
     function uintExactAddOverflowExample (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = abs(not (0));
-        exactMath.exactAdd(self, n, 1n);
+        exactMath_exactAdd(self, n, 1n);
       } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
-  it "library (no using) + pure (BROKEN exactMath.exactAdd)", ()->
+  it "library (no using) + pure", ()->
     text_i = """
     pragma solidity ^0.4.22;
     
@@ -83,7 +83,7 @@ describe "translate ligo section library", ()->
     function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
       block {
         const n : nat = abs(not (0));
-        exactMath.exactAdd(n, 1n);
+        exactMath_exactAdd(n, 1n);
       } with ((nil: list(operation)), 0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
@@ -93,7 +93,7 @@ describe "translate ligo section library", ()->
     """#"
     make_test text_i, text_o, router: true
   
-  it "library call from library (BROKEN bytes.fromBytes)", ()->
+  it "library call from library", ()->
     text_i = """
     pragma solidity ^0.4.16;
     
@@ -135,7 +135,7 @@ describe "translate ligo section library", ()->
     
     function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
-        const src : nat = bytes.fromBytes(test_reserved_long___self);
+        const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with ((nil: list(operation)), #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is

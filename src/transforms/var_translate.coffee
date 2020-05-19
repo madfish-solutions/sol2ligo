@@ -1,6 +1,7 @@
 { default_walk } = require "./default_walk"
 {translate_var_name} = require "../translate_var_name"
 config = require "../config"
+ast = require "../ast"
 
 do() =>
   walk = (root, ctx)->
@@ -51,7 +52,7 @@ do() =>
         if ctx.current_class?.is_library
           name = "#{ctx.current_class.name}_#{name}"
         root.name = translate_var_name name
-        
+
         root.scope = walk root.scope, ctx
         for name,idx in root.arg_name_list
           root.arg_name_list[idx] = translate_var_name name
@@ -59,8 +60,15 @@ do() =>
 
       when "Fn_call"
         name = root.fn.name
-        if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
-          name = "#{ctx.current_class.name}_#{name}"
+        if root.fn.constructor.name == "Var"
+          if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
+            name = "#{ctx.current_class.name}_#{name}"
+        else if root.fn.constructor.name == "Field_access"
+          library_name = root.fn.t.name
+          if ctx.libraries.hasOwnProperty library_name
+            name = "#{library_name}_#{name}"
+            root.fn = new ast.Var
+            root.fn.name = name
 
         root.fn.name = translate_var_name name
         
@@ -78,11 +86,8 @@ do() =>
         root
 
       when "Event_decl"
-        p "Event decl"
         for arg, idx in root.arg_list
-          p "before ", arg
           root.arg_list[idx]._name = translate_var_name arg._name
-          p "after ", arg
 
         root
       
