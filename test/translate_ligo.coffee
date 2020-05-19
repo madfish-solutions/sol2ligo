@@ -62,6 +62,7 @@ describe "translate ligo section unsorted", ()->
     const someData_DEFAULT : nat = 0n;
     const someData_ONE : nat = 1n;
     const someData_TWO : nat = 2n;
+    (* enum SomeData converted into list of nats *);
     """
     make_test text_i, text_o
   

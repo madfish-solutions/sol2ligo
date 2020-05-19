@@ -321,7 +321,10 @@ walk = (root, ctx)->
           jl = []
           for v in root.list
             code = walk v, ctx
-            jl.push code if code
+            if code
+              if v.constructor.name not in ["Comment", "Scope"]
+                code += ";" if !/;$/.test code
+              jl.push code
           
           if ctx.structs_default_list.length
             jl.unshift """
