@@ -223,7 +223,7 @@ describe "translate ligo section unsorted", ()->
     ###
     
     text_o = """
-    type transferOwnership_args_ is record
+    type transferOwnership__args is record
       newOwner : address;
     end;
     
@@ -236,7 +236,7 @@ describe "translate ligo section unsorted", ()->
     end;
     
     type router_enum is
-      | TransferOwnership_ of transferOwnership_args_
+      | TransferOwnership_ of transferOwnership__args
      | TransferOwnership of transferOwnership_args;
     
     function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (list(operation) * state) is

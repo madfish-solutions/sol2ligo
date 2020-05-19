@@ -114,7 +114,7 @@ describe "translate ligo section library", ()->
     }
     """
     text_o = """
-    type main_args is record
+    type test_reserved_long___main_args is record
       test_reserved_long___self : bytes;
       other : bytes;
     end;
@@ -131,7 +131,7 @@ describe "translate ligo section library", ()->
         const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with ((nil: list(operation)), #{config.contract_storage});
     type router_enum is
-      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_args;
+      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of test_reserved_long___main_args;
     
     function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
@@ -145,7 +145,7 @@ describe "translate ligo section library", ()->
     """#"
     make_test text_i, text_o, router: true
   
-  it "library struct use from contract (BROKEN. BAD pausers_ type)", ()->
+  it "library struct use from contract", ()->
     text_i = """
     pragma solidity ^0.5.0;
     
@@ -169,7 +169,7 @@ describe "translate ligo section library", ()->
     end;
     
     type state is record
-      pausers_ : pauserRole_Roles.Role;
+      pausers_ : roles_Role;
     end;
     
     const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];

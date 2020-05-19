@@ -96,3 +96,36 @@ reserved_map[config.op_list] = true
     "#{config.reserved}__#{name}"
   else
     name
+
+#########################
+
+spec_id_trans_map =
+  "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.sender"      : "sender"
+  "tx.origin"       : "source"
+  "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.value"       : "(amount / 1mutez)"
+  "abi.encodePacked": ""
+
+bad_spec_id_trans_map =
+  "block.coinbase"  : config.default_address
+  "block.difficulty": "0n"
+  "block.gaslimit"  : "0n"
+  "block.number"    : "0n"
+  "msg.data"        : "(\"00\": bytes)"
+  "msg.gas"         : "0n"
+  "msg.sig"         : "(\"00\": bytes)"
+  "tx.gasprice"     : "0n"
+
+warning_once_map = {}
+@spec_id_translate = (t, name)->
+  if spec_id_trans_map.hasOwnProperty t
+    spec_id_trans_map[t]
+  else if bad_spec_id_trans_map.hasOwnProperty t
+    val = bad_spec_id_trans_map[t]
+    if !warning_once_map.hasOwnProperty t
+      warning_once_map.hasOwnProperty[t] = true
+      perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
+    val
+  else
+    name

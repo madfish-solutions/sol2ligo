@@ -458,7 +458,6 @@ walk = (root, ctx)->
       ret
     
     when "FunctionCall"
-      insp root, 5
       fn = walk root.expression, ctx
       arg_list = []
       for v in root.arguments

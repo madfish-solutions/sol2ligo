@@ -1,6 +1,8 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+{translate_var_name, spec_id_translate} = require "./translate_var_name"
+
 module.warning_counter = 0
 # ###################################################################################################
 #    *_op
@@ -249,57 +251,23 @@ number2bytes = (val, precision = 32)->
         t = ctx.type_decl_map[type.main]
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
-          name = t.value_list[0].name
+          first_item = t.value_list[0].name
           if ctx.current_class.name and t.name != "router_enum"
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"
-            return "#{translate_var_name prefix + t.name}_#{name}"
+            return "#{name}_#{first_item}"
           else
             return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
           if ctx.current_class.name
             name = "#{ctx.current_class.name}_#{type.main}"
-          return "#{translate_var_name name}_default"
+          return "#{name}_default"
 
       perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
-{translate_var_name} = require "./translate_var_name"
-# ###################################################################################################
-#    special id, field access
-# ###################################################################################################
-spec_id_trans_map =
-  "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.sender"      : "sender"
-  "tx.origin"       : "source"
-  "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
-  "msg.value"       : "(amount / 1mutez)"
-  "abi.encodePacked": ""
-
-bad_spec_id_trans_map =
-  "block.coinbase"  : config.default_address
-  "block.difficulty": "0n"
-  "block.gaslimit"  : "0n"
-  "block.number"    : "0n"
-  "msg.data"        : "(\"00\": bytes)"
-  "msg.gas"         : "0n"
-  "msg.sig"         : "(\"00\": bytes)"
-  "tx.gasprice"     : "0n"
-
-warning_once_map = {}
-spec_id_translate = (t, name)->
-  if spec_id_trans_map.hasOwnProperty t
-    spec_id_trans_map[t]
-  else if bad_spec_id_trans_map.hasOwnProperty t
-    val = bad_spec_id_trans_map[t]
-    if !warning_once_map.hasOwnProperty t
-      warning_once_map.hasOwnProperty[t] = true
-      perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
-    val
-  else
-    name
 # ###################################################################################################
 
 class @Gen_context
@@ -463,7 +431,6 @@ walk = (root, ctx)->
     when "Var"
       name = root.name
       return "" if name == "this"
-      name = translate_var_name name, ctx if root.name_translate
       if ctx.contract_var_map.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else
@@ -580,22 +547,14 @@ walk = (root, ctx)->
                 throw new Error "unknown array field #{root.name}"
           
           when "enum"
-            name = translate_var_name root.name, ctx
-            if root.t?.name != "router_enum"
-              prefix = ""
-              if ctx.current_class.name
-                prefix = "#{ctx.current_class.name}_"
-              return "#{translate_var_name prefix + root.t.name}_#{root.name}"
-            else
-              name = "#{ctx.current_class.name.toUpperCase()}_#{name}"
-              return "#{name}(unit)"
+            return root.name
       
       # else
       if t == "" # this case
-        return translate_var_name root.name, ctx
+        return root.name
       
       chk_ret = "#{t}.#{root.name}"
-      ret = "#{t}.#{translate_var_name root.name, ctx}"
+      ret = "#{t}.#{root.name}"
       if root.t.constructor.name == "Var"
         if ctx.type_decl_map[root.t.name]?.is_library
           ret = translate_var_name "#{t}_#{root.name}", ctx
@@ -707,11 +666,6 @@ walk = (root, ctx)->
             return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
           else
             name = root.fn.name
-            if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
-              name = "#{ctx.current_class.name}_#{name}"
-              name = translate_var_name name, ctx
-            else
-              name = translate_var_name name, ctx if root.fn.name_translate
             # COPYPASTED (TEMP SOLUTION)
             fn = spec_id_translate root.fn.name, name
       else
@@ -788,11 +742,9 @@ walk = (root, ctx)->
     
     when "Var_decl"
       name = root.name
-      name = translate_var_name name, ctx if root.name_translate
       type = translate_type root.type, ctx
-      prefix = ""
       if ctx.is_class_scope
-        if root.special_type
+        if root.special_type # FIXME user-defined type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
         ctx.contract_var_map[name] = root
@@ -824,7 +776,6 @@ walk = (root, ctx)->
         type_list = []
         for _var, idx in root.list
           {name} = _var
-          name = translate_var_name name, ctx
           type_list.push type = translate_type _var.type, ctx
           jl.push """
           const #{name} : #{type} = #{tmp_var}.#{idx};
@@ -841,7 +792,6 @@ walk = (root, ctx)->
         jl = []
         for _var in root.list
           {name} = _var
-          name = translate_var_name name, ctx
           type = translate_type root.type, ctx
           jl.push """
           const #{name} : #{type} = #{type2default_value _var.type, ctx}
@@ -916,15 +866,9 @@ walk = (root, ctx)->
         type = translate_type v, ctx
         ret_jl.push "#{type}"
       
-      name = root.name
-      # current_class is missing for router
-      if orig_ctx.current_class?.is_library
-        name = "#{orig_ctx.current_class.name}_#{name}"
-      
-      name = translate_var_name name, ctx
       body = walk root.scope, ctx
       """
-      function #{name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
+      function #{root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
         #{make_tab body, '  '}
       """
     
@@ -1042,7 +986,7 @@ walk = (root, ctx)->
           if v.type
             type = translate_type v.type, ctx
             aux = "#{translate_var_name type, ctx}"
-          jl.push "const #{translate_var_name prefix + root.name}_#{v.name}#{aux} : nat = #{idx}n;"
+          jl.push "const #{root.name}#{aux} : nat = #{idx}n;"
         else
           if v.type
             aux = " of #{translate_var_name v.type.main.replace /\./g, "_", ctx}"
@@ -1058,7 +1002,7 @@ walk = (root, ctx)->
         else
           entry = "unit"
         """
-        type #{translate_var_name prefix + root.name, ctx} is
+        type #{root.name} is
           #{entry};
         """
     
@@ -1112,7 +1056,7 @@ walk = (root, ctx)->
     when "Event_decl"
       args = []
       for arg in root.arg_list
-        name = translate_var_name arg._name, ctx
+        name = arg._name
         type = translate_type arg, ctx
         args.push "#{name} : #{type}"
       """

@@ -5,7 +5,7 @@ config = require "../src/config"
 
 describe "translate ligo section struct", ()->
   @timeout 10000
-  it "struct in state (BROKEN pauserRole_Roles.Role)", ()->
+  it "struct in state", ()->
     text_i = """
     pragma solidity ^0.5.0;
     
@@ -25,7 +25,7 @@ describe "translate ligo section struct", ()->
     end;
     
     type state is record
-      pausers_ : pauserRole_Roles.Role;
+      pausers_ : roles_Role;
     end;
     
     const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];
