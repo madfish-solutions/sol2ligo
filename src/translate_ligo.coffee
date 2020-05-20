@@ -162,6 +162,9 @@ number2bytes = (val, precision = 32)->
     
     when "address"
       "address"
+
+    when "timestamp"
+      "timestamp"
     
     when "built_in_op_list"
       "list(operation)"
@@ -249,7 +252,7 @@ number2bytes = (val, precision = 32)->
         # take very first value in enum as default
         if t.constructor.name == "Enum_decl"
           first_item = t.value_list[0].name
-          if ctx.current_class.name and t.name != "router_enum"
+          if ctx.current_class.name
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"
@@ -434,7 +437,8 @@ walk = (root, ctx)->
       if ctx.contract_var_map.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else
-        spec_id_translate root.name, name
+        name
+        # spec_id_translate root.name, name
     
     when "Const"
       if !root.type
@@ -665,9 +669,7 @@ walk = (root, ctx)->
             # p root
             return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
           else
-            name = root.fn.name
-            # COPYPASTED (TEMP SOLUTION)
-            fn = spec_id_translate root.fn.name, name
+            fn = root.fn.name
       else
         fn = walk root.fn, ctx
       

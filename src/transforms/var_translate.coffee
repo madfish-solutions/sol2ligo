@@ -62,17 +62,14 @@ do() =>
         name = root.fn.name
         if root.fn.constructor.name == "Var"
           if ctx.current_class?.is_library and ctx.current_class._prepared_field2type[name]
-            name = "#{ctx.current_class.name}_#{name}"
+            root.fn.name = "#{ctx.current_class.name}_#{name}"
         else if root.fn.constructor.name == "Field_access"
           library_name = root.fn.t.name
           if ctx.libraries.hasOwnProperty library_name
             name = "#{library_name}_#{name}"
             root.fn = new ast.Var
             root.fn.name = name
-
-        root.fn.name = translate_var_name name
         
-        #TODO library prefix
         default_walk root, ctx
 
       when "Enum_decl"

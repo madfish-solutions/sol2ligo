@@ -90,8 +90,9 @@ reserved_map[config.op_list] = true
     # make the first letter lowercase
     name = name.substr(0,1).toLowerCase() + name.substr 1
   
-  if name == "@main"
-    "main"
+  # names created from code are preceded with @ so they don't get prepended with "reserved"
+  if name.startsWith "@"
+    name.substr(1)
   else if reserved_map.hasOwnProperty name
     "#{config.reserved}__#{name}"
   else

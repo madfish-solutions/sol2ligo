@@ -229,7 +229,7 @@ describe "translate ligo section var type", ()->
         #{config.contract_storage}.#{config.reserved}__source := source;
         #{config.contract_storage}.value := (amount / 1mutez);
         #{config.contract_storage}.data := ("00": bytes);
-        #{config.contract_storage}.time := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
+        #{config.contract_storage}.time := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
         #{config.contract_storage}.timestamp := abs(now - (\"1970-01-01T00:00:00Z\": timestamp));
       } with ((nil: list(operation)), #{config.contract_storage});
     
