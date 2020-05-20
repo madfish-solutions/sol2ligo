@@ -32,6 +32,34 @@ do() =>
 
         ctx.next_gen root, ctx
       
+      when "Field_access"
+        switch root.t.name
+          when "block"
+            if root.name == "timestamp"
+              return timestamp_node()
+          when "msg"
+            switch root.name
+              when "sender"
+                root.t.name = "@Tezos"
+                root.name = "@sender"
+              when "value"
+                ret = new ast.Bin_op
+                ret.op = "DIV"
+                ret.a = new ast.Var
+                ret.a.name = "@amount"
+                ret.a.type = new Type "uint"
+                ret.b = new ast.Const
+                ret.b.val = 1
+                ret.b.type = new Type "mutez"
+                return ctx.next_gen ret, ctx
+          when "tx"
+            if root.name == "origin"
+              root.t.name = "@Tezos"
+              root.name = "@source"
+        
+        ctx.next_gen root, ctx
+
+      else
         ctx.next_gen root, ctx
     
     
