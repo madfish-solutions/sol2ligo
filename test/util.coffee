@@ -51,3 +51,18 @@ cache_content_hash = {}
       throw err
       
   return
+
+@translate_ligo = (text_i, opt={})->
+  opt.router ?= true
+  solidity_ast = ast_gen text_i, silent:true
+  ast = solidity_to_ast4gen solidity_ast
+  assert !ast.need_prevent_deploy unless opt.allow_need_prevent_deploy
+  ast = ast_transform.ligo_pack ast, opt
+  ast = type_inference ast
+  text_o_real = translate ast, opt
+  text_o_real = text_o_real.trim()
+  text_o_real
+
+@tez_account_list = [
+  "tz1NxxKP97Sv6rURCqyZN8TvfLsDaJJ1gRZL"
+]
