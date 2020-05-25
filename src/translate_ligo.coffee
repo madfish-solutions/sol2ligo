@@ -191,7 +191,14 @@ number2bytes = (val, precision = 32)->
     when config.storage
       config.storage
     when "contract"
-      "contract(#{type.val})"
+      if type.val
+        "contract(#{type.val})"
+      else
+        type_list = []
+        for type in type.nest_list
+          translated_type = translate_type type, ctx
+          type_list.push translated_type
+        "contract(#{type_list.join ", "})"
     # when "t_bytes_memory_ptr"
     #   "bytes"
     # when config.storage

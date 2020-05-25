@@ -16,24 +16,19 @@ walk = (root, ctx)->
                 inject = new ast.Fn_call
                 inject.fn = new ast.Var
                 inject.fn.name = "@transaction"
-                inject.arg_list.push params = new ast.Const
-                params.type = new Type "Unit"
-                params.val = "unit"
+                inject.arg_list.push params = new ast.Tuple
+                params.list = root.arg_list
 
-                inject.arg_list.push cost = new ast.Bin_op
-                cost.op = "MUL"
-                cost.a = root.arg_list[0]
-                cost.b = new ast.Const
-                cost.b.val = 1
-                cost.b.type = new Type "mutez"
+                inject.arg_list.push tx_cost = new ast.Const
+                tx_cost.val = 0
+                tx_cost.type = new Type "mutez"
 
                 inject.arg_list.push contract_cast = new ast.Type_cast
                 
                 arg_types = (arg.type for arg in root.arg_list)
-                composite_type = arg_types.join ","
 
                 contract_cast.target_type = new Type "contract"
-                contract_cast.target_type.val = composite_type
+                contract_cast.target_type.nest_list = arg_types
                 
                 get_contract = new ast.Fn_call
                 get_contract.type = "function2<function<uint>, function<address>>"
@@ -46,10 +41,7 @@ walk = (root, ctx)->
 
                 return inject
              
-              else
-                throw new Error "unknown address field #{root.fn.name}"
-            return "var #{config.op_list} : list(operation) := list #{op_code} end"
-
+            # return "var #{config.op_list} : list(operation) := list #{op_code} end"
 
       ctx.next_gen root, ctx
     
