@@ -41,7 +41,7 @@ describe "emulator section", ()->
       '"Add(record a=1;b=2 end)"'
       JSON.stringify "record ret = 100; end"
     ].join " "
-    reg_ret = /ret = (\d+)/.exec res
+    reg_ret = /ret -> (\d+)/.exec res
     on_end new Error "!reg_ret #{res}" if !reg_ret
     [_skip, value] = reg_ret
     
