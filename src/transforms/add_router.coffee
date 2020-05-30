@@ -91,7 +91,7 @@ walk = (root, ctx)->
           call = new ast.Fn_call
           call.fn = new ast.Var
           call.fn.left_unpack = true
-          call.fn.name = func.name # TODO word "constructor" gets corruped here
+          call.fn.name = func.name
           # NOTE that PM_switch is ignored by type inference
           # BUG. Type inference should resolve this fn properly
           

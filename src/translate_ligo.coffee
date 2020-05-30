@@ -682,13 +682,7 @@ walk = (root, ctx)->
             fn = root.fn.name
       else
         fn = walk root.fn, ctx
-      
-      if root.fn.type?.main == "struct"
-        # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
-        perr "CRITICAL WARNING #{msg}"
-        fn = "(* LIGO unsupported *)" + fn
-      
+    
       if arg_list.length == 0
         arg_list.push "unit"
       
