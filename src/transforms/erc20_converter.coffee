@@ -2,32 +2,17 @@
 config = require "../config"
 Type = require "type"
 ast = require "../ast"
+astBuilder = require "../ast_builder"
 
-create_transaction = (address_expr, input_args, contract_type) ->
-  inject = new ast.Fn_call
-  inject.fn = new ast.Var
-  inject.fn.name = "@transaction"
-  inject.arg_list.push params = new ast.Tuple
-  params.list = input_args
+tx_node = (address_expr, arg_list, name) ->
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
+  return astBuilder.transaction(arg_list, entrypoint)
 
-  inject.arg_list.push tx_cost = new ast.Const
-  tx_cost.val = 0
-  tx_cost.type = new Type "mutez"
-
-  inject.arg_list.push contract_cast = new ast.Type_cast
-  
-  contract_cast.target_type = new Type "contract"
-  contract_cast.target_type.val = contract_type
-  
-  get_contract = new ast.Fn_call
-  get_contract.type = "function2<function<uint>, function<address>>"
-  get_contract.fn = new ast.Var
-  get_contract.fn.name = "get_contract"
-
-  get_contract.arg_list.push address_expr
-
-  contract_cast.t = get_contract
-  return inject
+callback_tx_node = (address_expr, arg_list, name) ->
+  return_callback = astBuilder.self_entrypoint(name + "Callback")
+  arg_list.push return_callback
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
+  return astBuilder.transaction(arg_list, entrypoint)   
 
 walk = (root, ctx)->
   {walk} = ctx
@@ -43,19 +28,19 @@ walk = (root, ctx)->
                 sender.type = new Type "address"
                 arg_list = root.arg_list
                 arg_list.unshift(sender)
-                return create_transaction(root.fn.t, arg_list, "Transfer")
+                return tx_node(root.fn.t, arg_list, "Transfer")
               when "approve"
-                return create_transaction(root.fn.t, root.arg_list, "Approve")
+                return tx_node(root.fn.t, root.arg_list, "Approve")
               when "transferFrom"
-                return create_transaction(root.fn.t, root.arg_list, "Transfer")
+                return tx_node(root.fn.t, root.arg_list, "Transfer")
               
               # calls returning values
               when "allowance"
-                return create_transaction(root.fn.t, root.arg_list, "GetAllowance")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetAllowance")
               when "balanceOf"
-                return create_transaction(root.fn.t, root.arg_list, "GetBalance")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetBalance")
               when "totalSupply"
-                return create_transaction(root.fn.t, root.arg_list, "GetTotalSupply")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetTotalSupply")
               
   
         # totalSupply() returns (uint) -> GetTotalSupply of (unit * contract(amt))

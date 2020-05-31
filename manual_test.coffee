@@ -32,7 +32,6 @@ process_file = (file)->
       p "FLAG need_prevent_deploy"
   
   if argv.full
-    p argv
     opt = {
       router  : argv.router,
       contract : argv.contract
