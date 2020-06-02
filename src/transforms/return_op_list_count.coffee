@@ -4,7 +4,6 @@ ast = require "../ast"
 Type = require "type"
 
 walk = (root, ctx)->
-  {walk} = ctx
   switch root.constructor.name
     when "Fn_decl_multiret"
       ctx.current_fn_opcount = 0
