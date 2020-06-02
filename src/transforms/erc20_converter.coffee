@@ -32,7 +32,6 @@ callback_tx_node = (address_expr, arg_list, name, ctx) ->
   return declaration
 
 walk = (root, ctx)->
-  {walk} = ctx
   switch root.constructor.name
     when "Class_decl"
       for entry in root.scope.list
