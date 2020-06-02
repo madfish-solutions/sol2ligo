@@ -17,9 +17,9 @@ tx_node = (address_expr, arg_list, name, ctx) ->
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   op_index = ctx.current_scope_ops_count
-  assignment = astBuilder.assignment("op" + op_index, tx, new Type "operation")
+  declaration = astBuilder.declaration("op" + op_index, tx, new Type "operation")
   ctx.current_scope_ops_count += 1
-  return assignment
+  return declaration
 
 callback_tx_node = (address_expr, arg_list, name, ctx) ->
   return_callback = astBuilder.self_entrypoint(name + "Callback")
@@ -27,9 +27,9 @@ callback_tx_node = (address_expr, arg_list, name, ctx) ->
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   op_index = ctx.current_scope_ops_count
-  assignment = astBuilder.assignment("op" + op_index, tx, new Type "operation")
+  declaration = astBuilder.declaration("op" + op_index, tx, new Type "operation")
   ctx.current_scope_ops_count += 1
-  return assignment
+  return declaration
 
 walk = (root, ctx)->
   {walk} = ctx

@@ -165,6 +165,9 @@ number2bytes = (val, precision = 32)->
 
     when "timestamp"
       "timestamp"
+
+    when "operation"
+      "operation"
     
     when "built_in_op_list"
       "list(operation)"
@@ -1031,14 +1034,17 @@ walk = (root, ctx)->
       for v in root.list
         arg_list.push walk v, ctx
       
-      decls = []
-      for arg, i in arg_list
-        decls.push("#{i}n -> #{arg};")
-      """
-      map
-        #{join_list decls, '  '}
-      end
-      """
+      if root.type.main == "built_in_op_list"
+        """list [#{arg_list.join "; " }]"""
+      else
+        decls = []
+        for arg, i in arg_list
+          decls.push("#{i}n -> #{arg};")
+        """
+        map
+          #{join_list decls, '  '}
+        end
+        """
     
     when "Event_decl"
       args = []

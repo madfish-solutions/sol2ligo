@@ -59,3 +59,12 @@ ast = require "./ast"
   ass.b = rvalue
 
   return ass
+
+@declaration = (name, rvalue, rtype) ->
+  decl = new ast.Var_decl
+  decl.name = name
+  decl.type = rtype
+
+  decl.assign_value = rvalue
+
+  return decl
