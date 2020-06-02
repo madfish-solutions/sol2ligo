@@ -19,7 +19,7 @@ walk = (root, ctx)->
       if ctx.current_fn_opcount > 0
         list_init = new ast.Array_init
         list_init.type = new Type "built_in_op_list"
-        for i in [0..ctx.current_fn_opcount]
+        for i in [0..ctx.current_fn_opcount - 1]
           list_init.list.push v = new ast.Var
           v.name = "op" + i
 

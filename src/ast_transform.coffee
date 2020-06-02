@@ -48,6 +48,6 @@ module = @
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
-    root = return_op_list_count root, opt
 
+  root = return_op_list_count root, opt
   root
