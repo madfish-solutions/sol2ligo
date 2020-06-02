@@ -4,19 +4,40 @@ Type = require "type"
 ast = require "../ast"
 astBuilder = require "../ast_builder"
 
-tx_node = (address_expr, arg_list, name) ->
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
-  return astBuilder.transaction(arg_list, entrypoint)
+# Approximate correspondance of ERC20 to FA1.2 token interface
 
-callback_tx_node = (address_expr, arg_list, name) ->
+# totalSupply() returns (uint) -> GetTotalSupply of (unit * contract(amt))
+# balanceOf(address tokenOwner) returns (uint balance) -> GetBalance of (address * contract(amt))
+# allowance(address tokenOwner, address spender) returns (uint remaining) -> GetAllowance of (address * address * contract(amt))
+# transfer(address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
+# transferFrom(address from, address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
+# approve(address spender, uint tokens) returns (bool success) -> Approve of (address * amt)
+
+tx_node = (address_expr, arg_list, name, ctx) ->
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
+  tx = astBuilder.transaction(arg_list, entrypoint)
+  op_index = ctx.current_scope_ops_count
+  assignment = astBuilder.assignment("op" + op_index, tx, new Type "operation")
+  ctx.current_scope_ops_count += 1
+  return assignment
+
+callback_tx_node = (address_expr, arg_list, name, ctx) ->
   return_callback = astBuilder.self_entrypoint(name + "Callback")
   arg_list.push return_callback
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
-  return astBuilder.transaction(arg_list, entrypoint)   
+  tx = astBuilder.transaction(arg_list, entrypoint)
+  op_index = ctx.current_scope_ops_count
+  assignment = astBuilder.assignment("op" + op_index, tx, new Type "operation")
+  ctx.current_scope_ops_count += 1
+  return assignment
 
 walk = (root, ctx)->
   {walk} = ctx
   switch root.constructor.name
+    when "Fn_decl_multiret"
+      ctx.current_scope_ops_count = 0
+      ctx.next_gen root, ctx
+
     when "Fn_call"
       if root.fn.t?.type
         switch root.fn.t.type.main
@@ -28,32 +49,24 @@ walk = (root, ctx)->
                 sender.type = new Type "address"
                 arg_list = root.arg_list
                 arg_list.unshift(sender)
-                return tx_node(root.fn.t, arg_list, "Transfer")
+                return tx_node(root.fn.t, arg_list, "Transfer", ctx)
               when "approve"
-                return tx_node(root.fn.t, root.arg_list, "Approve")
+                return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
               when "transferFrom"
-                return tx_node(root.fn.t, root.arg_list, "Transfer")
+                return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
               
-              # calls returning values
               when "allowance"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetAllowance")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetAllowance", ctx)
               when "balanceOf"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetBalance")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetBalance", ctx)
               when "totalSupply"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetTotalSupply")
+                return callback_tx_node(root.fn.t, root.arg_list, "GetTotalSupply", ctx)
               
-  
-        # totalSupply() returns (uint) -> GetTotalSupply of (unit * contract(amt))
-        # balanceOf(address tokenOwner) returns (uint balance) -> GetBalance of (address * contract(amt))
-        # allowance(address tokenOwner, address spender) returns (uint remaining) -> GetAllowance of (address * address * contract(amt))
-        # transfer(address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
-        # transferFrom(address from, address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
-        # approve(address spender, uint tokens) returns (bool success) -> Approve of (address * amt)
-
       ctx.next_gen root, ctx
     
     else
       ctx.next_gen root, ctx
+
 
 @erc20_converter = (root, ctx)-> 
   walk root, ctx = obj_merge({walk, next_gen: default_walk}, ctx)

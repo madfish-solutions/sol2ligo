@@ -48,3 +48,14 @@ ast = require "./ast"
 
   get_entrypoint.arg_list.push entrypoint_name
   return get_entrypoint
+
+@assignment = (name, rvalue, rtype) ->
+  ass = new ast.Bin_op
+  ass.op = "ASSIGN"
+  ass.a = new ast.Var
+  ass.a.name = name
+  ass.a.type = rtype
+
+  ass.b = rvalue
+
+  return ass
