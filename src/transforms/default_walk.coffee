@@ -108,6 +108,9 @@
     
     when "Event_decl"
       root
+
+    when "Include"
+      root
     
     else
       ### !pragma coverage-skip-block ###

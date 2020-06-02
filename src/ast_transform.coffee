@@ -16,6 +16,8 @@ module = @
 {call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
 {replace_enums_by_nat} = require "./transforms/replace_enums_by_nat"
 {intrinsics_converter} = require "./transforms/intrinsics_converter"
+{erc20_converter} = require "./transforms/erc20_converter"
+{return_op_list_count} = require "./transforms/return_op_list_count"
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
@@ -36,6 +38,7 @@ module = @
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
+  root = erc20_converter root
   root = intrinsics_converter root
   root = var_translate root
   root = decl_storage_and_oplist_inject root, opt
@@ -46,4 +49,5 @@ module = @
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
 
+  root = return_op_list_count root, opt
   root
