@@ -10,7 +10,7 @@ walk = (root, ctx)->
       decl = ctx.func_decls[root.fn.name]
 
       if not decl
-        p "can't find declaration for #{root.fn.name}"
+        perr "can't find declaration for #{root.fn.name}"
       else
         #TODO come up with a better heuristic for detecting if storage should be first argument
         if decl.arg_name_list[0] == config.contract_storage

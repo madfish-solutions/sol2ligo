@@ -22,7 +22,7 @@ tx_node = (address_expr, arg_list, name, ctx) ->
   return declaration
 
 callback_tx_node = (address_expr, arg_list, name, ctx) ->
-  return_callback = astBuilder.self_entrypoint(name + "Callback")
+  return_callback = astBuilder.self_entrypoint("%#{name}Callback")
   arg_list.push return_callback
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
@@ -34,6 +34,22 @@ callback_tx_node = (address_expr, arg_list, name, ctx) ->
 walk = (root, ctx)->
   {walk} = ctx
   switch root.constructor.name
+    when "Class_decl"
+      for entry in root.scope.list
+        if entry.constructor.name == "Fn_decl_multiret"
+          switch entry.name
+            when "approve",\
+                 "totalSupply",\
+                 "balanceOf",\ 
+                 "allowance",\ 
+                 "transfer",\
+                 "transferFrom"
+              # replace whole class (interface) declaration if we are converting it to FA1.2 anyway
+              ret = new ast.Include
+              ret.path = "fa1.2.ligo"
+              return ret
+      ctx.next_gen root, ctx
+
     when "Fn_decl_multiret"
       ctx.current_scope_ops_count = 0
       ctx.next_gen root, ctx

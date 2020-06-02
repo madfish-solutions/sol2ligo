@@ -1056,6 +1056,9 @@ walk = (root, ctx)->
       (* EventDefinition #{root.name}(#{args.join('; ')}) *)
       """
     
+    when "Include"
+      """#include \"#{root.path}\""""
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx

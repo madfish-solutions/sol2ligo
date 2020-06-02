@@ -4,7 +4,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "erc20 convertions", ()->
+describe "erc20 conversions", ()->
   @timeout 10000
   it "erc20_convert", ()->
     #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
@@ -39,12 +39,13 @@ describe "erc20 convertions", ()->
     text_o = """
     type state is unit;
     
+    #include "fa1.2.ligo";
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
-        const supply : nat = const op0 : operation = transaction((Tezos.self("GetTotalSupplyCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetTotalSupply)));
-        const bal : nat = const op1 : operation = transaction((sender, Tezos.self("GetBalanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetBalance)));
-        const allowance : nat = const op2 : operation = transaction((0x0, sender, Tezos.self("GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetTotalSupply)));
+        const bal : nat = const op1 : operation = transaction((sender, Tezos.self("%GetBalanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetBalance)));
+        const allowance : nat = const op2 : operation = transaction((0x0, sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
         const op3 : operation = transaction((sender, 0x0, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
         const op4 : operation = transaction((sender, sender, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
         const op5 : operation = transaction((sender, 5n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Approve)));
