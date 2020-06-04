@@ -13,6 +13,22 @@ astBuilder = require "../ast_builder"
 # transferFrom(address from, address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
 # approve(address spender, uint tokens) returns (bool success) -> Approve of (address * amt)
 
+callback_declaration = (name) ->
+  cb_decl = new ast.Fn_decl_multiret
+  cb_decl.name = name
+  
+  cb_decl.type_i = new Type "function"
+  cb_decl.type_o =  new Type "function"
+  
+  # TODO proper return arguments types
+  cb_decl.arg_name_list.push "action"
+  cb_decl.type_i.nest_list.push new Type "uint"
+
+  hint = new ast.Comment
+  hint.text = "This method should handle return value of #{name} of foreign contract"
+  cb_decl.scope.list.push hint
+  return cb_decl
+
 tx_node = (address_expr, arg_list, name, ctx) ->
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
@@ -22,7 +38,14 @@ tx_node = (address_expr, arg_list, name, ctx) ->
   return declaration
 
 callback_tx_node = (address_expr, arg_list, name, ctx) ->
-  return_callback = astBuilder.self_entrypoint("%#{name}Callback")
+  cb_name = name + "Callback"
+  return_callback = astBuilder.self_entrypoint("%" + cb_name)
+
+  if not ctx.callbacks_to_declare.hasOwnProperty cb_name
+    cb_decl = callback_declaration(cb_name)
+    ctx.callbacks_to_declare[cb_name] = cb_decl
+
+
   arg_list.push return_callback
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
@@ -34,6 +57,7 @@ callback_tx_node = (address_expr, arg_list, name, ctx) ->
 walk = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
+      # ignore ERC20 interface declaration
       for entry in root.scope.list
         if entry.constructor.name == "Fn_decl_multiret"
           switch entry.name
@@ -47,7 +71,13 @@ walk = (root, ctx)->
               ret = new ast.Include
               ret.path = "fa1.2.ligo"
               return ret
-      ctx.next_gen root, ctx
+      
+      # collect callback declaration dummies
+      ctx.callbacks_to_declare = {}
+      root = ctx.next_gen root, ctx
+      for name, decl of ctx.callbacks_to_declare
+        root.scope.list.unshift decl
+      return root
 
     when "Fn_decl_multiret"
       ctx.current_scope_ops_count = 0
@@ -56,7 +86,7 @@ walk = (root, ctx)->
     when "Fn_call"
       if root.fn.t?.type
         switch root.fn.t.type.main
-          when "address", "struct"
+          when "struct"
             switch root.fn.name
               when "transfer"
                 sender = new ast.Var
