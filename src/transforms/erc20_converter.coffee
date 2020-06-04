@@ -13,16 +13,15 @@ astBuilder = require "../ast_builder"
 # transferFrom(address from, address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
 # approve(address spender, uint tokens) returns (bool success) -> Approve of (address * amt)
 
-callback_declaration = (name) ->
+callback_declaration = (name, arg_type) ->
   cb_decl = new ast.Fn_decl_multiret
   cb_decl.name = name
   
   cb_decl.type_i = new Type "function"
   cb_decl.type_o =  new Type "function"
   
-  # TODO proper return arguments types
-  cb_decl.arg_name_list.push "action"
-  cb_decl.type_i.nest_list.push new Type "uint"
+  cb_decl.arg_name_list.push "arg"
+  cb_decl.type_i.nest_list.push arg_type
 
   hint = new ast.Comment
   hint.text = "This method should handle return value of #{name} of foreign contract"
@@ -37,16 +36,19 @@ tx_node = (address_expr, arg_list, name, ctx) ->
   ctx.current_scope_ops_count += 1
   return declaration
 
-callback_tx_node = (address_expr, arg_list, name, ctx) ->
+callback_tx_node = (name, root, ctx) ->
   cb_name = name + "Callback"
   return_callback = astBuilder.self_entrypoint("%" + cb_name)
 
   if not ctx.callbacks_to_declare.hasOwnProperty cb_name
-    cb_decl = callback_declaration(cb_name)
+    # TODO why are we using nest_list of nest_list?
+    return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
+    cb_decl = callback_declaration(cb_name, return_type)
     ctx.callbacks_to_declare[cb_name] = cb_decl
 
-
+  arg_list = root.arg_list
   arg_list.push return_callback
+  address_expr = root.fn.t
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   op_index = ctx.current_scope_ops_count
@@ -101,11 +103,11 @@ walk = (root, ctx)->
                 return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
               
               when "allowance"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetAllowance", ctx)
+                return callback_tx_node("GetAllowance", root,  ctx)
               when "balanceOf"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetBalance", ctx)
+                return callback_tx_node("GetBalance", root,  ctx)
               when "totalSupply"
-                return callback_tx_node(root.fn.t, root.arg_list, "GetTotalSupply", ctx)
+                return callback_tx_node("GetTotalSupply", root,  ctx)
               
       ctx.next_gen root, ctx
     

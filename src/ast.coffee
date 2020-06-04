@@ -4,8 +4,8 @@ for k,v of ast
   @[k] = v
 
 # constants for function arguments
-INPUT_ARGS = 0
-RETURN_VALUES = 1
+@INPUT_ARGS = 0
+@RETURN_VALUES = 1
 
 # ###################################################################################################
 #    redefine
