@@ -597,43 +597,6 @@ walk = (root, ctx)->
                 else
                   throw new Error "unknown array field function #{root.fn.name}"
             
-            when "address"
-              switch root.fn.name
-                when "send"
-                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return"
-                  # TODO check balance
-                  op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                
-                when "transfer"
-                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-                  op_code = "transaction(unit, #{arg_list[0]} * 1mutez, (get_contract(#{t}) : contract(unit)))"
-                
-                when "call"
-                  perr "CRITICAL WARNING call function willl be conveerted into transaction, it doesn't return any value so your code may be wrong."
-                  perr "CRITICAL WARNING we don't check balance in call function. So runtime error will be ignored and no throw"
-                  if root.arg_list[0]
-                    ret_type = translate_type root.arg_list[0].type, ctx
-                    ret = arg_list[0]
-                  else
-                    ret_type = "Unit"
-                    ret = "unit"
-                  op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"    
-
-
-                when "delegatecall"
-                  perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-                  op_code = "transaction(#{arg_list[1]}, 1mutez, (get_contract(#{t}) : contract(#{arg_list[0]})))"
-                
-                when "built_in_pure_callback"
-                  # TODO check balance
-                  ret_type = translate_type root.arg_list[0].type, ctx
-                  ret = arg_list[0]
-                  op_code = "transaction(#{ret}, 0mutez, (get_contract(#{t}) : contract(#{ret_type})))"
-                
-                else
-                  throw new Error "unknown address field #{root.fn.name}"
-              return "var #{config.op_list} : list(operation) := list #{op_code} end"
-
       if root.fn.constructor.name == "Var"
         switch root.fn.name
           when "require", "assert", "require2"

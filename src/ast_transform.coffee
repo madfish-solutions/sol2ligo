@@ -18,6 +18,7 @@ module = @
 {intrinsics_converter} = require "./transforms/intrinsics_converter"
 {erc20_converter} = require "./transforms/erc20_converter"
 {return_op_list_count} = require "./transforms/return_op_list_count"
+{address_calls_converter} = require "./transforms/address_calls_converter"
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
@@ -38,6 +39,7 @@ module = @
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
+  root = address_calls_converter root
   root = erc20_converter root
   root = intrinsics_converter root
   root = var_translate root
