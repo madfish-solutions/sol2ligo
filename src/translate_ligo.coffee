@@ -165,6 +165,9 @@ number2bytes = (val, precision = 32)->
 
     when "timestamp"
       "timestamp"
+
+    when "operation"
+      "operation"
     
     when "built_in_op_list"
       "list(operation)"
@@ -191,7 +194,14 @@ number2bytes = (val, precision = 32)->
     when config.storage
       config.storage
     when "contract"
-      "contract(#{type.val})"
+      if type.val
+        "contract(#{type.val})"
+      else
+        type_list = []
+        for type in type.nest_list
+          translated_type = translate_type type, ctx
+          type_list.push translated_type
+        "contract(#{type_list.join ", "})"
     # when "t_bytes_memory_ptr"
     #   "bytes"
     # when config.storage
@@ -675,13 +685,7 @@ walk = (root, ctx)->
             fn = root.fn.name
       else
         fn = walk root.fn, ctx
-      
-      if root.fn.type?.main == "struct"
-        # this is contract(address) case
-        msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)"	
-        perr "CRITICAL WARNING #{msg}"
-        fn = "(* LIGO unsupported *)" + fn
-      
+    
       if arg_list.length == 0
         arg_list.push "unit"
       
@@ -1030,14 +1034,17 @@ walk = (root, ctx)->
       for v in root.list
         arg_list.push walk v, ctx
       
-      decls = []
-      for arg, i in arg_list
-        decls.push("#{i}n -> #{arg};")
-      """
-      map
-        #{join_list decls, '  '}
-      end
-      """
+      if root.type.main == "built_in_op_list"
+        """list [#{arg_list.join "; " }]"""
+      else
+        decls = []
+        for arg, i in arg_list
+          decls.push("#{i}n -> #{arg};")
+        """
+        map
+          #{join_list decls, '  '}
+        end
+        """
     
     when "Event_decl"
       args = []
@@ -1049,6 +1056,9 @@ walk = (root, ctx)->
       (* EventDefinition #{root.name}(#{args.join('; ')}) *)
       """
     
+    when "Include"
+      """#include \"#{root.path}\""""
+
     else
       if ctx.next_gen?
         ctx.next_gen root, ctx
