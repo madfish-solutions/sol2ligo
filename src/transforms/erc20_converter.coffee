@@ -31,10 +31,7 @@ callback_declaration = (name, arg_type) ->
 tx_node = (address_expr, arg_list, name, ctx) ->
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
-  op_index = ctx.current_scope_ops_count
-  declaration = astBuilder.declaration("op" + op_index, tx, new Type "operation")
-  ctx.current_scope_ops_count += 1
-  return declaration
+  return tx
 
 callback_tx_node = (name, root, ctx) ->
   cb_name = name + "Callback"
@@ -51,10 +48,7 @@ callback_tx_node = (name, root, ctx) ->
   address_expr = root.fn.t
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
-  op_index = ctx.current_scope_ops_count
-  declaration = astBuilder.declaration("op" + op_index, tx, new Type "operation")
-  ctx.current_scope_ops_count += 1
-  return declaration
+  return tx
 
 walk = (root, ctx)->
   switch root.constructor.name

@@ -8,11 +8,7 @@ tx_node = (arg_list, cost, address_expr, name, ctx) ->
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tez_cost = astBuilder.cast_to_tez(cost)
   tx = astBuilder.transaction(arg_list, entrypoint, tez_cost)
-  op_index = ctx.current_scope_ops_count
-  declaration = astBuilder.declaration("op" + op_index, tx, new Type "operation")
-  ctx.current_scope_ops_count += 1
-  insp tx, 5
-  return declaration
+  return tx
 
 walk = (root, ctx)->
   switch root.constructor.name

@@ -1,6 +1,7 @@
 { default_walk } = require "./default_walk"
 
 ast = require "../ast"
+astBuilder = require "../ast_builder"
 Type = require "type"
 
 walk = (root, ctx)->
@@ -11,7 +12,11 @@ walk = (root, ctx)->
 
     when "Fn_call"
       if root.fn.name == "transaction"
+        op_index = ctx.current_fn_opcount
+        declaration = astBuilder.declaration("op" + op_index, root, new Type "operation")
         ctx.current_fn_opcount += 1
+        return declaration
+
       ctx.next_gen root, ctx
 
     when "Ret_multi"
