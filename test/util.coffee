@@ -1,4 +1,5 @@
 assert              = require "assert"
+config              = require "../src/config"
 ast_gen             = require("../src/ast_gen")
 solidity_to_ast4gen = require("../src/solidity_to_ast4gen").gen
 ast_transform       = require("../src/ast_transform")
