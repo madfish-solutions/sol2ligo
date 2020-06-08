@@ -1,4 +1,5 @@
 config = require "../src/config"
+assert = require "assert"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
@@ -8,58 +9,299 @@ describe "translate ligo section ops", ()->
   # ###################################################################################################
   #    expr
   # ###################################################################################################
-  describe "uintX un_ops", ()->
+  describe "uintX un_ops emulator", ()->
     for type in config.uint_type_list
-      it "#{type} un_ops", ()->
+      it "#{type} un_ops", (on_end)->
+        @timeout 30000
         text_i = """
         pragma solidity ^0.5.11;
         
         contract Expr {
-          #{type} public value;
+          #{type} public ret;
           
-          function expr() public returns (#{type}) {
+          function expr() public {
             #{type} a = 0;
             #{type} c = 0;
             a++;
             a--;
             ++a;
             --a;
+            c = ~a;
+            c = #{type}(~0);
             c = a++;
             c = a--;
             c = ++a;
             c = --a;
-            c = ~a;
-            c = #{type}(~0);
-            return c;
+            ret = c;
+          }
+          function getRet() public view returns (#{type} ret_val) {
+            ret_val = ret;
           }
         }
         """#"
         text_o = """
           type state is record
-            value : nat;
+            ret : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
             block {
               const a : nat = 0n;
               const c : nat = 0n;
-              a := a + 1;
-              a := a - 1;
-              a := a + 1;
-              a := a - 1;
-              a := a + 1;
-              c := (a - 1);
-              a := a - 1;
-              c := (a + 1);
-              a := a + 1;
-              c := a;
-              a := a - 1;
-              c := a;
+              a := a + 1n;
+              a := abs(a - 1n);
+              a := a + 1n;
+              a := abs(a - 1n);
               c := abs(not (a));
               c := abs(not (0));
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+              a := a + 1n;
+              c := abs(a - 1n);
+              a := abs(a - 1n);
+              c := (a + 1n);
+              a := a + 1n;
+              c := a;
+              a := abs(a - 1n);
+              c := a;
+              #{config.contract_storage}.ret := c;
+            } with ((nil: list(operation)), #{config.contract_storage});
+          
+          function getRet (const self : state; const receiver : contract(nat)) : (list(operation)) is
+            block {
+              const ret_val : nat = 0n;
+              ret_val := self.ret;
+              var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
+            } with (opList);
         """
         make_test text_i, text_o
+        if process.env.EMULATOR
+          await make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg      : '"Expr"'
+            ligo_state    : "record ret = 100n; end"
+            sol_test_fn   : (contract, on_end)->
+              await contract.expr().cb defer(err, result); return on_end err if err
+              await contract.getRet.call().cb defer(err, result); return on_end err if err
+              
+              try
+                assert.strictEqual result.toNumber(), 0
+              catch err
+                return on_end err
+              on_end()
+            ligo_test_fn  : (res, on_end)->
+              try
+                assert.strictEqual +res, 0
+              catch err
+                return on_end err
+              on_end()
+          }, defer(err); return on_end err if err
+        on_end()
+    
+    if process.env.EMULATOR
+      it "uint a++", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            
+            function expr() public {
+              uint a = 100;
+              uint c = 0;
+              ret = a++;
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg      : '"Expr"'
+          ligo_state    : "record ret = 100n; end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.expr().cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            try
+              assert.strictEqual result.toNumber(), 100
+            catch err
+              return loc_on_end err
+            loc_on_end()
+          ligo_test_fn  : (res, loc_on_end)->
+            try
+              assert.strictEqual +res, 100
+            catch err
+              return loc_on_end err
+            loc_on_end()
+        }, on_end
+      
+      it "uint a--", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            
+            function expr() public {
+              uint a = 100;
+              uint c = 0;
+              ret = a--;
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg      : '"Expr"'
+          ligo_state    : "record ret = 100n; end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.expr().cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            try
+              assert.strictEqual result.toNumber(), 100
+            catch err
+              return loc_on_end err
+            loc_on_end()
+          ligo_test_fn  : (res, loc_on_end)->
+            try
+              assert.strictEqual +res, 100
+            catch err
+              return loc_on_end err
+            loc_on_end()
+        }, on_end
+      
+      it "uint ++a", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            
+            function expr() public {
+              uint a = 100;
+              uint c = 0;
+              ret = ++a;
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg      : '"Expr"'
+          ligo_state    : "record ret = 100n; end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.expr().cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            try
+              assert.strictEqual result.toNumber(), 101
+            catch err
+              return loc_on_end err
+            loc_on_end()
+          ligo_test_fn  : (res, loc_on_end)->
+            try
+              assert.strictEqual +res, 101
+            catch err
+              return loc_on_end err
+            loc_on_end()
+        }, on_end
+      
+      it "uint --a", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            
+            function expr() public {
+              uint a = 100;
+              uint c = 0;
+              ret = --a;
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg      : '"Expr"'
+          ligo_state    : "record ret = 100n; end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.expr().cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            try
+              assert.strictEqual result.toNumber(), 99
+            catch err
+              return loc_on_end err
+            loc_on_end()
+          ligo_test_fn  : (res, loc_on_end)->
+            try
+              assert.strictEqual +res, 99
+            catch err
+              return loc_on_end err
+            loc_on_end()
+        }, on_end
+      
+      it "uint ~a", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            
+            function expr() public {
+              uint a = 100;
+              uint c = 0;
+              ret = ~a;
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg      : '"Expr"'
+          ligo_state    : "record ret = 100n; end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.expr().cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            # WTF hell yes. Very wierd split of uint256
+            try
+              assert.strictEqual result.words[0], 67108763 # 3ffffff
+              assert.strictEqual result.words[1], 67108863 # 3ffff9b
+              assert.strictEqual result.words[2], 67108863
+              assert.strictEqual result.words[3], 67108863
+              assert.strictEqual result.words[4], 67108863
+              assert.strictEqual result.words[5], 67108863
+              assert.strictEqual result.words[6], 67108863
+              assert.strictEqual result.words[7], 67108863
+              assert.strictEqual result.words[8], 67108863
+              assert.strictEqual result.words[9], 4194303 # 3fffff
+            catch err
+              return loc_on_end err
+            loc_on_end()
+          ligo_test_fn  : (res, loc_on_end)->
+            try
+              assert.strictEqual +res, 101 # WTF hell yes
+            catch err
+              return loc_on_end err
+            loc_on_end()
+        }, on_end
   
   describe "uintX bin_ops", ()->
     for type in config.uint_type_list

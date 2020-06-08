@@ -104,28 +104,49 @@ number2bytes = (val, precision = 32)->
     else
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
-  RET_INC : (a, ctx)->
+  RET_INC : (a, ctx, ast)->
     perr "RET_INC can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} + 1"
-    ctx.trim_expr = "(#{a} - 1)"
+    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    ctx.sink_list.push "#{a} := #{a} + #{one}"
+    if is_uint
+      ctx.trim_expr = "abs(#{a} - #{one})"
+    else
+      ctx.trim_expr = "(#{a} - #{one})"
   
-  RET_DEC : (a, ctx)->
+  RET_DEC : (a, ctx, ast)->
     perr "RET_DEC can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} - 1"
-    ctx.trim_expr = "(#{a} + 1)"
+    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    if is_uint
+      ctx.sink_list.push "#{a} := abs(#{a} - #{one})"
+    else
+      ctx.sink_list.push "#{a} := #{a} - #{one}"
+    ctx.trim_expr = "(#{a} + #{one})"
   
-  INC_RET : (a, ctx)->
+  INC_RET : (a, ctx, ast)->
     perr "INC_RET can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} + 1"
+    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    ctx.sink_list.push "#{a} := #{a} + #{one}"
     ctx.trim_expr = "#{a}"
   
-  DEC_RET : (a, ctx)->
+  DEC_RET : (a, ctx, ast)->
     perr "DEC_RET can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} - 1"
+    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    if is_uint
+      ctx.sink_list.push "#{a} := abs(#{a} - #{one})"
+    else
+      ctx.sink_list.push "#{a} := #{a} - #{one}"
     ctx.trim_expr = "#{a}"
   
   DELETE : (a, ctx, ast)->

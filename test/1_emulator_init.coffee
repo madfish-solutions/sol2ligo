@@ -1,9 +1,15 @@
 return if !process.env.EMULATOR
 require "fy"
+fs = require "fs"
 {
   spawn
+  exec
   execSync
 } = require "child_process"
+{
+  translate_ligo
+  tez_account_list
+} = require("./util")
 
 truffle_config      = require "@truffle/config"
 truffle_environment = require "@truffle/environment"
@@ -14,20 +20,72 @@ Promise.prototype.cb = (cb)->
   @catch (err)=>cb err
   @then (res)=>cb null, res
 
-global.test_get_contract = (name, cb)->
+uid = 0
+global.test_get_contract = (name, code, cb)->
+  # we should use unique name equal to file name, so we patch code. Yes it can break code
+  anon_name = "Test#{uid++}"
+  code = code.split(name).join anon_name
+  fs.writeFileSync "contracts/#{anon_name}.sol", code
+  
+  fs.writeFileSync "migrations/2_#{anon_name}.js", """
+    var contract = artifacts.require(#{JSON.stringify anon_name})
+    
+    module.exports = function(deployer) {
+      deployer.deploy(contract);
+    }
+    """
+  
+  await exec "./node_modules/.bin/truffle migrate --reset", defer(err, stdout, stderr); return cb err if err
+  p "stdout", stdout
+  p "stderr", stderr
+  
   config = truffle_config.default()
   await truffle_environment.Environment.detect(config).cb defer(err); return cb err if err
   config.artifactor = new truffle_artifactor("build")
   config.resolver   = new truffle_resolver config
   
-  wrap_contract = config.resolver.require name, config.contracts_build_directory
+  wrap_contract = config.resolver.require anon_name, config.contracts_build_directory
   await wrap_contract.deployed().cb defer(err, contract); return cb err if err
   cb null, contract
+
+global.make_emulator_test = (opt, on_end)->
+  {
+    sol_code
+    contract_name
+    ligo_arg    # e.g. '"Add(record a=1;b=2 end)"'
+    ligo_state  # e.g. "record ret = 100; end"
+    sol_test_fn
+    ligo_test_fn
+  } = opt
+  
+  ligo_code = translate_ligo sol_code
+  await test_get_contract contract_name, sol_code, defer(err, contract); return on_end err if err
+  await sol_test_fn contract, defer(err); return on_end err if err
+  
+  fs.writeFileSync "test.ligo", ligo_code
+  res = execSync [
+    "ligo dry-run test.ligo"
+    "--sender #{JSON.stringify tez_account_list[0]}"
+    "--syntax pascaligo"
+    "main" # router name
+    ligo_arg
+    JSON.stringify ligo_state
+  ].join " "
+  reg_ret = /ret -> ([\+\-]\d+)/.exec res
+  return on_end new Error "!reg_ret #{res}" if !reg_ret
+  [_skip, value] = reg_ret
+  await ligo_test_fn value, defer(err); return on_end err if err
+  
+  on_end()
 
 describe "emulator section", ()->
   it "init", (done)->
     @timeout 30000
     # https://developer.kyber.network/docs/Reserves-Ganache/
+    execSync "rm -rf build"
+    execSync "rm -rf db"
+    execSync "rm -rf contracts/Test*.sol"
+    execSync "rm -rf migrations/*Test*.js"
     global.__sandbox_proc = spawn "./node_modules/.bin/ganache-cli", [
       "--db", "db"
       "--accounts", "10"
@@ -54,7 +112,11 @@ describe "emulator section", ()->
     
     done()
   
-  it "migrations", ()->
+  it "migrations", (on_end)->
     @timeout 30000
-    execSync "./node_modules/.bin/truffle migrate"
+    await exec "./node_modules/.bin/truffle migrate", defer(err, stdout, stderr)
+    p "stdout", stdout
+    p "stderr", stderr
+    
+    on_end(err)
   
