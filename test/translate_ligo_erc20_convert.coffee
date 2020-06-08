@@ -45,17 +45,17 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract *)
       } with ((nil: list(operation)), self);
     
     function getBalanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetBalanceCallback of foreign contract *)
+        (* This method should handle return value of GetBalance of foreign contract *)
       } with ((nil: list(operation)), self);
     
     function getTotalSupplyCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetTotalSupplyCallback of foreign contract *)
+        (* This method should handle return value of GetTotalSupply of foreign contract *)
       } with ((nil: list(operation)), self);
     
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
@@ -97,7 +97,7 @@ describe "erc20 conversions", ()->
 
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract *)
       } with ((nil: list(operation)), self);
 
     function test (const self : state) : (list(operation) * state) is
@@ -133,7 +133,7 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract *)
       } with ((nil: list(operation)), self);
 
     function test (const self : state) : (list(operation) * state) is

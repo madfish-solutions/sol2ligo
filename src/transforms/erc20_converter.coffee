@@ -15,7 +15,7 @@ astBuilder = require "../ast_builder"
 
 callback_declaration = (name, arg_type) ->
   cb_decl = new ast.Fn_decl_multiret
-  cb_decl.name = name
+  cb_decl.name = name + "Callback"
   
   cb_decl.type_i = new Type "function"
   cb_decl.type_o =  new Type "function"
@@ -40,7 +40,7 @@ callback_tx_node = (name, root, ctx) ->
   if not ctx.callbacks_to_declare.hasOwnProperty cb_name
     # TODO why are we using nest_list of nest_list?
     return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = callback_declaration(cb_name, return_type)
+    cb_decl = callback_declaration(name, return_type)
     ctx.callbacks_to_declare[cb_name] = cb_decl
 
   arg_list = root.arg_list
