@@ -23,8 +23,9 @@ callback_declaration = (name, arg_type) ->
   cb_decl.arg_name_list.push "arg"
   cb_decl.type_i.nest_list.push arg_type
 
+  # full doc link: https://github.com/madfish-solutions/sol2ligo/wiki/Foreign-contract-callback-stub
   hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract"
+  hint.text = "This method should handle return value of #{name} of foreign contract. Read more at https://git.io/JfDxR"
   cb_decl.scope.list.push hint
   return cb_decl
 
