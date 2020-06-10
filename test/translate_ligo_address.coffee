@@ -24,8 +24,8 @@ describe "translate ligo section address", ()->
     
     function test (const #{config.contract_storage} : state; const target : address) : (list(operation) * state) is
       block {
-        var opList : list(operation) := list transaction(unit, 1n * 1mutez, (get_contract(target) : contract(unit))) end;
-      } with (opList, #{config.contract_storage});
+        const op0 : operation = transaction((unit), (1n * 1mutez), (get_contract(target) : contract(unit)));
+      } with (list [op0], #{config.contract_storage});
     """
     make_test text_i, text_o
   

@@ -2,17 +2,34 @@
 Type = require "type"
 ast = require "./ast"
 
-@transaction = (input_args, entrypoint_expr) ->
+@unit = () -> 
+  unit = new ast.Const
+  unit.type  = new Type "Unit"
+  unit.val = "unit"
+  return unit
+
+@cast_to_tez = (node) ->
+  ret = new ast.Bin_op
+  ret.op = "MUL"
+  ret.a = node
+  ret.b = new ast.Const
+  ret.b.val = 1
+  ret.b.type = new Type "mutez"
+  return ret
+
+@transaction = (input_args, entrypoint_expr, cost) ->
   inject = new ast.Fn_call
   inject.fn = new ast.Var
   inject.fn.name = "@transaction"
   inject.arg_list.push params = new ast.Tuple
   params.list = input_args
 
-  inject.arg_list.push tx_cost = new ast.Const
-  tx_cost.val = 0
-  tx_cost.type = new Type "mutez"
-
+  if not cost
+    cost = new ast.Const
+    cost.val = 0
+    cost.type = new Type "mutez"
+    
+  inject.arg_list.push cost
   inject.arg_list.push entrypoint_expr
   
   return inject

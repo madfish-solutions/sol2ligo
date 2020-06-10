@@ -4,8 +4,8 @@ for k,v of ast
   @[k] = v
 
 # constants for function arguments
-INPUT_ARGS = 0
-RETURN_VALUES = 1
+@INPUT_ARGS = 0
+@RETURN_VALUES = 1
 
 # ###################################################################################################
 #    redefine
@@ -83,7 +83,6 @@ class @Var_decl
   size  : null
   assign_value      : null
   assign_value_list : null
-  special_type : false
   line  : 0
   pos   : 0
   
@@ -95,7 +94,6 @@ class @Var_decl
     ret.contract_type = @contract_type
     ret.type  = @type.clone() if @type
     ret.size  = @size
-    ret.special_type  = @special_type
     ret.assign_value  = @assign_value.clone() if @assign_value
     if @assign_value_list
       ret.assign_value_list = []
@@ -385,6 +383,17 @@ class @Struct_init
       ret.val_list[idx] = v.clone()
     for v,idx in @arg_names
       ret.arg_names[idx] = v
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Include
+  path : ""
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    path = ""
     ret.line  = @line
     ret.pos   = @pos
     ret
