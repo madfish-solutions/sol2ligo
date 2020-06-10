@@ -8,6 +8,18 @@ ast = require "./ast"
   unit.val = "unit"
   return unit
 
+@nat_literal = (value) ->
+  literal = new ast.Const
+  literal.type = new Type "uint"
+  literal.val = value
+  return literal
+
+@list_init = (array) ->
+  init = new ast.Array_init
+  init.type = new Type "built_in_op_list"
+  init.list = array
+  return init
+
 @cast_to_tez = (node) ->
   ret = new ast.Bin_op
   ret.op = "MUL"

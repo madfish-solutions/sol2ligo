@@ -159,8 +159,25 @@ walk = (root, ctx)->
         switch root.fn.t.type.main
           when "struct"
             switch root.fn.name
-              when "transfer"
-                return tx_node(root.fn.t, root.arg_list, "Transferie", ctx)
+              when "transferFrom"
+                args = root.arg_list
+
+                tx = new ast.Struct_init
+                tx.arg_names = ["to_", "token_id", "amount"]
+                tx.val_list =  [args[1], args[2], astBuilder.nat_literal(1)]
+                
+                txs = new ast.Array_init
+                txs.type = new Type "built_in_op_list"
+                txs.list = [tx]
+
+                arg_record = new ast.Struct_init
+                arg_record.arg_names = ["from_", "txs",]
+                arg_record.val_list = [args[0], astBuilder.list_init([tx])]
+                
+                arg_list_obj = astBuilder.list_init([arg_record])
+
+
+                return tx_node(root.fn.t, [arg_list_obj], "Transferie", ctx)
               when "approve"
                 return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
               when "transferFrom"
