@@ -17,6 +17,7 @@ module = @
 {replace_enums_by_nat} = require "./transforms/replace_enums_by_nat"
 {intrinsics_converter} = require "./transforms/intrinsics_converter"
 {erc20_converter} = require "./transforms/erc20_converter"
+{erc721_converter} = require "./transforms/erc721_converter"
 {return_op_list_count} = require "./transforms/return_op_list_count"
 {address_calls_converter} = require "./transforms/address_calls_converter"
 
@@ -39,8 +40,10 @@ module = @
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
+  opt.prefer_erc721 ?= false
+
   root = address_calls_converter root
-  root = erc20_converter root
+  root = ercs_translate root, opt
   root = intrinsics_converter root
   root = var_translate root
   root = decl_storage_and_oplist_inject root, opt
@@ -52,4 +55,15 @@ module = @
     root = add_router root, obj_merge {router_func_list}, opt
 
   root = return_op_list_count root, opt
+  root
+
+# add this weird multiplexer until we figure out better interface detection
+ercs_translate = (root, opt) ->
+  if opt.prefer_erc721
+    root = erc721_converter root
+    root = erc20_converter root
+  else
+    root = erc20_converter root
+    root = erc721_converter root
+
   root
