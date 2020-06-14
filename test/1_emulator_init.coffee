@@ -52,7 +52,7 @@ global.make_emulator_test = (opt, on_end)->
   {
     sol_code
     contract_name
-    ligo_arg    # e.g. '"Add(record a=1;b=2 end)"'
+    ligo_arg_list    # e.g. '"Add(record a=1;b=2 end)"'
     ligo_state  # e.g. "record ret = 100; end"
     sol_test_fn
     ligo_test_fn
@@ -63,18 +63,21 @@ global.make_emulator_test = (opt, on_end)->
   await sol_test_fn contract, defer(err); return on_end err if err
   
   fs.writeFileSync "test.ligo", ligo_code
-  res = execSync [
-    "ligo dry-run test.ligo"
-    "--sender #{JSON.stringify tez_account_list[0]}"
-    "--syntax pascaligo"
-    "main" # router name
-    ligo_arg
-    JSON.stringify ligo_state
-  ].join " "
-  reg_ret = /ret -> ([\+\-]\d+)/.exec res
-  return on_end new Error "!reg_ret #{res}" if !reg_ret
-  [_skip, value] = reg_ret
-  await ligo_test_fn value, defer(err); return on_end err if err
+  value_list = []
+  for ligo_arg in ligo_arg_list
+    res = execSync [
+      "ligo dry-run test.ligo"
+      "--sender #{JSON.stringify tez_account_list[0]}"
+      "--syntax pascaligo"
+      "main" # router name
+      ligo_arg
+      JSON.stringify ligo_state
+    ].join " "
+    reg_ret = /ret -> ([\+\-]?\d+)/.exec res
+    return on_end new Error "!reg_ret #{res}" if !reg_ret
+    [_skip, value] = reg_ret
+    value_list.push value
+  await ligo_test_fn value_list, defer(err); return on_end err if err
   
   on_end()
 

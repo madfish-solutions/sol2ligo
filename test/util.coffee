@@ -67,3 +67,10 @@ cache_content_hash = {}
 @tez_account_list = [
   "tz1NxxKP97Sv6rURCqyZN8TvfLsDaJJ1gRZL"
 ]
+
+@async_assert_strict = (val_a, val_b, on_end)->
+  try
+    assert.strictEqual val_a, val_b
+  catch err
+    return on_end err
+  on_end()
