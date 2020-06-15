@@ -12,7 +12,7 @@ walk = null
   # SUB : "-"
   MUL : "*"
   DIV : "/"
-  MOD : "mod"
+  # MOD : "mod"
   
   EQ  : "="
   NE  : "=/="
@@ -59,23 +59,43 @@ number2bytes = (val, precision = 32)->
   BIT_AND : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_and(#{a}, #{b})"
+    ret = "bitwise_and(#{a}, #{b})"
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   BIT_OR  : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_or(#{a}, #{b})"
+    ret = "bitwise_or(#{a}, #{b})"
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   BIT_XOR : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_xor(#{a}, #{b})"
+    ret = "bitwise_xor(#{a}, #{b})"
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   SHR     : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_lsr(#{a}, #{b})"
+    ret = "bitwise_lsr(#{a}, #{b})"
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   SHL     : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_lsl(#{a}, #{b})"
+    ret = "bitwise_lsl(#{a}, #{b})"
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
@@ -91,6 +111,11 @@ number2bytes = (val, precision = 32)->
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
+  MOD : (a, b, ctx, ast)->
+    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+      "int(#{a} mod #{b})"
+    else
+      "(#{a} mod #{b})"
 
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
