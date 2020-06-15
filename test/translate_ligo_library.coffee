@@ -40,12 +40,12 @@ describe "translate ligo section library", ()->
     function uintExactAddOverflowExample (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = abs(not (0));
-        exactMath.exactAdd(self, n, 1);
+        exactMath_exactAdd(self, n, 1n);
       } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
-  it "library (no using) + pure (BROKEN exactMath.exactAdd)", ()->
+  it "library (no using) + pure", ()->
     text_i = """
     pragma solidity ^0.4.22;
     
@@ -83,7 +83,7 @@ describe "translate ligo section library", ()->
     function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
       block {
         const n : nat = abs(not (0));
-        exactMath.exactAdd(n, 1n);
+        exactMath_exactAdd(n, 1n);
       } with ((nil: list(operation)), 0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
@@ -93,7 +93,7 @@ describe "translate ligo section library", ()->
     """#"
     make_test text_i, text_o, router: true
   
-  it "library call from library (BROKEN bytes.fromBytes)", ()->
+  it "library call from library", ()->
     text_i = """
     pragma solidity ^0.4.16;
     
@@ -114,7 +114,7 @@ describe "translate ligo section library", ()->
     }
     """
     text_o = """
-    type main_args is record
+    type test_reserved_long___main_args is record
       test_reserved_long___self : bytes;
       other : bytes;
     end;
@@ -131,11 +131,11 @@ describe "translate ligo section library", ()->
         const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with ((nil: list(operation)), #{config.contract_storage});
     type router_enum is
-      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_args;
+      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of test_reserved_long___main_args;
     
     function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
-        const src : nat = bytes.fromBytes(test_reserved_long___self);
+        const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with ((nil: list(operation)), #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
@@ -145,7 +145,7 @@ describe "translate ligo section library", ()->
     """#"
     make_test text_i, text_o, router: true
   
-  it "library struct use from contract (BROKEN. BAD pausers_ type)", ()->
+  it "library struct use from contract", ()->
     text_i = """
     pragma solidity ^0.5.0;
     
@@ -169,7 +169,7 @@ describe "translate ligo section library", ()->
     end;
     
     type state is record
-      pausers_ : pauserRole_Roles.Role;
+      pausers_ : roles_Role;
     end;
     
     const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];

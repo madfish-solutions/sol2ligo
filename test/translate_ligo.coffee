@@ -28,24 +28,56 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
-  it "enums (BROKEN)"
-    # text_i = """
-    # pragma solidity ^0.5.11;
-    # 
-    # contract Enumeration {
-    #   enum SomeData {DEFAULT,ONE,TWO}
-    # }
-    # """#"
-    # # please note that enum name should become lowercase!
-    # text_o = """
-    # type state is unit;
-    # 
-    # type someData is
-    #   | DEFAULT
-    #   | ONE
-    #   | TWO;
-    # """
-    # make_test text_i, text_o
+  it "enums", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Enumeration {
+      enum SomeData {DEFAULT,ONE,TWO}
+    }
+    """#"
+    # please note that enum name should become lowercase!
+    text_o = """
+    type state is unit;
+    
+    type someData is
+      | DEFAULT
+     | ONE
+     | TWO;
+    """
+    make_test text_i, text_o, replace_enums_by_nats: false
+
+   
+  it "enum to nat conversion", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract Enumeration {
+      enum EnumType {DEFAULT,ONE,TWO}
+
+      mapping (bytes32 => EnumType) private dataMap;
+
+      function ternary() private {
+        EnumType e = EnumType.ONE;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      dataMap : map(bytes, nat);
+    end;
+
+    const enumType_DEFAULT : nat = 0n;
+    const enumType_ONE : nat = 1n;
+    const enumType_TWO : nat = 2n;
+    (* enum EnumType converted into list of nats *)
+
+    function ternary (const self : state) : (list(operation) * state) is
+      block {
+        const e : nat = enumType_ONE;
+      } with ((nil: list(operation)), self);
+    """
+    make_test text_i, text_o
   
   it "ternary", ()->
     text_i = """
@@ -223,7 +255,7 @@ describe "translate ligo section unsorted", ()->
     ###
     
     text_o = """
-    type transferOwnership_args_ is record
+    type transferOwnership__args is record
       newOwner : address;
     end;
     
@@ -236,7 +268,7 @@ describe "translate ligo section unsorted", ()->
     end;
     
     type router_enum is
-      | TransferOwnership_ of transferOwnership_args_
+      | TransferOwnership_ of transferOwnership__args
      | TransferOwnership of transferOwnership_args;
     
     function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (list(operation) * state) is

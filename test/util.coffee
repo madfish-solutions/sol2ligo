@@ -8,15 +8,16 @@ translate           = require("../src/translate_ligo").gen
 fs                  = require "fs"
 {execSync}          = require("child_process")
 
-cache_content_hash = {}
+cache_content_map = {}
 
 @translate_ligo_make_test = (text_i, text_o_expected, opt={})->
   opt.router ?= false
   solidity_ast = ast_gen text_i, silent:true
   ast = solidity_to_ast4gen solidity_ast
   assert !ast.need_prevent_deploy unless opt.allow_need_prevent_deploy
-  ast = ast_transform.ligo_pack ast, opt
+  ast = ast_transform.pre_ti ast, opt
   ast = type_inference ast
+  ast = ast_transform.post_ti ast, opt
   text_o_real     = translate ast, opt
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
@@ -35,10 +36,10 @@ cache_content_hash = {}
       
       """
     
-    if cache_content_hash[text_o_real]
+    if cache_content_map[text_o_real]
       puts "LIGO check skipped. Reason: content was already checked"
       return
-    cache_content_hash[text_o_real] = true
+    cache_content_map[text_o_real] = true
     
     fs.writeFileSync "test.ligo", text_o_real
     

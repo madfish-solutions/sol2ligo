@@ -90,13 +90,13 @@ module.exports = (path, import_cache = {})->
   code = line_list.join("\n")
   # deduplicate pragma
   line_list = code.split("\n")
-  pragma_hash = {}
+  pragma_map = {}
   filter_line_list = []
   for line in line_list
     key = line.trim()
     if /^pragma/.test key
-      continue if pragma_hash.hasOwnProperty key
-      pragma_hash[key] = true
+      continue if pragma_map.hasOwnProperty key
+      pragma_map[key] = true
     filter_line_list.push line
   
   code = filter_line_list.join("\n")
