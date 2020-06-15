@@ -62,7 +62,7 @@ number2bytes = (val, precision = 32)->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
     ret = "bitwise_and(#{a}, #{b})"
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
       ret
@@ -70,7 +70,7 @@ number2bytes = (val, precision = 32)->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
     ret = "bitwise_or(#{a}, #{b})"
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
       ret
@@ -78,7 +78,7 @@ number2bytes = (val, precision = 32)->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
     ret = "bitwise_xor(#{a}, #{b})"
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
       ret
@@ -86,7 +86,7 @@ number2bytes = (val, precision = 32)->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
     ret = "bitwise_lsr(#{a}, #{b})"
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
       ret
@@ -94,7 +94,7 @@ number2bytes = (val, precision = 32)->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
     ret = "bitwise_lsl(#{a}, #{b})"
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
       ret
@@ -114,7 +114,7 @@ number2bytes = (val, precision = 32)->
     else
       "(#{a} - #{b})"
   MOD : (a, b, ctx, ast)->
-    if config.int_type_hash.hasOwnProperty(ast.a.type.main) and config.int_type_hash.hasOwnProperty(ast.b.type.main)
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{a} mod #{b})"
     else
       "(#{a} mod #{b})"
@@ -134,7 +134,7 @@ number2bytes = (val, precision = 32)->
   RET_INC : (a, ctx, ast)->
     perr "RET_INC can have not fully correct implementation"
     module.warning_counter++
-    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
     one += "n" if is_uint
     ctx.sink_list.push "#{a} := #{a} + #{one}"
@@ -146,7 +146,7 @@ number2bytes = (val, precision = 32)->
   RET_DEC : (a, ctx, ast)->
     perr "RET_DEC can have not fully correct implementation"
     module.warning_counter++
-    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
     one += "n" if is_uint
     if is_uint
@@ -158,7 +158,7 @@ number2bytes = (val, precision = 32)->
   INC_RET : (a, ctx, ast)->
     perr "INC_RET can have not fully correct implementation"
     module.warning_counter++
-    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
     one += "n" if is_uint
     ctx.sink_list.push "#{a} := #{a} + #{one}"
@@ -167,7 +167,7 @@ number2bytes = (val, precision = 32)->
   DEC_RET : (a, ctx, ast)->
     perr "DEC_RET can have not fully correct implementation"
     module.warning_counter++
-    is_uint = config.uint_type_hash.hasOwnProperty(ast.a.type.main)
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
     one += "n" if is_uint
     if is_uint
