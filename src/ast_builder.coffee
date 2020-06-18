@@ -97,3 +97,25 @@ ast = require "./ast"
   decl.assign_value = rvalue
 
   return decl
+
+@struct_init = (dict) ->
+  structure = new ast.Struct_init
+  structure.arg_names = Object.keys(dict)
+  structure.val_list = Object.values(dict)
+  
+  return structure
+
+@callback_declaration = (name, arg_type) ->
+  cb_decl = new ast.Fn_decl_multiret
+  cb_decl.name = name + "Callback"
+  
+  cb_decl.type_i = new Type "function"
+  cb_decl.type_o =  new Type "function"
+  
+  cb_decl.arg_name_list.push "arg"
+  cb_decl.type_i.nest_list.push arg_type
+
+  hint = new ast.Comment
+  hint.text = "This method should handle return value of #{name} of foreign contract"
+  cb_decl.scope.list.push hint
+  return cb_decl

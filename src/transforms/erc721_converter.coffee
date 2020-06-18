@@ -11,8 +11,6 @@ astBuilder = require "../ast_builder"
 #  function throws for queries about the zero address.
 # @param _owner An address for whom to query the balance
 # @return The number of NFTs owned by `_owner`, possibly zero
-
-
 # function balanceOf(address _owner) external view returns (uint256); -> Balance_of(record [requests = list [ record [owner = arg[0], token_id = callee] ], callback = Tezos.self(%callback))
 
 # @notice Find the owner of an NFT
@@ -21,7 +19,7 @@ astBuilder = require "../ast_builder"
 # @param _tokenId The identifier for an NFT
 # @return The address of the owner of the NFT
 # function ownerOf(uint256 _tokenId) external view returns (address);
-# Is_operator(record [ owner = arg[0], operator = Tezos.sender, callback = self("%is_operator_callback")
+# ?Balance_of(record [ owner = arg[0], operator = Tezos.sender, callback = self("%is_operator_callback")
 
 # @notice Transfers the ownership of an NFT from one address to another address
 # @dev Throws unless `msg.sender` is the current owner, an authorized
@@ -65,6 +63,7 @@ astBuilder = require "../ast_builder"
 # @param _approved The new approved NFT controller
 # @param _tokenId The NFT to approve
 # function approve(address _approved, uint256 _tokenId) external payable;
+# Update_operators(list [ AddOperator( record [ owner = Tezos.sender, operator = arg[0] ] ) ]
 
 # @notice Enable or disable approval for a third party ("operator") to manage
 #  all of `msg.sender`'s assets
@@ -73,6 +72,7 @@ astBuilder = require "../ast_builder"
 # @param _operator Address to add to the set of authorized operators
 # @param _approved True if the operator is approved, false to revoke approval
 # function setApprovalForAll(address _operator, bool _approved) external;
+# Update_operators(list [ AddOperator( record [ owner = Tezos.sender, operator = arg[0] ] ) ]
 
 # @notice Get the approved address for a single NFT
 # @dev Throws if `_tokenId` is not a valid NFT.
@@ -85,40 +85,16 @@ astBuilder = require "../ast_builder"
 # @param _operator The address that acts on behalf of the owner
 # @return True if `_operator` is an approved operator for `_owner`, false otherwise
 # function isApprovedForAll(address _owner, address _operator) external view returns (bool);
+# Is_operator(record [ operator = record [ owner = arg[0], operator = arg[1] ], callback = Tezos.self("%is_operator_callback") ])
 
-callback_declaration = (name, arg_type) ->
-  cb_decl = new ast.Fn_decl_multiret
-  cb_decl.name = name + "Callback"
-  
-  cb_decl.type_i = new Type "function"
-  cb_decl.type_o =  new Type "function"
-  
-  cb_decl.arg_name_list.push "arg"
-  cb_decl.type_i.nest_list.push arg_type
-
-  hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract"
-  cb_decl.scope.list.push hint
-  return cb_decl
+declare_callback = (name, fn, ctx) ->
+  if not ctx.callbacks_to_declare.hasOwnProperty name
+    # TODO why are we using nest_list of nest_list?
+    return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
+    cb_decl = astBuilder.callback_declaration(name, return_type)
+    ctx.callbacks_to_declare[name] = cb_decl # no "Callback" suffix for key
 
 tx_node = (address_expr, arg_list, name, ctx) ->
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
-  tx = astBuilder.transaction(arg_list, entrypoint)
-  return tx
-
-callback_tx_node = (name, root, ctx) ->
-  cb_name = name + "Callback"
-  return_callback = astBuilder.self_entrypoint("%" + cb_name)
-
-  if not ctx.callbacks_to_declare.hasOwnProperty cb_name
-    # TODO why are we using nest_list of nest_list?
-    return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = callback_declaration(name, return_type)
-    ctx.callbacks_to_declare[cb_name] = cb_decl
-
-  arg_list = root.arg_list
-  arg_list.push return_callback
-  address_expr = root.fn.t
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
@@ -162,24 +138,36 @@ walk = (root, ctx)->
               when "transferFrom"
                 args = root.arg_list
 
-                tx = new ast.Struct_init
-                tx.arg_names = ["to_", "token_id", "amount"]
-                tx.val_list =  [args[1], args[2], astBuilder.nat_literal(1)]
+                tx = astBuilder.struct_init {
+                  to_: args[1],
+                  token_id: args[2],
+                  amount: astBuilder.nat_literal(1)
+                }
                 
-                txs = new ast.Array_init
-                txs.type = new Type "built_in_op_list"
-                txs.list = [tx]
-
-                arg_record = new ast.Struct_init
-                arg_record.arg_names = ["from_", "txs",]
-                arg_record.val_list = [args[0], astBuilder.list_init([tx])]
+                arg_record = astBuilder.struct_init {
+                  from_ : args[0],
+                  txs :  astBuilder.list_init([tx])
+                }
                 
                 arg_list_obj = astBuilder.list_init([arg_record])
+                args = root.arg_list
 
+                return tx_node(root.fn.t, [arg_list_obj], "Transfer", ctx)
+              when "balanceOf"
+                name = "Balance_of"
+                args = root.arg_list
+                balance_request = astBuilder.struct_init {
+                  owner : args[0],
+                  token_id : root.fn.t
+                }
+                arg_record = astBuilder.struct_init {
+                  requests: astBuilder.list_init [balance_request]
+                  callback : astBuilder.self_entrypoint "%#{name}Callback"
+                }
 
-                return tx_node(root.fn.t, [arg_list_obj], "Transferie", ctx)
-              when "approve"
-                return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
+                declare_callback name, root.fn, ctx
+                
+                return tx_node(root.fn.t, [arg_record], name, ctx)
               when "transferFrom"
                 return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
 
