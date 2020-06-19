@@ -119,3 +119,10 @@ ast = require "./ast"
   hint.text = "This method should handle return value of #{name} of foreign contract"
   cb_decl.scope.list.push hint
   return cb_decl
+
+@tezos_var = (name) ->
+  ret = new ast.Field_access
+  ret.t = new ast.Var
+  ret.t.name = "Tezos"
+  ret.name = name
+  return ret

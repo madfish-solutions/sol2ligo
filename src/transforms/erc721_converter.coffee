@@ -168,8 +168,21 @@ walk = (root, ctx)->
                 declare_callback name, root.fn, ctx
                 
                 return tx_node(root.fn.t, [arg_record], name, ctx)
-              when "transferFrom"
-                return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
+              when "approve"
+                # HACK imitate enum value with payload via fn_call
+                enum_val = new ast.Fn_call
+                enum_val.fn = new ast.Var
+                enum_val.fn.name = "AddOperator"
+
+                arg_record = astBuilder.struct_init {
+                  owner : astBuilder.tezos_var("sender")
+                  operator : root.arg_list[0]
+                }
+
+                enum_val.arg_list = [arg_record]
+
+                list = astBuilder.list_init [enum_val]
+                return tx_node(root.fn.t, [list], "Update_operators", ctx)
 
       ctx.next_gen root, ctx
     
