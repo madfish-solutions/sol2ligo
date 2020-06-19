@@ -169,17 +169,28 @@ walk = (root, ctx)->
                 
                 return tx_node(root.fn.t, [arg_record], name, ctx)
               when "approve"
-                # HACK imitate enum value with payload via fn_call
-                enum_val = new ast.Fn_call
-                enum_val.fn = new ast.Var
-                enum_val.fn.name = "AddOperator"
-
                 arg_record = astBuilder.struct_init {
                   owner : astBuilder.tezos_var("sender")
                   operator : root.arg_list[0]
                 }
 
-                enum_val.arg_list = [arg_record]
+                enum_val = astBuilder.enum_val("Add_operator", [arg_record])
+
+                list = astBuilder.list_init [enum_val]
+                return tx_node(root.fn.t, [list], "Update_operators", ctx)
+              when "setApprovalForAll"
+                args = root.arg_list
+                arg_record = astBuilder.struct_init {
+                  owner : astBuilder.tezos_var("sender")
+                  operator : args[0]
+                }
+
+                if args[1].val == 'true'
+                  action = "Add_operator"
+                else
+                  action = "Remove_operator"
+
+                enum_val = astBuilder.enum_val(action, [arg_record])             
 
                 list = astBuilder.list_init [enum_val]
                 return tx_node(root.fn.t, [list], "Update_operators", ctx)

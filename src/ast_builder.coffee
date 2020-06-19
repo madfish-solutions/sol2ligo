@@ -126,3 +126,11 @@ ast = require "./ast"
   ret.t.name = "Tezos"
   ret.name = name
   return ret
+
+@enum_val = (name, payload) ->
+  # HACK imitate enum value with payload via fn_call
+  enum_val = new ast.Fn_call
+  enum_val.fn = new ast.Var
+  enum_val.fn.name = name
+  enum_val.arg_list = payload
+  return enum_val
