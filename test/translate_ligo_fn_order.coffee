@@ -27,7 +27,7 @@ describe "translate ligo section fn order", ()->
     function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -63,7 +63,7 @@ describe "translate ligo section fn order", ()->
     function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         assert(isAuthorized(self));
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -90,7 +90,7 @@ describe "translate ligo section fn order", ()->
         } else block {
           skip
         };
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o, no_ligo:true
   

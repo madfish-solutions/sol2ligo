@@ -28,7 +28,7 @@ describe "translate ligo section fn", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         #{config.contract_storage}.value := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -60,7 +60,7 @@ describe "translate ligo section fn", ()->
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with ((nil: list(operation)), #{config.contract_storage}, c);
+      } with (list [], #{config.contract_storage}, c);
     """
     make_test text_i, text_o
 
@@ -107,7 +107,7 @@ describe "translate ligo section fn", ()->
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with ((nil: list(operation)), #{config.contract_storage}, c);
+      } with (list [], #{config.contract_storage}, c);
     """
     make_test text_i, text_o
   
@@ -130,7 +130,7 @@ describe "translate ligo section fn", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (list [], #{config.contract_storage}, 0n);
     """
     make_test text_i, text_o
   
@@ -153,12 +153,12 @@ describe "translate ligo section fn", ()->
     function call_me (const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, a);
+      } with (list [], #{config.contract_storage}, a);
     
     function test (const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
       block {
         skip
-      } with ((nil: list(operation)), self, call_me(self, a));
+      } with (list [], self, call_me(self, a));
     """
     make_test text_i, text_o
   
@@ -254,7 +254,7 @@ describe "translate ligo section fn", ()->
     function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
       block {
         skip
-      } with ((nil: list(operation)), 0n);
+      } with (list [], 0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
@@ -301,7 +301,7 @@ describe "translate ligo section fn", ()->
       block {
         const n : nat = abs(not (0));
         exactAdd(n, 1n);
-      } with ((nil: list(operation)), 0n);
+      } with (list [], 0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of

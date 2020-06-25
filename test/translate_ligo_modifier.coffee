@@ -44,7 +44,7 @@ describe "translate ligo section modifier", ()->
         } else block {
           skip
         };
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -83,7 +83,7 @@ describe "translate ligo section modifier", ()->
           skip
         };
         #{config.contract_storage}.val := True;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

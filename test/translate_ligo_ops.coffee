@@ -57,7 +57,7 @@ describe "translate ligo section ops", ()->
               c := a;
               c := abs(not (a));
               c := abs(not (0));
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (list [], #{config.contract_storage}, c);
         """
         make_test text_i, text_o
   
@@ -120,7 +120,7 @@ describe "translate ligo section ops", ()->
               c := bitwise_and(c, b);
               c := bitwise_or(c, b);
               c := bitwise_xor(c, b);
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (list [], #{config.contract_storage}, c);
           
         """
         make_test text_i, text_o
@@ -163,7 +163,7 @@ describe "translate ligo section ops", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+            } with (list [], #{config.contract_storage}, 0n);
           
         """
         make_test text_i, text_o
@@ -197,7 +197,7 @@ describe "translate ligo section ops", ()->
               const c : int = 0;
               c := not (a);
               c := int(abs(not (0)));
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (list [], #{config.contract_storage}, c);
         """
         make_test text_i, text_o
   # TODO support mod & | ^ LATER
@@ -260,7 +260,7 @@ describe "translate ligo section ops", ()->
   #         c := bitwise_and(c, b);
   #         c := bitwise_or(c, b);
   #         c := bitwise_xor(c, b);
-  #       } with ((nil: list(operation)), #{config.contract_storage}, c);
+  #       } with (list [], #{config.contract_storage}, c);
   #     
   #   """
   #   make_test text_i, text_o
@@ -310,7 +310,7 @@ describe "translate ligo section ops", ()->
               c := (c - b);
               c := (c * b);
               c := (c / b);
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (list [], #{config.contract_storage}, c);
           
         """
         make_test text_i, text_o
@@ -353,7 +353,7 @@ describe "translate ligo section ops", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+            } with (list [], #{config.contract_storage}, 0n);
           
         """
         make_test text_i, text_o
@@ -378,7 +378,7 @@ describe "translate ligo section ops", ()->
     function expr (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, (case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
+      } with (list [], #{config.contract_storage}, (case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
     """
     make_test text_i, text_o
   
@@ -404,7 +404,7 @@ describe "translate ligo section ops", ()->
         const z : nat = 3n;
         const a : nat = ((x + y) mod z);
         const m : nat = ((x * y) mod z);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
 

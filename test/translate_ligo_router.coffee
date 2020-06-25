@@ -33,12 +33,12 @@ describe "translate ligo section router", ()->
     function oneArgFunction (const #{config.contract_storage} : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function twoArgsFunction (const #{config.contract_storage} : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
@@ -73,12 +73,12 @@ describe "translate ligo section router", ()->
     function oneArgFunction (const #{config.contract_storage} : state; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function twoArgsFunction (const #{config.contract_storage} : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
@@ -117,7 +117,7 @@ describe "translate ligo section router", ()->
     function twoArgsFunction (const #{config.contract_storage} : state; const dest : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of

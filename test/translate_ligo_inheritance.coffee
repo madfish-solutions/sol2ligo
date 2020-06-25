@@ -31,17 +31,17 @@ describe "translate ligo section inheritance", ()->
     function one (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         i := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -72,17 +72,17 @@ describe "translate ligo section inheritance", ()->
     function ownable_constructor (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         i := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         ownable_constructor(self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
   

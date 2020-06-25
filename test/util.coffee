@@ -30,7 +30,7 @@ cache_content_map = {}
       #{text_o_real}
       function main (const action : nat; const #{config.contract_storage} : state) : (list(operation) * state) is
         block {
-          const opList : list(operation) = (nil: list(operation));
+          const opList : list(operation) = list [];
         } with (opList, #{config.contract_storage});
       
       """

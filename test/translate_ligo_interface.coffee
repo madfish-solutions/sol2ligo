@@ -32,12 +32,12 @@ describe "translate ligo section interface", ()->
     function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function one (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

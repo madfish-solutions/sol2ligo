@@ -38,7 +38,7 @@ describe "translate ligo section ops bytes", ()->
           function expr (const #{config.contract_storage} : state) : (list(operation) * state * bytes) is
             block {
               const a : bytes = 0x#{'00'.repeat count};
-            } with ((nil: list(operation)), #{config.contract_storage}, a);
+            } with (list [], #{config.contract_storage}, a);
         """
         make_test text_i, text_o
   
@@ -71,7 +71,7 @@ describe "translate ligo section ops bytes", ()->
         assert((b2 > b3));
         assert((b4 >= b5));
         assert(((b4 : bytes) < b5));
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

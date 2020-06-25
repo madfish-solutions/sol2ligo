@@ -33,7 +33,7 @@ describe "translate ligo section map", ()->
       block {
         #{config.contract_storage}.allowedIntegers[0n] := True;
         remove 0n from map #{config.contract_storage}.allowedIntegers;
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (list [], #{config.contract_storage}, 0n);
     
     """
     make_test text_i, text_o
@@ -66,7 +66,7 @@ describe "translate ligo section map", ()->
   #   function #{config.reserved}__map (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
   #     block {
   #       #{config.contract_storage}.allowedIntegers[0][0n] := 0n;
-  #     } with ((nil: list(operation)), #{config.contract_storage}, 0);
+  #     } with (list [], #{config.contract_storage}, 0);
     
   #   """ #"
   #   make_test text_i, text_o
@@ -96,7 +96,7 @@ describe "translate ligo section map", ()->
             0n -> 0n;
           end;
         end;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """ #"
     make_test text_i, text_o

@@ -62,7 +62,7 @@ describe "translate ligo real contracts section", ()->
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        const opList : list(operation) = (nil: list(operation));
+        const opList : list(operation) = list [];
         if (#{config.contract_storage}.#{config.initialized}) then block {
           case action of
           | Constructor(match_action) -> block {
@@ -253,7 +253,7 @@ describe "translate ligo real contracts section", ()->
         assert(isOwner(#{config.contract_storage})) (* "Ownable: caller is not the owner" *);
         (* EmitStatement OwnershipTransferred(_owner, ) *);
         #{config.contract_storage}.owner_ := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (state) is
       block {
@@ -266,7 +266,7 @@ describe "translate ligo real contracts section", ()->
       block {
         assert(isOwner(self)) (* "Ownable: caller is not the owner" *);
         transferOwnership_(self, newOwner);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of

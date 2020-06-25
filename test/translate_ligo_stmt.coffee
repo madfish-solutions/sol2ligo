@@ -36,11 +36,11 @@ describe "translate ligo section stmt", ()->
         const tmp_1 : (nat * nat) = fromBytes(test_reserved_long___self);
         const src : nat = tmp_1.0;
         const srcLen : nat = tmp_1.1;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """
     make_test text_i, text_o
   
-  it "if (BROKEN opList from nowhere)", ()->
+  it "if", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -74,7 +74,7 @@ describe "translate ligo section stmt", ()->
         } else block {
           ret := 0n;
         };
-      } with (opList, #{config.contract_storage}, ret);
+      } with (list [], #{config.contract_storage}, ret);
     
     """
     make_test text_i, text_o
@@ -103,7 +103,7 @@ describe "translate ligo section stmt", ()->
         while (i < 5) block {
           i := (i + 1);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (list [], #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -135,7 +135,7 @@ describe "translate ligo section stmt", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (list [], #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -163,7 +163,7 @@ describe "translate ligo section stmt", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (list [], #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -192,7 +192,7 @@ describe "translate ligo section stmt", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (list [], #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -220,11 +220,11 @@ describe "translate ligo section stmt", ()->
         while (i < 5) block {
           i := (i + 1);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (list [], #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
-  it "for with body of no scope (BROKEN opList from nowhere)", ()->
+  it "for with body of no scope", ()->
     text_i = """
     pragma solidity ^0.4.16;
     
@@ -249,7 +249,7 @@ describe "translate ligo section stmt", ()->
             skip
           };
         };
-      } with (opList, #{config.contract_storage}, 0);
+      } with (list [], #{config.contract_storage}, 0);
     """
     make_test text_i, text_o
   

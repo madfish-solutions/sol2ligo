@@ -32,7 +32,7 @@ describe "translate ligo section fn api", ()->
         assert((tokenCount = 4n));
         failwith("revert");
         failwith("Should fail");
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -57,7 +57,7 @@ describe "translate ligo section fn api", ()->
     function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
       block {
         assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n)) (* "Overdrawn balance" *);
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (list [], #{config.contract_storage}, 0n);
     """#"
     make_test text_i, text_o
   
@@ -118,7 +118,7 @@ describe "translate ligo section fn api", ()->
         const g : nat = 0n;
         const s : bytes = ("00": bytes);
         const gp : nat = 0n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -143,7 +143,7 @@ describe "translate ligo section fn api", ()->
     function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
       block {
         assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n));
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (list [], #{config.contract_storage}, 0n);
     """#"
     make_test text_i, text_o
   
@@ -194,7 +194,7 @@ describe "translate ligo section fn api", ()->
       function test (const #{config.contract_storage} : state; const b0 : bytes) : (list(operation) * state * bytes) is
         block {
           skip
-        } with ((nil: list(operation)), #{config.contract_storage}, (sha_256(b0)));
+        } with (list [], #{config.contract_storage}, (sha_256(b0)));
       """#"
       make_test text_i, text_o
   

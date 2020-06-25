@@ -46,17 +46,17 @@ describe "erc20 conversions", ()->
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
-      } with ((nil: list(operation)), self);
+      } with (list [], self);
     
     function getBalanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of GetBalance of foreign contract. Read more at https://git.io/JfDxR *)
-      } with ((nil: list(operation)), self);
+      } with (list [], self);
     
     function getTotalSupplyCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR *)
-      } with ((nil: list(operation)), self);
+      } with (list [], self);
     
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
@@ -98,7 +98,7 @@ describe "erc20 conversions", ()->
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
-      } with ((nil: list(operation)), self);
+      } with (list [], self);
 
     function test (const self : state) : (list(operation) * state) is
       block {
@@ -134,7 +134,7 @@ describe "erc20 conversions", ()->
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
-      } with ((nil: list(operation)), self);
+      } with (list [], self);
 
     function test (const self : state) : (list(operation) * state) is
       block {

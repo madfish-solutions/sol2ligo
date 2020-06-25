@@ -28,7 +28,7 @@ walk = (root, ctx)->
         inject.name_translate = false
       
       if ctx.returns_op_list
-        root.t_list.unshift inject = new ast.Const
+        root.t_list.unshift inject = new ast.Array_init
         inject.type = new Type "built_in_op_list"
         if ctx.has_op_list_decl
           inject.val = config.op_list

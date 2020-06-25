@@ -34,7 +34,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -80,7 +80,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -118,7 +118,7 @@ describe "translate ligo section var type", ()->
         const value_uint : nat = 0n;
         const value_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const value_string : string = "";
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -145,7 +145,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -165,7 +165,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : int = -(1);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -185,7 +185,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : string = "1";
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -231,7 +231,7 @@ describe "translate ligo section var type", ()->
         #{config.contract_storage}.data := ("00": bytes);
         #{config.contract_storage}.time := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
         #{config.contract_storage}.timestamp := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -254,7 +254,7 @@ describe "translate ligo section var type", ()->
       block {
         const #{config.reserved}__#{config.contract_storage} : nat = 1n;
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -275,7 +275,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state; const #{config.reserved}__#{config.contract_storage} : nat) : (list(operation) * state) is
       block {
         const a : nat = #{config.reserved}__#{config.contract_storage};
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -299,7 +299,7 @@ describe "translate ligo section var type", ()->
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const a : nat = #{config.contract_storage}.#{config.reserved}__#{config.contract_storage};
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     """#"
     make_test text_i, text_o
@@ -341,7 +341,7 @@ describe "translate ligo section var type", ()->
       block {
         const bts0 : bytes = ("00": bytes);
         const bts1 : bytes = ("00": bytes);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -367,7 +367,7 @@ describe "translate ligo section var type", ()->
         const bts1 : bytes = 0x00;
         const bts2 : bytes = bts0;
         bts2 := 0x00;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

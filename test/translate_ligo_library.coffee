@@ -41,7 +41,7 @@ describe "translate ligo section library", ()->
       block {
         const n : nat = abs(not (0));
         exactMath_exactAdd(self, n, 1n);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -84,7 +84,7 @@ describe "translate ligo section library", ()->
       block {
         const n : nat = abs(not (0));
         exactMath_exactAdd(n, 1n);
-      } with ((nil: list(operation)), 0n);
+      } with (list [], 0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
@@ -129,14 +129,14 @@ describe "translate ligo section library", ()->
     function #{config.reserved}__bytes_concat (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const src : nat = bytes_fromBytes(test_reserved_long___self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     type router_enum is
       | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of test_reserved_long___main_args;
     
     function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
         const src : nat = bytes_fromBytes(test_reserved_long___self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of

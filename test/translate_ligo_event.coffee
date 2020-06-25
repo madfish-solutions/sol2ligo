@@ -26,7 +26,7 @@ describe "translate ligo section emit", ()->
     function transferPrimary (const #{config.contract_storage} : state; const recipient : address) : (list(operation) * state) is
       block {
         (* EmitStatement PrimaryTransferred(recipient) *)
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -51,7 +51,7 @@ describe "translate ligo section emit", ()->
     function transferPrimary (const #{config.contract_storage} : state; const recipient : address) : (list(operation) * state) is
       block {
         (* EmitStatement PrimaryTransferred(recipient) *)
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

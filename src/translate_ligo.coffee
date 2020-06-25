@@ -245,7 +245,7 @@ number2bytes = (val, precision = 32)->
       "(#{JSON.stringify config.default_address} : address)"
     
     when "built_in_op_list"
-      "(nil: list(operation))"
+      "list []"
 
     when "contract"
       "contract(unit)"

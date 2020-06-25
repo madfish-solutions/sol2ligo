@@ -32,7 +32,7 @@ describe "translate ligo section unsupported", ()->
           (* CRITICAL WARNING break is not supported *);
           (* CRITICAL WARNING continue is not supported *);
         };
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o, allow_need_prevent_deploy:true
   
@@ -53,7 +53,7 @@ describe "translate ligo section unsupported", ()->
     function recover (const hash : bytes; const v : nat; const r : bytes; const s : bytes) : (list(operation) * address) is
       block {
         skip
-      } with ((nil: list(operation)), ecrecover(hash, v, r, s));
+      } with (list [], ecrecover(hash, v, r, s));
     """#"
     make_test text_i, text_o, no_ligo:true
   
@@ -80,6 +80,6 @@ describe "translate ligo section unsupported", ()->
     function isAuthorized (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         (* LIGO unsupported *)dSAuthority(0);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (list [], #{config.contract_storage});
     """#"
     make_test text_i, text_o, no_ligo:true

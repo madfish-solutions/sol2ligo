@@ -117,7 +117,7 @@ walk = (root, ctx)->
           if !func.returns_op_list and func.modifies_storage
             _case.scope.need_nest = false
             _case.scope.list.push ret = new ast.Tuple
-            ret.list.push _var = new ast.Const
+            ret.list.push _var = new ast.Array_init
             _var.type = new Type "built_in_op_list"
             ret.list.push call 
           else if !func.modifies_storage
