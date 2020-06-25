@@ -64,11 +64,11 @@ ast = require "./ast"
 
 @self_entrypoint = (name) ->
   arg = new ast.Var
-  arg.name = "Tezos"
+  arg.name = "@Tezos"
 
   get_entrypoint = new ast.Fn_call
   get_entrypoint.fn = new ast.Field_access
-  get_entrypoint.fn.name = "self"
+  get_entrypoint.fn.name = "@self"
   get_entrypoint.fn.t = arg
 
   entrypoint_name = new ast.Const
@@ -123,8 +123,8 @@ ast = require "./ast"
 @tezos_var = (name) ->
   ret = new ast.Field_access
   ret.t = new ast.Var
-  ret.t.name = "Tezos"
-  ret.name = name
+  ret.t.name = "@Tezos"
+  ret.name = "@" + name
   return ret
 
 @enum_val = (name, payload) ->
