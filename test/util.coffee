@@ -1,4 +1,5 @@
 assert              = require "assert"
+config              = require "../src/config"
 ast_gen             = require("../src/ast_gen")
 solidity_to_ast4gen = require("../src/solidity_to_ast4gen").gen
 ast_transform       = require("../src/ast_transform")
@@ -21,7 +22,7 @@ cache_content_map = {}
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
   assert.strictEqual text_o_real, text_o_expected
-  if process.argv.has "--ext_compiler" and !opt.no_ligo
+  if process.env.EXT_COMPILER and !opt.no_ligo
     # strip known non-working code
     text_o_real = text_o_real.replace /\(\* EmitStatement \*\);/g, "const unused : nat = 0n;"
     
@@ -52,3 +53,26 @@ cache_content_map = {}
       throw err
       
   return
+
+@translate_ligo = (text_i, opt={})->
+  opt.router ?= true
+  solidity_ast = ast_gen text_i, silent:true
+  ast = solidity_to_ast4gen solidity_ast
+  assert !ast.need_prevent_deploy unless opt.allow_need_prevent_deploy
+  ast = ast_transform.pre_ti ast, opt
+  ast = type_inference ast
+  ast = ast_transform.post_ti ast, opt
+  text_o_real = translate ast, opt
+  text_o_real = text_o_real.trim()
+  text_o_real
+
+@tez_account_list = [
+  "tz1NxxKP97Sv6rURCqyZN8TvfLsDaJJ1gRZL"
+]
+
+@async_assert_strict = (val_a, val_b, on_end)->
+  try
+    assert.strictEqual val_a, val_b
+  catch err
+    return on_end err
+  on_end()

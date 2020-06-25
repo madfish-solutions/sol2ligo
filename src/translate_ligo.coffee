@@ -14,7 +14,7 @@ walk = null
   # SUB : "-"
   MUL : "*"
   DIV : "/"
-  MOD : "mod"
+  # MOD : "mod"
   
   EQ  : "="
   NE  : "=/="
@@ -61,23 +61,43 @@ number2bytes = (val, precision = 32)->
   BIT_AND : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_and(#{a}, #{b})"
+    ret = "bitwise_and(#{a}, #{b})"
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   BIT_OR  : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_or(#{a}, #{b})"
+    ret = "bitwise_or(#{a}, #{b})"
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   BIT_XOR : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_xor(#{a}, #{b})"
+    ret = "bitwise_xor(#{a}, #{b})"
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   SHR     : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_lsr(#{a}, #{b})"
+    ret = "bitwise_lsr(#{a}, #{b})"
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   SHL     : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    "bitwise_lsl(#{a}, #{b})"
+    ret = "bitwise_lsl(#{a}, #{b})"
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{ret})"
+    else
+      ret
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
@@ -93,6 +113,11 @@ number2bytes = (val, precision = 32)->
       "abs(#{a} - #{b})"
     else
       "(#{a} - #{b})"
+  MOD : (a, b, ctx, ast)->
+    if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
+      "int(#{a} mod #{b})"
+    else
+      "(#{a} mod #{b})"
 
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
@@ -106,28 +131,49 @@ number2bytes = (val, precision = 32)->
     else
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
-  RET_INC : (a, ctx)->
+  RET_INC : (a, ctx, ast)->
     perr "RET_INC can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} + 1"
-    ctx.trim_expr = "(#{a} - 1)"
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    ctx.sink_list.push "#{a} := #{a} + #{one}"
+    if is_uint
+      ctx.trim_expr = "abs(#{a} - #{one})"
+    else
+      ctx.trim_expr = "(#{a} - #{one})"
   
-  RET_DEC : (a, ctx)->
+  RET_DEC : (a, ctx, ast)->
     perr "RET_DEC can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} - 1"
-    ctx.trim_expr = "(#{a} + 1)"
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    if is_uint
+      ctx.sink_list.push "#{a} := abs(#{a} - #{one})"
+    else
+      ctx.sink_list.push "#{a} := #{a} - #{one}"
+    ctx.trim_expr = "(#{a} + #{one})"
   
-  INC_RET : (a, ctx)->
+  INC_RET : (a, ctx, ast)->
     perr "INC_RET can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} + 1"
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    ctx.sink_list.push "#{a} := #{a} + #{one}"
     ctx.trim_expr = "#{a}"
   
-  DEC_RET : (a, ctx)->
+  DEC_RET : (a, ctx, ast)->
     perr "DEC_RET can have not fully correct implementation"
     module.warning_counter++
-    ctx.sink_list.push "#{a} := #{a} - 1"
+    is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
+    one = "1"
+    one += "n" if is_uint
+    if is_uint
+      ctx.sink_list.push "#{a} := abs(#{a} - #{one})"
+    else
+      ctx.sink_list.push "#{a} := #{a} - #{one}"
     ctx.trim_expr = "#{a}"
   
   DELETE : (a, ctx, ast)->

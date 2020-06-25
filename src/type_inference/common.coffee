@@ -186,6 +186,9 @@ do ()=>
     for type_main in config.uint_type_list
       for type_index in config.uint_type_list
         list.push [type_main, type_index, type_main]
+    for type_main in config.int_type_list
+      for type_index in config.int_type_list
+        list.push [type_main, type_index, type_main]
   
   return
 # ###################################################################################################

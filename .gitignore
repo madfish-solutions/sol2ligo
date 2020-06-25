@@ -8,3 +8,11 @@ test.pp.ligo
 *.log
 report.sh
 .vscode
+
+# ganache
+db
+build
+
+# temp
+contracts/Test*.sol
+migrations/*Test*.js
