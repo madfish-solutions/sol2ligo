@@ -79,7 +79,7 @@ describe "translate ligo section unsupported", ()->
     
     function isAuthorized (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        (* LIGO unsupported *)dSAuthority(0);
+        dSAuthority(0);
       } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o, no_ligo:true
