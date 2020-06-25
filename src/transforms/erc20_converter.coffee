@@ -86,9 +86,7 @@ walk = (root, ctx)->
           when "struct"
             switch root.fn.name
               when "transfer"
-                sender = new ast.Var
-                sender.name = "sender"
-                sender.type = new Type "address"
+                sender = astBuilder.tezos_var("sender")
                 arg_list = root.arg_list
                 arg_list.unshift(sender)
                 return tx_node(root.fn.t, arg_list, "Transfer", ctx)

@@ -62,6 +62,6 @@ describe "translate ligo section struct", ()->
       block {
         const v : ballot_Voter = record [ votee = Tezos.sender;
           voted = True ];
-      } with (list [], self);
+      } with ((nil: list(operation)), self);
     """
     make_test text_i, text_o

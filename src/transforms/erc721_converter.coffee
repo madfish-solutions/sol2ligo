@@ -174,7 +174,7 @@ walk = (root, ctx)->
                   operator : root.arg_list[0]
                 }
 
-                enum_val = astBuilder.enum_val("Add_operator", [arg_record])
+                enum_val = astBuilder.enum_val("@Add_operator", [arg_record])
 
                 list = astBuilder.list_init [enum_val]
                 return tx_node(root.fn.t, [list], "Update_operators", ctx)
@@ -186,9 +186,9 @@ walk = (root, ctx)->
                 }
 
                 if args[1].val == 'true'
-                  action = "Add_operator"
+                  action = "@Add_operator"
                 else
-                  action = "Remove_operator"
+                  action = "@Remove_operator"
 
                 enum_val = astBuilder.enum_val(action, [arg_record])             
 

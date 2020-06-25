@@ -41,25 +41,24 @@ describe "erc721 conversions", ()->
     type state is unit;
     
     #include "fa2.ligo";
-
     function balance_ofCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
         (* This method should handle return value of Balance_of of foreign contract *)
-      } with (list [], self);
+      } with ((nil: list(operation)), self);
 
     function test (const self : state) : (list(operation) * state) is
       block {
-        const op0 : operation = transaction((list [record [ from_ = sender;
+        const op0 : operation = transaction((list [record [ from_ = Tezos.sender;
           txs = list [record [ to_ = 0x0;
           token_id = 32n;
           amount = 1n ]] ]]), 0mutez, (get_contract(ERC721(0x0)) : contract(Transfer)));
-        const b : nat = const op1 : operation = transaction((record [ requests = list [record [ owner = sender;
+        const b : nat = const op1 : operation = transaction((record [ requests = list [record [ owner = Tezos.sender;
           token_id = ERC721(0x0) ]];
           callback = Tezos.self("%Balance_ofCallback") ]), 0mutez, (get_contract(ERC721(0x0)) : contract(Balance_of)));
         const op2 : operation = transaction((list [Add_operator(record [ owner = Tezos.sender;
-          operator = sender ])]), 0mutez, (get_contract(ERC721(0x0)) : contract(Update_operators)));
+          operator = Tezos.sender ])]), 0mutez, (get_contract(ERC721(0x0)) : contract(Update_operators)));
         const op3 : operation = transaction((list [Remove_operator(record [ owner = Tezos.sender;
-          operator = sender ])]), 0mutez, (get_contract(ERC721(0x0)) : contract(Update_operators)));
+          operator = Tezos.sender ])]), 0mutez, (get_contract(ERC721(0x0)) : contract(Update_operators)));
       } with (list [op0; op1; op2; op3], self);
     """
     make_test text_i, text_o, prefer_erc721: true
