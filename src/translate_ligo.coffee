@@ -720,7 +720,7 @@ walk = (root, ctx)->
       arg_list = []
       for i in [0..root.val_list.length-1]
         arg_list.push "#{root.arg_names[i]} = #{walk root.val_list[i], ctx}"
-      "record [ #{arg_list.join ";\n\t"} ]"
+      "record [ #{arg_list.join ";\n  "} ]"
 
     when "Type_cast"
       # TODO detect 'address(0)' here
@@ -977,7 +977,7 @@ walk = (root, ctx)->
           arg_list = []
           for v in root.scope.list
             arg_list.push "#{v.name} = #{type2default_value v.type, ctx}"
-          ctx.structs_default_list.push "const #{name}_default : #{name} = record [ #{arg_list.join ";\n\t"} ];\n"
+          ctx.structs_default_list.push "const #{name}_default : #{name} = record [ #{arg_list.join ";\n  "} ];\n"
         ctx.type_decl_sink_list.push {
           name
           field_decl_jl

@@ -26,11 +26,11 @@
   },
   "homepage": "https://github.com/madfish-solutions/sol2ligo#readme",
   "dependencies": {
-    "ast4gen": "github:konchunas/ast4gen",
+    "ast4gen": "github:madfish-solutions/ast4gen",
     "fy": "github:hu2prod/fy",
     "minimist": "^1.2.3",
     "solc": "^0.5.14",
-    "type": "github:konchunas/ast4gen-type"
+    "type": "github:madfish-solutions/ast4gen-type"
   },
   "devDependencies": {
     "@truffle/artifactor": "^4.0.60",

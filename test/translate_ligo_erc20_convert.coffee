@@ -45,28 +45,28 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with ((nil: list(operation)), self);
     
     function getBalanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetBalanceCallback of foreign contract *)
+        (* This method should handle return value of GetBalance of foreign contract. Read more at https://git.io/JfDxR *)
       } with ((nil: list(operation)), self);
     
     function getTotalSupplyCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetTotalSupplyCallback of foreign contract *)
+        (* This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR *)
       } with ((nil: list(operation)), self);
     
     function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
         const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetTotalSupply)));
-        const bal : nat = const op1 : operation = transaction((sender, Tezos.self("%GetBalanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetBalance)));
-        const allowance : nat = const op2 : operation = transaction((0x0, sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
-        const op3 : operation = transaction((sender, 0x0, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
-        const op4 : operation = transaction((sender, sender, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
-        const op5 : operation = transaction((sender, 5n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Approve)));
+        const bal : nat = const op1 : operation = transaction((Tezos.sender, Tezos.self("%GetBalanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetBalance)));
+        const allowance : nat = const op2 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const op3 : operation = transaction((Tezos.sender, 0x0, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
+        const op4 : operation = transaction((Tezos.sender, Tezos.sender, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
+        const op5 : operation = transaction((Tezos.sender, 5n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Approve)));
       } with (list [op0; op1; op2; op3; op4; op5], #{config.contract_storage});
     """#"
     make_test text_i, text_o
@@ -97,12 +97,12 @@ describe "erc20 conversions", ()->
 
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with ((nil: list(operation)), self);
 
     function test (const self : state) : (list(operation) * state) is
       block {
-        const allowance : nat = const op0 : operation = transaction((0x0, sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
       } with (list [op0], self);
 
     function main (const action : router_enum; const self : state) : (list(operation) * state) is
@@ -133,14 +133,15 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const self : state; const arg : nat) : (list(operation) * state) is
       block {
-        (* This method should handle return value of GetAllowanceCallback of foreign contract *)
+        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with ((nil: list(operation)), self);
 
     function test (const self : state) : (list(operation) * state) is
       block {
-        const allowance : nat = const op0 : operation = transaction((0x0, sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(sender) : contract(unit)));
       } with (list [op0; op1], self);
     """#"
     make_test text_i, text_o
+
 

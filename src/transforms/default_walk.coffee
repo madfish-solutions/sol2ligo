@@ -25,9 +25,9 @@
       root
     
     when "Fn_call"
-      root.fn = walk root.fn, ctx
       for v,idx in root.arg_list
         root.arg_list[idx] = walk v, ctx
+      root.fn = walk root.fn, ctx
       root
 
     when "Struct_init"
@@ -35,6 +35,10 @@
       if ctx.class_map and root.arg_names.length == 0
         for v, idx in ctx.class_map[root.fn.name].scope.list
           root.arg_names.push v.name
+
+      for v,idx in root.val_list
+        root.val_list[idx] = walk v, ctx
+        
       root
     
     when "New"
@@ -66,7 +70,7 @@
         walk root.t, ctx
       root
     
-    when "Enum_decl", "Type_cast", "Tuple"
+    when "Enum_decl", "Type_cast", "PM_switch"
       root
     
     when "Ret_multi"
@@ -104,6 +108,8 @@
       root
     
     when "Tuple", "Array_init"
+      for v,idx in root.list
+        root.list[idx] = walk v, ctx
       root
     
     when "Event_decl"

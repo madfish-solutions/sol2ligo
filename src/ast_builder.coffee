@@ -8,6 +8,18 @@ ast = require "./ast"
   unit.val = "unit"
   return unit
 
+@nat_literal = (value) ->
+  literal = new ast.Const
+  literal.type = new Type "uint"
+  literal.val = value
+  return literal
+
+@list_init = (array) ->
+  init = new ast.Array_init
+  init.type = new Type "built_in_op_list"
+  init.list = array
+  return init
+
 @cast_to_tez = (node) ->
   ret = new ast.Bin_op
   ret.op = "MUL"
@@ -52,11 +64,11 @@ ast = require "./ast"
 
 @self_entrypoint = (name) ->
   arg = new ast.Var
-  arg.name = "Tezos"
+  arg.name = "@Tezos"
 
   get_entrypoint = new ast.Fn_call
   get_entrypoint.fn = new ast.Field_access
-  get_entrypoint.fn.name = "self"
+  get_entrypoint.fn.name = "@self"
   get_entrypoint.fn.t = arg
 
   entrypoint_name = new ast.Const
@@ -85,3 +97,40 @@ ast = require "./ast"
   decl.assign_value = rvalue
 
   return decl
+
+@struct_init = (dict) ->
+  structure = new ast.Struct_init
+  structure.arg_names = Object.keys(dict)
+  structure.val_list = Object.values(dict)
+  
+  return structure
+
+@callback_declaration = (name, arg_type) ->
+  cb_decl = new ast.Fn_decl_multiret
+  cb_decl.name = name + "Callback"
+  
+  cb_decl.type_i = new Type "function"
+  cb_decl.type_o =  new Type "function"
+  
+  cb_decl.arg_name_list.push "arg"
+  cb_decl.type_i.nest_list.push arg_type
+
+  hint = new ast.Comment
+  hint.text = "This method should handle return value of #{name} of foreign contract"
+  cb_decl.scope.list.push hint
+  return cb_decl
+
+@tezos_var = (name) ->
+  ret = new ast.Field_access
+  ret.t = new ast.Var
+  ret.t.name = "@Tezos"
+  ret.name = "@" + name
+  return ret
+
+@enum_val = (name, payload) ->
+  # HACK imitate enum value with payload via fn_call
+  enum_val = new ast.Fn_call
+  enum_val.fn = new ast.Var
+  enum_val.fn.name = name
+  enum_val.arg_list = payload
+  return enum_val

@@ -15,7 +15,7 @@ astBuilder = require "../ast_builder"
 
 callback_declaration = (name, arg_type) ->
   cb_decl = new ast.Fn_decl_multiret
-  cb_decl.name = name
+  cb_decl.name = name + "Callback"
   
   cb_decl.type_i = new Type "function"
   cb_decl.type_o =  new Type "function"
@@ -23,8 +23,9 @@ callback_declaration = (name, arg_type) ->
   cb_decl.arg_name_list.push "arg"
   cb_decl.type_i.nest_list.push arg_type
 
+  # full doc link: https://github.com/madfish-solutions/sol2ligo/wiki/Foreign-contract-callback-stub
   hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract"
+  hint.text = "This method should handle return value of #{name} of foreign contract. Read more at https://git.io/JfDxR"
   cb_decl.scope.list.push hint
   return cb_decl
 
@@ -40,7 +41,7 @@ callback_tx_node = (name, root, ctx) ->
   if not ctx.callbacks_to_declare.hasOwnProperty cb_name
     # TODO why are we using nest_list of nest_list?
     return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = callback_declaration(cb_name, return_type)
+    cb_decl = callback_declaration(name, return_type)
     ctx.callbacks_to_declare[cb_name] = cb_decl
 
   arg_list = root.arg_list
@@ -85,9 +86,7 @@ walk = (root, ctx)->
           when "struct"
             switch root.fn.name
               when "transfer"
-                sender = new ast.Var
-                sender.name = "sender"
-                sender.type = new Type "address"
+                sender = astBuilder.tezos_var("sender")
                 arg_list = root.arg_list
                 arg_list.unshift(sender)
                 return tx_node(root.fn.t, arg_list, "Transfer", ctx)
