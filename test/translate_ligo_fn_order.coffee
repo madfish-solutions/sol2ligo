@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section fn order", ()->
   @timeout 10000
   it "modifier after usage", ()->
     text_i = """
@@ -20,16 +20,14 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
     (* modifier auth inlined *)
     
-    function setAuthority (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         skip
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
   
@@ -53,24 +51,19 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
     (* modifier auth inlined *)
     
-    function isAuthorized (const opList : list(operation); const contractStorage : state) : (list(operation) * state * bool) is
+    function isAuthorized (const #{config.contract_storage} : state) : (bool) is
       block {
         skip
-      } with (opList, contractStorage, False);
+      } with (False);
     
-    function setAuthority (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
-        const tmp_0 : (list(operation) * state * bool) = isAuthorized(opList, contractStorage);
-        opList := tmp_0.0;
-        contractStorage := tmp_0.1;
-        if tmp_0.2 then {skip} else failwith("require fail");
-      } with (opList, contractStorage);
+        assert(isAuthorized(self));
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -88,20 +81,16 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         if (False) then block {
-          const tmp_0 : (list(operation) * state) = test(opList, contractStorage);
-          opList := tmp_0.0;
-          contractStorage := tmp_0.1;
+          test(self);
         } else block {
           skip
         };
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o, no_ligo:true
   

@@ -40,6 +40,16 @@ https://github.com/madfish-solutions/sol2ligo/tree/pretty-ligo/examples
 
 
 ## 🏗️ Installation
+You need to have NodeJS installed on your machine.
+It was tested and developed using NodeJS v.10.13.0, but it’s expected to work on versions starting from v6.x.x up to v12.x.x
+
+We suggest using node version manger (like [nvm](https://github.com/nvm-sh/nvm))
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+# relogin or source ~/.bashrc
+nvm i 12
+```
+
 To try it out you will need Node.js, NPM and Iced Coffee Script
 
 ```sh
@@ -56,6 +66,13 @@ sol2ligo <filename>
 After transpiling you are likely gonna need to modify and thorougly audit the generated code. Follow transpiler warnings and comments inside the code to get more insight on what has to be done.
 
 ## 🏥️ Tests
+You need clone github repository and install packages
+```
+git clone https://github.com/madfish-solutions/sol2ligo
+cd sol2ligo
+npm i
+```
+
 For full test run
 ```sh
 npm test 
@@ -76,4 +93,4 @@ npm run test-specific <test-name>
 Check out [wiki](https://github.com/madfish-solutions/sol2ligo/wiki) for the knowledge base
 
 ## Licensing
-TBD
+MIT

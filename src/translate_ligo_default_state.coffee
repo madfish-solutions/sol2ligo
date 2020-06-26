@@ -10,19 +10,19 @@ Type = require "type"
 
 class @Gen_context
   next_gen : null
-  var_hash : {}
-  contract_hash : {}
-  type_decl_hash: {}
+  var_map : {}
+  contract_map : {}
+  type_decl_map: {}
   
   constructor:()->
-    @var_hash = {}
-    @contract_hash  = {}
-    @type_decl_hash = {}
+    @var_map = {}
+    @contract_map  = {}
+    @type_decl_map = {}
   
   mk_nest_contract : (name)->
     t = new module.Gen_context
-    @contract_hash[name] = t.var_hash
-    obj_set t.type_decl_hash, @type_decl_hash
+    @contract_map[name] = t.var_map
+    obj_set t.type_decl_map, @type_decl_map
     t
 
 last_bracket_state = false
@@ -40,7 +40,7 @@ walk = (root, ctx)->
       "nothing"
     
     when "Var_decl"
-      ctx.var_hash[root.name] = {
+      ctx.var_map[root.name] = {
         type  : translate_type root.type, ctx
         value : type2default_value root.type, ctx
       }
@@ -48,13 +48,13 @@ walk = (root, ctx)->
     
     when "Class_decl"
       return if root.need_skip
-      ctx.type_decl_hash[root.name] = root
+      ctx.type_decl_map[root.name] = root
       if root.is_contract
         ctx = ctx.mk_nest_contract(root.name)
       walk root.scope, ctx
     
     when "Enum_decl"
-      ctx.type_decl_hash[root.name] = root
+      ctx.type_decl_map[root.name] = root
       "nothing"
     
     else
@@ -71,7 +71,7 @@ walk = (root, ctx)->
   ctx.next_gen = opt.next_gen
   walk root, ctx
   
-  for k,v of ctx.contract_hash
+  for k,v of ctx.contract_map
     if 0 == h_count v
       type = new Type "uint"
       v[config.empty_state] = {
@@ -80,11 +80,11 @@ walk = (root, ctx)->
       }
   
   if !opt.convert_to_string
-    return ctx.contract_hash
+    return ctx.contract_map
   
   # TODO proper convert
   jl = []
-  for k,contract of ctx.contract_hash
+  for k,contract of ctx.contract_map
     field_jl = []
     for var_name, var_content of contract
       field_jl.push "#{var_name} = #{var_content.value};"

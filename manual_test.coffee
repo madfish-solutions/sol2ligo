@@ -12,6 +12,8 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 argv = require("minimist")(process.argv.slice(2))
 argv.router ?= true
 argv.contract ?= false
+argv.disable_enums_to_nat ?= false
+argv.prefer_erc721 ?= false
 
 process_file = (file)->
   code = import_resolver file
@@ -34,9 +36,12 @@ process_file = (file)->
     opt = {
       router  : argv.router,
       contract : argv.contract
+      replace_enums_by_nats: not argv.disable_enums_to_nat
+      prefer_erc721: argv.prefer_erc721
     }
-    new_ast = ast_transform.ligo_pack new_ast, opt
+    new_ast = ast_transform.pre_ti new_ast, opt
     new_ast = type_inference new_ast
+    new_ast = ast_transform.post_ti new_ast, opt
     code = translate new_ast, opt
     if argv.print
       puts code

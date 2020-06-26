@@ -1,78 +1,285 @@
 config = require "../src/config"
+assert = require "assert"
 {
   translate_ligo_make_test : make_test
+  async_assert_strict
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section ops", ()->
   @timeout 10000
   # ###################################################################################################
   #    expr
   # ###################################################################################################
-  describe "uintX un_ops", ()->
+  describe "uintX un_ops emulator", ()->
     for type in config.uint_type_list
-      it "#{type} un_ops", ()->
+      it "#{type} un_ops", (on_end)->
+        @timeout 30000
         text_i = """
         pragma solidity ^0.5.11;
         
         contract Expr {
-          #{type} public value;
+          #{type} public ret;
           
-          function expr() public returns (#{type}) {
+          function expr() public {
             #{type} a = 0;
             #{type} c = 0;
             a++;
             a--;
             ++a;
             --a;
+            c = ~a;
+            c = #{type}(~0);
             c = a++;
             c = a--;
             c = ++a;
             c = --a;
-            c = ~a;
-            c = #{type}(~0);
-            return c;
+            ret = c;
+          }
+          function getRet() public view returns (#{type} ret_val) {
+            ret_val = ret;
           }
         }
         """#"
         text_o = """
           type state is record
-            value : nat;
+            ret : nat;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
             block {
               const a : nat = 0n;
               const c : nat = 0n;
-              a := a + 1;
-              a := a - 1;
-              a := a + 1;
-              a := a - 1;
-              a := a + 1;
-              c := (a - 1);
-              a := a - 1;
-              c := (a + 1);
-              a := a + 1;
-              c := a;
-              a := a - 1;
-              c := a;
+              a := a + 1n;
+              a := abs(a - 1n);
+              a := a + 1n;
+              a := abs(a - 1n);
               c := abs(not (a));
               c := abs(not (0));
-            } with (opList, contractStorage, c);
+              a := a + 1n;
+              c := abs(a - 1n);
+              a := abs(a - 1n);
+              c := (a + 1n);
+              a := a + 1n;
+              c := a;
+              a := abs(a - 1n);
+              c := a;
+              #{config.contract_storage}.ret := c;
+            } with ((nil: list(operation)), #{config.contract_storage});
+          
+          function getRet (const self : state; const receiver : contract(nat)) : (list(operation)) is
+            block {
+              const ret_val : nat = 0n;
+              ret_val := self.ret;
+              var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
+            } with (opList);
         """
         make_test text_i, text_o
+        if process.env.EMULATOR and type == "uint"
+          await make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, on_end)->
+              await contract.expr().cb defer(err, result); return on_end err if err
+              await contract.getRet.call().cb defer(err, result); return on_end err if err
+              
+              await async_assert_strict result.toNumber(), 0, defer(err); return on_end err if err
+              on_end()
+            ligo_test_fn  : (res_list, on_end)->
+              await async_assert_strict +res_list[0], 0, defer(err); return on_end err if err
+              on_end()
+          }, defer(err); return on_end err if err
+        on_end()
+    
+    if process.env.EMULATOR
+      describe "emulator", ()->
+        # TODO group in loop
+        it "uint a++", (on_end)->
+          @timeout 30000
+          text_i = """
+            pragma solidity ^0.5.11;
+            
+            contract Expr {
+              uint public ret;
+              
+              function expr(uint a) public {
+                ret = a++;
+              }
+              function getRet() public view returns (uint ret_val) {
+                ret_val = ret;
+              }
+            }
+            """#"
+          make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, loc_on_end)->
+              await contract.expr(100).cb defer(err, result); return loc_on_end err if err
+              await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+              
+              await async_assert_strict result.toNumber(), 100, defer(err); return loc_on_end err if err
+              loc_on_end()
+            ligo_test_fn  : (res_list, loc_on_end)->
+              await async_assert_strict +res_list[0], 100, defer(err); return loc_on_end err if err
+              loc_on_end()
+          }, on_end
+        
+        it "uint a--", (on_end)->
+          @timeout 30000
+          text_i = """
+            pragma solidity ^0.5.11;
+            
+            contract Expr {
+              uint public ret;
+              
+              function expr(uint a) public {
+                ret = a--;
+              }
+              function getRet() public view returns (uint ret_val) {
+                ret_val = ret;
+              }
+            }
+            """#"
+          make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, loc_on_end)->
+              await contract.expr(100).cb defer(err, result); return loc_on_end err if err
+              await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+              
+              await async_assert_strict result.toNumber(), 100, defer(err); return loc_on_end err if err
+              loc_on_end()
+            ligo_test_fn  : (res_list, loc_on_end)->
+              await async_assert_strict +res_list[0], 100, defer(err); return loc_on_end err if err
+              loc_on_end()
+          }, on_end
+        
+        it "uint ++a", (on_end)->
+          @timeout 30000
+          text_i = """
+            pragma solidity ^0.5.11;
+            
+            contract Expr {
+              uint public ret;
+              
+              function expr(uint a) public {
+                ret = ++a;
+              }
+              function getRet() public view returns (uint ret_val) {
+                ret_val = ret;
+              }
+            }
+            """#"
+          make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, loc_on_end)->
+              await contract.expr(100).cb defer(err, result); return loc_on_end err if err
+              await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+              
+              await async_assert_strict result.toNumber(), 101, defer(err); return loc_on_end err if err
+              loc_on_end()
+            ligo_test_fn  : (res_list, loc_on_end)->
+              await async_assert_strict +res_list[0], 101, defer(err); return loc_on_end err if err
+              loc_on_end()
+          }, on_end
+        
+        it "uint --a", (on_end)->
+          @timeout 30000
+          text_i = """
+            pragma solidity ^0.5.11;
+            
+            contract Expr {
+              uint public ret;
+              
+              function expr(uint a) public {
+                ret = --a;
+              }
+              function getRet() public view returns (uint ret_val) {
+                ret_val = ret;
+              }
+            }
+            """#"
+          make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, loc_on_end)->
+              await contract.expr(100).cb defer(err, result); return loc_on_end err if err
+              await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+              
+              await async_assert_strict result.toNumber(), 99, defer(err); return loc_on_end err if err
+              loc_on_end()
+            ligo_test_fn  : (res_list, loc_on_end)->
+              await async_assert_strict +res_list[0], 99, defer(err); return loc_on_end err if err
+              loc_on_end()
+          }, on_end
+        
+        it "uint ~a", (on_end)->
+          @timeout 30000
+          text_i = """
+            pragma solidity ^0.5.11;
+            
+            contract Expr {
+              uint public ret;
+              
+              function expr(uint a) public {
+                ret = ~a;
+              }
+              function getRet() public view returns (uint ret_val) {
+                ret_val = ret;
+              }
+            }
+            """#"
+          make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, loc_on_end)->
+              await contract.expr(100).cb defer(err, result); return loc_on_end err if err
+              await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+              # WTF hell yes. Very wierd split of uint256
+              try
+                assert.strictEqual result.words[0], 67108763 # 3ffffff
+                assert.strictEqual result.words[1], 67108863 # 3ffff9b
+                assert.strictEqual result.words[2], 67108863
+                assert.strictEqual result.words[3], 67108863
+                assert.strictEqual result.words[4], 67108863
+                assert.strictEqual result.words[5], 67108863
+                assert.strictEqual result.words[6], 67108863
+                assert.strictEqual result.words[7], 67108863
+                assert.strictEqual result.words[8], 67108863
+                assert.strictEqual result.words[9], 4194303 # 3fffff
+              catch err
+                return loc_on_end err
+              loc_on_end()
+            ligo_test_fn  : (res_list, loc_on_end)->
+              # WTF hell yes
+              await async_assert_strict +res_list[0], 101, defer(err); return loc_on_end err if err
+              loc_on_end()
+          }, on_end
   
-  describe "uintX bin_ops", ()->
+  describe "uintX bin_ops emulator", ()->
     for type in config.uint_type_list
-      it "#{type} bin_ops", ()->
+      it "#{type} bin_ops", (on_end)->
         text_i = """
         pragma solidity ^0.5.11;
         
         contract Expr {
-          #{type} public value;
+          #{type} public ret;
           
-          function expr() public returns (#{type}) {
+          function expr() public {
             #{type} a = 0;
-            #{type} b = 0;
+            #{type} b = 1;
             #{type} c = 0;
             c = a + b;
             c = a - b;
@@ -90,19 +297,22 @@ describe "translate ligo section", ()->
             c &= b;
             c |= b;
             c ^= b;
-            return c;
+            ret = c;
+          }
+          function getRet() public view returns (#{type} ret_val) {
+            ret_val = ret;
           }
         }
         """#"
         text_o = """
           type state is record
-            value : nat;
+            ret : nat;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
             block {
               const a : nat = 0n;
-              const b : nat = 0n;
+              const b : nat = 1n;
               const c : nat = 0n;
               c := (a + b);
               c := abs(a - b);
@@ -120,11 +330,85 @@ describe "translate ligo section", ()->
               c := bitwise_and(c, b);
               c := bitwise_or(c, b);
               c := bitwise_xor(c, b);
-            } with (opList, contractStorage, c);
+              self.ret := c;
+            } with ((nil: list(operation)), #{config.contract_storage});
           
+          function getRet (const self : state; const receiver : contract(nat)) : (list(operation)) is
+            block {
+              const ret_val : nat = 0n;
+              ret_val := self.ret;
+              var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
+            } with (opList);
         """
         make_test text_i, text_o
+        if process.env.EMULATOR and type == "uint"
+          await make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ['"Expr"']
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, on_end)->
+              await contract.expr().cb defer(err, result); return on_end err if err
+              await contract.getRet.call().cb defer(err, result); return on_end err if err
+              
+              await async_assert_strict result.toNumber(), 0, defer(err); return on_end err if err
+              on_end()
+            ligo_test_fn  : (res_list, on_end)->
+              await async_assert_strict +res_list[0], 0, defer(err); return on_end err if err
+              on_end()
+          }, defer(err); return on_end err if err
+        on_end()
     
+    if process.env.EMULATOR
+      describe "emulator", ()->
+        for op in "+ - * / % & | ^ << >>".split /\s+/g
+          do (op)->
+            test_value_list = []
+            for a in [0 .. 2]
+              for b in [0 .. 2]
+                c = eval "#{a} #{op} #{b}"
+                continue if c < 0
+                continue if !isFinite c
+                c = Math.floor c
+                test_value_list.push [a,b,c]
+            it "uint a#{op}b", (on_end)->
+              @timeout 30000
+              text_i = """
+                pragma solidity ^0.5.11;
+                
+                contract Expr {
+                  uint public ret;
+                  
+                  function expr(uint a, uint b) public {
+                    ret = a #{op} b;
+                  }
+                  function getRet() public view returns (uint ret_val) {
+                    ret_val = ret;
+                  }
+                }
+                """#"
+              
+              make_emulator_test {
+                sol_code      : text_i
+                contract_name : "Expr"
+                ligo_arg_list : test_value_list.map (v)->
+                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                ligo_state    : "record ret = 99999n; end"
+                sol_test_fn   : (contract, loc_on_end)->
+                  for v in test_value_list
+                    [a,b,c] = v
+                    await contract.expr(a, b).cb defer(err, result); return loc_on_end err if err
+                    await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+                    
+                    await async_assert_strict result.toNumber(), c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+                ligo_test_fn  : (res_list, loc_on_end)->
+                  for v,idx in test_value_list
+                    [a,b,c] = v
+                    await async_assert_strict +res_list[idx], c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+              }, on_end
+        
     for type in config.uint_type_list
       it "cmp #{type}", ()->
         text_i = """
@@ -152,7 +436,7 @@ describe "translate ligo section", ()->
             value : nat;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
             block {
               const a : nat = 0n;
               const b : nat = 0n;
@@ -163,7 +447,7 @@ describe "translate ligo section", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with (opList, contractStorage, 0n);
+            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
           
         """
         make_test text_i, text_o
@@ -191,13 +475,13 @@ describe "translate ligo section", ()->
             value : nat;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
             block {
               const a : int = 0;
               const c : int = 0;
               c := not (a);
               c := int(abs(not (0)));
-            } with (opList, contractStorage, c);
+            } with ((nil: list(operation)), #{config.contract_storage}, c);
         """
         make_test text_i, text_o
   # TODO support mod & | ^ LATER
@@ -238,7 +522,7 @@ describe "translate ligo section", ()->
   #       value : int;
   #     end;
   #     
-  #     function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
+  #     function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
   #       block {
   #         const a : int = 0;
   #         const b : int = 0;
@@ -260,7 +544,7 @@ describe "translate ligo section", ()->
   #         c := bitwise_and(c, b);
   #         c := bitwise_or(c, b);
   #         c := bitwise_xor(c, b);
-  #       } with (opList, contractStorage, c);
+  #       } with ((nil: list(operation)), #{config.contract_storage}, c);
   #     
   #   """
   #   make_test text_i, text_o
@@ -296,7 +580,7 @@ describe "translate ligo section", ()->
             value : int;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
             block {
               const a : int = 0;
               const b : int = 0;
@@ -310,7 +594,7 @@ describe "translate ligo section", ()->
               c := (c - b);
               c := (c * b);
               c := (c / b);
-            } with (opList, contractStorage, c);
+            } with ((nil: list(operation)), #{config.contract_storage}, c);
           
         """
         make_test text_i, text_o
@@ -342,7 +626,7 @@ describe "translate ligo section", ()->
             value : nat;
           end;
           
-          function expr (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+          function expr (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
             block {
               const a : int = 0;
               const b : int = 0;
@@ -353,34 +637,135 @@ describe "translate ligo section", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with (opList, contractStorage, 0n);
+            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
           
         """
         make_test text_i, text_o
-      
-  it "a[b]", ()->
-    text_i = """
-    pragma solidity ^0.5.11;
     
-    contract Expr {
-      mapping (address => uint) balances;
+    if process.env.EMULATOR
+      describe "emulator", ()->
+        for op in "+ - * / % & | ^ << >>".split /\s+/g
+          do (op)->
+            test_value_list = []
+            for a in [0 .. 2]
+              for b in [0 .. 2]
+                c = eval "#{a} #{op} #{b}"
+                continue if !isFinite c
+                continue if c < 0 # we can't read negative numbers properly from solidity for now
+                c = Math.floor c
+                test_value_list.push [a,b,c]
+            it "int a#{op}b", (on_end)->
+              @timeout 30000
+              text_i = """
+                pragma solidity ^0.5.11;
+                
+                contract Expr {
+                  int public ret;
+                  
+                  function expr(int a, int b) public {
+                    ret = (a #{op} b);
+                  }
+                  function getRet() public view returns (int ret_val) {
+                    ret_val = ret;
+                  }
+                }
+                """#"
+              
+              make_emulator_test {
+                sol_code      : text_i
+                contract_name : "Expr"
+                ligo_arg_list : test_value_list.map (v)->
+                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                ligo_state    : "record ret = 99999; end"
+                sol_test_fn   : (contract, loc_on_end)->
+                  for v in test_value_list
+                    [a,b,c] = v
+                    await contract.expr(a, b).cb defer(err, result); return loc_on_end err if err
+                    await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+                    
+                    await async_assert_strict result.toNumber(), c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+                ligo_test_fn  : (res_list, loc_on_end)->
+                  for v,idx in test_value_list
+                    [a,b,c] = v
+                    await async_assert_strict +res_list[idx], c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+              }, on_end
+  
+  describe "map emulator", ()->
+    it "a[b]", ()->
+      text_i = """
+      pragma solidity ^0.5.11;
       
-      function expr(address owner) public returns (uint) {
-        return balances[owner];
+      contract Expr {
+        mapping (address => uint) balances;
+        
+        function expr(address owner) public returns (uint) {
+          return balances[owner];
+        }
       }
-    }
-    """#"
-    text_o = """
-    type state is record
-      balances : map(address, nat);
-    end;
+      """#"
+      text_o = """
+      type state is record
+        balances : map(address, nat);
+      end;
+      
+      function expr (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
+        block {
+          skip
+        } with ((nil: list(operation)), #{config.contract_storage}, (case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
+      """
+      make_test text_i, text_o
     
-    function expr (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * nat) is
-      block {
-        skip
-      } with (opList, contractStorage, (case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end));
-    """
-    make_test text_i, text_o
+    if process.env.EMULATOR
+      it "a[b] get/set emulator", (on_end)->
+        @timeout 30000
+        text_i = """
+          pragma solidity ^0.5.11;
+          
+          contract Expr {
+            uint public ret;
+            mapping (uint => uint) store_map;
+            
+            function call_set(uint key, uint value) public {
+              store_map[key] = value;
+            }
+            function call_get(uint key) public {
+              ret = store_map[key];
+            }
+            function getRet() public view returns (uint ret_val) {
+              ret_val = ret;
+            }
+          }
+          """#"
+        make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg_list : [
+            '"Call_set(record key=1n; value=100n end)"'
+            '"Call_get(record key=2n end)"'
+          ]
+          ligo_state    : "record ret = 99999n; store_map = (map [2n->100n] : map(nat,nat)) end"
+          sol_test_fn   : (contract, loc_on_end)->
+            await contract.call_set(1, 100).cb defer(err, result); return loc_on_end err if err
+            await contract.call_get(1).cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            
+            await async_assert_strict result.toNumber(), 100, defer(err); return loc_on_end err if err
+            
+            await contract.call_get(2).cb defer(err, result); return loc_on_end err if err
+            await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+            
+            # empty in solidity == default value
+            await async_assert_strict result.toNumber(), 0, defer(err); return loc_on_end err if err
+            
+            loc_on_end()
+          ligo_test_fn  : (res_list, loc_on_end)->
+            # we can't store state between calls yet
+            # no check for 1
+            await async_assert_strict +res_list[1], 100, defer(err); return loc_on_end err if err
+            loc_on_end()
+        }, on_end
   
   it "addmulmod", ()->
     text_i = """
@@ -395,18 +780,16 @@ describe "translate ligo section", ()->
       }
     }"""#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function addmulmod (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function addmulmod (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const x : nat = 1n;
         const y : nat = 2n;
         const z : nat = 3n;
         const a : nat = ((x + y) mod z);
         const m : nat = ((x * y) mod z);
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
 
@@ -423,17 +806,15 @@ describe "translate ligo section", ()->
         }
     }"""#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test1 (const opList : list(operation); const contractStorage : state; const u0 : nat) : (list(operation) * state) is
+    function test1 (const #{config.contract_storage} : state; const u0 : nat) : (state) is
       block {
         const u1 : nat = abs(not (u0));
         const u2 : nat = abs(not (abs(not (u0))));
         const u3 : nat = (abs(not (u0)) + u2);
         const u4 : nat = (abs(not (u3)) + u2);
-      } with (opList, contractStorage);
+      } with (#{config.contract_storage});
     """
     make_test text_i, text_o
   it "un_op1", ()->
@@ -447,15 +828,13 @@ describe "translate ligo section", ()->
         }
     }"""#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test2 (const opList : list(operation); const contractStorage : state; const b0 : bool) : (list(operation) * state) is
+    function test2 (const #{config.contract_storage} : state; const b0 : bool) : (state) is
       block {
         const b1 : bool = not (b0);
         const b2 : bool = not (not (not (not (not (b1)))));
-      } with (opList, contractStorage);
+      } with (#{config.contract_storage});
     """
     make_test text_i, text_o
     

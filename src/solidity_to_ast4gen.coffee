@@ -82,12 +82,14 @@ walk_type = (root, ctx)->
     when "ArrayTypeName"
       ret = new Type "array"
       ret.nest_list.push walk_type root.baseType, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Mapping"
       ret = new Type "map"
       ret.nest_list.push walk_type root.keyType, ctx
       ret.nest_list.push walk_type root.valueType, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     else
@@ -133,14 +135,17 @@ unpack_id_type = (root, ctx)->
       null # fields would be replaced in type inference
     
     else
-      if config.bytes_type_hash.hasOwnProperty type_string
+      if config.bytes_type_map.hasOwnProperty type_string
         new Type root.typeString
-      else if config.uint_type_hash.hasOwnProperty type_string
+      else if config.uint_type_map.hasOwnProperty type_string
         new Type root.typeString
-      else if config.int_type_hash.hasOwnProperty type_string
+      else if config.int_type_map.hasOwnProperty type_string
         new Type root.typeString
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
+
+parse_line_pos = (str) ->
+  return str.split(":", 2)
 
 walk_param = (root, ctx)->
   switch root.nodeType
@@ -148,6 +153,7 @@ walk_param = (root, ctx)->
       ret = []
       for v in root.parameters
         ret.append walk_param v, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "VariableDeclaration"
@@ -158,6 +164,7 @@ walk_param = (root, ctx)->
       # HACK INJECT
       t._name = root.name
       ret.push t
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     else
@@ -189,6 +196,7 @@ walk = (root, ctx)->
       ret.original_node_type = root.nodeType
       for node in root.nodes
         ret.list.push walk node, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "ContractDefinition"
@@ -223,6 +231,8 @@ walk = (root, ctx)->
       ret.name = root.name
       for node in root.nodes
         ret.scope.list.push walk node, ctx
+        
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       
       ret
     
@@ -234,12 +244,15 @@ walk = (root, ctx)->
       ret = new ast.Comment
       ret.text = "PragmaDirective #{root.literals.join ' '}"
       ret.can_skip = true
+
       ret
     
     when "UsingForDirective"
       perr "WARNING UsingForDirective is not supported"
       ret = new ast.Comment
       ret.text = "UsingForDirective"
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "StructDefinition"
@@ -248,12 +261,15 @@ walk = (root, ctx)->
       ret.is_struct = true
       for v in root.members
         ret.scope.list.push walk v, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "InlineAssembly"
       perr "WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler"
       ret = new ast.Comment
       ret.text = "InlineAssembly #{root.operations}"
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "EventDefinition"
@@ -261,21 +277,27 @@ walk = (root, ctx)->
       ret = new ast.Event_decl
       ret.name = root.name
       ret.arg_list = walk_param root.parameters, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "EmitStatement"
       perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
       args = []
-      name = root.fn?.name || root.eventCall.name
+      name = root.fn?.name || root.eventCall.name || root.eventCall.expression.name
       args = root.arg_list || root.eventCall.arguments
       arg_names = args.map (arg) -> arg.name
       ret.text = "EmitStatement #{name}(#{arg_names.join(", ")})"
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "PlaceholderStatement"
       ret = new ast.Comment
       ret.text = "COMPILER MSG PlaceholderStatement"
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     # ###################################################################################################
@@ -288,12 +310,16 @@ walk = (root, ctx)->
         ret.type = unpack_id_type root.typeDescriptions, ctx
       catch err
         perr "WARNING can't resolve type #{err}"
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+      
       ret
     
     when "Literal"
       ret = new ast.Const
       ret.type  = new Type root.kind
       ret.val   = root.value
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       switch root.subdenomination
         when "seconds"
           ret
@@ -362,8 +388,6 @@ walk = (root, ctx)->
       ret.name = root.name
       ret.contract_name = ctx.contract_name
       ret.contract_type = ctx.contract_type
-      if root.typeName.nodeType == 'UserDefinedTypeName'
-        ret.special_type = true
       ret.type = walk_type root.typeName, ctx
       # ret.type = new Type root.typeDescriptions.typeIdentifier
       if root.value
@@ -372,6 +396,8 @@ walk = (root, ctx)->
       # storage : root.storageLocation
       # state   : root.stateVariable
       # visibility   : root.visibility
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "Assignment"
@@ -381,6 +407,8 @@ walk = (root, ctx)->
         throw new Error("unknown bin_op #{root.operator}")
       ret.a = walk root.leftHandSide, ctx
       ret.b = walk root.rightHandSide, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "BinaryOperation"
@@ -390,12 +418,16 @@ walk = (root, ctx)->
         throw new Error("unknown bin_op #{root.operator}")
       ret.a = walk root.leftExpression, ctx
       ret.b = walk root.rightExpression, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "MemberAccess"
       ret = new ast.Field_access
       ret.t = walk root.expression, ctx
       ret.name = root.memberName
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "IndexAccess"
@@ -403,6 +435,8 @@ walk = (root, ctx)->
       ret.op = "INDEX_ACCESS"
       ret.a = walk root.baseExpression, ctx
       ret.b = walk root.indexExpression, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "UnaryOperation"
@@ -417,6 +451,8 @@ walk = (root, ctx)->
         perr root
         throw new Error("unknown un_op #{root.operator}")
       ret.a = walk root.subExpression, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "FunctionCall"
@@ -448,7 +484,9 @@ walk = (root, ctx)->
             ret = new ast.Fn_call
             ret.fn = fn
             ret.arg_list = arg_list
-      
+
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "TupleExpression"
@@ -466,17 +504,23 @@ walk = (root, ctx)->
       if ret.constructor.name == "Tuple"
         if ret.list.length == 1
           ret = ret.list[0]
-      
+
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "NewExpression"
       ret = new ast.New
       ret.cls = walk_type root.typeName, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "ElementaryTypeNameExpression"
       ret = new ast.Type_cast
       ret.target_type = walk_type root.typeName, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     
     when "Conditional"
@@ -484,6 +528,8 @@ walk = (root, ctx)->
       ret.cond  = walk root.condition       , ctx
       ret.t     = walk root.trueExpression  , ctx
       ret.f     = walk root.falseExpression , ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+
       ret
     # ###################################################################################################
     #    stmt
@@ -525,6 +571,8 @@ walk = (root, ctx)->
         ret.type = new Type "tuple<>"
         ret.type.nest_list = type_list
         
+        [ret.pos, ret.line] = parse_line_pos(root.src)
+
         ret
       else
         decl = root.declarations[0]
@@ -539,12 +587,16 @@ walk = (root, ctx)->
           ret.type = unpack_id_type decl.typeDescriptions, ctx
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
+        [ret.pos, ret.line] = parse_line_pos(root.src)
+        
         ret
     
     when "Block"
       ret = new ast.Scope
       for node in root.statements
         ret.list.push walk node, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+      
       ret
     
     when "IfStatement"
@@ -553,12 +605,15 @@ walk = (root, ctx)->
       ret.t    = ensure_scope walk root.trueBody,  ctx
       if root.falseBody
         ret.f    = ensure_scope walk root.falseBody, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
+      
       ret
     
     when "WhileStatement"
       ret = new ast.While
       ret.cond = walk root.condition, ctx
       ret.scope= ensure_scope walk root.body, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "ForStatement"
@@ -570,6 +625,7 @@ walk = (root, ctx)->
       if root.loopExpression
         ret.iter = walk root.loopExpression, ctx
       ret.scope= ensure_scope walk root.body, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     # ###################################################################################################
@@ -579,22 +635,26 @@ walk = (root, ctx)->
       ret = new ast.Ret_multi
       if root.expression # and ctx.current_function.should_ret_args
         ret.t_list.push walk root.expression, ctx
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Continue"
       perr "CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Break"
       perr "CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Break
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Throw"
       ret = new ast.Throw
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     # ###################################################################################################
@@ -613,10 +673,6 @@ walk = (root, ctx)->
       ret.type_o =  new Type "function"
       ret.visibility = root.visibility
       ret.state_mutability = root.stateMutability
-      ret.should_ret_args = (ret.state_mutability in ['pure', 'view'] and ret.visibility == 'private') or ret.visibility == 'internal' or (ret.state_mutability == 'pure' and ret.visibility == 'public')
-      ret.should_ret_op_list = !ret.should_ret_args or ret.visibility == 'public'
-      ret.should_modify_storage = ret.state_mutability not in ['pure', 'view']
-
       
       ret.type_i.nest_list = walk_param root.parameters, ctx
       unless ret.is_modifier
@@ -674,6 +730,7 @@ walk = (root, ctx)->
                 _var.name = v.name
               
               ret_multi.t_list.push tuple
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "EnumDefinition"
@@ -684,6 +741,7 @@ walk = (root, ctx)->
         decl.name = member.name
         # decl.type = new Type ret.name
         # skip type declaration since solidity enums aren't typed
+      [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     else

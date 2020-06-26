@@ -4,7 +4,7 @@ config = require("../src/config")
 } = require("./util")
 
 
-describe "translate ligo section", ()->
+describe "translate ligo section stmt", ()->
   @timeout 10000
   # ###################################################################################################
   #    stmt
@@ -23,9 +23,7 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
     function fromBytes (const bts : bytes) : ((nat * nat)) is
       block {
@@ -33,17 +31,16 @@ describe "translate ligo section", ()->
         const len : nat = 0n;
       } with ((addr, len));
     
-    function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
-        const tmp_0 : (nat * nat) = fromBytes(self);
-        const tmp_1 : (nat * nat) = tmp_0;
+        const tmp_1 : (nat * nat) = fromBytes(test_reserved_long___self);
         const src : nat = tmp_1.0;
         const srcLen : nat = tmp_1.1;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """
     make_test text_i, text_o
   
-  it "if", ()->
+  it "if (BROKEN opList from nowhere)", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -68,16 +65,16 @@ describe "translate ligo section", ()->
       value : nat;
     end;
     
-    function ifer (const opList : list(operation); const contractStorage : state) : (list(operation) * state * nat) is
+    function ifer (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
       block {
         const x : nat = 5n;
         const ret : nat = 0n;
         if (x = 5n) then block {
-          ret := (contractStorage.value + x);
+          ret := (#{config.contract_storage}.value + x);
         } else block {
           ret := 0n;
         };
-      } with (opList, contractStorage, ret);
+      } with (opList, #{config.contract_storage}, ret);
     
     """
     make_test text_i, text_o
@@ -98,17 +95,15 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function whiler (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * int) is
+    function whiler (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
       block {
         const i : int = 0;
         while (i < 5) block {
           i := (i + 1);
         };
-      } with (opList, contractStorage, i);
+      } with ((nil: list(operation)), #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -130,11 +125,9 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function forer (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
       block {
         const i : int = 0;
         i := 2;
@@ -142,7 +135,7 @@ describe "translate ligo section", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with (opList, contractStorage, i);
+      } with ((nil: list(operation)), #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -161,18 +154,16 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function forer (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
       block {
         const i : int = 0;
         while (i < 5) block {
           i := (i + 1);
           i := (i + 10);
         };
-      } with (opList, contractStorage, i);
+      } with ((nil: list(operation)), #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -191,11 +182,9 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function forer (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
       block {
         const i : int = 0;
         i := 2;
@@ -203,7 +192,7 @@ describe "translate ligo section", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with (opList, contractStorage, i);
+      } with ((nil: list(operation)), #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
@@ -222,22 +211,20 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function forer (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
       block {
         const i : int = 0;
         i := 2;
         while (i < 5) block {
           i := (i + 1);
         };
-      } with (opList, contractStorage, i);
+      } with ((nil: list(operation)), #{config.contract_storage}, i);
     """
     make_test text_i, text_o
   
-  it "for with body of no scope", ()->
+  it "for with body of no scope (BROKEN opList from nowhere)", ()->
     text_i = """
     pragma solidity ^0.4.16;
     
@@ -250,11 +237,9 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state * int) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state * int) is
       block {
         const i : nat = 0n;
         while (False) block {
@@ -264,7 +249,7 @@ describe "translate ligo section", ()->
             skip
           };
         };
-      } with (opList, contractStorage, 0);
+      } with (opList, #{config.contract_storage}, 0);
     """
     make_test text_i, text_o
   

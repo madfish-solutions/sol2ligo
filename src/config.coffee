@@ -32,18 +32,18 @@ for i in [1 .. 32]
   @bytes_type_list.push "bytes#{i}"
 
 # hash versions for o(1) check
-@int_type_hash = {}
+@int_type_map = {}
 for v in @int_type_list
-  @int_type_hash[v] = true
+  @int_type_map[v] = true
 
-@uint_type_hash = {}
+@uint_type_map = {}
 for v in @uint_type_list
-  @uint_type_hash[v] = true
+  @uint_type_map[v] = true
 
-@any_int_type_hash = {}
+@any_int_type_map = {}
 for v in @any_int_type_list
-  @any_int_type_hash[v] = true
+  @any_int_type_map[v] = true
 
-@bytes_type_hash = {}
+@bytes_type_map = {}
 for v in @bytes_type_list
-  @bytes_type_hash[v] = true
+  @bytes_type_map[v] = true
