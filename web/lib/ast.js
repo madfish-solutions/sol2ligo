@@ -10,6 +10,10 @@
     this[k] = v;
   }
 
+  this.INPUT_ARGS = 0;
+
+  this.RETURN_VALUES = 1;
+
   this.Class_decl = (function() {
     Class_decl.prototype.name = "";
 
@@ -131,8 +135,6 @@
 
     Var_decl.prototype.assign_value_list = null;
 
-    Var_decl.prototype.special_type = false;
-
     Var_decl.prototype.line = 0;
 
     Var_decl.prototype.pos = 0;
@@ -148,7 +150,6 @@
         ret.type = this.type.clone();
       }
       ret.size = this.size;
-      ret.special_type = this.special_type;
       if (this.assign_value) {
         ret.assign_value = this.assign_value.clone();
       }
@@ -194,12 +195,6 @@
 
     Fn_decl_multiret.prototype.contract_type = "";
 
-    Fn_decl_multiret.prototype.should_ret_op_list = false;
-
-    Fn_decl_multiret.prototype.should_modify_storage = false;
-
-    Fn_decl_multiret.prototype.should_ret_args = false;
-
     Fn_decl_multiret.prototype.is_modifier = false;
 
     Fn_decl_multiret.prototype.is_constructor = false;
@@ -228,9 +223,6 @@
       ret.pos = this.pos;
       ret.visibility = this.visibility;
       ret.state_mutability = this.state_mutability;
-      ret.should_ret_op_list = this.should_ret_op_list;
-      ret.should_modify_storage = this.should_modify_storage;
-      ret.should_ret_args = this.should_ret_args;
       ret.contract_name = this.contract_name;
       ret.contract_type = this.contract_type;
       ret.is_modifier = this.is_modifier;
@@ -575,7 +567,6 @@
       var ret, _i, _len, _ref;
       ret = new module.Enum_decl;
       ret.name = this.name;
-      ret.int_type = this.int_type;
       _ref = this.value_list;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         v = _ref[_i];
@@ -654,4 +645,25 @@
 
   })();
 
-}).call(window.mod_ast = {});
+  this.Include = (function() {
+    function Include() {}
+
+    Include.prototype.path = "";
+
+    Include.prototype.line = 0;
+
+    Include.prototype.pos = 0;
+
+    Include.prototype.clone = function() {
+      var path;
+      path = "";
+      ret.line = this.line;
+      ret.pos = this.pos;
+      return ret;
+    };
+
+    return Include;
+
+  })();
+
+}).call(window.require_register("./ast"));

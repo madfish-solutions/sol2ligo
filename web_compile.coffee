@@ -38,6 +38,7 @@ walk dirname, (err, paths) ->
   if err
     throw err
   for filename in paths
+    p filename
     code = fs.readFileSync filename, "utf-8"
     code = iced_compiler.compile code
 
@@ -48,6 +49,16 @@ walk dirname, (err, paths) ->
       p "skipping ", filepath
       continue
     fs.mkdirSync "web/lib/#{parsed_path.dir}", recursive: true
+    
+    code = code.replace 'require("fy");', ''
+    code = code.replace 'require("fy/codegen");', ''
+    code = code.replace 'Type = require("type");', 'Type = window.Type;'
+    code = code.replace 'ast = require("ast4gen");', 'ast = window.ast4gen;'
+    
+    require_path = "./"+filepath.replace /\.coffee$/, ''
+    # code = code.replace '}).call(this);', "}).call(window._require_hash[#{JSON.stringify require_path}] = {});"
+    code = code.replace '}).call(this);', "}).call(window.require_register(#{JSON.stringify require_path}));"
+    
     fs.writeFileSync "web/lib/#{parsed_path.dir}/#{parsed_path.name}.js", code
     
 

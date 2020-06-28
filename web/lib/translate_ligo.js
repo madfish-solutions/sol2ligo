@@ -1,11 +1,13 @@
 (function() {
-  var bad_spec_id_trans_hash, config, last_bracket_state, module, number2bytes, some2nat, spec_id_trans_hash, spec_id_translate, string2bytes, translate_type, translate_var_name, type2default_value, walk, warning_once_hash;
+  var config, last_bracket_state, module, number2bytes, some2nat, spec_id_translate, string2bytes, translate_type, translate_var_name, type2default_value, walk, _ref;
 
   module = this;
 
   
 
-  config = window.config
+  config = require("./config");
+
+  _ref = require("./translate_var_name"), translate_var_name = _ref.translate_var_name, spec_id_translate = _ref.spec_id_translate;
 
   module.warning_counter = 0;
 
@@ -15,7 +17,6 @@
     ADD: "+",
     MUL: "*",
     DIV: "/",
-    MOD: "mod",
     EQ: "=",
     NE: "=/=",
     GT: ">",
@@ -68,45 +69,82 @@
 
   this.bin_op_name_cb_map = {
     ASSIGN: function(a, b, ctx, ast) {
-      if (config.bytes_type_hash.hasOwnProperty(ast.a.type.main) && ast.b.type.main === "string" && ast.b.constructor.name === "Const") {
+      if (config.bytes_type_map.hasOwnProperty(ast.a.type.main) && ast.b.type.main === "string" && ast.b.constructor.name === "Const") {
         b = string2bytes(ast.b.val);
       }
       return "" + a + " := " + b;
     },
     BIT_AND: function(a, b, ctx, ast) {
+      var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      return "bitwise_and(" + a + ", " + b + ")";
+      ret = "bitwise_and(" + a + ", " + b + ")";
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + ret + ")";
+      } else {
+        return ret;
+      }
     },
     BIT_OR: function(a, b, ctx, ast) {
+      var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      return "bitwise_or(" + a + ", " + b + ")";
+      ret = "bitwise_or(" + a + ", " + b + ")";
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + ret + ")";
+      } else {
+        return ret;
+      }
     },
     BIT_XOR: function(a, b, ctx, ast) {
+      var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      return "bitwise_xor(" + a + ", " + b + ")";
+      ret = "bitwise_xor(" + a + ", " + b + ")";
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + ret + ")";
+      } else {
+        return ret;
+      }
     },
     SHR: function(a, b, ctx, ast) {
+      var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      return "bitwise_lsr(" + a + ", " + b + ")";
+      ret = "bitwise_lsr(" + a + ", " + b + ")";
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + ret + ")";
+      } else {
+        return ret;
+      }
     },
     SHL: function(a, b, ctx, ast) {
+      var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      return "bitwise_lsl(" + a + ", " + b + ")";
+      ret = "bitwise_lsl(" + a + ", " + b + ")";
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + ret + ")";
+      } else {
+        return ret;
+      }
     },
     INDEX_ACCESS: function(a, b, ctx, ast) {
       var ret, val;
       return ret = ctx.lvalue ? "" + a + "[" + b + "]" : (val = type2default_value(ast.type, ctx), "(case " + a + "[" + b + "] of | None -> " + val + " | Some(x) -> x end)");
     },
     SUB: function(a, b, ctx, ast) {
-      if (config.uint_type_hash.hasOwnProperty(ast.a.type.main) && config.uint_type_hash.hasOwnProperty(ast.b.type.main)) {
+      if (config.uint_type_map.hasOwnProperty(ast.a.type.main) && config.uint_type_map.hasOwnProperty(ast.b.type.main)) {
         return "abs(" + a + " - " + b + ")";
       } else {
         return "(" + a + " - " + b + ")";
+      }
+    },
+    MOD: function(a, b, ctx, ast) {
+      if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "int(" + a + " mod " + b + ")";
+      } else {
+        return "(" + a + " mod " + b + ")";
       }
     }
   };
@@ -123,7 +161,7 @@
         perr("WARNING BIT_NOT ( ~" + a + " ) translation can be incorrect");
         module.warning_counter++;
       }
-      if (ast.type && config.uint_type_hash.hasOwnProperty(ast.type.main)) {
+      if (ast.type && config.uint_type_map.hasOwnProperty(ast.type.main)) {
         return "abs(not (" + a + "))";
       } else {
         return "not (" + a + ")";
@@ -132,28 +170,64 @@
     BOOL_NOT: function(a) {
       return "not (" + a + ")";
     },
-    RET_INC: function(a, ctx) {
+    RET_INC: function(a, ctx, ast) {
+      var is_uint, one;
       perr("RET_INC can have not fully correct implementation");
       module.warning_counter++;
-      ctx.sink_list.push("" + a + " := " + a + " + 1");
-      return ctx.trim_expr = "(" + a + " - 1)";
+      is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
+      one = "1";
+      if (is_uint) {
+        one += "n";
+      }
+      ctx.sink_list.push("" + a + " := " + a + " + " + one);
+      if (is_uint) {
+        return ctx.trim_expr = "abs(" + a + " - " + one + ")";
+      } else {
+        return ctx.trim_expr = "(" + a + " - " + one + ")";
+      }
     },
-    RET_DEC: function(a, ctx) {
+    RET_DEC: function(a, ctx, ast) {
+      var is_uint, one;
       perr("RET_DEC can have not fully correct implementation");
       module.warning_counter++;
-      ctx.sink_list.push("" + a + " := " + a + " - 1");
-      return ctx.trim_expr = "(" + a + " + 1)";
+      is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
+      one = "1";
+      if (is_uint) {
+        one += "n";
+      }
+      if (is_uint) {
+        ctx.sink_list.push("" + a + " := abs(" + a + " - " + one + ")");
+      } else {
+        ctx.sink_list.push("" + a + " := " + a + " - " + one);
+      }
+      return ctx.trim_expr = "(" + a + " + " + one + ")";
     },
-    INC_RET: function(a, ctx) {
+    INC_RET: function(a, ctx, ast) {
+      var is_uint, one;
       perr("INC_RET can have not fully correct implementation");
       module.warning_counter++;
-      ctx.sink_list.push("" + a + " := " + a + " + 1");
+      is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
+      one = "1";
+      if (is_uint) {
+        one += "n";
+      }
+      ctx.sink_list.push("" + a + " := " + a + " + " + one);
       return ctx.trim_expr = "" + a;
     },
-    DEC_RET: function(a, ctx) {
+    DEC_RET: function(a, ctx, ast) {
+      var is_uint, one;
       perr("DEC_RET can have not fully correct implementation");
       module.warning_counter++;
-      ctx.sink_list.push("" + a + " := " + a + " - 1");
+      is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
+      one = "1";
+      if (is_uint) {
+        one += "n";
+      }
+      if (is_uint) {
+        ctx.sink_list.push("" + a + " := abs(" + a + " - " + one + ")");
+      } else {
+        ctx.sink_list.push("" + a + " := " + a + " - " + one);
+      }
       return ctx.trim_expr = "" + a;
     },
     DELETE: function(a, ctx, ast) {
@@ -172,7 +246,7 @@
   };
 
   this.translate_type = translate_type = function(type, ctx) {
-    var is_enum, is_struct, key, list, name, nest, v, value, _i, _len, _ref, _ref1, _ref2, _ref3;
+    var is_struct, key, list, name, nest, translated_type, type_list, v, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4;
     switch (type.main) {
       case "bool":
         return "bool";
@@ -182,6 +256,10 @@
         return "string";
       case "address":
         return "address";
+      case "timestamp":
+        return "timestamp";
+      case "operation":
+        return "operation";
       case "built_in_op_list":
         return "list(operation)";
       case "array":
@@ -189,9 +267,9 @@
         return "map(nat, " + nest + ")";
       case "tuple":
         list = [];
-        _ref = type.nest_list;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          v = _ref[_i];
+        _ref1 = type.nest_list;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          v = _ref1[_i];
           list.push(translate_type(v, ctx));
         }
         return "(" + (list.join(' * ')) + ")";
@@ -202,25 +280,33 @@
       case config.storage:
         return config.storage;
       case "contract":
-        return "contract(" + type.val + ")";
+        if (type.val) {
+          return "contract(" + type.val + ")";
+        } else {
+          type_list = [];
+          _ref2 = type.nest_list;
+          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+            type = _ref2[_j];
+            translated_type = translate_type(type, ctx);
+            type_list.push(translated_type);
+          }
+          return "contract(" + (type_list.join(", ")) + ")";
+        }
+        break;
       default:
-        if ((_ref1 = ctx.type_decl_hash) != null ? _ref1.hasOwnProperty(type.main) : void 0) {
+        if ((_ref3 = ctx.type_decl_map) != null ? _ref3.hasOwnProperty(type.main) : void 0) {
           name = type.main.replace(/\./g, "_");
-          is_struct = ((ctx.current_class && ctx.type_decl_hash["" + ctx.current_class.name + "_" + name]) || ctx.type_decl_hash[name]) && ((_ref2 = ctx.type_decl_hash[name]) != null ? _ref2.constructor.name : void 0) === "Class_decl";
-          is_enum = ((_ref3 = ctx.type_decl_hash[name]) != null ? _ref3.constructor.name : void 0) === "Enum_decl";
+          is_struct = ((ctx.current_class && ctx.type_decl_map["" + ctx.current_class.name + "_" + name]) || ctx.type_decl_map[name]) && ((_ref4 = ctx.type_decl_map[name]) != null ? _ref4.constructor.name : void 0) === "Class_decl";
           if (ctx.current_class && is_struct) {
             name = "" + ctx.current_class.name + "_" + name;
-          }
-          if (name !== "router_enum" && is_enum) {
-            name = "nat";
           }
           name = translate_var_name(name, ctx);
           return name;
         } else if (type.main.match(/^byte[s]?\d{0,2}$/)) {
           return "bytes";
-        } else if (config.uint_type_hash.hasOwnProperty(type.main)) {
+        } else if (config.uint_type_map.hasOwnProperty(type.main)) {
           return "nat";
-        } else if (config.int_type_hash.hasOwnProperty(type.main)) {
+        } else if (config.int_type_map.hasOwnProperty(type.main)) {
           return "int";
         } else if (type.main.match(RegExp("^" + config.storage + "_"))) {
           return type.main;
@@ -232,14 +318,14 @@
   };
 
   this.type2default_value = type2default_value = function(type, ctx) {
-    var name, prefix, t;
-    if (config.uint_type_hash.hasOwnProperty(type.main)) {
+    var first_item, name, prefix, t;
+    if (config.uint_type_map.hasOwnProperty(type.main)) {
       return "0n";
     }
-    if (config.int_type_hash.hasOwnProperty(type.main)) {
+    if (config.int_type_map.hasOwnProperty(type.main)) {
       return "0";
     }
-    if (config.bytes_type_hash.hasOwnProperty(type.main)) {
+    if (config.bytes_type_map.hasOwnProperty(type.main)) {
       return "(\"00\": bytes)";
     }
     switch (type.main) {
@@ -257,16 +343,16 @@
       case "string":
         return '""';
       default:
-        if (ctx.type_decl_hash.hasOwnProperty(type.main)) {
-          t = ctx.type_decl_hash[type.main];
+        if (ctx.type_decl_map.hasOwnProperty(type.main)) {
+          t = ctx.type_decl_map[type.main];
           if (t.constructor.name === "Enum_decl") {
-            name = t.value_list[0].name;
-            if (ctx.current_class.name && t.name !== "router_enum") {
+            first_item = t.value_list[0].name;
+            if (ctx.current_class.name) {
               prefix = "";
               if (ctx.current_class.name) {
                 prefix = "" + ctx.current_class.name + "_";
               }
-              return "" + (translate_var_name(prefix + t.name)) + "_" + name;
+              return "" + name + "_" + first_item;
             } else {
               return "" + name + "(unit)";
             }
@@ -276,51 +362,11 @@
             if (ctx.current_class.name) {
               name = "" + ctx.current_class.name + "_" + type.main;
             }
-            return "" + (translate_var_name(name)) + "_default";
+            return "" + name + "_default";
           }
         }
         perr("CRITICAL WARNING. type2default_value unknown solidity type '" + type + "'");
         return "UNKNOWN_TYPE_DEFAULT_VALUE_" + type;
-    }
-  };
-
-  translate_var_name = window.translate_var_name.translate_var_name;
-
-  spec_id_trans_hash = {
-    "now": "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))",
-    "msg.sender": "sender",
-    "tx.origin": "source",
-    "block.timestamp": "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))",
-    "msg.value": "(amount / 1mutez)",
-    "abi.encodePacked": ""
-  };
-
-  bad_spec_id_trans_hash = {
-    "block.coinbase": config.default_address,
-    "block.difficulty": "0n",
-    "block.gaslimit": "0n",
-    "block.number": "0n",
-    "msg.data": "(\"00\": bytes)",
-    "msg.gas": "0n",
-    "msg.sig": "(\"00\": bytes)",
-    "tx.gasprice": "0n"
-  };
-
-  warning_once_hash = {};
-
-  spec_id_translate = function(t, name) {
-    var val;
-    if (spec_id_trans_hash.hasOwnProperty(t)) {
-      return spec_id_trans_hash[t];
-    } else if (bad_spec_id_trans_hash.hasOwnProperty(t)) {
-      val = bad_spec_id_trans_hash[t];
-      if (!warning_once_hash.hasOwnProperty(t)) {
-        warning_once_hash.hasOwnProperty[t] = true;
-        perr("CRITICAL WARNING we don't have proper translation for ethereum '" + t + "', so it would be translated as '" + val + "'. That's incorrect");
-      }
-      return val;
-    } else {
-      return name;
     }
   };
 
@@ -335,9 +381,9 @@
 
     Gen_context.prototype.lvalue = false;
 
-    Gen_context.prototype.type_decl_hash = {};
+    Gen_context.prototype.type_decl_map = {};
 
-    Gen_context.prototype.contract_var_hash = {};
+    Gen_context.prototype.contract_var_map = {};
 
     Gen_context.prototype.contract = false;
 
@@ -356,8 +402,8 @@
     Gen_context.prototype.tmp_idx = 0;
 
     function Gen_context() {
-      this.type_decl_hash = {};
-      this.contract_var_hash = {};
+      this.type_decl_map = {};
+      this.contract_var_map = {};
       this.storage_sink_list = {};
       this.sink_list = [];
       this.type_decl_sink_list = [];
@@ -371,8 +417,8 @@
       t = new module.Gen_context;
       t.parent = this;
       t.current_class = this.current_class;
-      obj_set(t.contract_var_hash, this.contract_var_hash);
-      obj_set(t.type_decl_hash, this.type_decl_hash);
+      obj_set(t.contract_var_map, this.contract_var_map);
+      obj_set(t.type_decl_map, this.type_decl_map);
       t.type_decl_sink_list = this.type_decl_sink_list;
       t.structs_default_list = this.structs_default_list;
       t.enum_list = this.enum_list;
@@ -387,18 +433,23 @@
   last_bracket_state = false;
 
   walk = function(root, ctx) {
-    var a, arg, arg_jl, arg_list, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decls, f, field_decl_jl, fn, i, idx, is_pure, is_state_in_main, jl, k, loc_code, msg, name, op, op_code, orig_ctx, prefix, ret, ret_jl, ret_type, scope, state_name, str, t, target_type, tmp_var, translated_type, type, type_decl, type_decl_jl, type_jl, type_list, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref34, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    var a, arg, arg_jl, arg_list, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decls, entry, f, field_decl_jl, fn, i, idx, jl, k, loc_code, msg, name, op, orig_ctx, prefix, ret, ret_jl, ret_types_list, return_types, scope, state_name, str, t, target_type, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
     last_bracket_state = false;
     switch (root.constructor.name) {
       case "Scope":
         switch (root.original_node_type) {
           case "SourceUnit":
             jl = [];
-            _ref = root.list;
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              v = _ref[_i];
+            _ref1 = root.list;
+            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+              v = _ref1[_i];
               code = walk(v, ctx);
               if (code) {
+                if ((_ref2 = v.constructor.name) !== "Comment" && _ref2 !== "Scope") {
+                  if (!/;$/.test(code)) {
+                    code += ";";
+                  }
+                }
                 jl.push(code);
               }
             }
@@ -410,9 +461,9 @@
             if (Object.keys(ctx.storage_sink_list).length === 0) {
               jl.unshift("type " + name + " is unit;");
             } else {
-              _ref1 = ctx.storage_sink_list;
-              for (k in _ref1) {
-                v = _ref1[k];
+              _ref3 = ctx.storage_sink_list;
+              for (k in _ref3) {
+                v = _ref3[k];
                 if (v.length === 0) {
                   jl.unshift("type " + k + " is unit;");
                 } else {
@@ -423,9 +474,9 @@
             ctx.storage_sink_list = {};
             if (ctx.type_decl_sink_list.length) {
               type_decl_jl = [];
-              _ref2 = ctx.type_decl_sink_list;
-              for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-                type_decl = _ref2[_j];
+              _ref4 = ctx.type_decl_sink_list;
+              for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
+                type_decl = _ref4[_j];
                 name = type_decl.name, field_decl_jl = type_decl.field_decl_jl;
                 if (field_decl_jl.length === 0) {
                   type_decl_jl.push("type " + name + " is unit;");
@@ -444,13 +495,13 @@
           default:
             if (!root.original_node_type) {
               jl = [];
-              _ref3 = root.list;
-              for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
-                v = _ref3[_k];
+              _ref5 = root.list;
+              for (_k = 0, _len2 = _ref5.length; _k < _len2; _k++) {
+                v = _ref5[_k];
                 code = walk(v, ctx);
-                _ref4 = ctx.sink_list;
-                for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
-                  loc_code = _ref4[_l];
+                _ref6 = ctx.sink_list;
+                for (_l = 0, _len3 = _ref6.length; _l < _len3; _l++) {
+                  loc_code = _ref6[_l];
                   if (!/;$/.test(loc_code)) {
                     loc_code += ";";
                   }
@@ -462,7 +513,7 @@
                   continue;
                 }
                 if (code) {
-                  if ((_ref5 = v.constructor.name) !== "Comment" && _ref5 !== "Scope") {
+                  if ((_ref7 = v.constructor.name) !== "Comment" && _ref7 !== "Scope") {
                     if (!/;$/.test(code)) {
                       code += ";";
                     }
@@ -507,13 +558,10 @@
         if (name === "this") {
           return "";
         }
-        if (root.name_translate) {
-          name = translate_var_name(name, ctx);
-        }
-        if (ctx.contract_var_hash.hasOwnProperty(name)) {
+        if (ctx.contract_var_map.hasOwnProperty(name)) {
           return "" + config.contract_storage + "." + name;
         } else {
-          return spec_id_translate(root.name, name);
+          return name;
         }
         break;
       case "Const":
@@ -521,7 +569,7 @@
           puts(root);
           throw new Error("Can't type inference");
         }
-        if (config.uint_type_hash.hasOwnProperty(root.type.main)) {
+        if (config.uint_type_map.hasOwnProperty(root.type.main)) {
           return "" + root.val + "n";
         }
         switch (root.type.main) {
@@ -543,6 +591,8 @@
             return root.val;
           case "unsigned_number":
             return "" + root.val + "n";
+          case "mutez":
+            return "" + root.val + "mutez";
           case "string":
             return JSON.stringify(root.val);
           case "built_in_op_list":
@@ -553,7 +603,7 @@
             }
             break;
           default:
-            if (config.bytes_type_hash.hasOwnProperty(root.type.main)) {
+            if (config.bytes_type_map.hasOwnProperty(root.type.main)) {
               return number2bytes(root.val, +root.type.main.replace(/bytes/, ''));
             } else {
               return root.val;
@@ -628,35 +678,25 @@
               }
               break;
             case "enum":
-              name = translate_var_name(root.name, ctx);
-              if (((_ref6 = root.t) != null ? _ref6.name : void 0) !== "router_enum") {
-                prefix = "";
-                if (ctx.current_class.name) {
-                  prefix = "" + ctx.current_class.name + "_";
-                }
-                return "" + (translate_var_name(prefix + root.t.name)) + "_" + root.name;
-              } else {
-                name = "" + (ctx.current_class.name.toUpperCase()) + "_" + name;
-                return "" + name + "(unit)";
-              }
+              return root.name;
           }
         }
         if (t === "") {
-          return translate_var_name(root.name, ctx);
+          return root.name;
         }
         chk_ret = "" + t + "." + root.name;
-        ret = "" + t + "." + (translate_var_name(root.name, ctx));
+        ret = "" + t + "." + root.name;
         if (root.t.constructor.name === "Var") {
-          if ((_ref7 = ctx.type_decl_hash[root.t.name]) != null ? _ref7.is_library : void 0) {
+          if ((_ref8 = ctx.type_decl_map[root.t.name]) != null ? _ref8.is_library : void 0) {
             ret = translate_var_name("" + t + "_" + root.name, ctx);
           }
         }
         return spec_id_translate(chk_ret, ret);
       case "Fn_call":
         arg_list = [];
-        _ref8 = root.arg_list;
-        for (_m = 0, _len4 = _ref8.length; _m < _len4; _m++) {
-          v = _ref8[_m];
+        _ref9 = root.arg_list;
+        for (_m = 0, _len4 = _ref9.length; _m < _len4; _m++) {
+          v = _ref9[_m];
           arg_list.push(walk(v, ctx));
         }
         if (root.fn.constructor.name === "Field_access") {
@@ -672,42 +712,6 @@
                   default:
                     throw new Error("unknown array field function " + root.fn.name);
                 }
-                break;
-              case "address":
-                switch (root.fn.name) {
-                  case "send":
-                    perr("CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no boolean return");
-                    op_code = "transaction(unit, " + arg_list[0] + " * 1mutez, (get_contract(" + t + ") : contract(unit)))";
-                    break;
-                  case "transfer":
-                    perr("CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw");
-                    op_code = "transaction(unit, " + arg_list[0] + " * 1mutez, (get_contract(" + t + ") : contract(unit)))";
-                    break;
-                  case "call":
-                    perr("CRITICAL WARNING call function willl be conveerted into transaction, it doesn't return any value so your code may be wrong.");
-                    perr("CRITICAL WARNING we don't check balance in call function. So runtime error will be ignored and no throw");
-                    if (root.arg_list[0]) {
-                      ret_type = translate_type(root.arg_list[0].type, ctx);
-                      ret = arg_list[0];
-                    } else {
-                      ret_type = "Unit";
-                      ret = "unit";
-                    }
-                    op_code = "transaction(" + ret + ", 0mutez, (get_contract(" + t + ") : contract(" + ret_type + ")))";
-                    break;
-                  case "delegatecall":
-                    perr("CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw");
-                    op_code = "transaction(" + arg_list[1] + ", 1mutez, (get_contract(" + t + ") : contract(" + arg_list[0] + ")))";
-                    break;
-                  case "built_in_pure_callback":
-                    ret_type = translate_type(root.arg_list[0].type, ctx);
-                    ret = arg_list[0];
-                    op_code = "transaction(" + ret + ", 0mutez, (get_contract(" + t + ") : contract(" + ret_type + ")))";
-                    break;
-                  default:
-                    throw new Error("unknown address field " + root.fn.name);
-                }
-                return "var " + config.op_list + " : list(operation) := list " + op_code + " end";
             }
           }
         }
@@ -755,60 +759,39 @@
               perr("CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw");
               return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, " + config.receiver_name + ") end";
             default:
-              name = root.fn.name;
-              if (((_ref9 = ctx.current_class) != null ? _ref9.is_library : void 0) && ctx.current_class._prepared_field2type[name]) {
-                name = "" + ctx.current_class.name + "_" + name;
-                name = translate_var_name(name, ctx);
-              } else {
-                if (root.fn.name_translate) {
-                  name = translate_var_name(name, ctx);
-                }
-              }
-              fn = spec_id_translate(root.fn.name, name);
+              fn = root.fn.name;
           }
         } else {
           fn = walk(root.fn, ctx);
         }
-        if (((_ref10 = root.fn.type) != null ? _ref10.main : void 0) === "struct") {
-          msg = "address contract to type_cast is not supported yet (we need enum action type for each contract)";
-          perr("CRITICAL WARNING " + msg);
-          fn = "(* LIGO unsupported *)" + fn;
-        }
-        is_pure = ((_ref11 = root.fn.type) != null ? _ref11.main : void 0) === "function2_pure";
-        if (!is_pure) {
-          arg_list.unshift(config.contract_storage);
-        }
         if (arg_list.length === 0) {
           arg_list.push("unit");
         }
-        type_jl = [];
-        _ref14 = ((_ref12 = root.fn.type) != null ? (_ref13 = _ref12.nest_list[1]) != null ? _ref13.nest_list : void 0 : void 0) || [];
-        for (_n = 0, _len5 = _ref14.length; _n < _len5; _n++) {
-          v = _ref14[_n];
-          type_jl.push(translate_type(v, ctx));
+        ret_types_list = [];
+        return_types = (_ref10 = root.fn.type) != null ? _ref10.nest_list[1] : void 0;
+        _ref11 = (return_types != null ? return_types.nest_list : void 0) || [];
+        for (_n = 0, _len5 = _ref11.length; _n < _len5; _n++) {
+          v = _ref11[_n];
+          ret_types_list.push(translate_type(v, ctx));
         }
         tmp_var = "tmp_" + (ctx.tmp_idx++);
         call_expr = "" + fn + "(" + (arg_list.join(', ')) + ")";
-        if (is_pure && type_jl.length === 0) {
-          perr("Bad call of pure function that returns nothing");
-          type_jl.push("unit");
-        }
         if (!root.left_unpack) {
           return "" + call_expr;
         } else {
-          if (type_jl.length === 1) {
-            return ctx.sink_list.push("const " + tmp_var + " : " + type_jl[0] + " = " + call_expr);
+          if (ret_types_list.length === 1) {
+            return ctx.sink_list.push("const " + tmp_var + " : " + ret_types_list[0] + " = " + call_expr);
           } else {
-            return ctx.sink_list.push("const " + tmp_var + " : (" + (type_jl.join(' * ')) + ") = " + call_expr);
+            return ctx.sink_list.push("const " + tmp_var + " : (" + (ret_types_list.join(' * ')) + ") = " + call_expr);
           }
         }
         break;
       case "Struct_init":
         arg_list = [];
-        for (i = _o = 0, _ref15 = root.val_list.length - 1; 0 <= _ref15 ? _o <= _ref15 : _o >= _ref15; i = 0 <= _ref15 ? ++_o : --_o) {
+        for (i = _o = 0, _ref12 = root.val_list.length - 1; 0 <= _ref12 ? _o <= _ref12 : _o >= _ref12; i = 0 <= _ref12 ? ++_o : --_o) {
           arg_list.push("" + root.arg_names[i] + " = " + (walk(root.val_list[i], ctx)));
         }
-        return "record [ " + (arg_list.join(";\n\t")) + " ]";
+        return "record [ " + (arg_list.join(";\n  ")) + " ]";
       case "Type_cast":
         target_type = translate_type(root.target_type, ctx);
         t = walk(root.t, ctx);
@@ -821,7 +804,7 @@
           return "abs(" + t + ")";
         } else if (target_type === "address" && t === "0") {
           return type2default_value(root.target_type, ctx);
-        } else if (target_type === "bytes" && ((_ref16 = root.t.type) != null ? _ref16.main : void 0) === "string") {
+        } else if (target_type === "bytes" && ((_ref13 = root.t.type) != null ? _ref13.main : void 0) === "string") {
           return "bytes_pack(" + t + ")";
         } else if (target_type === "address" && (t === "0x0" || t === "0")) {
           return "(" + (JSON.stringify(config.default_address)) + " : " + target_type + ")";
@@ -842,29 +825,25 @@
         return "(* CRITICAL WARNING break is not supported *)";
       case "Var_decl":
         name = root.name;
-        if (root.name_translate) {
-          name = translate_var_name(name, ctx);
-        }
         type = translate_type(root.type, ctx);
-        prefix = "";
         if (ctx.is_class_scope) {
           if (root.special_type) {
             type = "" + ctx.current_class.name + "_" + root.type.main;
           }
           type = translate_var_name(type, ctx);
-          ctx.contract_var_hash[name] = root;
+          ctx.contract_var_map[name] = root;
           return "" + name + " : " + type + ";";
         } else {
           if (root.assign_value) {
-            if (((_ref17 = root.assign_value) != null ? _ref17.constructor.name : void 0) === "Struct_init") {
+            if (((_ref14 = root.assign_value) != null ? _ref14.constructor.name : void 0) === "Struct_init") {
               type = "" + ctx.current_class.name + "_" + root.type.main;
               type = translate_var_name(type, ctx);
             }
             val = walk(root.assign_value, ctx);
-            if (config.bytes_type_hash.hasOwnProperty(root.type.main) && root.assign_value.type.main === "string" && root.assign_value.constructor.name === "Const") {
+            if (config.bytes_type_map.hasOwnProperty(root.type.main) && root.assign_value.type.main === "string" && root.assign_value.constructor.name === "Const") {
               val = string2bytes(root.assign_value.val);
             }
-            if (config.bytes_type_hash.hasOwnProperty(root.type.main) && root.assign_value.type.main === "number" && root.assign_value.constructor.name === "Const") {
+            if (config.bytes_type_map.hasOwnProperty(root.type.main) && root.assign_value.type.main === "number" && root.assign_value.constructor.name === "Const") {
               val = number2bytes(root.assign_value.val);
             }
             return "const " + name + " : " + type + " = " + val;
@@ -879,11 +858,10 @@
           tmp_var = "tmp_" + (ctx.tmp_idx++);
           jl = [];
           type_list = [];
-          _ref18 = root.list;
-          for (idx = _p = 0, _len6 = _ref18.length; _p < _len6; idx = ++_p) {
-            _var = _ref18[idx];
+          _ref15 = root.list;
+          for (idx = _p = 0, _len6 = _ref15.length; _p < _len6; idx = ++_p) {
+            _var = _ref15[idx];
             name = _var.name;
-            name = translate_var_name(name, ctx);
             type_list.push(type = translate_type(_var.type, ctx));
             jl.push("const " + name + " : " + type + " = " + tmp_var + "." + idx + ";");
           }
@@ -893,11 +871,10 @@
           perr("CRITICAL WARNING We can't guarantee that smart contract would work at all");
           module.warning_counter++;
           jl = [];
-          _ref19 = root.list;
-          for (_q = 0, _len7 = _ref19.length; _q < _len7; _q++) {
-            _var = _ref19[_q];
+          _ref16 = root.list;
+          for (_q = 0, _len7 = _ref16.length; _q < _len7; _q++) {
+            _var = _ref16[_q];
             name = _var.name;
-            name = translate_var_name(name, ctx);
             type = translate_type(root.type, ctx);
             jl.push("const " + name + " : " + type + " = " + (type2default_value(_var.type, ctx)));
           }
@@ -914,9 +891,9 @@
         break;
       case "Ret_multi":
         jl = [];
-        _ref20 = root.t_list;
-        for (idx = _r = 0, _len8 = _ref20.length; _r < _len8; idx = ++_r) {
-          v = _ref20[idx];
+        _ref17 = root.t_list;
+        for (idx = _r = 0, _len8 = _ref17.length; _r < _len8; idx = ++_r) {
+          v = _ref17[idx];
           jl.push(walk(v, ctx));
         }
         return "with (" + (jl.join(', ')) + ")";
@@ -939,27 +916,28 @@
         cond = walk(root.cond, ctx);
         ctx = ctx.mk_nest();
         jl = [];
-        _ref21 = root.scope.list;
-        for (_s = 0, _len9 = _ref21.length; _s < _len9; _s++) {
-          _case = _ref21[_s];
+        _ref18 = root.scope.list;
+        for (_s = 0, _len9 = _ref18.length; _s < _len9; _s++) {
+          _case = _ref18[_s];
           case_scope = walk(_case.scope, ctx);
           if (/;$/.test(case_scope)) {
             case_scope = case_scope.slice(0, -1);
           }
           jl.push("| " + _case.struct_name + "(" + _case.var_decl.name + ") -> " + case_scope);
         }
-        return "case " + cond + " of\n" + (join_list(jl, '')) + "\nend";
+        if (jl.length) {
+          return "case " + cond + " of\n" + (join_list(jl, '')) + "\nend";
+        } else {
+          return "unit";
+        }
+        break;
       case "Fn_decl_multiret":
         orig_ctx = ctx;
         ctx = ctx.mk_nest();
         arg_jl = [];
-        _ref22 = root.arg_name_list;
-        for (idx = _t = 0, _len10 = _ref22.length; _t < _len10; idx = ++_t) {
-          v = _ref22[idx];
-          is_state_in_main = root.name === "@main" && idx === 1;
-          if (root.visibility !== 'pure' && idx > 0 && !is_state_in_main) {
-            v = translate_var_name(v, ctx);
-          }
+        _ref19 = root.arg_name_list;
+        for (idx = _t = 0, _len10 = _ref19.length; _t < _len10; idx = ++_t) {
+          v = _ref19[idx];
           type = translate_type(root.type_i.nest_list[idx], ctx);
           arg_jl.push("const " + v + " : " + type);
         }
@@ -967,19 +945,14 @@
           arg_jl.push("const " + config.reserved + "__unit : unit");
         }
         ret_jl = [];
-        _ref23 = root.type_o.nest_list;
-        for (_u = 0, _len11 = _ref23.length; _u < _len11; _u++) {
-          v = _ref23[_u];
+        _ref20 = root.type_o.nest_list;
+        for (_u = 0, _len11 = _ref20.length; _u < _len11; _u++) {
+          v = _ref20[_u];
           type = translate_type(v, ctx);
           ret_jl.push("" + type);
         }
-        name = root.name;
-        if ((_ref24 = orig_ctx.current_class) != null ? _ref24.is_library : void 0) {
-          name = "" + orig_ctx.current_class.name + "_" + name;
-        }
-        name = translate_var_name(name, ctx);
         body = walk(root.scope, ctx);
-        return "function " + name + " (" + (arg_jl.join('; ')) + ") : (" + (ret_jl.join(' * ')) + ") is\n  " + (make_tab(body, '  '));
+        return "function " + root.name + " (" + (arg_jl.join('; ')) + ") : (" + (ret_jl.join(' * ')) + ") is\n  " + (make_tab(body, '  '));
       case "Class_decl":
         if (root.need_skip) {
           return "";
@@ -990,25 +963,25 @@
         orig_ctx = ctx;
         prefix = "";
         if (ctx.parent && ctx.current_class && root.namespace_name) {
-          ctx.parent.type_decl_hash["" + ctx.current_class.name + "." + root.name] = root;
+          ctx.parent.type_decl_map["" + ctx.current_class.name + "." + root.name] = root;
           prefix = ctx.current_class.name;
         }
         ctx = ctx.mk_nest();
         ctx.current_class = root;
         ctx.is_class_scope = true;
-        _ref25 = root.scope.list;
-        for (_v = 0, _len12 = _ref25.length; _v < _len12; _v++) {
-          v = _ref25[_v];
+        _ref21 = root.scope.list;
+        for (_v = 0, _len12 = _ref21.length; _v < _len12; _v++) {
+          v = _ref21[_v];
           switch (v.constructor.name) {
             case "Enum_decl":
             case "Class_decl":
-              ctx.type_decl_hash[v.name] = v;
+              ctx.type_decl_map[v.name] = v;
               break;
             case "PM_switch":
-              _ref26 = root.scope.list;
-              for (_w = 0, _len13 = _ref26.length; _w < _len13; _w++) {
-                _case = _ref26[_w];
-                ctx.type_decl_hash[_case.var_decl.type.main] = _case.var_decl;
+              _ref22 = root.scope.list;
+              for (_w = 0, _len13 = _ref22.length; _w < _len13; _w++) {
+                _case = _ref22[_w];
+                ctx.type_decl_map[_case.var_decl.type.main] = _case.var_decl;
               }
               break;
             default:
@@ -1016,15 +989,15 @@
           }
         }
         field_decl_jl = [];
-        _ref27 = root.scope.list;
-        for (_x = 0, _len14 = _ref27.length; _x < _len14; _x++) {
-          v = _ref27[_x];
+        _ref23 = root.scope.list;
+        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
+          v = _ref23[_x];
           switch (v.constructor.name) {
             case "Var_decl":
               field_decl_jl.push(walk(v, ctx));
               break;
             case "Fn_decl_multiret":
-              ctx.contract_var_hash[v.name] = v;
+              ctx.contract_var_map[v.name] = v;
               break;
             case "Enum_decl":
               "skip";
@@ -1048,19 +1021,15 @@
         jl = [];
         jl.append(ctx.sink_list);
         ctx.sink_list.clear();
-        _ref28 = root.scope.list;
-        for (_y = 0, _len15 = _ref28.length; _y < _len15; _y++) {
-          v = _ref28[_y];
+        _ref24 = root.scope.list;
+        for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
+          v = _ref24[_y];
           switch (v.constructor.name) {
             case "Var_decl":
               "skip";
               break;
             case "Enum_decl":
-              if (v.name !== "router_enum") {
-                ctx.enum_list.push(walk(v, ctx));
-              } else {
-                jl.unshift(walk(v, ctx));
-              }
+              jl.unshift(walk(v, ctx));
               break;
             case "Fn_decl_multiret":
               jl.push(walk(v, ctx));
@@ -1091,12 +1060,12 @@
           name = translate_var_name(name, ctx);
           if (root.is_struct) {
             arg_list = [];
-            _ref29 = root.scope.list;
-            for (_z = 0, _len16 = _ref29.length; _z < _len16; _z++) {
-              v = _ref29[_z];
+            _ref25 = root.scope.list;
+            for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
+              v = _ref25[_z];
               arg_list.push("" + v.name + " = " + (type2default_value(v.type, ctx)));
             }
-            ctx.structs_default_list.push("const " + name + "_default : " + name + " = record [ " + (arg_list.join(";\n\t")) + " ];\n");
+            ctx.structs_default_list.push("const " + name + "_default : " + name + " = record [ " + (arg_list.join(";\n  ")) + " ];\n");
           }
           ctx.type_decl_sink_list.push({
             name: name,
@@ -1106,34 +1075,22 @@
         return jl.join("\n\n");
       case "Enum_decl":
         jl = [];
-        prefix = "";
-        if (ctx.current_class.name && root.int_type) {
-          prefix = "" + ctx.current_class.name + "_";
-        }
-        _ref30 = root.value_list;
-        for (idx = _aa = 0, _len17 = _ref30.length; _aa < _len17; idx = ++_aa) {
-          v = _ref30[idx];
-          ctx.contract_var_hash[v.name] = v;
+        _ref26 = root.value_list;
+        for (idx = _aa = 0, _len17 = _ref26.length; _aa < _len17; idx = ++_aa) {
+          v = _ref26[idx];
+          ctx.contract_var_map[v.name] = v;
           aux = "";
-          if (root.int_type) {
-            if (v.type) {
-              type = translate_type(v.type, ctx);
-              aux = "" + (translate_var_name(type, ctx));
-            }
-            jl.push("const " + (translate_var_name(prefix + root.name)) + "_" + v.name + aux + " : nat = " + idx + "n;");
-          } else {
-            if (v.type) {
-              aux = " of " + (translate_var_name(v.type.main.replace(/\./g, "_", ctx)));
-            }
-            jl.push("| " + (prefix.toUpperCase()) + v.name + aux);
+          if (v.type) {
+            aux = " of " + (translate_var_name(v.type.main.replace(/\./g, "_", ctx)));
           }
+          jl.push("| " + v.name + aux);
         }
-        if (root.int_type) {
-          return "" + (join_list(jl));
+        if (jl.length) {
+          entry = join_list(jl, ' ');
         } else {
-          return "type " + (translate_var_name(prefix + root.name, ctx)) + " is\n  " + (join_list(jl, '  ')) + ";";
+          entry = "unit";
         }
-        break;
+        return "type " + root.name + " is\n  " + entry + ";";
       case "Ternary":
         cond = walk(root.cond, ctx);
         t = walk(root.t, ctx);
@@ -1141,9 +1098,9 @@
         return "(case " + cond + " of | True -> " + t + " | False -> " + f + " end)";
       case "New":
         arg_list = [];
-        _ref31 = root.arg_list;
-        for (_ab = 0, _len18 = _ref31.length; _ab < _len18; _ab++) {
-          v = _ref31[_ab];
+        _ref27 = root.arg_list;
+        for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
+          v = _ref27[_ab];
           arg_list.push(walk(v, ctx));
         }
         args = "" + (join_list(arg_list, ', '));
@@ -1158,35 +1115,42 @@
         break;
       case "Tuple":
         arg_list = [];
-        _ref32 = root.list;
-        for (_ac = 0, _len19 = _ref32.length; _ac < _len19; _ac++) {
-          v = _ref32[_ac];
+        _ref28 = root.list;
+        for (_ac = 0, _len19 = _ref28.length; _ac < _len19; _ac++) {
+          v = _ref28[_ac];
           arg_list.push(walk(v, ctx));
         }
         return "(" + (arg_list.join(', ')) + ")";
       case "Array_init":
         arg_list = [];
-        _ref33 = root.list;
-        for (_ad = 0, _len20 = _ref33.length; _ad < _len20; _ad++) {
-          v = _ref33[_ad];
+        _ref29 = root.list;
+        for (_ad = 0, _len20 = _ref29.length; _ad < _len20; _ad++) {
+          v = _ref29[_ad];
           arg_list.push(walk(v, ctx));
         }
-        decls = [];
-        for (i = _ae = 0, _len21 = arg_list.length; _ae < _len21; i = ++_ae) {
-          arg = arg_list[i];
-          decls.push("" + i + "n -> " + arg + ";");
+        if (root.type.main === "built_in_op_list") {
+          return "list [" + (arg_list.join("; ")) + "]";
+        } else {
+          decls = [];
+          for (i = _ae = 0, _len21 = arg_list.length; _ae < _len21; i = ++_ae) {
+            arg = arg_list[i];
+            decls.push("" + i + "n -> " + arg + ";");
+          }
+          return "map\n  " + (join_list(decls, '  ')) + "\nend";
         }
-        return "map\n  " + (join_list(decls, '  ')) + "\nend";
+        break;
       case "Event_decl":
         args = [];
-        _ref34 = root.arg_list;
-        for (_af = 0, _len22 = _ref34.length; _af < _len22; _af++) {
-          arg = _ref34[_af];
-          name = translate_var_name(arg._name, ctx);
+        _ref30 = root.arg_list;
+        for (_af = 0, _len22 = _ref30.length; _af < _len22; _af++) {
+          arg = _ref30[_af];
+          name = arg._name;
           type = translate_type(arg, ctx);
           args.push("" + name + " : " + type);
         }
         return "(* EventDefinition " + root.name + "(" + (args.join('; ')) + ") *)";
+      case "Include":
+        return "#include \"" + root.path + "\"";
       default:
         if (ctx.next_gen != null) {
           return ctx.next_gen(root, ctx);
@@ -1210,4 +1174,4 @@
     return walk(root, ctx);
   };
 
-}).call(window.translate_ligo = {});
+}).call(window.require_register("./translate_ligo"));

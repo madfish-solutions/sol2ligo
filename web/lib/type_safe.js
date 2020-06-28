@@ -1,7 +1,7 @@
 (function() {
   var Type, null_str;
 
-  Type = window.Type
+  Type = window.Type;
 
   Type.prototype.clone = function() {
     var k, ret, v, _i, _len, _ref, _ref1;
@@ -16,13 +16,13 @@
         ret.nest_list.push(v.clone());
       }
     }
-    _ref1 = this.field_hash;
+    _ref1 = this.field_map;
     for (k in _ref1) {
       v = _ref1[k];
       if (v == null) {
-        ret.field_hash[k] = v;
+        ret.field_map[k] = v;
       } else {
-        ret.field_hash[k] = v.clone();
+        ret.field_map[k] = v.clone();
       }
     }
     return ret;
@@ -47,7 +47,7 @@
       ret += "<" + (jl.join(', ')) + ">";
     }
     jl = [];
-    _ref1 = this.field_hash;
+    _ref1 = this.field_map;
     for (k in _ref1) {
       v = _ref1[k];
       if (v == null) {
@@ -81,29 +81,29 @@
         return false;
       }
     }
-    _ref1 = this.field_hash;
+    _ref1 = this.field_map;
     for (k in _ref1) {
       v = _ref1[k];
-      if (t.field_hash[k] === v) {
+      if (t.field_map[k] === v) {
         continue;
       }
-      if (!t.field_hash.hasOwnProperty(k)) {
+      if (!t.field_map.hasOwnProperty(k)) {
         return false;
       }
-      tv = t.field_hash[k];
+      tv = t.field_map[k];
       if (!(tv != null ? tv.cmp(v) : void 0)) {
         return false;
       }
     }
-    _ref2 = t.field_hash;
+    _ref2 = t.field_map;
     for (k in _ref2) {
       v = _ref2[k];
-      if (!this.field_hash.hasOwnProperty(k)) {
+      if (!this.field_map.hasOwnProperty(k)) {
         return false;
       }
-      tv = this.field_hash[k];
+      tv = this.field_map[k];
     }
     return true;
   };
 
-}).call(this);
+}).call(window.require_register("./type_safe"));

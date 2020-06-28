@@ -1,4 +1,4 @@
-{ Ti_context } = require "./type_inference/common.coffee"
+{ Ti_context } = require "./type_inference/common"
 
 stage1 = require "./type_inference/stage1"
 stage2 = require "./type_inference/stage2"
