@@ -5,32 +5,32 @@
 
   
 
-  config = window.config
+  config = require("./config");
 
-  Type = window.Type
+  Type = window.Type;
 
-  _ref = translate_ligo, translate_type = _ref.translate_type, type2default_value = _ref.type2default_value;
+  _ref = require("./translate_ligo"), translate_type = _ref.translate_type, type2default_value = _ref.type2default_value;
 
   this.Gen_context = (function() {
     Gen_context.prototype.next_gen = null;
 
-    Gen_context.prototype.var_hash = {};
+    Gen_context.prototype.var_map = {};
 
-    Gen_context.prototype.contract_hash = {};
+    Gen_context.prototype.contract_map = {};
 
-    Gen_context.prototype.type_decl_hash = {};
+    Gen_context.prototype.type_decl_map = {};
 
     function Gen_context() {
-      this.var_hash = {};
-      this.contract_hash = {};
-      this.type_decl_hash = {};
+      this.var_map = {};
+      this.contract_map = {};
+      this.type_decl_map = {};
     }
 
     Gen_context.prototype.mk_nest_contract = function(name) {
       var t;
       t = new module.Gen_context;
-      this.contract_hash[name] = t.var_hash;
-      obj_set(t.type_decl_hash, this.type_decl_hash);
+      this.contract_map[name] = t.var_map;
+      obj_set(t.type_decl_map, this.type_decl_map);
       return t;
     };
 
@@ -56,7 +56,7 @@
       case "Enum_decl":
         return "nothing";
       case "Var_decl":
-        ctx.var_hash[root.name] = {
+        ctx.var_map[root.name] = {
           type: translate_type(root.type, ctx),
           value: type2default_value(root.type, ctx)
         };
@@ -65,13 +65,13 @@
         if (root.need_skip) {
           return;
         }
-        ctx.type_decl_hash[root.name] = root;
+        ctx.type_decl_map[root.name] = root;
         if (root.is_contract) {
           ctx = ctx.mk_nest_contract(root.name);
         }
         return walk(root.scope, ctx);
       case "Enum_decl":
-        ctx.type_decl_hash[root.name] = root;
+        ctx.type_decl_map[root.name] = root;
         return "nothing";
       default:
         if (ctx.next_gen != null) {
@@ -94,7 +94,7 @@
     ctx = new module.Gen_context;
     ctx.next_gen = opt.next_gen;
     walk(root, ctx);
-    _ref1 = ctx.contract_hash;
+    _ref1 = ctx.contract_map;
     for (k in _ref1) {
       v = _ref1[k];
       if (0 === h_count(v)) {
@@ -106,10 +106,10 @@
       }
     }
     if (!opt.convert_to_string) {
-      return ctx.contract_hash;
+      return ctx.contract_map;
     }
     jl = [];
-    _ref2 = ctx.contract_hash;
+    _ref2 = ctx.contract_map;
     for (k in _ref2) {
       contract = _ref2[k];
       field_jl = [];
@@ -122,4 +122,4 @@
     return join_list(jl, '');
   };
 
-}).call(window.translate_ligo_default_state = {});
+}).call(window.require_register("./translate_ligo_default_state"));

@@ -7,13 +7,13 @@
 
     Type.prototype.nest_list = [];
 
-    Type.prototype.field_hash = {};
+    Type.prototype.field_map = {};
 
     function Type(str) {
       var ret, tail, _ref;
       if (!str) {
         this.nest_list = [];
-        this.field_hash = {};
+        this.field_map = {};
       } else {
         _ref = this._parse_tail(str), ret = _ref.ret, tail = _ref.tail;
         if (tail) {
@@ -21,7 +21,7 @@
         }
         this.main = ret.main;
         this.nest_list = ret.nest_list;
-        this.field_hash = ret.field_hash;
+        this.field_map = ret.field_map;
       }
     }
 
@@ -34,10 +34,10 @@
         v = _ref[_i];
         ret.nest_list.push(v.clone());
       }
-      _ref1 = this.field_hash;
+      _ref1 = this.field_map;
       for (k in _ref1) {
         v = _ref1[k];
-        ret.field_hash[k] = v.clone();
+        ret.field_map[k] = v.clone();
       }
       return ret;
     };
@@ -57,20 +57,20 @@
           return false;
         }
       }
-      _ref1 = this.field_hash;
+      _ref1 = this.field_map;
       for (k in _ref1) {
         v = _ref1[k];
-        if (!(tv = t.field_hash[k])) {
+        if (!(tv = t.field_map[k])) {
           return false;
         }
         if (!tv.cmp(v)) {
           return false;
         }
       }
-      _ref2 = t.field_hash;
+      _ref2 = t.field_map;
       for (k in _ref2) {
         v = _ref2[k];
-        if (!(tv = this.field_hash[k])) {
+        if (!(tv = this.field_map[k])) {
           return false;
         }
       }
@@ -90,7 +90,7 @@
         ret += "<" + (jl.join(', ')) + ">";
       }
       jl = [];
-      _ref1 = this.field_hash;
+      _ref1 = this.field_map;
       for (k in _ref1) {
         v = _ref1[k];
         jl.push("" + k + ": " + (v.toString()));
@@ -135,7 +135,7 @@
           }
           _skip = reg_ret[0], key = reg_ret[1], tail = reg_ret[2];
           _ref2 = this._parse_tail(tail), ret = _ref2.ret, tail = _ref2.tail;
-          full_ret.field_hash[key] = ret;
+          full_ret.field_map[key] = ret;
           _ref3 = /^(?:\s*(?:,\s*)?)(.*)$/.exec(tail), _skip = _ref3[0], tail = _ref3[1];
         }
         tail = tail.substr(1);
