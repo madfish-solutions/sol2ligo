@@ -1,9 +1,9 @@
 (function() {
-  var config, reserved_hash;
+  var bad_spec_id_trans_map, config, reserved_map, spec_id_trans_map, warning_once_map;
 
-  config = window.config
+  config = require("./config");
 
-  reserved_hash = {
+  reserved_map = {
     "get_force": true,
     "get_chain_id": true,
     "transaction": true,
@@ -25,7 +25,7 @@
     "string_concat": true,
     "string_slice": true,
     "crypto_check": true,
-    "crypto_hash_key": true,
+    "crypto_map_key": true,
     "bytes_concat": true,
     "bytes_slice": true,
     "bytes_pack": true,
@@ -76,9 +76,9 @@
     "some": true
   };
 
-  reserved_hash[config.contract_storage] = true;
+  reserved_map[config.contract_storage] = true;
 
-  reserved_hash[config.op_list] = true;
+  reserved_map[config.op_list] = true;
 
   this.translate_var_name = function(name, ctx) {
     if (name[0] === "_") {
@@ -87,13 +87,51 @@
     if (name.toUpperCase() !== name) {
       name = name.substr(0, 1).toLowerCase() + name.substr(1);
     }
-    if (name === "@main") {
-      return "main";
-    } else if (reserved_hash.hasOwnProperty(name)) {
+    if (name.startsWith("@")) {
+      return name.substr(1);
+    } else if (reserved_map.hasOwnProperty(name)) {
       return "" + config.reserved + "__" + name;
     } else {
       return name;
     }
   };
 
-}).call(window.translate_var_name = {});
+  spec_id_trans_map = {
+    "now": "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))",
+    "msg.sender": "sender",
+    "tx.origin": "source",
+    "block.timestamp": "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))",
+    "msg.value": "(amount / 1mutez)",
+    "abi.encodePacked": ""
+  };
+
+  bad_spec_id_trans_map = {
+    "block.coinbase": config.default_address,
+    "block.difficulty": "0n",
+    "block.gaslimit": "0n",
+    "block.number": "0n",
+    "msg.data": "(\"00\": bytes)",
+    "msg.gas": "0n",
+    "msg.sig": "(\"00\": bytes)",
+    "tx.gasprice": "0n"
+  };
+
+  warning_once_map = {};
+
+  this.spec_id_translate = function(t, name) {
+    var val;
+    if (spec_id_trans_map.hasOwnProperty(t)) {
+      return spec_id_trans_map[t];
+    } else if (bad_spec_id_trans_map.hasOwnProperty(t)) {
+      val = bad_spec_id_trans_map[t];
+      if (!warning_once_map.hasOwnProperty(t)) {
+        warning_once_map.hasOwnProperty[t] = true;
+        perr("CRITICAL WARNING we don't have proper translation for ethereum '" + t + "', so it would be translated as '" + val + "'. That's incorrect");
+      }
+      return val;
+    } else {
+      return name;
+    }
+  };
+
+}).call(window.require_register("./translate_var_name"));

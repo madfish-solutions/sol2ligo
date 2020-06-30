@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section library", ()->
   @timeout 10000
   # ###################################################################################################
   #    library
@@ -29,23 +29,19 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function exactMath_exactAdd (const opList : list(operation); const contractStorage : state; const self : nat; const other : nat) : (list(operation) * state * nat) is
+    function exactMath_exactAdd (const self : state; const test_reserved_long___self : nat; const other : nat) : (state * nat) is
       block {
         const sum : nat = 0n;
-        sum := (self + other);
-        if (sum >= self) then {skip} else failwith("require fail");
-      } with (opList, contractStorage, sum);
-    function uintExactAddOverflowExample (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+        sum := (test_reserved_long___self + other);
+        assert((sum >= test_reserved_long___self));
+      } with (#{config.contract_storage}, sum);
+    function uintExactAddOverflowExample (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const n : nat = abs(not (0));
-        const tmp_0 : (list(operation) * state * nat) = exactMath_exactAdd(opList, contractStorage, n, 1n);
-        opList := tmp_0.0;
-        contractStorage := tmp_0.1;
-      } with (opList, contractStorage);
+        exactMath_exactAdd(self, n, 1n);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -73,39 +69,27 @@ describe "translate ligo section", ()->
       callbackAddress : address;
     end;
     
-    type state is record
-      #{config.initialized} : bool;
-    end;
+    type state is unit;
     
-    function exactMath_exactAdd (const self : nat; const other : nat) : (nat) is
+    function exactMath_exactAdd (const test_reserved_long___self : nat; const other : nat) : (nat) is
       block {
         const sum : nat = 0n;
-        sum := (self + other);
-        if (sum >= self) then {skip} else failwith("require fail");
+        sum := (test_reserved_long___self + other);
+        assert((sum >= test_reserved_long___self));
       } with (sum);
-    function test (const #{config.reserved}__unit : unit) : (nat) is
-      block {
-        const n : nat = abs(not (0));
-        const tmp_0 : nat = exactMath_exactAdd(n, 1n);
-      } with (0n);
-    
     type router_enum is
       | Test of test_args;
     
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
       block {
-        const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | Test(match_action) -> block {
-            const tmp_0 : nat = test(unit);
-            opList := cons(transaction(tmp_0, 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))), opList);
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
-      } with (opList, contractStorage);
+        const n : nat = abs(not (0));
+        exactMath_exactAdd(n, 1n);
+      } with ((nil: list(operation)), 0n);
+    
+    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+      (case action of
+      | Test(match_action) -> (test(unit), self)
+      end);
     """#"
     make_test text_i, text_o, router: true
   
@@ -130,49 +114,34 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type main_args is record
-      self : bytes;
+    type test_reserved_long___main_args is record
+      test_reserved_long___self : bytes;
       other : bytes;
     end;
     
-    type state is record
-      #{config.initialized} : bool;
-    end;
+    type state is unit;
     
     function bytes_fromBytes (const bts : bytes) : (nat) is
       block {
         const addr : nat = 0n;
       } with (addr);
     
-    function #{config.reserved}__bytes_concat (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__bytes_concat (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
-        const tmp_0 : nat = bytes_fromBytes(self);
-        const src : nat = tmp_0;
-      } with (opList, contractStorage);
-    function #{config.reserved}__main (const opList : list(operation); const contractStorage : state; const self : bytes; const other : bytes) : (list(operation) * state) is
-      block {
-        const tmp_0 : nat = bytes_fromBytes(self);
-        const src : nat = tmp_0;
-      } with (opList, contractStorage);
-    
+        const src : nat = bytes_fromBytes(test_reserved_long___self);
+      } with ((nil: list(operation)), #{config.contract_storage});
     type router_enum is
-      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of main_args;
+      | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of test_reserved_long___main_args;
     
-    function main (const action : router_enum; const contractStorage : state) : (list(operation) * state) is
+    function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
       block {
-        const opList : list(operation) = (nil: list(operation));
-        if (contractStorage.#{config.initialized}) then block {
-          case action of
-          | #{config.reserved[0].toUpperCase() +  config.reserved.slice(1)}__main(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = #{config.reserved}__main(opList, contractStorage, match_action.self, match_action.other);
-            opList := tmp_0.0;
-            contractStorage := tmp_0.1;
-          }
-          end;
-        } else block {
-          contractStorage.#{config.initialized} := True;
-        };
-      } with (opList, contractStorage);
+        const src : nat = bytes_fromBytes(test_reserved_long___self);
+      } with ((nil: list(operation)), #{config.contract_storage});
+    
+    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+      (case action of
+      | Test_reserved_long___main(match_action) -> test_reserved_long___main(self, match_action.test_reserved_long___self, match_action.other)
+      end);
     """#"
     make_test text_i, text_o, router: true
   
@@ -200,13 +169,15 @@ describe "translate ligo section", ()->
     end;
     
     type state is record
-      #{config.fix_underscore}__pausers : roles_Role;
+      pausers_ : roles_Role;
     end;
     
-    function #{config.fix_underscore}__addPauser (const opList : list(operation); const contractStorage : state; const account : address) : (list(operation) * state) is
+    const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];
+    
+    function addPauser_ (const #{config.contract_storage} : state; const account : address) : (state) is
       block {
-        contractStorage.#{config.fix_underscore}__pausers.bearer[account] := True;
-      } with (opList, contractStorage);
+        #{config.contract_storage}.pausers_.bearer[account] := True;
+      } with (#{config.contract_storage});
     """#"
     make_test text_i, text_o
   

@@ -1,8 +1,9 @@
+config = require "../src/config"
 {
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section emit", ()->
   @timeout 10000
   it "emit", ()->
     text_i = """
@@ -18,16 +19,14 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    (* EventDefinition PrimaryTransferred *)
+    (* EventDefinition PrimaryTransferred(recipient : address) *)
     
-    function transferPrimary (const opList : list(operation); const contractStorage : state; const recipient : address) : (list(operation) * state) is
+    function transferPrimary (const #{config.contract_storage} : state; const recipient : address) : (list(operation) * state) is
       block {
-        (* EmitStatement *);
-      } with (opList, contractStorage);
+        (* EmitStatement PrimaryTransferred(recipient) *)
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -45,16 +44,14 @@ describe "translate ligo section", ()->
     }
     """
     text_o = """
-    type state is record
-      reserved__empty_state : int;
-    end;
+    type state is unit;
     
-    (* EventDefinition PrimaryTransferred *)
+    (* EventDefinition PrimaryTransferred(recipient : address) *)
     
-    function transferPrimary (const opList : list(operation); const contractStorage : state; const recipient : address) : (list(operation) * state) is
+    function transferPrimary (const #{config.contract_storage} : state; const recipient : address) : (list(operation) * state) is
       block {
-        (* EmitStatement *);
-      } with (opList, contractStorage);
+        (* EmitStatement PrimaryTransferred(recipient) *)
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   

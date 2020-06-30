@@ -35,11 +35,11 @@ describe "ast_gen section", ()->
       }
       """, silent:true
   
-  if !process.argv.has "--skip_solc"
+  if !process.env.SKIP_SOLC
     describe "solidity samples", ()->
-      global.solidity_source_to_ast_hash = {}
+      global.solidity_source_to_ast_map = {}
       fs_tree.walk "solidity_samples", (path)->
-        global.solidity_source_to_ast_hash[path] = null
+        global.solidity_source_to_ast_map[path] = null
         it path, ()->
           # reasons for too long
           # 10 sec foc compiler load
@@ -51,5 +51,5 @@ describe "ast_gen section", ()->
             suggest_solc_version : "0.4.26"
             debug : true
           }
-          global.solidity_source_to_ast_hash[path] = ast
+          global.solidity_source_to_ast_map[path] = ast
   

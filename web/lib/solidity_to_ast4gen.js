@@ -1,11 +1,11 @@
 (function() {
-  var Context, Type, ast, bin_op_map, config, ensure_scope, is_complex_assign_op, prev_root, un_op_map, un_op_post_map, un_op_pre_map, unpack_id_type, walk, walk_param, walk_type;
+  var Context, Type, ast, bin_op_map, config, ensure_scope, is_complex_assign_op, parse_line_pos, prev_root, un_op_map, un_op_post_map, un_op_pre_map, unpack_id_type, walk, walk_param, walk_type;
 
-  config = window.config
+  config = require("./config");
 
-  Type = window.Type
+  Type = window.Type;
 
-  ast = window.mod_ast;
+  ast = require("./ast");
 
   bin_op_map = {
     "+": "ADD",
@@ -66,7 +66,7 @@
   };
 
   walk_type = function(root, ctx) {
-    var ret;
+    var ret, _ref, _ref1;
     if (typeof root === "string") {
       return new Type(root);
     }
@@ -86,11 +86,13 @@
       case "ArrayTypeName":
         ret = new Type("array");
         ret.nest_list.push(walk_type(root.baseType, ctx));
+        _ref = parse_line_pos(root.src), ret.pos = _ref[0], ret.line = _ref[1];
         return ret;
       case "Mapping":
         ret = new Type("map");
         ret.nest_list.push(walk_type(root.keyType, ctx));
         ret.nest_list.push(walk_type(root.valueType, ctx));
+        _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
         return ret;
       default:
         perr(root);
@@ -129,11 +131,11 @@
       case "tx":
         return null;
       default:
-        if (config.bytes_type_hash.hasOwnProperty(type_string)) {
+        if (config.bytes_type_map.hasOwnProperty(type_string)) {
           return new Type(root.typeString);
-        } else if (config.uint_type_hash.hasOwnProperty(type_string)) {
+        } else if (config.uint_type_map.hasOwnProperty(type_string)) {
           return new Type(root.typeString);
-        } else if (config.int_type_hash.hasOwnProperty(type_string)) {
+        } else if (config.int_type_map.hasOwnProperty(type_string)) {
           return new Type(root.typeString);
         } else {
           throw new Error("unpack_id_type unknown typeString '" + root.typeString + "'");
@@ -141,8 +143,12 @@
     }
   };
 
+  parse_line_pos = function(str) {
+    return str.split(":", 2);
+  };
+
   walk_param = function(root, ctx) {
-    var ret, t, v, _i, _len, _ref;
+    var ret, t, v, _i, _len, _ref, _ref1, _ref2;
     switch (root.nodeType) {
       case "ParameterList":
         ret = [];
@@ -151,6 +157,7 @@
           v = _ref[_i];
           ret.append(walk_param(v, ctx));
         }
+        _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
         return ret;
       case "VariableDeclaration":
         if (root.value) {
@@ -160,6 +167,7 @@
         t = walk_type(root.typeName, ctx);
         t._name = root.name;
         ret.push(t);
+        _ref2 = parse_line_pos(root.src), ret.pos = _ref2[0], ret.line = _ref2[1];
         return ret;
       default:
         perr(root);
@@ -196,7 +204,7 @@
     }
     prev_root = root;
     result = (function() {
-      var _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _w, _x;
+      var _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _ref37, _ref38, _ref39, _ref4, _ref40, _ref41, _ref42, _ref43, _ref44, _ref45, _ref46, _ref47, _ref48, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _w, _x;
       switch (root.nodeType) {
         case "SourceUnit":
           ret = new ast.Scope;
@@ -206,6 +214,7 @@
             node = _ref[_i];
             ret.list.push(walk(node, ctx));
           }
+          _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
           return ret;
         case "ContractDefinition":
           ret = new ast.Class_decl;
@@ -225,14 +234,14 @@
           ret.inheritance_list = [];
           ctx.contract_name = root.name;
           ctx.contract_type = root.contractKind;
-          _ref1 = root.baseContracts;
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            v = _ref1[_j];
+          _ref2 = root.baseContracts;
+          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+            v = _ref2[_j];
             arg_list = [];
             if (v["arguments"]) {
-              _ref2 = v["arguments"];
-              for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-                arg = _ref2[_k];
+              _ref3 = v["arguments"];
+              for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
+                arg = _ref3[_k];
                 arg_list.push(walk(arg, ctx));
               }
             }
@@ -242,11 +251,12 @@
             });
           }
           ret.name = root.name;
-          _ref3 = root.nodes;
-          for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-            node = _ref3[_l];
+          _ref4 = root.nodes;
+          for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
+            node = _ref4[_l];
             ret.scope.list.push(walk(node, ctx));
           }
+          _ref5 = parse_line_pos(root.src), ret.pos = _ref5[0], ret.line = _ref5[1];
           return ret;
         case "PragmaDirective":
           ret = new ast.Comment;
@@ -257,42 +267,48 @@
           perr("WARNING UsingForDirective is not supported");
           ret = new ast.Comment;
           ret.text = "UsingForDirective";
+          _ref6 = parse_line_pos(root.src), ret.pos = _ref6[0], ret.line = _ref6[1];
           return ret;
         case "StructDefinition":
           ret = new ast.Class_decl;
           ret.name = root.name;
           ret.is_struct = true;
-          _ref4 = root.members;
-          for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
-            v = _ref4[_m];
+          _ref7 = root.members;
+          for (_m = 0, _len4 = _ref7.length; _m < _len4; _m++) {
+            v = _ref7[_m];
             ret.scope.list.push(walk(v, ctx));
           }
+          _ref8 = parse_line_pos(root.src), ret.pos = _ref8[0], ret.line = _ref8[1];
           return ret;
         case "InlineAssembly":
           perr("WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler");
           ret = new ast.Comment;
           ret.text = "InlineAssembly " + root.operations;
+          _ref9 = parse_line_pos(root.src), ret.pos = _ref9[0], ret.line = _ref9[1];
           return ret;
         case "EventDefinition":
           perr("WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
           ret = new ast.Event_decl;
           ret.name = root.name;
           ret.arg_list = walk_param(root.parameters, ctx);
+          _ref10 = parse_line_pos(root.src), ret.pos = _ref10[0], ret.line = _ref10[1];
           return ret;
         case "EmitStatement":
           perr("WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
           ret = new ast.Comment;
           args = [];
-          name = ((_ref5 = root.fn) != null ? _ref5.name : void 0) || root.eventCall.name;
+          name = ((_ref11 = root.fn) != null ? _ref11.name : void 0) || root.eventCall.name || root.eventCall.expression.name;
           args = root.arg_list || root.eventCall["arguments"];
           arg_names = args.map(function(arg) {
             return arg.name;
           });
           ret.text = "EmitStatement " + name + "(" + (arg_names.join(", ")) + ")";
+          _ref12 = parse_line_pos(root.src), ret.pos = _ref12[0], ret.line = _ref12[1];
           return ret;
         case "PlaceholderStatement":
           ret = new ast.Comment;
           ret.text = "COMPILER MSG PlaceholderStatement";
+          _ref13 = parse_line_pos(root.src), ret.pos = _ref13[0], ret.line = _ref13[1];
           return ret;
         case "Identifier":
           ret = new ast.Var;
@@ -303,11 +319,13 @@
             err = _error;
             perr("WARNING can't resolve type " + err);
           }
+          _ref14 = parse_line_pos(root.src), ret.pos = _ref14[0], ret.line = _ref14[1];
           return ret;
         case "Literal":
           ret = new ast.Const;
           ret.type = new Type(root.kind);
           ret.val = root.value;
+          _ref15 = parse_line_pos(root.src), ret.pos = _ref15[0], ret.line = _ref15[1];
           switch (root.subdenomination) {
             case "seconds":
               return ret;
@@ -377,13 +395,11 @@
           ret.name = root.name;
           ret.contract_name = ctx.contract_name;
           ret.contract_type = ctx.contract_type;
-          if (root.typeName.nodeType === 'UserDefinedTypeName') {
-            ret.special_type = true;
-          }
           ret.type = walk_type(root.typeName, ctx);
           if (root.value) {
             ret.assign_value = walk(root.value, ctx);
           }
+          _ref16 = parse_line_pos(root.src), ret.pos = _ref16[0], ret.line = _ref16[1];
           return ret;
         case "Assignment":
           ret = new ast.Bin_op;
@@ -393,6 +409,7 @@
           }
           ret.a = walk(root.leftHandSide, ctx);
           ret.b = walk(root.rightHandSide, ctx);
+          _ref17 = parse_line_pos(root.src), ret.pos = _ref17[0], ret.line = _ref17[1];
           return ret;
         case "BinaryOperation":
           ret = new ast.Bin_op;
@@ -402,17 +419,20 @@
           }
           ret.a = walk(root.leftExpression, ctx);
           ret.b = walk(root.rightExpression, ctx);
+          _ref18 = parse_line_pos(root.src), ret.pos = _ref18[0], ret.line = _ref18[1];
           return ret;
         case "MemberAccess":
           ret = new ast.Field_access;
           ret.t = walk(root.expression, ctx);
           ret.name = root.memberName;
+          _ref19 = parse_line_pos(root.src), ret.pos = _ref19[0], ret.line = _ref19[1];
           return ret;
         case "IndexAccess":
           ret = new ast.Bin_op;
           ret.op = "INDEX_ACCESS";
           ret.a = walk(root.baseExpression, ctx);
           ret.b = walk(root.indexExpression, ctx);
+          _ref20 = parse_line_pos(root.src), ret.pos = _ref20[0], ret.line = _ref20[1];
           return ret;
         case "UnaryOperation":
           ret = new ast.Un_op;
@@ -429,13 +449,14 @@
             throw new Error("unknown un_op " + root.operator);
           }
           ret.a = walk(root.subExpression, ctx);
+          _ref21 = parse_line_pos(root.src), ret.pos = _ref21[0], ret.line = _ref21[1];
           return ret;
         case "FunctionCall":
           fn = walk(root.expression, ctx);
           arg_list = [];
-          _ref6 = root["arguments"];
-          for (_n = 0, _len5 = _ref6.length; _n < _len5; _n++) {
-            v = _ref6[_n];
+          _ref22 = root["arguments"];
+          for (_n = 0, _len5 = _ref22.length; _n < _len5; _n++) {
+            v = _ref22[_n];
             arg_list.push(walk(v, ctx));
           }
           switch (fn.constructor.name) {
@@ -465,6 +486,7 @@
                 ret.arg_list = arg_list;
               }
           }
+          _ref23 = parse_line_pos(root.src), ret.pos = _ref23[0], ret.line = _ref23[1];
           return ret;
         case "TupleExpression":
           if (root.isInlineArray) {
@@ -472,9 +494,9 @@
           } else {
             ret = new ast.Tuple;
           }
-          _ref7 = root.components;
-          for (_o = 0, _len6 = _ref7.length; _o < _len6; _o++) {
-            v = _ref7[_o];
+          _ref24 = root.components;
+          for (_o = 0, _len6 = _ref24.length; _o < _len6; _o++) {
+            v = _ref24[_o];
             if (v != null) {
               ret.list.push(walk(v, ctx));
             } else {
@@ -486,29 +508,33 @@
               ret = ret.list[0];
             }
           }
+          _ref25 = parse_line_pos(root.src), ret.pos = _ref25[0], ret.line = _ref25[1];
           return ret;
         case "NewExpression":
           ret = new ast.New;
           ret.cls = walk_type(root.typeName, ctx);
+          _ref26 = parse_line_pos(root.src), ret.pos = _ref26[0], ret.line = _ref26[1];
           return ret;
         case "ElementaryTypeNameExpression":
           ret = new ast.Type_cast;
           ret.target_type = walk_type(root.typeName, ctx);
+          _ref27 = parse_line_pos(root.src), ret.pos = _ref27[0], ret.line = _ref27[1];
           return ret;
         case "Conditional":
           ret = new ast.Ternary;
           ret.cond = walk(root.condition, ctx);
           ret.t = walk(root.trueExpression, ctx);
           ret.f = walk(root.falseExpression, ctx);
+          _ref28 = parse_line_pos(root.src), ret.pos = _ref28[0], ret.line = _ref28[1];
           return ret;
         case "ExpressionStatement":
           return walk(root.expression, ctx);
         case "VariableDeclarationStatement":
           if (root.declarations.length !== 1) {
             ret = new ast.Var_decl_multi;
-            _ref8 = root.declarations;
-            for (_p = 0, _len7 = _ref8.length; _p < _len7; _p++) {
-              decl = _ref8[_p];
+            _ref29 = root.declarations;
+            for (_p = 0, _len7 = _ref29.length; _p < _len7; _p++) {
+              decl = _ref29[_p];
               if (decl == null) {
                 ret.list.push({
                   skip: true
@@ -537,13 +563,14 @@
               ret.assign_value = walk(root.initialValue, ctx);
             }
             type_list = [];
-            _ref9 = ret.list;
-            for (_q = 0, _len8 = _ref9.length; _q < _len8; _q++) {
-              v = _ref9[_q];
+            _ref30 = ret.list;
+            for (_q = 0, _len8 = _ref30.length; _q < _len8; _q++) {
+              v = _ref30[_q];
               type_list.push(v.type);
             }
             ret.type = new Type("tuple<>");
             ret.type.nest_list = type_list;
+            _ref31 = parse_line_pos(root.src), ret.pos = _ref31[0], ret.line = _ref31[1];
             return ret;
           } else {
             decl = root.declarations[0];
@@ -560,16 +587,18 @@
             if (root.initialValue) {
               ret.assign_value = walk(root.initialValue, ctx);
             }
+            _ref32 = parse_line_pos(root.src), ret.pos = _ref32[0], ret.line = _ref32[1];
             return ret;
           }
           break;
         case "Block":
           ret = new ast.Scope;
-          _ref10 = root.statements;
-          for (_r = 0, _len9 = _ref10.length; _r < _len9; _r++) {
-            node = _ref10[_r];
+          _ref33 = root.statements;
+          for (_r = 0, _len9 = _ref33.length; _r < _len9; _r++) {
+            node = _ref33[_r];
             ret.list.push(walk(node, ctx));
           }
+          _ref34 = parse_line_pos(root.src), ret.pos = _ref34[0], ret.line = _ref34[1];
           return ret;
         case "IfStatement":
           ret = new ast.If;
@@ -578,11 +607,13 @@
           if (root.falseBody) {
             ret.f = ensure_scope(walk(root.falseBody, ctx));
           }
+          _ref35 = parse_line_pos(root.src), ret.pos = _ref35[0], ret.line = _ref35[1];
           return ret;
         case "WhileStatement":
           ret = new ast.While;
           ret.cond = walk(root.condition, ctx);
           ret.scope = ensure_scope(walk(root.body, ctx));
+          _ref36 = parse_line_pos(root.src), ret.pos = _ref36[0], ret.line = _ref36[1];
           return ret;
         case "ForStatement":
           ret = new ast.For3;
@@ -596,25 +627,30 @@
             ret.iter = walk(root.loopExpression, ctx);
           }
           ret.scope = ensure_scope(walk(root.body, ctx));
+          _ref37 = parse_line_pos(root.src), ret.pos = _ref37[0], ret.line = _ref37[1];
           return ret;
         case "Return":
           ret = new ast.Ret_multi;
           if (root.expression) {
             ret.t_list.push(walk(root.expression, ctx));
           }
+          _ref38 = parse_line_pos(root.src), ret.pos = _ref38[0], ret.line = _ref38[1];
           return ret;
         case "Continue":
           perr("CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Continue;
+          _ref39 = parse_line_pos(root.src), ret.pos = _ref39[0], ret.line = _ref39[1];
           return ret;
         case "Break":
           perr("CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Break;
+          _ref40 = parse_line_pos(root.src), ret.pos = _ref40[0], ret.line = _ref40[1];
           return ret;
         case "Throw":
           ret = new ast.Throw;
+          _ref41 = parse_line_pos(root.src), ret.pos = _ref41[0], ret.line = _ref41[1];
           return ret;
         case "FunctionDefinition":
         case "ModifierDefinition":
@@ -631,9 +667,6 @@
           ret.type_o = new Type("function");
           ret.visibility = root.visibility;
           ret.state_mutability = root.stateMutability;
-          ret.should_ret_args = (((_ref11 = ret.state_mutability) === 'pure' || _ref11 === 'view') && ret.visibility === 'private') || ret.visibility === 'internal' || (ret.state_mutability === 'pure' && ret.visibility === 'public');
-          ret.should_ret_op_list = !ret.should_ret_args || ret.visibility === 'public';
-          ret.should_modify_storage = (_ref12 = ret.state_mutability) !== 'pure' && _ref12 !== 'view';
           ret.type_i.nest_list = walk_param(root.parameters, ctx);
           if (!ret.is_modifier) {
             list = walk_param(root.returnParameters, ctx);
@@ -647,9 +680,9 @@
           }
           scope_prepend_list = [];
           if (root.returnParameters) {
-            _ref13 = root.returnParameters.parameters;
-            for (_s = 0, _len10 = _ref13.length; _s < _len10; _s++) {
-              parameter = _ref13[_s];
+            _ref42 = root.returnParameters.parameters;
+            for (_s = 0, _len10 = _ref42.length; _s < _len10; _s++) {
+              parameter = _ref42[_s];
               if (!parameter.name) {
                 continue;
               }
@@ -658,21 +691,21 @@
               var_decl.type = walk_type(parameter.typeName, ctx);
             }
           }
-          _ref14 = ret.type_i.nest_list;
-          for (_t = 0, _len11 = _ref14.length; _t < _len11; _t++) {
-            v = _ref14[_t];
+          _ref43 = ret.type_i.nest_list;
+          for (_t = 0, _len11 = _ref43.length; _t < _len11; _t++) {
+            v = _ref43[_t];
             ret.arg_name_list.push(v._name);
           }
           if (!ret.is_modifier) {
-            _ref15 = root.modifiers;
-            for (_u = 0, _len12 = _ref15.length; _u < _len12; _u++) {
-              modifier = _ref15[_u];
+            _ref44 = root.modifiers;
+            for (_u = 0, _len12 = _ref44.length; _u < _len12; _u++) {
+              modifier = _ref44[_u];
               ast_mod = new ast.Fn_call;
               ast_mod.fn = walk(modifier.modifierName, ctx);
               if (modifier["arguments"]) {
-                _ref16 = modifier["arguments"];
-                for (_v = 0, _len13 = _ref16.length; _v < _len13; _v++) {
-                  v = _ref16[_v];
+                _ref45 = modifier["arguments"];
+                for (_v = 0, _len13 = _ref45.length; _v < _len13; _v++) {
+                  v = _ref45[_v];
                   ast_mod.arg_list.push(walk(v, ctx));
                 }
               }
@@ -708,16 +741,18 @@
               }
             }
           }
+          _ref46 = parse_line_pos(root.src), ret.pos = _ref46[0], ret.line = _ref46[1];
           return ret;
         case "EnumDefinition":
           ret = new ast.Enum_decl;
           ret.name = root.name;
-          _ref17 = root.members;
-          for (_x = 0, _len15 = _ref17.length; _x < _len15; _x++) {
-            member = _ref17[_x];
+          _ref47 = root.members;
+          for (_x = 0, _len15 = _ref47.length; _x < _len15; _x++) {
+            member = _ref47[_x];
             ret.value_list.push(decl = new ast.Var_decl);
             decl.name = member.name;
           }
+          _ref48 = parse_line_pos(root.src), ret.pos = _ref48[0], ret.line = _ref48[1];
           return ret;
         default:
           perr(root);
@@ -734,4 +769,4 @@
     return walk(root, new Context);
   };
 
-}).call(window.solidity_to_ast4gen = {});
+}).call(window.require_register("./solidity_to_ast4gen"));

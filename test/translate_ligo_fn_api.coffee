@@ -3,7 +3,7 @@ config = require "../src/config"
   translate_ligo_make_test : make_test
 } = require("./util")
 
-describe "translate ligo section", ()->
+describe "translate ligo section fn api", ()->
   @timeout 10000
   # ###################################################################################################
   #    assert
@@ -23,18 +23,16 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function asserts (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function asserts (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const tokenCount : nat = 4n;
-        if (tokenCount < 5n) then {skip} else failwith("Sample text");
-        if (tokenCount = 4n) then {skip} else failwith("require fail");
+        assert((tokenCount < 5n)) (* "Sample text" *);
+        assert((tokenCount = 4n));
         failwith("revert");
         failwith("Should fail");
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -56,10 +54,10 @@ describe "translate ligo section", ()->
       balances : map(address, nat);
     end;
     
-    function test (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * nat) is
+    function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
       block {
-        if ((case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n) then {skip} else failwith("Overdrawn balance");
-      } with (opList, contractStorage, 0n);
+        assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n)) (* "Overdrawn balance" *);
+      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
     """#"
     make_test text_i, text_o
   
@@ -77,17 +75,15 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test2 (const opList : list(operation); const contractStorage : state; const b0 : bytes) : (list(operation) * state) is
+    function test2 (const #{config.contract_storage} : state; const b0 : bytes) : (state) is
       block {
         const h0 : bytes = sha_256(b0);
         const h1 : bytes = blake2b(b0);
         const h2 : bytes = sha_256(b0);
         const h3 : bytes = sha_256(b0);
-      } with (opList, contractStorage);
+      } with (#{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -110,21 +106,19 @@ describe "translate ligo section", ()->
     }
     """#"
     text_o = """
-    type state is record
-      #{config.empty_state} : int;
-    end;
+    type state is unit;
     
-    function test (const opList : list(operation); const contractStorage : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const a : address = tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg;
         const b : nat = 0n;
         const gl : nat = 0n;
         const n : nat = 0n;
-        const d : bytes = bytes_pack(unit);
+        const d : bytes = ("00": bytes);
         const g : nat = 0n;
-        const s : bytes = bytes_pack(unit);
+        const s : bytes = ("00": bytes);
         const gp : nat = 0n;
-      } with (opList, contractStorage);
+      } with ((nil: list(operation)), #{config.contract_storage});
     """#"
     make_test text_i, text_o
   
@@ -146,10 +140,10 @@ describe "translate ligo section", ()->
       balances : map(address, nat);
     end;
     
-    function test (const opList : list(operation); const contractStorage : state; const owner : address) : (list(operation) * state * nat) is
+    function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
       block {
-        if ((case contractStorage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n) then {skip} else failwith("require fail");
-      } with (opList, contractStorage, 0n);
+        assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n));
+      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
     """#"
     make_test text_i, text_o
   
@@ -172,17 +166,15 @@ describe "translate ligo section", ()->
         }
         """#"
         text_o = """
-        type state is record
-          #{config.empty_state} : int;
-        end;
+        type state is unit;
         
-        function test (const opList : list(operation); const contractStorage : state; const b0 : bytes) : (list(operation) * state) is
+        function test (const #{config.contract_storage} : state; const b0 : bytes) : (state) is
           block {
             const h0 : bytes = sha_256(b0);
             const h1 : bytes = blake2b(b0);
             const h2 : bytes = sha_256(b0);
             const h3 : bytes = sha_256(b0);
-          } with (opList, contractStorage);
+          } with (#{config.contract_storage});
         """#"
         make_test text_i, text_o
     
@@ -197,14 +189,12 @@ describe "translate ligo section", ()->
       }
       """#"
       text_o = """
-      type state is record
-        #{config.empty_state} : int;
-      end;
+      type state is unit;
       
-      function test (const opList : list(operation); const contractStorage : state; const b0 : bytes) : (list(operation) * state * bytes) is
+      function test (const #{config.contract_storage} : state; const b0 : bytes) : (list(operation) * state * bytes) is
         block {
-          const tmp_0 : bytes = (sha_256(b0));
-        } with (opList, contractStorage, tmp_0);
+          skip
+        } with ((nil: list(operation)), #{config.contract_storage}, (sha_256(b0)));
       """#"
       make_test text_i, text_o
   

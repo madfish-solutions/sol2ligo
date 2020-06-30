@@ -3,6 +3,10 @@ ast = require "ast4gen"
 for k,v of ast
   @[k] = v
 
+# constants for function arguments
+@INPUT_ARGS = 0
+@RETURN_VALUES = 1
+
 # ###################################################################################################
 #    redefine
 # ###################################################################################################
@@ -79,7 +83,6 @@ class @Var_decl
   size  : null
   assign_value      : null
   assign_value_list : null
-  special_type : false
   line  : 0
   pos   : 0
   
@@ -91,7 +94,6 @@ class @Var_decl
     ret.contract_type = @contract_type
     ret.type  = @type.clone() if @type
     ret.size  = @size
-    ret.special_type  = @special_type
     ret.assign_value  = @assign_value.clone() if @assign_value
     if @assign_value_list
       ret.assign_value_list = []
@@ -116,9 +118,7 @@ class @Fn_decl_multiret
   state_mutability : ""
   contract_name : ""
   contract_type : ""
-  should_ret_op_list : false
-  should_modify_storage : false
-  should_ret_args : false
+  
   is_modifier: false
   is_constructor: false
   modifier_list : [] # array<Fn_call>
@@ -142,9 +142,7 @@ class @Fn_decl_multiret
     ret.pos   = @pos
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
-    ret.should_ret_op_list= @should_ret_op_list
-    ret.should_modify_storage= @should_modify_storage
-    ret.should_ret_args= @should_ret_args
+
     ret.contract_name = @contract_name
     ret.contract_type = @contract_type
     ret.is_modifier = @is_modifier
@@ -348,7 +346,6 @@ class @Enum_decl
   clone : ()->
     ret = new module.Enum_decl
     ret.name = @name
-    ret.int_type = @int_type
     for v in @value_list
       ret.value_list.push v.clone()
     ret.line  = @line
@@ -386,6 +383,17 @@ class @Struct_init
       ret.val_list[idx] = v.clone()
     for v,idx in @arg_names
       ret.arg_names[idx] = v
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+class @Include
+  path : ""
+  line  : 0
+  pos   : 0
+  
+  clone : ()->
+    path = ""
     ret.line  = @line
     ret.pos   = @pos
     ret

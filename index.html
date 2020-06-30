@@ -92,6 +92,27 @@
 
     <script>
       window._solc = {}
+      window._require_hash = {};
+      window.require_register = function(file) {
+        var orig_file = file;
+        var ret = {}
+        while(reg_ret = /\/(.*)/.exec(file)) {
+          file = reg_ret[1];
+          if (window._require_hash['./'+file]) {
+            console.error("re-register", './'+file, "orig_file", orig_file);
+            continue;
+          }
+          window._require_hash['./'+file] = ret;
+        }
+        return ret;
+      }
+      window.require = function(file) {
+        file = file.replace(/^(\.\.\/)+/, './');
+        if (!window._require_hash[file]) {
+          throw new Error(`can't require ${file}`)
+        }
+        return window._require_hash[file];
+      }
     </script>
     <script src="web/solc/soljson-v0.4.26+commit.4563c3fc.js"></script>
     <script src="web/solc/soljson-v0.5.11+commit.c082d0b4.js"></script>
@@ -107,9 +128,47 @@
     <script src="web/lib/translate_var_name.js"></script>
     <script src="web/lib/translate_ligo.js"></script>
     <script src="web/lib/translate_ligo_default_state.js"></script>
+    
+    <script src="web/lib/type_inference/common.js"></script>
+    <script src="web/lib/type_inference/stage1.js"></script>
+    <script src="web/lib/type_inference/stage2.js"></script>
     <script src="web/lib/type_inference.js"></script>
+    
+    <script src="web/lib/ast_builder.js"></script>
+    <script src="web/lib/transforms/default_walk.js"></script>
+    <script src="web/lib/transforms/collect_fn_call.js"></script>
+    <script src="web/lib/transforms/placeholder_replace.js"></script>
+    
+    <script src="web/lib/transforms/var_translate.js"></script>
+    <script src="web/lib/transforms/require_distinguish.js"></script>
+    <script src="web/lib/transforms/fix_missing_emit.js"></script>
+    <script src="web/lib/transforms/fix_modifier_order.js"></script>
+    <script src="web/lib/transforms/for3_unpack.js"></script>
+    <script src="web/lib/transforms/math_funcs_convert.js"></script>
+    <script src="web/lib/transforms/ass_op_unpack.js"></script>
+    <script src="web/lib/transforms/modifier_unpack.js"></script>
+    <script src="web/lib/transforms/inheritance_unpack.js"></script>
+    <script src="web/lib/transforms/decl_storage_and_oplist_inject.js"></script>
+    <script src="web/lib/transforms/router_collector.js"></script>
+    <script src="web/lib/transforms/add_router.js"></script>
+    <script src="web/lib/transforms/collect_fn_decl.js"></script>
+    <script src="web/lib/transforms/call_storage_and_oplist_inject.js"></script>
+    <script src="web/lib/transforms/replace_enums_by_nat.js"></script>
+    <script src="web/lib/transforms/intrinsics_converter.js"></script>
+    <script src="web/lib/transforms/erc20_converter.js"></script>
+    <script src="web/lib/transforms/erc721_converter.js"></script>
+    <script src="web/lib/transforms/return_op_list_count.js"></script>
+    <script src="web/lib/transforms/address_calls_converter.js"></script>
+    
     <script src="web/lib/ast_transform.js"></script>
     <script src="web/example_list.js"></script>
+    <script>
+      // NOTE MONACO EDITOR will replace require
+      var solidity_to_ast4gen = require("./solidity_to_ast4gen");
+      var ast_transform = require("./ast_transform");
+      var type_inference = require("./type_inference");
+      var translate_ligo = require("./translate_ligo");
+    </script>
     <!-- MONACO EDITOR -->
     <script
       type="text/javascript"
@@ -141,8 +200,9 @@
           try {
             const solidity_ast = ast_gen(code);
             let ast = solidity_to_ast4gen.gen(solidity_ast);
-            ast = ast_transform.ligo_pack(ast);
+            ast = ast_transform.pre_ti(ast);
             ast = type_inference.gen(ast);
+            ast = ast_transform.post_ti(ast);
             const result = translate_ligo.gen(ast);
             res(result);
           } catch (err) {

@@ -1,5 +1,5 @@
 config = require "./config"
-reserved_hash =
+reserved_map =
   # https://gitlab.com/ligolang/ligo/blob/dev/src/passes/operators/operators.ml
   "get_force"       : true
   "get_chain_id"    : true
@@ -22,7 +22,7 @@ reserved_hash =
   "string_concat"   : true
   "string_slice"    : true
   "crypto_check"    : true
-  "crypto_hash_key" : true
+  "crypto_map_key" : true
   "bytes_concat"    : true
   "bytes_slice"     : true
   "bytes_pack"      : true
@@ -77,8 +77,8 @@ reserved_hash =
   "some"            : true
   
 
-reserved_hash[config.contract_storage] = true
-reserved_hash[config.op_list] = true
+reserved_map[config.contract_storage] = true
+reserved_map[config.op_list] = true
 
 @translate_var_name = (name, ctx)->
   if name[0] == "_"
@@ -90,9 +90,43 @@ reserved_hash[config.op_list] = true
     # make the first letter lowercase
     name = name.substr(0,1).toLowerCase() + name.substr 1
   
-  if name == "@main"
-    "main"
-  else if reserved_hash.hasOwnProperty name
+  # names created from code are preceded with @ so they don't get prepended with "reserved"
+  if name.startsWith "@"
+    name.substr(1)
+  else if reserved_map.hasOwnProperty name
     "#{config.reserved}__#{name}"
+  else
+    name
+
+#########################
+
+spec_id_trans_map =
+  "now"             : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.sender"      : "sender"
+  "tx.origin"       : "source"
+  "block.timestamp" : "abs(now - (\"1970-01-01T00:00:00Z\": timestamp))"
+  "msg.value"       : "(amount / 1mutez)"
+  "abi.encodePacked": ""
+
+bad_spec_id_trans_map =
+  "block.coinbase"  : config.default_address
+  "block.difficulty": "0n"
+  "block.gaslimit"  : "0n"
+  "block.number"    : "0n"
+  "msg.data"        : "(\"00\": bytes)"
+  "msg.gas"         : "0n"
+  "msg.sig"         : "(\"00\": bytes)"
+  "tx.gasprice"     : "0n"
+
+warning_once_map = {}
+@spec_id_translate = (t, name)->
+  if spec_id_trans_map.hasOwnProperty t
+    spec_id_trans_map[t]
+  else if bad_spec_id_trans_map.hasOwnProperty t
+    val = bad_spec_id_trans_map[t]
+    if !warning_once_map.hasOwnProperty t
+      warning_once_map.hasOwnProperty[t] = true
+      perr "CRITICAL WARNING we don't have proper translation for ethereum '#{t}', so it would be translated as '#{val}'. That's incorrect"
+    val
   else
     name
