@@ -49,7 +49,6 @@ walk = (root, ctx)->
         inject.fn = new ast.Var
         inject.fn.name = "@respond"
         inject.arg_list = f.t_list[1..]
-      ctx.has_op_list_decl = true
       root
     
     when "Fn_decl_multiret"
