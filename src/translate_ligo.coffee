@@ -45,10 +45,11 @@ some2nat = (val, type)->
 
 number2bytes = (val, precision = 32)->
   ret = []
+  val = BigInt(val)
   for i in [0 ... precision]
-    hex = val & 0xFF
+    hex = val & BigInt("0xFF")
     ret.push hex.toString(16).rjust 2, "0"
-    val >>= 8
+    val >>= BigInt(8)
   ret.push "0x"
   ret.reverse()
   ret.join ""
