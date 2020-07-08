@@ -1,7 +1,11 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+Type = require "type"
 {translate_var_name, spec_id_translate} = require "./translate_var_name"
+{default_var_map_gen} = require "./type_inference/common"
+ti_map = default_var_map_gen()
+ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
 module.warning_counter = 0
 # ###################################################################################################
@@ -725,16 +729,23 @@ walk = (root, ctx)->
       if not root.left_unpack or fn in ["get_contract", "transaction"]
         call_expr
       else
-        if !root.fn_decl
-          throw new Error "!root.fn_decl #{fn}"
-        {
-          returns_op_list
-          modifies_storage
-          returns_value
-        } = root.fn_decl
+        if root.fn_decl
+          {
+            returns_op_list
+            modifies_storage
+            returns_value
+          } = root.fn_decl
+          {type_o} = root.fn_decl
+        else if type_decl = ti_map[root.fn.name]
+          returns_op_list = false
+          modifies_storage= false
+          returns_value   = type_decl.nest_list[1].nest_list.length > 0
+          type_o          = type_decl.nest_list[1]
+        else
+          throw new Error "!root.fn_decl #{root.fn.name}"
         
         ret_types_list = []
-        for v in root.fn_decl.type_o.nest_list
+        for v in type_o.nest_list
           ret_types_list.push translate_type v, ctx
         
         if ret_types_list.length == 0

@@ -25,14 +25,14 @@ describe "translate ligo section fn api", ()->
     text_o = """
     type state is unit;
     
-    function asserts (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function asserts (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const tokenCount : nat = 4n;
         assert((tokenCount < 5n)) (* "Sample text" *);
         assert((tokenCount = 4n));
         failwith("revert");
         failwith("Should fail");
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -54,10 +54,10 @@ describe "translate ligo section fn api", ()->
       balances : map(address, nat);
     end;
     
-    function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
+    function test (const #{config.contract_storage} : state; const owner : address) : (nat) is
       block {
         assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n)) (* "Overdrawn balance" *);
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (0n);
     """#"
     make_test text_i, text_o
   
@@ -77,13 +77,13 @@ describe "translate ligo section fn api", ()->
     text_o = """
     type state is unit;
     
-    function test2 (const #{config.contract_storage} : state; const b0 : bytes) : (state) is
+    function test2 (const b0 : bytes) : (unit) is
       block {
         const h0 : bytes = sha_256(b0);
         const h1 : bytes = blake2b(b0);
         const h2 : bytes = sha_256(b0);
         const h3 : bytes = sha_256(b0);
-      } with (#{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -108,7 +108,7 @@ describe "translate ligo section fn api", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const a : address = tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg;
         const b : nat = 0n;
@@ -118,7 +118,7 @@ describe "translate ligo section fn api", ()->
         const g : nat = 0n;
         const s : bytes = ("00": bytes);
         const gp : nat = 0n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -140,10 +140,10 @@ describe "translate ligo section fn api", ()->
       balances : map(address, nat);
     end;
     
-    function test (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
+    function test (const #{config.contract_storage} : state; const owner : address) : (nat) is
       block {
         assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n));
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (0n);
     """#"
     make_test text_i, text_o
   
@@ -168,13 +168,13 @@ describe "translate ligo section fn api", ()->
         text_o = """
         type state is unit;
         
-        function test (const #{config.contract_storage} : state; const b0 : bytes) : (state) is
+        function test (const b0 : bytes) : (unit) is
           block {
             const h0 : bytes = sha_256(b0);
             const h1 : bytes = blake2b(b0);
             const h2 : bytes = sha_256(b0);
             const h3 : bytes = sha_256(b0);
-          } with (#{config.contract_storage});
+          } with (unit);
         """#"
         make_test text_i, text_o
     
@@ -191,10 +191,10 @@ describe "translate ligo section fn api", ()->
       text_o = """
       type state is unit;
       
-      function test (const #{config.contract_storage} : state; const b0 : bytes) : (list(operation) * state * bytes) is
+      function test (const b0 : bytes) : (bytes) is
         block {
           skip
-        } with ((nil: list(operation)), #{config.contract_storage}, (sha_256(b0)));
+        } with ((sha_256(b0)));
       """#"
       make_test text_i, text_o
   
