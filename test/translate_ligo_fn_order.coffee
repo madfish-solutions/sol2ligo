@@ -24,10 +24,10 @@ describe "translate ligo section fn order", ()->
     
     (* modifier auth inlined *)
     
-    function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function setAuthority (const #{config.reserved}__unit : unit) : (unit) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -55,15 +55,15 @@ describe "translate ligo section fn order", ()->
     
     (* modifier auth inlined *)
     
-    function isAuthorized (const #{config.contract_storage} : state) : (bool) is
+    function isAuthorized (const #{config.reserved}__unit : unit) : (bool) is
       block {
         skip
       } with (False);
     
-    function setAuthority (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function setAuthority (const #{config.reserved}__unit : unit) : (unit) is
       block {
-        assert(isAuthorized(self));
-      } with ((nil: list(operation)), #{config.contract_storage});
+        assert(isAuthorized(unit));
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -83,14 +83,14 @@ describe "translate ligo section fn order", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         if (False) then block {
-          test(self);
+          test(unit);
         } else block {
           skip
         };
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o, no_ligo:true
   
