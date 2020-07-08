@@ -48,7 +48,6 @@ Type = require "type"
     keccak256     : new Type "function2<function<bytes>,function<bytes32>>"
     ripemd160     : new Type "function2<function<bytes>,function<bytes20>>"
     ecrecover     : new Type "function2<function<bytes, uint8, bytes32, bytes32>,function<address>>"
-    "@respond"    : new Type "function2<function<>,function<>>"
   }
 
 @array_field_map =

@@ -45,7 +45,7 @@ walk = (root, ctx)->
             arg.name = value
             arg.type = func.type_i.nest_list[idx]
           
-          if func.state_mutability == "pure"
+          if func.returns_value
             record.scope.list.push arg = new ast.Var_decl
             arg.name = config.callback_address
             arg.type = new Type "address"
@@ -114,23 +114,76 @@ walk = (root, ctx)->
               match_shoulder.name = arg_name
               match_shoulder.t = arg
           
-          if !func.returns_op_list and func.modifies_storage
+          if !func.returns_value
             _case.scope.need_nest = false
-            _case.scope.list.push ret = new ast.Tuple
-            ret.list.push _var = new ast.Const
-            _var.type = new Type "built_in_op_list"
-            ret.list.push call 
-          else if !func.modifies_storage
-            _case.scope.need_nest = false
-            _case.scope.list.push ret = new ast.Tuple
-            ret.list.push call 
-            ret.list.push _var = new ast.Var
-            _var.type = new Type config.storage
-            _var.name = config.contract_storage
-            _var.name_translate = false
+            # simpliest code is generated
+            if func.returns_op_list and func.modifies_storage
+              _case.scope.list.push call
+            else
+              _case.scope.list.push ret_tuple = new ast.Tuple
+              if !func.returns_op_list
+                ret_tuple.list.push _var = new ast.Const
+                _var.type = new Type "built_in_op_list"
+              ret_tuple.list.push call
+              if !func.modifies_storage
+                ret_tuple.list.push _var = new ast.Var
+                _var.type = new Type config.storage
+                _var.name = config.contract_storage
+                _var.name_translate = false
           else
-            _case.scope.need_nest = false
-            _case.scope.list.push call  
+            _case.scope.need_nest = true
+            # tmp var is needed
+            _case.scope.list.push tmp = new ast.Var_decl
+            tmp.name = "tmp"
+            tmp.assign_value = call
+            tmp.type = func.type_o.clone() # safe deep clone
+            tmp.type.main = "tuple" # rename type function2 -> tuple
+            ret_tuple = new ast.Tuple
+            
+            arg_num = 0
+            if func.returns_op_list
+              ret_tuple.list.push tmp_access = new ast.Field_access
+              tmp_access.name = arg_num.toString()
+              arg_num++
+              tmp_access.t = var_tmp = new ast.Var
+              var_tmp.name = "tmp"
+            else
+              ret_tuple.list.push _var = new ast.Const
+              _var.type = new Type "built_in_op_list"
+            
+            if func.modifies_storage
+              ret_tuple.list.push tmp_access = new ast.Field_access
+              tmp_access.name = arg_num.toString()
+              arg_num++
+              tmp_access.t = var_tmp = new ast.Var
+              var_tmp.name = "tmp"
+            else
+              ret_tuple.list.push _var = new ast.Var
+              _var.type = new Type config.storage
+              _var.name = config.contract_storage
+              _var.name_translate = false
+            
+            ret_val = new ast.Field_access
+            ret_val.name = arg_num.toString()
+            ret_val.t = var_tmp = new ast.Var
+            var_tmp.name = "tmp"
+            
+            _case.scope.list.push proxy_call = new ast.Fn_call
+            proxy_call.fn = new ast.Var
+            if func.returns_op_list
+              ops_extract = new ast.Field_access
+              ops_extract.name = "0"
+              ops_extract.t = var_tmp = new ast.Var
+              var_tmp.name = "tmp"
+              
+              proxy_call.fn.name = "@respond_append"
+              proxy_call.arg_list = [ops_extract, ret_val]
+            else
+              proxy_call.fn.name = "@respond"
+              proxy_call.arg_list = [ret_val]
+            
+            _case.scope.list.push ret = new ast.Ret_multi
+            ret.t_list.push ret_tuple
         root
       else
         ctx.next_gen root, ctx

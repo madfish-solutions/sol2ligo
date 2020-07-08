@@ -123,13 +123,17 @@ class @Fn_decl_multiret
   is_constructor: false
   modifier_list : [] # array<Fn_call>
   
+  returns_op_list : false
+  modifies_storage: false
+  returns_value   : false
+  
   constructor:()->
     @arg_name_list = []
     @scope = new ast.Scope
     @modifier_list = []
     @contract_name = ""
     @contract_type = ""
-    @should_ret_args = false
+  
   clone : ()->
     ret = new module.Fn_decl_multiret
     ret.is_closure  = @is_closure

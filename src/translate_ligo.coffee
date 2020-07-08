@@ -688,8 +688,12 @@ walk = (root, ctx)->
           
           when "@respond"
             perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-            # p root
             return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
+          
+          when "@respond_append"
+            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, #{config.receiver_name}) end)"
+          
           else
             fn = root.fn.name
       else
