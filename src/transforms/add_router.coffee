@@ -38,12 +38,14 @@ walk = (root, ctx)->
           root.scope.list.push record = new ast.Class_decl
           record.name = func2args_struct func.name
           record.namespace_name = false
-          for value,idx in func.arg_name_list
-            if func.state_mutability != "pure"
-              continue if idx < 1
+          start = 0
+          start++ if func.uses_storage
+          start++ if func.returns_op_list
+          
+          for value,idx in func.arg_name_list[start..]
             record.scope.list.push arg = new ast.Var_decl
             arg.name = value
-            arg.type = func.type_i.nest_list[idx]
+            arg.type = func.type_i.nest_list[start+idx]
           
           if func.returns_value
             record.scope.list.push arg = new ast.Var_decl
@@ -89,8 +91,8 @@ walk = (root, ctx)->
           _case.var_decl.type = new Type _case.struct_name
           
           call = new ast.Fn_call
+          call.left_unpack = false
           call.fn = new ast.Var
-          call.fn.left_unpack = true
           call.fn.name = func.name
           # NOTE that PM_switch is ignored by type inference
           # BUG. Type inference should resolve this fn properly
@@ -100,23 +102,30 @@ walk = (root, ctx)->
           call.fn.type.nest_list[0] = func.type_i
           call.fn.type.nest_list[1] = func.type_o
           for arg_name,idx in func.arg_name_list
-            if arg_name == "self"
-              arg = new ast.Var
-              arg.name = arg_name
-              arg.type = new Type config.storage
-              arg.name_translate = false
-              call.arg_list.push arg
-            else
-              arg = new ast.Var
-              arg.name = _case.var_decl.name
-              arg.type = _case.var_decl.type
-              call.arg_list.push match_shoulder = new ast.Field_access
-              match_shoulder.name = arg_name
-              match_shoulder.t = arg
+            switch arg_name
+              when config.contract_storage
+                arg = new ast.Var
+                arg.name = arg_name
+                arg.type = new Type config.storage
+                arg.name_translate = false
+                call.arg_list.push arg
+              when config.op_list
+                arg = new ast.Const
+                arg.type = new Type "built_in_op_list"
+                call.arg_list.push arg
+              else
+                arg = new ast.Var
+                arg.name = _case.var_decl.name
+                arg.type = _case.var_decl.type
+                call.arg_list.push match_shoulder = new ast.Field_access
+                match_shoulder.name = arg_name
+                match_shoulder.t = arg
           
-          if !func.returns_value
-            _case.scope.need_nest = false
+          
+          if !func.returns_value and (func.returns_op_list or func.modifies_storage)
+            # without block
             # simpliest code is generated
+            _case.scope.need_nest = false
             if func.returns_op_list and func.modifies_storage
               _case.scope.list.push call
             else
@@ -131,8 +140,13 @@ walk = (root, ctx)->
                 _var.name = config.contract_storage
                 _var.name_translate = false
           else
+            # with block
             _case.scope.need_nest = true
-            # tmp var is needed
+            if !func.returns_value
+              _case.scope.list.push comment = new ast.Comment
+              comment.text = "This function does nothing, but it's present in router"
+              perr "WARNING. Some function does nothing, but it's present in router"
+            # tmp var is needed in any case
             _case.scope.list.push tmp = new ast.Var_decl
             tmp.name = "tmp"
             tmp.assign_value = call
@@ -141,46 +155,57 @@ walk = (root, ctx)->
             ret_tuple = new ast.Tuple
             
             arg_num = 0
-            if func.returns_op_list
-              ret_tuple.list.push tmp_access = new ast.Field_access
+            access_gen = ()->
+              tmp_access = new ast.Field_access
+              tmp_access.type = tmp.type.nest_list[arg_num]
               tmp_access.name = arg_num.toString()
               arg_num++
               tmp_access.t = var_tmp = new ast.Var
               var_tmp.name = "tmp"
+              tmp_access
+            # fix tuple size 1
+            if +func.returns_op_list + +func.modifies_storage + +func.returns_value == 1
+              access_gen = ()->
+                var_tmp = new ast.Var
+                var_tmp.name = "tmp"
+                var_tmp.type = tmp.type.nest_list[0]
+                var_tmp
+            
+            if func.returns_op_list
+              ret_tuple.list.push access_gen()
             else
-              ret_tuple.list.push _var = new ast.Const
-              _var.type = new Type "built_in_op_list"
+              if func.returns_value
+                ret_tuple.list.push _var = new ast.Var
+                _var.name = config.op_list
+              else
+                ret_tuple.list.push _var = new ast.Const
+                _var.type = new Type "built_in_op_list"
             
             if func.modifies_storage
-              ret_tuple.list.push tmp_access = new ast.Field_access
-              tmp_access.name = arg_num.toString()
-              arg_num++
-              tmp_access.t = var_tmp = new ast.Var
-              var_tmp.name = "tmp"
+              ret_tuple.list.push access_gen()
             else
               ret_tuple.list.push _var = new ast.Var
               _var.type = new Type config.storage
               _var.name = config.contract_storage
               _var.name_translate = false
             
-            ret_val = new ast.Field_access
-            ret_val.name = arg_num.toString()
-            ret_val.t = var_tmp = new ast.Var
-            var_tmp.name = "tmp"
+            arg_num = 0
+            ret_val = access_gen()
             
-            _case.scope.list.push proxy_call = new ast.Fn_call
-            proxy_call.fn = new ast.Var
-            if func.returns_op_list
-              ops_extract = new ast.Field_access
-              ops_extract.name = "0"
-              ops_extract.t = var_tmp = new ast.Var
-              var_tmp.name = "tmp"
-              
-              proxy_call.fn.name = "@respond_append"
-              proxy_call.arg_list = [ops_extract, ret_val]
-            else
-              proxy_call.fn.name = "@respond"
-              proxy_call.arg_list = [ret_val]
+            if func.returns_value
+              _case.scope.list.push proxy_call = new ast.Fn_call
+              proxy_call.fn = new ast.Var
+              if func.returns_op_list
+                ops_extract = new ast.Field_access
+                ops_extract.name = "0"
+                ops_extract.t = var_tmp = new ast.Var
+                var_tmp.name = "tmp"
+                
+                proxy_call.fn.name = "@respond_append"
+                proxy_call.arg_list = [ops_extract, ret_val]
+              else
+                proxy_call.fn.name = "@respond"
+                proxy_call.arg_list = [ret_val]
             
             _case.scope.list.push ret = new ast.Ret_multi
             ret.t_list.push ret_tuple

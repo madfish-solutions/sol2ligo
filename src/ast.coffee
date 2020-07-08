@@ -61,7 +61,6 @@ class @Var
   name  : ""
   name_translate: true
   type  : null
-  left_unpack  : false
   line  : 0
   pos   : 0
   
@@ -70,7 +69,6 @@ class @Var
     ret.name  = @name
     ret.type  = @type.clone() if @type
     ret.line  = @line
-    ret.left_unpack  = @left_unpack
     ret.pos   = @pos
     ret
 
@@ -83,6 +81,7 @@ class @Var_decl
   size  : null
   assign_value      : null
   assign_value_list : null
+  is_enum_decl : false
   line  : 0
   pos   : 0
   
@@ -99,6 +98,55 @@ class @Var_decl
       ret.assign_value_list = []
       for v in @assign_value_list
         ret.assign_value_list.push v.clone()
+    ret.is_enum_decl  = @is_enum_decl
+    ret.line  = @line
+    ret.pos   = @pos
+    ret
+
+
+class @Fn_call
+  fn        : null
+  arg_list  : []
+  splat_fin : false
+  type      : null
+  left_unpack  : true
+  fn_decl   : null
+  line  : 0
+  pos   : 0
+  constructor:()->
+    @arg_list = []
+  
+  validate : (ctx = new module.Validation_context)->
+    if !@fn
+      throw new Error "Fn_call validation error line=#{@line} pos=#{@pos}. fn missing"
+    @fn.validate(ctx)
+    if @fn.type.main != "function"
+      throw new Error "Fn_call validation error line=#{@line} pos=#{@pos}. Can't call type '@fn.type'. You can call only function"
+    
+    if !@type.cmp void_type
+      type_validate @type, ctx
+    
+    if !@type.cmp @fn.type.nest_list[0]
+      throw new Error "Fn_call validation error line=#{@line} pos=#{@pos}. Return type and function decl return type doesn't match #{@fn.type.nest_list[0]} != #{@type}"
+    
+    if @fn.type.nest_list.length-1 != @arg_list.length
+      throw new Error "Fn_call validation error line=#{@line} pos=#{@pos}. Expected arg count=#{@fn.type.nest_list.length-1} found=#{@arg_list.length}"
+    
+    for arg,k in @arg_list
+      arg.validate(ctx)
+      if !@fn.type.nest_list[k+1].cmp arg.type
+        throw new Error "Fn_call validation error line=#{@line} pos=#{@pos}. arg[#{k}] type mismatch. Expected=#{@fn.type.nest_list[k+1]} found=#{arg.type}"
+    return
+  
+  clone : ()->
+    ret = new module.Fn_call
+    ret.fn    = @fn.clone()
+    for v in @arg_list
+      ret.arg_list.push v.clone()
+    ret.splat_fin = @splat_fin
+    ret.type  = @type.clone() if @type
+    ret.left_unpack  = @left_unpack
+    ret.fn_decl      = @fn_decl
     ret.line  = @line
     ret.pos   = @pos
     ret
@@ -124,6 +172,7 @@ class @Fn_decl_multiret
   modifier_list : [] # array<Fn_call>
   
   returns_op_list : false
+  uses_storage    : false
   modifies_storage: false
   returns_value   : false
   

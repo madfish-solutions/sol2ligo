@@ -10,17 +10,17 @@ do () =>
       switch root.constructor.name
         when "Scope"
           if root.original_node_type == "SourceUnit"
-            ctx.enums_map = {}
+            ctx.enums_map = new Map
             ctx.new_declarations = []
             root = ctx.next_gen root, ctx
             # prepend collected declarations to global scope
             root.list = ctx.new_declarations.concat root.list
-            root          
+            root
           else
             ctx.next_gen root, ctx
         
         when "Enum_decl"
-          ctx.enums_map[root.name] = true
+          ctx.enums_map.set root.name, true
           for value, idx in root.value_list
             decl = new ast.Var_decl
             decl.name = "#{root.name}_#{value.name}"
@@ -28,6 +28,8 @@ do () =>
             decl.assign_value = new ast.Const
             decl.assign_value.type = new Type "uint"
             decl.assign_value.val = idx
+            decl.assign_value.val = idx
+            decl.is_enum_decl = true
             ctx.new_declarations.push decl
           
           ret = new ast.Comment
@@ -38,16 +40,16 @@ do () =>
           if root.type
             if root.type.main == "map"
               for type, idx in root.type?.nest_list
-                if ctx.enums_map.hasOwnProperty type.main
+                if ctx.enums_map.has type.main
                   root.type.nest_list[idx] = new Type "uint"
             else
-              if ctx.enums_map.hasOwnProperty root.type.main
+              if ctx.enums_map.has root.type.main
                 root.type = new Type "uint"
           ctx.next_gen root, ctx
 
         when "Field_access"
           if root.t.constructor.name == "Var"
-            if ctx.enums_map.hasOwnProperty root.t.name
+            if ctx.enums_map.has root.t.name
               v = new ast.Var
               v.name = "#{root.t.name}_#{root.name}"
               v.type = new Type "nat"
