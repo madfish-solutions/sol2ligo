@@ -4,7 +4,7 @@ config = require("../src/config")
 } = require("./util")
 
 
-describe "translate ligo section stmt SEARCH", ()->
+describe "translate ligo section stmt", ()->
   @timeout 10000
   # ###################################################################################################
   #    stmt
