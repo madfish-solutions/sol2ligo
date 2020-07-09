@@ -28,7 +28,6 @@ do () =>
             decl.assign_value = new ast.Const
             decl.assign_value.type = new Type "uint"
             decl.assign_value.val = idx
-            decl.assign_value.val = idx
             decl.is_enum_decl = true
             ctx.new_declarations.push decl
           
