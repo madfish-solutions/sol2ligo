@@ -296,7 +296,7 @@ describe "translate ligo section var type", ()->
       #{config.reserved}__#{config.contract_storage} : nat;
     end;
     
-    function test (const #{config.reserved}__unit : unit) : (unit) is
+    function test (const #{config.contract_storage} : #{config.storage}) : (unit) is
       block {
         const a : nat = #{config.contract_storage}.#{config.reserved}__#{config.contract_storage};
       } with (unit);

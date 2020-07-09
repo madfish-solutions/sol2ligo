@@ -28,20 +28,20 @@ describe "translate ligo section inheritance", ()->
     text_o = """
     type state is unit;
     
-    function one (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
+    function one (const i : nat) : (unit) is
       block {
         i := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     
-    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function constructor (const #{config.reserved}__unit : unit) : (unit) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     
-    function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
+    function #{config.reserved}__some (const i : nat) : (unit) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -69,20 +69,20 @@ describe "translate ligo section inheritance", ()->
     text_o = """
     type state is unit;
     
-    function ownable_constructor (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
+    function ownable_constructor (const i : nat) : (unit) is
       block {
         i := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     
-    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function constructor (const #{config.reserved}__unit : unit) : (unit) is
       block {
         ownable_constructor(self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     
-    function #{config.reserved}__some (const #{config.contract_storage} : state; const i : nat) : (list(operation) * state) is
+    function #{config.reserved}__some (const i : nat) : (unit) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   

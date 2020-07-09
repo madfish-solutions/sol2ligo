@@ -18,7 +18,8 @@ walk = (root, ctx)->
           root.a = walk root.a, ctx_lvalue
       
       root.a = walk root.a, ctx
-      root  
+      root
+    
     when "Bin_op"
       if /^ASS/.test root.op
         ctx_lvalue = clone ctx
@@ -80,8 +81,21 @@ walk = (root, ctx)->
               root.fn_decl = nest_fn
           
           when "Field_access"
-            # e.g. arr.push(10)
-            if root.fn.name == "push"
+            if root.fn.t.constructor.name == "Var" and root.fn.t.name == "this"
+              if nest_fn = ctx.fn_decl_map.get root.fn.name
+                if nest_fn.returns_op_list and !ctx.returns_op_list.val
+                  ctx.returns_op_list.val = true
+                  ctx.change_count.val++
+                if nest_fn.uses_storage.val and !ctx.uses_storage.val
+                  ctx.uses_storage.val = true
+                  ctx.change_count.val++
+                if nest_fn.modifies_storage.val and !ctx.modifies_storage.val
+                  ctx.modifies_storage.val = true
+                  ctx.change_count.val++
+                
+                root.fn_decl = nest_fn
+            else if root.fn.name == "push"
+              # e.g. arr.push(10)
               ctx_lvalue = clone ctx
               ctx_lvalue.lvalue = true
               root.fn = walk root.fn, ctx_lvalue

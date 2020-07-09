@@ -742,7 +742,8 @@ walk = (root, ctx)->
           returns_value   = type_decl.nest_list[1].nest_list.length > 0
           type_o          = type_decl.nest_list[1]
         else
-          throw new Error "!root.fn_decl #{root.fn.name}"
+          perr "WARNING !root.fn_decl #{root.fn.name}"
+          return call_expr
         
         ret_types_list = []
         for v in type_o.nest_list
