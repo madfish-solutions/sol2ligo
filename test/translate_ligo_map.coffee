@@ -100,3 +100,29 @@ describe "translate ligo section map", ()->
     
     """ #"
     make_test text_i, text_o
+
+  it "array nested in map", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract NestedArrays {
+        mapping (address => uint[]) nested_mapping;
+
+        function nest(uint dummy) public {
+            nested_mapping[address(0)] = [0];
+        }
+    }
+    """#"
+    text_o = """
+    type state is record
+      nested_mapping : map(address, map(nat, nat));
+    end;
+
+    function nest (const self : state; const dummy : nat) : (state) is
+      block {
+        self.nested_mapping[("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)] := map
+          0n -> 0n;
+        end;
+      } with (self);
+    """ #"
+    make_test text_i, text_o
