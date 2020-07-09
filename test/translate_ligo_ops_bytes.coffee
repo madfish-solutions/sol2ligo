@@ -106,3 +106,26 @@ describe "translate ligo section ops bytes", ()->
       } with (unit);
     """
     make_test text_i, text_o
+
+  it "larger byte literals", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract BytesTest {
+        function test0() public {
+          bytes30 b1 = 0x1034a34234;
+          bytes30 b2 = 0xee1034a34234;
+        }
+    }
+    """#"
+    
+    text_o = """
+    type state is unit;
+    
+    function test0 (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const b1 : bytes = 0x000000000000000000000000000000000000000000000000001034a34234;
+        const b2 : bytes = 0x000000000000000000000000000000000000000000000000ee1034a34234;
+      } with (unit);
+    """
+    make_test text_i, text_o
