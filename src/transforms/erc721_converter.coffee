@@ -20,13 +20,14 @@ astBuilder = require "../ast_builder"
 # function isApprovedForAll(address _owner, address _operator) external view returns (bool); -> Is_operator(record [ operator = record [ owner = arg[0], operator = arg[1] ], callback = Tezos.self("%is_operator_callback") ])
 
 declare_callback = (name, fn, ctx) ->
-  if not ctx.callbacks_to_declare.hasOwnProperty name
+  if not ctx.callbacks_to_declare_map.has name
     # TODO why are we using nest_list of nest_list?
     return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
     cb_decl = astBuilder.callback_declaration(name, return_type)
-    ctx.callbacks_to_declare[name] = cb_decl # no "Callback" suffix for key
+    ctx.callbacks_to_declare_map[name] = cb_decl # no "Callback" suffix for key
 
 tx_node = (address_expr, arg_list, name, ctx) ->
+  address_expr = astBuilder.contract_addr_transform address_expr
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
@@ -52,9 +53,9 @@ walk = (root, ctx)->
               return ret
       
       # collect callback declaration dummies
-      ctx.callbacks_to_declare = {}
+      ctx.callbacks_to_declare_map = new Map
       root = ctx.next_gen root, ctx
-      for name, decl of ctx.callbacks_to_declare
+      ctx.callbacks_to_declare_map.forEach (decl)->
         root.scope.list.unshift decl
       return root
 

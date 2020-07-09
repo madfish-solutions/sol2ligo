@@ -62,18 +62,17 @@ describe "erc20 conversions", ()->
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
       block {
         const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
-        const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetTotalSupply)));
-        const bal : nat = const op1 : operation = transaction((Tezos.sender, Tezos.self("%GetBalanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetBalance)));
-        const allowance : nat = const op2 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
-        const op3 : operation = transaction((Tezos.sender, 0x0, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
-        const op4 : operation = transaction((Tezos.sender, Tezos.sender, 50n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Transfer)));
-        const op5 : operation = transaction((Tezos.sender, 5n), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(Approve)));
+        const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetTotalSupply)));
+        const bal : nat = const op1 : operation = transaction((Tezos.sender, Tezos.self("%GetBalanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetBalance)));
+        const allowance : nat = const op2 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
+        const op3 : operation = transaction((Tezos.sender, 0x0, 50n), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Transfer)));
+        const op4 : operation = transaction((Tezos.sender, Tezos.sender, 50n), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Transfer)));
+        const op5 : operation = transaction((Tezos.sender, 5n), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Approve)));
       } with (list [op0; op1; op2; op3; op4; op5]);
     """#"
     make_test text_i, text_o
 
   it "callback dummy declaration", ()->
-    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
     text_i = """
     pragma solidity ^0.4.16;
 
@@ -103,7 +102,7 @@ describe "erc20 conversions", ()->
 
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
       block {
-        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
       } with (list [op0]);
 
     function main (const action : router_enum; const self : state) : (list(operation) * state) is
@@ -118,7 +117,6 @@ describe "erc20 conversions", ()->
     make_test text_i, text_o, router: true
 
   it "mixed address and erc20 calls", ()->
-    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
     text_i = """
     pragma solidity ^0.4.16;
 
@@ -142,7 +140,7 @@ describe "erc20 conversions", ()->
 
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
       block {
-        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(ERC20TokenFace(0x0)) : contract(GetAllowance)));
+        const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(sender) : contract(unit)));
       } with (list [op0; op1]);
     """#"

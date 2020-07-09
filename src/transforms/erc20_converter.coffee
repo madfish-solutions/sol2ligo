@@ -30,6 +30,7 @@ callback_declaration = (name, arg_type) ->
   return cb_decl
 
 tx_node = (address_expr, arg_list, name, ctx) ->
+  address_expr = astBuilder.contract_addr_transform address_expr
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
@@ -38,15 +39,15 @@ callback_tx_node = (name, root, ctx) ->
   cb_name = name + "Callback"
   return_callback = astBuilder.self_entrypoint("%" + cb_name)
 
-  if not ctx.callbacks_to_declare.hasOwnProperty cb_name
+  if not ctx.callbacks_to_declare_map.has cb_name
     # TODO why are we using nest_list of nest_list?
     return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
     cb_decl = callback_declaration(name, return_type)
-    ctx.callbacks_to_declare[cb_name] = cb_decl
+    ctx.callbacks_to_declare_map.set cb_name, cb_decl
 
   arg_list = root.arg_list
   arg_list.push return_callback
-  address_expr = root.fn.t
+  address_expr = astBuilder.contract_addr_transform root.fn.t
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
@@ -70,9 +71,9 @@ walk = (root, ctx)->
               return ret
       
       # collect callback declaration dummies
-      ctx.callbacks_to_declare = {}
+      ctx.callbacks_to_declare_map = new Map
       root = ctx.next_gen root, ctx
-      for name, decl of ctx.callbacks_to_declare
+      ctx.callbacks_to_declare_map.forEach (decl)->
         root.scope.list.unshift decl
       return root
 

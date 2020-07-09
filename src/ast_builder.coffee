@@ -29,6 +29,16 @@ ast = require "./ast"
   ret.b.type = new Type "mutez"
   return ret
 
+@contract_addr_transform = (in_addr_expr)->
+  if in_addr_expr.type.main == "struct" and in_addr_expr.arg_list.length == 1
+    address_expr = new ast.Type_cast
+    address_expr.t = in_addr_expr.arg_list[0]
+    address_expr.target_type = new Type "address"
+  else
+    # fallback
+    address_expr = in_addr_expr
+  address_expr
+  
 @transaction = (input_args, entrypoint_expr, cost) ->
   inject = new ast.Fn_call
   inject.fn = new ast.Var
