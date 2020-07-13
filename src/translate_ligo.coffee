@@ -1,7 +1,11 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+Type = require "type"
 {translate_var_name, spec_id_translate} = require "./translate_var_name"
+{default_var_map_gen} = require "./type_inference/common"
+ti_map = default_var_map_gen()
+ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
 module.warning_counter = 0
 # ###################################################################################################
@@ -231,7 +235,10 @@ number2bytes = (val, precision = 32)->
       list = []
       for v in type.nest_list
         list.push translate_type v, ctx
-      "(#{list.join ' * '})"
+      if list.length == 0
+        "unit"
+      else
+        "(#{list.join ' * '})"
     
     when "map"
       key   = translate_type type.nest_list[0], ctx
@@ -339,6 +346,8 @@ class @Gen_context
   
   contract          : false
   trim_expr         : ""
+  terminate_expr_check    : ""
+  terminate_expr_replace_fn: null
   storage_sink_list : {}
   sink_list         : []
   type_decl_sink_list: []
@@ -447,6 +456,9 @@ walk = (root, ctx)->
               if ctx.trim_expr == code
                 ctx.trim_expr = ""
                 continue
+              if ctx.terminate_expr_check == code
+                ctx.terminate_expr_check = ""
+                code = ctx.terminate_expr_replace_fn()
               if code
                 if v.constructor.name not in ["Comment", "Scope"]
                   code += ";" if !/;$/.test code
@@ -688,34 +700,90 @@ walk = (root, ctx)->
             fn = "ecrecover"
           
           when "@respond"
+            type_list = []
+            for v in root.arg_list
+              type_list.push translate_type v.type, ctx
+            type_str = type_list.join " * "
+            # TODO config match_action, config.callback_address
             perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-            # p root
-            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str}))) end"
+          
+          when "@respond_append"
+            type_list = []
+            for v in root.arg_list
+              type_list.push translate_type v.type, ctx
+            type_str = type_list.join " * "
+            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str})) end)"
+          
           else
             fn = root.fn.name
       else
         fn = walk root.fn, ctx
-    
+      
       if arg_list.length == 0
         arg_list.push "unit"
       
-      ret_types_list = []
-      # type can be null
-      # type can be contract name, so no nest_list
-      return_types = root.fn.type?.nest_list[1]
-      for v in return_types?.nest_list or []
-        ret_types_list.push translate_type v, ctx
       
-      tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
-
-      if not root.left_unpack
-        "#{call_expr}"
+      
+      if not root.left_unpack or fn in ["get_contract", "transaction"]
+        call_expr
       else
-        if ret_types_list.length == 1
-          ctx.sink_list.push "const #{tmp_var} : #{ret_types_list[0]} = #{call_expr}"
+        if root.fn_decl
+          {
+            returns_op_list
+            modifies_storage
+            returns_value
+          } = root.fn_decl
+          {type_o} = root.fn_decl
+        else if type_decl = ti_map[root.fn.name]
+          returns_op_list = false
+          modifies_storage= false
+          returns_value   = type_decl.nest_list[1].nest_list.length > 0
+          type_o          = type_decl.nest_list[1]
         else
-          ctx.sink_list.push "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+          perr "WARNING !root.fn_decl #{root.fn.name}"
+          return call_expr
+        
+        ret_types_list = []
+        for v in type_o.nest_list
+          ret_types_list.push translate_type v, ctx
+        
+        if ret_types_list.length == 0
+          call_expr
+        else if ret_types_list.length == 1 and returns_value
+          ctx.terminate_expr_replace_fn = ()->
+            perr "WARNING #{call_expr} was terminated with dummy var_decl"
+            tmp_var = "terminate_tmp_#{ctx.tmp_idx++}"
+            "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+          ctx.terminate_expr_check = call_expr
+        else
+          if ret_types_list.length == 1
+            # no tmp_var
+            if returns_op_list
+              "#{config.op_list} := #{call_expr}"
+            else if modifies_storage
+              "#{config.contract_storage} := #{call_expr}"
+            else
+              throw new Error "WTF !returns_op_list !modifies_storage"
+          else
+            tmp_var = "tmp_#{ctx.tmp_idx++}"
+            ctx.sink_list.push "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+            
+            arg_num = 0
+            get_tmp = ()->
+              if ret_types_list.length == 1
+                tmp_var
+              else
+                "#{tmp_var}.#{arg_num++}"
+            
+            if returns_op_list
+              ctx.sink_list.push "#{config.op_list} := #{get_tmp()}"
+            if modifies_storage
+              ctx.sink_list.push "#{config.contract_storage} := #{get_tmp()}"
+              
+            ctx.trim_expr = get_tmp()
     
     when "Struct_init"
       arg_list = []
@@ -828,7 +896,8 @@ walk = (root, ctx)->
       jl = []
       for v,idx in root.t_list
         jl.push walk v, ctx
-        
+      
+      jl.push "unit" if jl.length == 0
       """
       with (#{jl.join ', '})
       """
@@ -854,7 +923,7 @@ walk = (root, ctx)->
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
-      for _case in root.scope.list        
+      for _case in root.scope.list
         case_scope = walk _case.scope, ctx
         case_scope = case_scope[0..-2] if /;$/.test case_scope
         
@@ -884,6 +953,8 @@ walk = (root, ctx)->
       for v in root.type_o.nest_list
         type = translate_type v, ctx
         ret_jl.push "#{type}"
+      
+      ret_jl.push "unit" if ret_jl.length == 0
       
       body = walk root.scope, ctx
       """
@@ -920,7 +991,7 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-              field_decl_jl.push walk v, ctx
+            field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_map[v.name] = v

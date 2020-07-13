@@ -27,10 +27,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.reserved}__unit : unit) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (0n);
     
     """
     make_test text_i, text_o
@@ -52,10 +52,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.reserved}__unit : unit) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (0n);
     
     """
     make_test text_i, text_o
@@ -77,10 +77,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.contract_storage} : state) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, size(#{config.contract_storage}.storageArray));
+      } with (size(#{config.contract_storage}.storageArray));
     
     """
     make_test text_i, text_o
@@ -102,10 +102,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.contract_storage} : state) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, size(#{config.contract_storage}.storageArray));
+      } with (size(#{config.contract_storage}.storageArray));
     
     """
     make_test text_i, text_o
@@ -128,11 +128,11 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.contract_storage} : state) : (state * nat) is
       block {
         const tmp_0 : map(nat, int) = #{config.contract_storage}.storageArray;
         tmp_0[size(tmp_0)] := 0;
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (#{config.contract_storage}, 0n);
     
     """
     make_test text_i, text_o
@@ -155,7 +155,7 @@ describe "translate ligo section array", ()->
       arr : map(nat, int);
     end;
 
-    function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function expr (const #{config.contract_storage} : state) : (state) is
       block {
         const memArr : map(nat, nat) = map
           0n -> 0n;
@@ -163,7 +163,7 @@ describe "translate ligo section array", ()->
         #{config.contract_storage}.arr := map
           0n -> 0;
         end;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (#{config.contract_storage});
     """
     make_test text_i, text_o
 
@@ -189,7 +189,7 @@ describe "translate ligo section array", ()->
     text_o = """
     type state is unit;
 
-    function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function expr (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const foo1 : map(nat, nat) = map
           0n -> 0n;
@@ -219,7 +219,7 @@ describe "translate ligo section array", ()->
           3n -> int(abs(0));
           4n -> int(abs(0));
         end;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -241,10 +241,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function array (const #{config.contract_storage} : state) : (state * nat) is
       block {
         remove 0n from map #{config.contract_storage}.storageArray;
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (#{config.contract_storage}, 0n);
     
     """
     make_test text_i, text_o
@@ -262,13 +262,13 @@ describe "translate ligo section array", ()->
     text_o = """
     type state is unit;
     
-    function inlineArray (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function inlineArray (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const temp : map(nat, nat) = map
           0n -> abs(1);
           1n -> 2n;
           2n -> 3n;
         end;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o

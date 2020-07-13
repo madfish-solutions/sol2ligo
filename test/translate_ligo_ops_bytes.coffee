@@ -35,10 +35,10 @@ describe "translate ligo section ops bytes", ()->
             value : bytes;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * bytes) is
+          function expr (const #{config.reserved}__unit : unit) : (bytes) is
             block {
               const a : bytes = 0x#{'00'.repeat count};
-            } with ((nil: list(operation)), #{config.contract_storage}, a);
+            } with (a);
         """
         make_test text_i, text_o
   
@@ -65,13 +65,13 @@ describe "translate ligo section ops bytes", ()->
     text_o = """
     type state is unit;
     
-    function test0 (const #{config.contract_storage} : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes; const b4 : bytes; const b5 : bytes) : (list(operation) * state) is
+    function test0 (const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes; const b4 : bytes; const b5 : bytes) : (unit) is
       block {
         assert((b0 <= b1));
         assert((b2 > b3));
         assert((b4 >= b5));
         assert(((b4 : bytes) < b5));
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -97,13 +97,13 @@ describe "translate ligo section ops bytes", ()->
     text_o = """
     type state is unit;
     
-    function test2 (const #{config.contract_storage} : state; const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes) : (state) is
+    function test2 (const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes) : (unit) is
       block {
         const bts : bytes = ("00": bytes) (* args: 0 *);
         b0 := b1;
         b2 := b3;
         b3 := ("00": bytes) (* args: 15 *);
-      } with (#{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
 
@@ -122,10 +122,10 @@ describe "translate ligo section ops bytes", ()->
     text_o = """
     type state is unit;
     
-    function test0 (const self : state) : (list(operation) * state) is
+    function test0 (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const b1 : bytes = 0x000000000000000000000000000000000000000000000000001034a34234;
         const b2 : bytes = 0x000000000000000000000000000000000000000000000000ee1034a34234;
-      } with ((nil: list(operation)), self);
+      } with (unit);
     """
     make_test text_i, text_o

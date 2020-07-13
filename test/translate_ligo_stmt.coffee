@@ -31,12 +31,12 @@ describe "translate ligo section stmt", ()->
         const len : nat = 0n;
       } with ((addr, len));
     
-    function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__main (const test_reserved_long___self : bytes; const other : bytes) : (unit) is
       block {
-        const tmp_1 : (nat * nat) = fromBytes(test_reserved_long___self);
-        const src : nat = tmp_1.0;
-        const srcLen : nat = tmp_1.1;
-      } with ((nil: list(operation)), #{config.contract_storage});
+        const tmp_0 : (nat * nat) = fromBytes(test_reserved_long___self);
+        const src : nat = tmp_0.0;
+        const srcLen : nat = tmp_0.1;
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -65,7 +65,7 @@ describe "translate ligo section stmt", ()->
       value : nat;
     end;
     
-    function ifer (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function ifer (const #{config.contract_storage} : #{config.storage}) : (nat) is
       block {
         const x : nat = 5n;
         const ret : nat = 0n;
@@ -74,7 +74,7 @@ describe "translate ligo section stmt", ()->
         } else block {
           ret := 0n;
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, ret);
+      } with (ret);
     
     """
     make_test text_i, text_o
@@ -97,13 +97,13 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function whiler (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
+    function whiler (const owner : address) : (int) is
       block {
         const i : int = 0;
         while (i < 5) block {
           i := (i + 1);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (i);
     """
     make_test text_i, text_o
   
@@ -127,7 +127,7 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const owner : address) : (int) is
       block {
         const i : int = 0;
         i := 2;
@@ -135,7 +135,7 @@ describe "translate ligo section stmt", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (i);
     """
     make_test text_i, text_o
   
@@ -156,14 +156,14 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const owner : address) : (int) is
       block {
         const i : int = 0;
         while (i < 5) block {
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (i);
     """
     make_test text_i, text_o
   
@@ -184,7 +184,7 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const owner : address) : (int) is
       block {
         const i : int = 0;
         i := 2;
@@ -192,7 +192,7 @@ describe "translate ligo section stmt", ()->
           i := (i + 1);
           i := (i + 10);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (i);
     """
     make_test text_i, text_o
   
@@ -213,14 +213,14 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function forer (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * int) is
+    function forer (const owner : address) : (int) is
       block {
         const i : int = 0;
         i := 2;
         while (i < 5) block {
           i := (i + 1);
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, i);
+      } with (i);
     """
     make_test text_i, text_o
   
@@ -239,7 +239,7 @@ describe "translate ligo section stmt", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+    function test (const #{config.reserved}__unit : unit) : (int) is
       block {
         const i : nat = 0n;
         while (False) block {
@@ -249,7 +249,7 @@ describe "translate ligo section stmt", ()->
             skip
           };
         };
-      } with ((nil: list(operation)), #{config.contract_storage}, 0);
+      } with (0);
     """
     make_test text_i, text_o
   

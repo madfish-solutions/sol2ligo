@@ -22,10 +22,10 @@ describe "translate ligo section address", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state; const target : address) : (list(operation) * state) is
+    function test (const opList : list(operation); const target : address) : (list(operation)) is
       block {
-        const op0 : operation = transaction((unit), (1n * 1mutez), (get_contract(target) : contract(unit)));
-      } with (list [op0], #{config.contract_storage});
+        opList := cons(opList, list transaction((unit), (1n * 1mutez), (get_contract(target) : contract(unit))) end);
+      } with (opList);
     """
     make_test text_i, text_o
   

@@ -45,7 +45,7 @@ describe "translate ligo section ops", ()->
             ret : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+          function expr (const #{config.contract_storage} : state) : (state) is
             block {
               const a : nat = 0n;
               const c : nat = 0n;
@@ -64,14 +64,13 @@ describe "translate ligo section ops", ()->
               a := abs(a - 1n);
               c := a;
               #{config.contract_storage}.ret := c;
-            } with ((nil: list(operation)), #{config.contract_storage});
+            } with (#{config.contract_storage});
           
-          function getRet (const self : state; const receiver : contract(nat)) : (list(operation)) is
+          function getRet (const #{config.contract_storage} : state) : (nat) is
             block {
               const ret_val : nat = 0n;
-              ret_val := self.ret;
-              var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
-            } with (opList);
+              ret_val := #{config.contract_storage}.ret;
+            } with (ret_val);
         """
         make_test text_i, text_o
         if process.env.EMULATOR and type == "uint"
@@ -309,7 +308,7 @@ describe "translate ligo section ops", ()->
             ret : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+          function expr (const #{config.contract_storage} : state) : (state) is
             block {
               const a : nat = 0n;
               const b : nat = 1n;
@@ -330,15 +329,14 @@ describe "translate ligo section ops", ()->
               c := bitwise_and(c, b);
               c := bitwise_or(c, b);
               c := bitwise_xor(c, b);
-              self.ret := c;
-            } with ((nil: list(operation)), #{config.contract_storage});
+              #{config.contract_storage}.ret := c;
+            } with (#{config.contract_storage});
           
-          function getRet (const self : state; const receiver : contract(nat)) : (list(operation)) is
+          function getRet (const #{config.contract_storage} : state) : (nat) is
             block {
               const ret_val : nat = 0n;
-              ret_val := self.ret;
-              var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
-            } with (opList);
+              ret_val := #{config.contract_storage}.ret;
+            } with (ret_val);
         """
         make_test text_i, text_o
         if process.env.EMULATOR and type == "uint"
@@ -436,7 +434,7 @@ describe "translate ligo section ops", ()->
             value : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+          function expr (const #{config.reserved}__unit : unit) : (nat) is
             block {
               const a : nat = 0n;
               const b : nat = 0n;
@@ -447,7 +445,7 @@ describe "translate ligo section ops", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+            } with (0n);
           
         """
         make_test text_i, text_o
@@ -475,13 +473,13 @@ describe "translate ligo section ops", ()->
             value : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+          function expr (const #{config.reserved}__unit : unit) : (int) is
             block {
               const a : int = 0;
               const c : int = 0;
               c := not (a);
               c := int(abs(not (0)));
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (c);
         """
         make_test text_i, text_o
   # TODO support mod & | ^ LATER
@@ -522,7 +520,7 @@ describe "translate ligo section ops", ()->
   #       value : int;
   #     end;
   #     
-  #     function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+  #     function expr (const #{config.reserved}__unit : unit) : (int) is
   #       block {
   #         const a : int = 0;
   #         const b : int = 0;
@@ -544,7 +542,7 @@ describe "translate ligo section ops", ()->
   #         c := bitwise_and(c, b);
   #         c := bitwise_or(c, b);
   #         c := bitwise_xor(c, b);
-  #       } with ((nil: list(operation)), #{config.contract_storage}, c);
+  #       } with (c);
   #     
   #   """
   #   make_test text_i, text_o
@@ -580,7 +578,7 @@ describe "translate ligo section ops", ()->
             value : int;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+          function expr (const #{config.reserved}__unit : unit) : (int) is
             block {
               const a : int = 0;
               const b : int = 0;
@@ -594,7 +592,7 @@ describe "translate ligo section ops", ()->
               c := (c - b);
               c := (c * b);
               c := (c / b);
-            } with ((nil: list(operation)), #{config.contract_storage}, c);
+            } with (c);
           
         """
         make_test text_i, text_o
@@ -626,7 +624,7 @@ describe "translate ligo section ops", ()->
             value : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+          function expr (const #{config.reserved}__unit : unit) : (nat) is
             block {
               const a : int = 0;
               const b : int = 0;
@@ -637,7 +635,7 @@ describe "translate ligo section ops", ()->
               c := (a >= b);
               c := (a = b);
               c := (a =/= b);
-            } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+            } with (0n);
           
         """
         make_test text_i, text_o
@@ -710,10 +708,10 @@ describe "translate ligo section ops", ()->
         balances : map(address, nat);
       end;
       
-      function expr (const #{config.contract_storage} : state; const owner : address) : (list(operation) * state * nat) is
+      function expr (const #{config.contract_storage} : state; const owner : address) : (nat) is
         block {
           skip
-        } with ((nil: list(operation)), #{config.contract_storage}, (case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
+        } with ((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
       """
       make_test text_i, text_o
     
@@ -782,14 +780,14 @@ describe "translate ligo section ops", ()->
     text_o = """
     type state is unit;
     
-    function addmulmod (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function addmulmod (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const x : nat = 1n;
         const y : nat = 2n;
         const z : nat = 3n;
         const a : nat = ((x + y) mod z);
         const m : nat = ((x * y) mod z);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
 
@@ -808,13 +806,13 @@ describe "translate ligo section ops", ()->
     text_o = """
     type state is unit;
     
-    function test1 (const #{config.contract_storage} : state; const u0 : nat) : (state) is
+    function test1 (const u0 : nat) : (unit) is
       block {
         const u1 : nat = abs(not (u0));
         const u2 : nat = abs(not (abs(not (u0))));
         const u3 : nat = (abs(not (u0)) + u2);
         const u4 : nat = (abs(not (u3)) + u2);
-      } with (#{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   it "un_op1", ()->
@@ -830,11 +828,11 @@ describe "translate ligo section ops", ()->
     text_o = """
     type state is unit;
     
-    function test2 (const #{config.contract_storage} : state; const b0 : bool) : (state) is
+    function test2 (const b0 : bool) : (unit) is
       block {
         const b1 : bool = not (b0);
         const b2 : bool = not (not (not (not (not (b1)))));
-      } with (#{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
     

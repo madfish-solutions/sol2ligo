@@ -31,17 +31,17 @@ describe "translate ligo section library", ()->
     text_o = """
     type state is unit;
     
-    function exactMath_exactAdd (const self : state; const test_reserved_long___self : nat; const other : nat) : (state * nat) is
+    function exactMath_exactAdd (const test_reserved_long___self : nat; const other : nat) : (nat) is
       block {
         const sum : nat = 0n;
         sum := (test_reserved_long___self + other);
         assert((sum >= test_reserved_long___self));
-      } with (#{config.contract_storage}, sum);
-    function uintExactAddOverflowExample (const #{config.contract_storage} : state) : (list(operation) * state) is
+      } with (sum);
+    function uintExactAddOverflowExample (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const n : nat = abs(not (0));
-        exactMath_exactAdd(self, n, 1n);
-      } with ((nil: list(operation)), #{config.contract_storage});
+        const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -80,15 +80,18 @@ describe "translate ligo section library", ()->
     type router_enum is
       | Test of test_args;
     
-    function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
+    function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         const n : nat = abs(not (0));
-        exactMath_exactAdd(n, 1n);
-      } with ((nil: list(operation)), 0n);
+        const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
+      } with (0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
-      | Test(match_action) -> (test(unit), self)
+      | Test(match_action) -> block {
+        const tmp : (nat) = test(unit);
+        var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
+      } with ((opList, self))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -126,21 +129,24 @@ describe "translate ligo section library", ()->
         const addr : nat = 0n;
       } with (addr);
     
-    function #{config.reserved}__bytes_concat (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__bytes_concat (const test_reserved_long___self : bytes; const other : bytes) : (unit) is
       block {
         const src : nat = bytes_fromBytes(test_reserved_long___self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     type router_enum is
       | #{config.reserved[0].toUpperCase() + config.reserved.slice(1)}__main of test_reserved_long___main_args;
     
-    function #{config.reserved}__main (const #{config.contract_storage} : state; const test_reserved_long___self : bytes; const other : bytes) : (list(operation) * state) is
+    function #{config.reserved}__main (const test_reserved_long___self : bytes; const other : bytes) : (unit) is
       block {
         const src : nat = bytes_fromBytes(test_reserved_long___self);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
-      | Test_reserved_long___main(match_action) -> test_reserved_long___main(self, match_action.test_reserved_long___self, match_action.other)
+      | Test_reserved_long___main(match_action) -> block {
+        (* This function does nothing, but it's present in router *)
+        const tmp : unit = test_reserved_long___main(match_action.test_reserved_long___self, match_action.other);
+      } with (((nil: list(operation)), self))
       end);
     """#"
     make_test text_i, text_o, router: true

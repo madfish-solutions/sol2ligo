@@ -15,7 +15,7 @@ walk = (root, ctx)->
         #TODO come up with a better heuristic for detecting if storage should be first argument
         if decl.arg_name_list[0] == config.contract_storage
           root.arg_list.unshift storage = new ast.Var
-          storage.name = "self"
+          storage.name = config.contract_storage
           storage.type = new Type config.storage
           storage.name_translate = false
 

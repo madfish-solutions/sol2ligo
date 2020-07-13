@@ -72,10 +72,10 @@ describe "translate ligo section unsorted", ()->
     const enumType_TWO : nat = 2n;
     (* enum EnumType converted into list of nats *)
 
-    function ternary (const self : state) : (list(operation) * state) is
+    function ternary (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const e : nat = enumType_ONE;
-      } with ((nil: list(operation)), self);
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -94,10 +94,10 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
-    function ternary (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+    function ternary (const #{config.reserved}__unit : unit) : (int) is
       block {
         const i : int = 5;
-      } with ((nil: list(operation)), #{config.contract_storage}, (case (i < 5) of | True -> 7 | False -> i end));
+      } with ((case (i < 5) of | True -> 7 | False -> i end));
     """
     make_test text_i, text_o
     
@@ -118,14 +118,14 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
-    function castType (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
         const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
@@ -166,7 +166,7 @@ describe "translate ligo section unsorted", ()->
         amountEther : nat;
       end;
       
-      function test (const #{config.contract_storage} : state) : (list(operation) * state) is
+      function test (const #{config.contract_storage} : state) : (state) is
         block {
           #{config.contract_storage}.timesSeconds := 100n;
           #{config.contract_storage}.timeMinutes := (12n * 60n);
@@ -176,7 +176,7 @@ describe "translate ligo section unsorted", ()->
           #{config.contract_storage}.amountSzabo := 12n;
           #{config.contract_storage}.amountFinney := (3n * 1000n);
           #{config.contract_storage}.amountEther := (11n * 1000000n);
-        } with ((nil: list(operation)), #{config.contract_storage});
+        } with (#{config.contract_storage});
       """#"
       make_test text_i, text_o
   
@@ -195,16 +195,16 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
-    function newKeyword (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function newKeyword (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const tokenCount : nat = 4n;
         const emptyBytes : bytes = ("00": bytes) (* args: 0 *);
         const newArray : map(nat, nat) = map end (* args: tokenCount *);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o
   
-  it "return-tuple (BROKEN pure returns op list)", ()->
+  it "return-tuple", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -217,15 +217,15 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
-    function tupleRet (const #{config.reserved}__unit : unit) : (list(operation) * (nat * bool)) is
+    function tupleRet (const #{config.reserved}__unit : unit) : ((nat * bool)) is
       block {
         skip
-      } with ((nil: list(operation)), (7n, True));
+      } with ((7n, True));
     """#"
     make_test text_i, text_o
   
   # ###################################################################################################
-  it "this (BAD vertical alignment, BROKEN function call result unpack)", ()->
+  it "this (BAD vertical alignment)", ()->
     translate = (name)->
       (config.fix_underscore.capitalize()+"_"+name).substr(0, 31)
     
@@ -271,21 +271,21 @@ describe "translate ligo section unsorted", ()->
       | TransferOwnership_ of transferOwnership__args
      | TransferOwnership of transferOwnership_args;
     
-    function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (list(operation) * state) is
+    function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (state) is
       block {
         #{config.contract_storage}.owner := newOwner;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (#{config.contract_storage});
     
-    function transferOwnership (const #{config.contract_storage} : state; const newOwner : address) : (list(operation) * state) is
+    function transferOwnership (const #{config.contract_storage} : state; const newOwner : address) : (state) is
       block {
-        transferOwnership_(self, newOwner);
+        #{config.contract_storage} := transferOwnership_(#{config.contract_storage}, newOwner);
         #{config.contract_storage}.owner := self_address;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (#{config.contract_storage});
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
-      | TransferOwnership_(match_action) -> transferOwnership_(self, match_action.newOwner)
-      | TransferOwnership(match_action) -> transferOwnership(self, match_action.newOwner)
+      | TransferOwnership_(match_action) -> ((nil: list(operation)), transferOwnership_(#{config.contract_storage}, match_action.newOwner))
+      | TransferOwnership(match_action) -> ((nil: list(operation)), transferOwnership(#{config.contract_storage}, match_action.newOwner))
       end);
     """#"
     make_test text_i, text_o, {
