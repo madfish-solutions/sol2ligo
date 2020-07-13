@@ -272,3 +272,32 @@ describe "translate ligo section array", ()->
       } with (unit);
     """
     make_test text_i, text_o
+
+  it "twodim array", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract TwoDimensionalArray {
+        uint[][] twodim;
+
+        function test(uint dummy) public {
+            twodim[0] = [1,2,3];
+        }
+    }
+    """
+    text_o = """
+    type state is record
+      twodim : map(nat, map(nat, nat));
+    end;
+    
+    function test (const self : state; const dummy : nat) : (state) is
+      block {
+        self.twodim[0n] := map
+          0n -> 1n;
+          1n -> 2n;
+          2n -> 3n;
+        end;
+      } with (self);
+    """
+    make_test text_i, text_o
+
