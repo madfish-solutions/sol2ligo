@@ -220,7 +220,7 @@ describe "translate ligo section inheritance", ()->
     """
     make_test text_i, text_o, router: true
   
-  it "method self collide + properties self collide (class used twice in inheritance tree)", ()->
+  it "opt.contract (no self collide)", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -258,6 +258,52 @@ describe "translate ligo section inheritance", ()->
     function main (const action : router_enum; const self : state) : (list(operation) * state) is
       (case action of
       | Method(match_action) -> ((nil: list(operation)), method(self))
+      end);
+    """
+    make_test text_i, text_o, {
+      contract: "Parent1"
+      router: true
+    }
+  
+  it "opt.contract (no self collide constructor)", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Dupe_parent {
+      uint ret;
+      constructor() public {
+        ret += 1;
+      }
+    }
+    
+    contract Parent1 is Dupe_parent {}
+    
+    contract Parent2 is Dupe_parent {}
+    
+    contract Child is Parent1, Parent2 {}
+    """
+    text_o = """
+    type constructor_args is unit;
+    type state is record
+      ret : nat;
+    end;
+    
+    type router_enum is
+      | Constructor of constructor_args;
+    
+    function dupe_parent_constructor (const self : state) : (state) is
+      block {
+        self.ret := (self.ret + 1n);
+      } with (self);
+    
+    function constructor (const self : state) : (state) is
+      block {
+        self := dupe_parent_constructor(self);
+      } with (self);
+    
+    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+      (case action of
+      | Constructor(match_action) -> ((nil: list(operation)), constructor(self))
       end);
     """
     make_test text_i, text_o, {
