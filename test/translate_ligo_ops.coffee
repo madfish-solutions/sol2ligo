@@ -358,7 +358,7 @@ describe "translate ligo section ops", ()->
         on_end()
     
     if process.env.EMULATOR
-      describe "emulator", ()->
+      describe "emulator a op b -> uint", ()->
         for op in "+ - * / % & | ^ << >>".split /\s+/g
           do (op)->
             test_value_list = []
@@ -404,6 +404,53 @@ describe "translate ligo section ops", ()->
                   for v,idx in test_value_list
                     [a,b,c] = v
                     await async_assert_strict +res_list[idx], c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+              }, on_end
+      
+      describe "emulator a op b -> bool", ()->
+        for op in "== != >= <= < >".split /\s+/g
+          do (op)->
+            test_value_list = []
+            for a in [0 .. 2]
+              for b in [0 .. 2]
+                c = eval "#{a} #{op} #{b}"
+                test_value_list.push [a,b,c]
+            it "uint a#{op}b", (on_end)->
+              @timeout 30000
+              text_i = """
+                pragma solidity ^0.5.11;
+                
+                contract Expr {
+                  bool public ret;
+                  
+                  function expr(uint a, uint b) public {
+                    ret = a #{op} b;
+                  }
+                  function getRet() public view returns (bool ret_val) {
+                    ret_val = ret;
+                  }
+                }
+                """#"
+              
+              make_emulator_test {
+                sol_code      : text_i
+                contract_name : "Expr"
+                ligo_arg_list : test_value_list.map (v)->
+                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                ligo_state    : "record ret = False; end"
+                sol_test_fn   : (contract, loc_on_end)->
+                  for v in test_value_list
+                    [a,b,c] = v
+                    await contract.expr(a, b).cb defer(err, result); return loc_on_end err if err
+                    await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+                    
+                    await async_assert_strict result, c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+                ligo_test_fn  : (res_list, loc_on_end)->
+                  for v,idx in test_value_list
+                    [a,b,c] = v
+                    real = eval res_list[idx]
+                    await async_assert_strict real, c, defer(err); return loc_on_end err if err
                   loc_on_end()
               }, on_end
         
@@ -547,7 +594,7 @@ describe "translate ligo section ops", ()->
   #   """
   #   make_test text_i, text_o
   # 
-  describe "intX bin_ops", ()->
+  describe "intX bin_ops emulator", ()->
     for type in config.int_type_list
       it "#{type} bin_ops", ()->
         text_i = """
@@ -641,7 +688,7 @@ describe "translate ligo section ops", ()->
         make_test text_i, text_o
     
     if process.env.EMULATOR
-      describe "emulator", ()->
+      describe "emulator a op b -> int", ()->
         for op in "+ - * / % & | ^ << >>".split /\s+/g
           do (op)->
             test_value_list = []
@@ -689,7 +736,174 @@ describe "translate ligo section ops", ()->
                     await async_assert_strict +res_list[idx], c, defer(err); return loc_on_end err if err
                   loc_on_end()
               }, on_end
+        
+        for op in "== != >= <= < >".split /\s+/g
+          do (op)->
+            test_value_list = []
+            for a in [0 .. 2]
+              for b in [0 .. 2]
+                c = eval "#{a} #{op} #{b}"
+                test_value_list.push [a,b,c]
+            it "int a#{op}b", (on_end)->
+              @timeout 30000
+              text_i = """
+                pragma solidity ^0.5.11;
+                
+                contract Expr {
+                  bool public ret;
+                  
+                  function expr(int a, int b) public {
+                    ret = a #{op} b;
+                  }
+                  function getRet() public view returns (bool ret_val) {
+                    ret_val = ret;
+                  }
+                }
+                """#"
+              
+              make_emulator_test {
+                sol_code      : text_i
+                contract_name : "Expr"
+                ligo_arg_list : test_value_list.map (v)->
+                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                ligo_state    : "record ret = False; end"
+                sol_test_fn   : (contract, loc_on_end)->
+                  for v in test_value_list
+                    [a,b,c] = v
+                    await contract.expr(a, b).cb defer(err, result); return loc_on_end err if err
+                    await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+                    
+                    await async_assert_strict result, c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+                ligo_test_fn  : (res_list, loc_on_end)->
+                  for v,idx in test_value_list
+                    [a,b,c] = v
+                    real = eval res_list[idx]
+                    await async_assert_strict real, c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+              }, on_end
   
+  # ###################################################################################################
+  describe "bool bin_ops emulator", ()->
+    it "bool bin_ops", (on_end)->
+      @timeout 30000
+      text_i = """
+      pragma solidity ^0.5.11;
+      
+      contract Expr {
+        bool public ret;
+        
+        function expr() public {
+          bool a = false;
+          bool b = true;
+          bool c = false;
+          c = a && b;
+          c = a || b;
+          c = a == b;
+          c = a != b;
+          c = !b;
+          ret = c;
+        }
+        function getRet() public view returns (bool ret_val) {
+          ret_val = ret;
+        }
+      }
+      """#"
+      text_o = """
+        type state is record
+          ret : bool;
+        end;
+        
+        function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+          block {
+            const a : bool = False;
+            const b : bool = True;
+            const c : bool = False;
+            c := (a and b);
+            c := (a or b);
+            c := (a = b);
+            c := (a =/= b);
+            c := not (b);
+            self.ret := c;
+          } with ((nil: list(operation)), #{config.contract_storage});
+        
+        function getRet (const self : state; const receiver : contract(bool)) : (list(operation)) is
+          block {
+            const ret_val : bool = False;
+            ret_val := self.ret;
+            var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
+          } with (opList);
+      """
+      make_test text_i, text_o
+      if process.env.EMULATOR
+        await make_emulator_test {
+          sol_code      : text_i
+          contract_name : "Expr"
+          ligo_arg_list : ['"Expr"']
+          ligo_state    : "record ret = False; end"
+          sol_test_fn   : (contract, on_end)->
+            await contract.expr().cb defer(err, result); return on_end err if err
+            await contract.getRet.call().cb defer(err, result); return on_end err if err
+            
+            await async_assert_strict result, false, defer(err); return on_end err if err
+            on_end()
+          ligo_test_fn  : (res_list, on_end)->
+            await async_assert_strict res_list[0], "false", defer(err); return on_end err if err
+            on_end()
+        }, defer(err); return on_end err if err
+      on_end()
+    
+    if process.env.EMULATOR
+      describe "emulator a op b -> bool", ()->
+        for op in "== != && ||".split /\s+/g
+          do (op)->
+            test_value_list = []
+            for a in [true, false]
+              for b in [true, false]
+                c = eval "#{a} #{op} #{b}"
+                test_value_list.push [a,b,c]
+            it "bool a#{op}b", (on_end)->
+              @timeout 30000
+              text_i = """
+                pragma solidity ^0.5.11;
+                
+                contract Expr {
+                  bool public ret;
+                  
+                  function expr(bool a, bool b) public {
+                    ret = a #{op} b;
+                  }
+                  function getRet() public view returns (bool ret_val) {
+                    ret_val = ret;
+                  }
+                }
+                """#"
+              
+              make_emulator_test {
+                sol_code      : text_i
+                contract_name : "Expr"
+                ligo_arg_list : test_value_list.map (v)->
+                  [a,b] = v
+                  a = JSON.stringify(a).capitalize()
+                  b = JSON.stringify(b).capitalize()
+                  "\"Expr(record a=#{a}; b=#{b} end)\""
+                ligo_state    : "record ret = False; end"
+                sol_test_fn   : (contract, loc_on_end)->
+                  for v in test_value_list
+                    [a,b,c] = v
+                    await contract.expr(a, b).cb defer(err, result); return loc_on_end err if err
+                    await contract.getRet.call().cb defer(err, result); return loc_on_end err if err
+                    
+                    await async_assert_strict result, c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+                ligo_test_fn  : (res_list, loc_on_end)->
+                  for v,idx in test_value_list
+                    [a,b,c] = v
+                    real = eval res_list[idx]
+                    await async_assert_strict real, c, defer(err); return loc_on_end err if err
+                  loc_on_end()
+              }, on_end
+  # ###################################################################################################
   describe "map emulator", ()->
     it "a[b]", ()->
       text_i = """

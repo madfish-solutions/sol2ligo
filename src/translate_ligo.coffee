@@ -573,9 +573,9 @@ walk = (root, ctx)->
         if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
           switch op
             when "="
-              "bitwise_not(bitwise_xor(#{_a}, #{_b}))"
+              "(#{_a} = #{_b})"
             when "=/="
-              "bitwise_xor(#{_a}, #{_b})"
+              "(#{_a} =/= #{_b})"
             when ">"
               "(#{_a} and not #{_b})"
             when "<" 
