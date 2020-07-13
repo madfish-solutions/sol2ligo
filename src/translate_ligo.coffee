@@ -742,6 +742,8 @@ walk = (root, ctx)->
           modifies_storage= false
           returns_value   = type_decl.nest_list[1].nest_list.length > 0
           type_o          = type_decl.nest_list[1]
+        else if ctx.contract_var_map.hasOwnProperty root.fn.name
+          return "#{config.contract_storage}.#{root.fn.name}"
         else
           perr "WARNING !root.fn_decl #{root.fn.name}"
           return call_expr

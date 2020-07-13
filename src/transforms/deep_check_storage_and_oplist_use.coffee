@@ -94,6 +94,14 @@ walk = (root, ctx)->
                   ctx.change_count.val++
                 
                 root.fn_decl = nest_fn
+              else if ctx.global_var_decl_map.has root.fn.name
+                if ctx.lvalue
+                  if !ctx.modifies_storage.val
+                    ctx.modifies_storage.val = true
+                    ctx.change_count.val++
+                if !ctx.uses_storage.val
+                  ctx.uses_storage.val = true
+                  ctx.change_count.val++
             else if root.fn.name == "push"
               # e.g. arr.push(10)
               ctx_lvalue = clone ctx
