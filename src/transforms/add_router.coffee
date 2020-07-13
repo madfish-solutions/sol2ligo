@@ -23,7 +23,7 @@ walk = (root, ctx)->
   {walk} = ctx
   switch root.constructor.name
     when "Class_decl"
-      if root.is_contract
+      if root.is_contract and root.is_last
         # ###################################################################################################
         #    patch state
         # ###################################################################################################
@@ -67,7 +67,7 @@ walk = (root, ctx)->
         _main.name = "main"
         
         _main.type_i = new Type "function"
-        _main.type_o =  new Type "function"
+        _main.type_o = new Type "function"
         
         _main.arg_name_list.push "action"
         _main.type_i.nest_list.push new Type "router_enum"

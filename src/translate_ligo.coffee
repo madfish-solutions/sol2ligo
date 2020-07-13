@@ -965,6 +965,7 @@ walk = (root, ctx)->
     when "Class_decl"
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
+      return "" if root.is_contract and !root.is_last
       orig_ctx = ctx
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name

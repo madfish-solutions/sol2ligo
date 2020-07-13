@@ -11,6 +11,7 @@ module = @
 {inheritance_unpack} = require "./transforms/inheritance_unpack"
 {deep_check_storage_and_oplist_use} = require "./transforms/deep_check_storage_and_oplist_use"
 {decl_storage_and_oplist_inject} = require "./transforms/decl_storage_and_oplist_inject"
+{mark_last} = require "./transforms/mark_last"
 {router_collector} = require "./transforms/router_collector"
 {add_router} = require "./transforms/add_router"
 {collect_fn_decl} = require "./transforms/collect_fn_decl"
@@ -52,6 +53,7 @@ module = @
   func_decls = collect_fn_decl root
   root = call_storage_and_oplist_inject root, {func_decls}
 
+  root = mark_last root
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
