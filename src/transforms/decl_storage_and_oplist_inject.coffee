@@ -29,7 +29,6 @@ walk = (root, ctx)->
       root.scope = walk root.scope, ctx
       
       state_name = config.storage
-      state_name = "#{state_name}_#{root.contract_name}" if ctx.contract and ctx.contract != root.contract_name
       if root.uses_storage
         root.arg_name_list.unshift config.contract_storage
         root.type_i.nest_list.unshift new Type state_name

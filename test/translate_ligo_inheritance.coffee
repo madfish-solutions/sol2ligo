@@ -220,6 +220,51 @@ describe "translate ligo section inheritance", ()->
     """
     make_test text_i, text_o, router: true
   
+  it "method self collide + properties self collide (class used twice in inheritance tree)", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Dupe_parent {
+      uint ret;
+      function method() public {
+        ret += 1;
+      }
+    }
+    
+    contract Parent1 is Dupe_parent {}
+    
+    contract Parent2 is Dupe_parent {
+      uint should_not_pass1;
+    }
+    
+    contract Child is Parent1, Parent2 {
+      uint should_not_pass2;
+    }
+    """
+    text_o = """
+    type method_args is unit;
+    type state is record
+      ret : nat;
+    end;
+    
+    type router_enum is
+      | Method of method_args;
+    
+    function method (const self : state) : (state) is
+      block {
+        self.ret := (self.ret + 1n);
+      } with (self);
+    
+    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+      (case action of
+      | Method(match_action) -> ((nil: list(operation)), method(self))
+      end);
+    """
+    make_test text_i, text_o, {
+      contract: "Parent1"
+      router: true
+    }
+  
   it "super.method()", ()->
     text_i = """
     pragma solidity ^0.5.11;

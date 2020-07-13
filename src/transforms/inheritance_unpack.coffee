@@ -114,7 +114,7 @@ walk = (root, ctx)->
         # inject constructor call on top of my constructor (create my constructor if not exists)
         
         if !found_constructor
-          root.scope.list.unshift found_constructor = new ast.Fn_decl_multiret
+          root.scope.list.push found_constructor = new ast.Fn_decl_multiret
           found_constructor.name = "constructor"
           found_constructor.type_i = new Type "function"
           found_constructor.type_o = new Type "function"

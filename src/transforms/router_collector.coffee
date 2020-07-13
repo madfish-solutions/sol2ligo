@@ -12,7 +12,7 @@ walk = (root, ctx)->
       ctx.next_gen root, ctx
     
     when "Fn_decl_multiret"
-      if root.visibility not in ["private", "internal"] and (!ctx.contract or root.contract_name == ctx.contract or ctx.inheritance_list?[ctx.contract])
+      if root.visibility not in ["private", "internal"]
         ctx.router_func_list.push root
       root
     

@@ -71,10 +71,10 @@ walk = (root, ctx)->
               if nest_fn.returns_op_list and !ctx.returns_op_list.val
                 ctx.returns_op_list.val = true
                 ctx.change_count.val++
-              if nest_fn.uses_storage.val and !ctx.uses_storage.val
+              if nest_fn.uses_storage and !ctx.uses_storage.val
                 ctx.uses_storage.val = true
                 ctx.change_count.val++
-              if nest_fn.modifies_storage.val and !ctx.modifies_storage.val
+              if nest_fn.modifies_storage and !ctx.modifies_storage.val
                 ctx.modifies_storage.val = true
                 ctx.change_count.val++
               
@@ -86,10 +86,10 @@ walk = (root, ctx)->
                 if nest_fn.returns_op_list and !ctx.returns_op_list.val
                   ctx.returns_op_list.val = true
                   ctx.change_count.val++
-                if nest_fn.uses_storage.val and !ctx.uses_storage.val
+                if nest_fn.uses_storage and !ctx.uses_storage.val
                   ctx.uses_storage.val = true
                   ctx.change_count.val++
-                if nest_fn.modifies_storage.val and !ctx.modifies_storage.val
+                if nest_fn.modifies_storage and !ctx.modifies_storage.val
                   ctx.modifies_storage.val = true
                   ctx.change_count.val++
                 

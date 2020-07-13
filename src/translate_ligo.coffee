@@ -1037,8 +1037,6 @@ walk = (root, ctx)->
       
       if root.is_contract or root.is_library
         state_name = config.storage
-        if ctx.contract and ctx.contract != root.name
-          state_name = "#{state_name}_#{root.name}"
         orig_ctx.storage_sink_list[state_name] ?= []
         orig_ctx.storage_sink_list[state_name].append field_decl_jl
       else
@@ -1152,5 +1150,4 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  ctx.contract = opt.contract if opt.contract
   walk root, ctx

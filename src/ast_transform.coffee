@@ -43,7 +43,7 @@ module = @
 @post_ti = (root, opt={}) ->
   opt.router ?= true
   opt.prefer_erc721 ?= false
-
+  
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = intrinsics_converter root
@@ -52,12 +52,12 @@ module = @
   root = decl_storage_and_oplist_inject root, opt
   func_decls = collect_fn_decl root
   root = call_storage_and_oplist_inject root, {func_decls}
-
-  root = mark_last root
+  
+  root = mark_last root, opt
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
-
+  
   root = return_op_list_count root, opt
   root
 
