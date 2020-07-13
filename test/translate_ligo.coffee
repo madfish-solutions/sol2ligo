@@ -293,4 +293,28 @@ describe "translate ligo section unsorted", ()->
     }
     # NOTE without router self_address will not work
   
+  it "this.prop()", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Expr {
+      uint public ret;
+      
+      function getRet() public view returns (uint ret_val) {
+        ret_val = this.ret();
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      ret : nat;
+    end;
+    
+    function getRet (const #{config.contract_storage} : state) : (nat) is
+      block {
+        const ret_val : nat = 0n;
+        ret_val := #{config.contract_storage}.ret;
+      } with (ret_val);
+    """
+    make_test text_i, text_o
   
