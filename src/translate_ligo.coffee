@@ -502,7 +502,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Var"
       name = root.name
-      return "" if name == "this"
+      return "" if name in ["this", "super"]
       if ctx.contract_var_map.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else

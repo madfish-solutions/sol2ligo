@@ -86,3 +86,35 @@ describe "translate ligo section inheritance", ()->
     """
     make_test text_i, text_o
   
+  it "super.method()", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Parent {
+      function method1() public returns (uint ret_val) {
+        ret_val = 0;
+      }
+    }
+    
+    contract Child is Parent {
+      function method2() public returns (uint ret_val) {
+        ret_val = super.method1();
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function method1 (const #{config.reserved}__unit : unit) : (nat) is
+      block {
+        const ret_val : nat = 0n;
+        ret_val := 0n;
+      } with (ret_val);
+    
+    function method2 (const #{config.reserved}__unit : unit) : (nat) is
+      block {
+        const ret_val : nat = 0n;
+        ret_val := method1(unit);
+      } with (ret_val);
+    """
+    make_test text_i, text_o
