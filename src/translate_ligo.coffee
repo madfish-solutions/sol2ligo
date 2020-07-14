@@ -106,6 +106,11 @@ number2bytes = (val, precision = 32)->
   
   # disabled until requested
   INDEX_ACCESS : (a, b, ctx, ast)->
+    if a.endsWith ")" # naive heuristic to overcome ligo parser bug
+      tmp_var = "tmp_#{ctx.tmp_idx++}"
+      ctx.sink_list.push "const #{tmp_var} : #{translate_type ast.a.type, ctx} = #{a};"
+      a = tmp_var
+      
     ret = if ctx.lvalue
       "#{a}[#{b}]"
     else
