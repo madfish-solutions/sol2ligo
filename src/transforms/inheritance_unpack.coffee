@@ -1,10 +1,19 @@
 { default_walk } = require "./default_walk"
+Type = require "type"
 ast = require "../ast"
 
 walk = (root, ctx)->
-  {walk} = ctx
   switch root.constructor.name
+    when "Fn_call"
+      if root.fn.constructor.name == "Field_access"
+        if root.fn.t.constructor.name == "Var"
+          if root.fn.t.name == "super"
+            if new_name = ctx.fn_dedupe_translate_map.get root.fn.name
+              root.fn.name = new_name
+      root
+    
     when "Class_decl"
+      ctx.fn_dedupe_translate_map = new Map() # old_name -> new_name
       is_constructor_name = (name)->
         name == "constructor" or name == root.name
       
@@ -34,11 +43,40 @@ walk = (root, ctx)->
       
       # keep unmodified stored in ctx.class_decl
       root = root.clone()
+      fn_decl_set = new Set()
+      pick_name = (start_name)->
+        for i in [1 ... Infinity]
+          try_name = "#{start_name}_#{i}"
+          return try_name if !fn_decl_set.has try_name
+        throw new Error "unreachable"
+      
+      add_fn_decl = (v)->
+        if fn_decl_set.has v.name
+          if ctx.fn_dedupe_translate_map.has v.name
+            perr "CRITICAL WARNING. only 1 level of shadowing is allowed. Translated code would be not functional"
+          else
+            new_name = pick_name v.name
+            ctx.fn_dedupe_translate_map.set v.name, new_name
+            v.visibility = "internal"
+            v.name = new_name
+        else
+          fn_decl_set.add v.name
+        
+        return
+      
+      for v in root.scope.list
+        continue if v.constructor.name != "Fn_decl_multiret"
+        add_fn_decl v
+      
+      class_set = new Set
       
       for parent in inheritance_apply_list
         if !ctx.class_map.hasOwnProperty parent.name
           throw new Error "can't find parent class #{parent.name}"
         class_decl = ctx.class_map[parent.name]
+        
+        continue if class_set.has parent.name
+        class_set.add parent.name
         
         continue if class_decl.is_interface
         look_list = class_decl.scope.list
@@ -53,7 +91,10 @@ walk = (root, ctx)->
             v.visibility = "internal"
             need_constuctor = v
           
+          add_fn_decl v
           root.scope.list.unshift v
+          for old in root.scope.list
+            walk old, ctx
         
         # import all vars (on top of fn)
         for v in look_list
@@ -73,7 +114,7 @@ walk = (root, ctx)->
         # inject constructor call on top of my constructor (create my constructor if not exists)
         
         if !found_constructor
-          root.scope.list.unshift found_constructor = new ast.Fn_decl_multiret
+          root.scope.list.push found_constructor = new ast.Fn_decl_multiret
           found_constructor.name = "constructor"
           found_constructor.type_i = new Type "function"
           found_constructor.type_o = new Type "function"

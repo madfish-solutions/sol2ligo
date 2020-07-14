@@ -11,6 +11,7 @@ module = @
 {inheritance_unpack} = require "./transforms/inheritance_unpack"
 {deep_check_storage_and_oplist_use} = require "./transforms/deep_check_storage_and_oplist_use"
 {decl_storage_and_oplist_inject} = require "./transforms/decl_storage_and_oplist_inject"
+{mark_last} = require "./transforms/mark_last"
 {router_collector} = require "./transforms/router_collector"
 {add_router} = require "./transforms/add_router"
 {collect_fn_decl} = require "./transforms/collect_fn_decl"
@@ -42,7 +43,7 @@ module = @
 @post_ti = (root, opt={}) ->
   opt.router ?= true
   opt.prefer_erc721 ?= false
-
+  
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = intrinsics_converter root
@@ -51,11 +52,12 @@ module = @
   root = decl_storage_and_oplist_inject root, opt
   func_decls = collect_fn_decl root
   root = call_storage_and_oplist_inject root, {func_decls}
-
+  
+  root = mark_last root, opt
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
-
+  
   root = return_op_list_count root, opt
   root
 

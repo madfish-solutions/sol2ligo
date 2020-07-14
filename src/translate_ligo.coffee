@@ -967,6 +967,7 @@ walk = (root, ctx)->
     when "Class_decl"
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
+      return "" if root.is_contract and !root.is_last
       orig_ctx = ctx
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
@@ -1038,8 +1039,6 @@ walk = (root, ctx)->
       
       if root.is_contract or root.is_library
         state_name = config.storage
-        if ctx.contract and ctx.contract != root.name
-          state_name = "#{state_name}_#{root.name}"
         orig_ctx.storage_sink_list[state_name] ?= []
         orig_ctx.storage_sink_list[state_name].append field_decl_jl
       else
@@ -1153,5 +1152,4 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  ctx.contract = opt.contract if opt.contract
   walk root, ctx
