@@ -38,38 +38,32 @@ describe "translate ligo section map", ()->
     """
     make_test text_i, text_o
   
-  # TODO
-  it "nested map"
-  ###
-  (case #{config.contract_storage}.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
-  this is not proper assign...
-  TODO FIXME
-  ###
-  # it "nested map", ()->
-  #   text_i = """
-  #   pragma solidity ^0.5.11;
+  it "array in map access", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
     
-  #   contract Map {
-  #     mapping(int => mapping(uint => uint)) public addresses;
+    contract Map {
+      mapping(int => mapping(uint => uint)) public addresses;
       
-  #     function map() public returns (uint) {
-  #       addresses[0][0] = 0;
-  #       return 0;
-  #     }
-  #   }
-  #   """#"
-  #   text_o = """
-  #   type state is record
-  #     allowedIntegers : map(int, bool);
-  #   end;
+      function map() public returns (uint) {
+        addresses[0][0] = 0;
+        return 0;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      addresses : map(int, map(nat, nat));
+    end;
     
-  #   function #{config.reserved}__map (const #{config.contract_storage} : state) : (state * nat) is
-  #     block {
-  #       #{config.contract_storage}.allowedIntegers[0][0n] := 0n;
-  #     } with (#{config.contract_storage}, 0);
-    
-  #   """ #"
-  #   make_test text_i, text_o
+    function #{config.reserved}__map (const self : state) : (state * nat) is
+      block {
+        const tmp_0 : map(nat, nat) = (case #{config.contract_storage}.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end);
+        tmp_0[0n] := 0n;
+      } with (#{config.contract_storage}, 0n);
+    """ #"
+    make_test text_i, text_o
+
   it "nested map", ()->
     text_i = """
     pragma solidity ^0.4.24;
