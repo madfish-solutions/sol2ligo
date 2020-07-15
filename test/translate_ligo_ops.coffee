@@ -814,7 +814,7 @@ describe "translate ligo section ops", ()->
           ret : bool;
         end;
         
-        function expr (const #{config.contract_storage} : state) : (list(operation) * state) is
+        function expr (const #{config.contract_storage} : state) : (state) is
           block {
             const a : bool = False;
             const b : bool = True;
@@ -825,14 +825,13 @@ describe "translate ligo section ops", ()->
             c := (a =/= b);
             c := not (b);
             self.ret := c;
-          } with ((nil: list(operation)), #{config.contract_storage});
+          } with (#{config.contract_storage});
         
-        function getRet (const self : state; const receiver : contract(bool)) : (list(operation)) is
+        function getRet (const #{config.contract_storage} : state) : (bool) is
           block {
             const ret_val : bool = False;
-            ret_val := self.ret;
-            var opList : list(operation) := list transaction((ret_val), 0mutez, receiver) end;
-          } with (opList);
+            ret_val := #{config.contract_storage}.ret;
+          } with (ret_val);
       """
       make_test text_i, text_o
       if process.env.EMULATOR
