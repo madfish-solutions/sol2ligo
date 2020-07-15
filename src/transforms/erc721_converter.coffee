@@ -24,7 +24,7 @@ declare_callback = (name, fn, ctx) ->
     # TODO why are we using nest_list of nest_list?
     return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
     cb_decl = astBuilder.callback_declaration(name, return_type)
-    ctx.callbacks_to_declare_map[name] = cb_decl # no "Callback" suffix for key
+    ctx.callbacks_to_declare_map.set name, cb_decl # no "Callback" suffix for key
 
 tx_node = (address_expr, arg_list, name, ctx) ->
   address_expr = astBuilder.contract_addr_transform address_expr
