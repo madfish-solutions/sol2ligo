@@ -14,7 +14,7 @@ do () =>
             ctx.scope_sink.unshift {statements_to_prepend: [], temp_index: 0}
             res = walk v, ctx
             if ctx.scope_sink[0].statements_to_prepend.length > 0
-              statements = statements.concat ctx.scope_sink[0].statements_to_prepend
+              statements.append ctx.scope_sink[0].statements_to_prepend
             ctx.scope_sink.shift()
             statements.push res
           root.list = statements
