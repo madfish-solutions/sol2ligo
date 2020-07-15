@@ -22,6 +22,7 @@ module = @
 {erc721_converter} = require "./transforms/erc721_converter"
 {return_op_list_count} = require "./transforms/return_op_list_count"
 {address_calls_converter} = require "./transforms/address_calls_converter"
+{split_nested_index_access} = require "./transforms/split_nested_index_access"
 
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
@@ -44,6 +45,7 @@ module = @
   opt.router ?= true
   opt.prefer_erc721 ?= false
   
+  root = split_nested_index_access root
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = intrinsics_converter root
