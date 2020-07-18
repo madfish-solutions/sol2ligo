@@ -1,6 +1,7 @@
 config= require "./config"
 Type  = require "type"
 ast   = require "./ast"
+type_generalize = require "./type_generalize"
 
 bin_op_map =
   "+"   : "ADD"
@@ -178,6 +179,9 @@ ensure_scope = (t)->
   ret
 
 class Context
+  contract      : null
+  contract_name : ""
+  contract_type : ""
   need_prevent_deploy : false
   constructor:()->
 
@@ -216,6 +220,8 @@ walk = (root, ctx)->
           throw new Error "unknown contractKind #{root.contractKind}"
       
       ret.inheritance_list = []
+      ret.name          = root.name
+      ctx.contract      = ret
       ctx.contract_name = root.name
       ctx.contract_type = root.contractKind
       for v in root.baseContracts
@@ -228,7 +234,6 @@ walk = (root, ctx)->
           name : v.baseName.name
           arg_list
         }
-      ret.name = root.name
       for node in root.nodes
         ret.scope.list.push walk node, ctx
         
@@ -248,10 +253,13 @@ walk = (root, ctx)->
       ret
     
     when "UsingForDirective"
-      perr "WARNING UsingForDirective is not supported"
       ret = new ast.Comment
       ret.text = "UsingForDirective"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      
+      type = type_generalize root.typeName.name
+      ctx.contract.using_map[type] ?= []
+      ctx.contract.using_map[type].push root.libraryName.name
 
       ret
     

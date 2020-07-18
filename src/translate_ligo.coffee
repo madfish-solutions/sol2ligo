@@ -4,6 +4,7 @@ config = require "./config"
 Type = require "type"
 {translate_var_name, spec_id_translate} = require "./translate_var_name"
 {default_var_map_gen} = require "./type_inference/common"
+type_generalize = require "./type_generalize"
 ti_map = default_var_map_gen()
 ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
@@ -642,15 +643,16 @@ walk = (root, ctx)->
       for v in root.arg_list
         arg_list.push walk v, ctx
       
+      field_access_translation = null
       if root.fn.constructor.name == "Field_access"
-        t = walk root.fn.t, ctx
+        field_access_translation =  walk root.fn.t, ctx
         if root.fn.t.type
           switch root.fn.t.type.main
             when "array"
               switch root.fn.name
                 when "push"
                   tmp_var = "tmp_#{ctx.tmp_idx++}"
-                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
+                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};"
                   return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
                 
                 else
@@ -733,10 +735,17 @@ walk = (root, ctx)->
         if root.fn_decl
           {
             returns_op_list
+            uses_storage
             modifies_storage
             returns_value
           } = root.fn_decl
           {type_o} = root.fn_decl
+          if root.is_fn_decl_from_using
+            # TODO same for op list
+            shift_self = arg_list.shift() if uses_storage
+            arg_list.unshift field_access_translation
+            arg_list.unshift shift_self   if uses_storage
+            call_expr = "#{root.fn_name_using}(#{arg_list.join ', '})"
         else if type_decl = ti_map[root.fn.name]
           returns_op_list = false
           modifies_storage= false
@@ -975,6 +984,8 @@ walk = (root, ctx)->
       if ctx.parent and ctx.current_class and root.namespace_name
         ctx.parent.type_decl_map["#{ctx.current_class.name}.#{root.name}"] = root
         prefix = ctx.current_class.name
+      
+      ctx.type_decl_map[root.name] = root
       
       ctx = ctx.mk_nest()
       ctx.current_class = root

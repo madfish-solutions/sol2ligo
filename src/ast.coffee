@@ -21,12 +21,14 @@ class @Class_decl
   scope : null
   _prepared_field2type : {}
   inheritance_list : []
+  using_map : {} # type -> list of library
   line  : 0
   pos   : 0
   constructor:()->
     @scope = new module.Scope
     @_prepared_field2type = {}
     @inheritance_list = []
+    @using_map = {}
   
   # skip validate
   
@@ -111,6 +113,10 @@ class @Fn_call
   type      : null
   left_unpack  : true
   fn_decl   : null
+  
+  is_fn_decl_from_using: false
+  fn_name_using : null
+  
   line  : 0
   pos   : 0
   constructor:()->

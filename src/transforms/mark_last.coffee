@@ -13,7 +13,8 @@
   
   if opt.contract?
     if !seek_contract
-      perr "WARNING Can't find contract '#{opt.contract}' I will use last contract '#{last_contract?.name}'"
+      if opt.contract
+        perr "WARNING Can't find contract '#{opt.contract}' I will use last contract '#{last_contract?.name}'"
     else
       if last_contract
         last_contract.is_last = false

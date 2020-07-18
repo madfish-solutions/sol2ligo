@@ -3,6 +3,7 @@ config = require "../config"
 Type   = require "type"
 ast = require "../ast"
 {translate_type} = require "../translate_ligo"
+{translate_var_name} = require "../translate_var_name"
 
 walk = (root, ctx)->
   switch root.constructor.name
@@ -59,6 +60,14 @@ walk = (root, ctx)->
           ctx.change_count.val++
       root
     
+    when "Class_decl"
+      prev_class = ctx.current_class
+      ctx.current_class = root
+      for v in root.scope.list
+        walk v, ctx
+      ctx.current_class = prev_class
+      root
+    
     when "Fn_call"
       if root.fn.name in ["transfer", "send", "call", "built_in_pure_callback", "delegatecall", "transaction"]
         if !ctx.returns_op_list.val
@@ -103,10 +112,37 @@ walk = (root, ctx)->
                   ctx.uses_storage.val = true
                   ctx.change_count.val++
             else if root.fn.name == "push"
+              # TODO check that root.fn.type is array
               # e.g. arr.push(10)
               ctx_lvalue = clone ctx
               ctx_lvalue.lvalue = true
               root.fn = walk root.fn, ctx_lvalue
+            else
+              # using case
+              # TODO check for using decl
+              # BUG 2 libraries with same method name will break this
+              found = false
+              for _type, using_list of ctx.current_class.using_map
+                for using in using_list
+                  synthetic_name = translate_var_name "#{using}_#{root.fn.name}", null
+                  if nest_fn = ctx.fn_decl_map.get synthetic_name
+                    if nest_fn.returns_op_list and !ctx.returns_op_list.val
+                      ctx.returns_op_list.val = true
+                      ctx.change_count.val++
+                    if nest_fn.uses_storage and !ctx.uses_storage.val
+                      ctx.uses_storage.val = true
+                      ctx.change_count.val++
+                    if nest_fn.modifies_storage and !ctx.modifies_storage.val
+                      ctx.modifies_storage.val = true
+                      ctx.change_count.val++
+                    
+                    root.fn_decl = nest_fn
+                    root.is_fn_decl_from_using = true
+                    root.fn_name_using = synthetic_name
+                    
+                    found = true
+                    break
+                break if found
       
       for v,idx in root.arg_list
         root.arg_list[idx] = walk v, ctx
@@ -142,6 +178,9 @@ walk = (root, ctx)->
     change_count: val : 1 # pass first while, val for clone bypass
     global_var_decl_map: new Map
     fn_decl_map: new Map
+    current_class : null
+    # BUG 2 classes with same method name will replace fn_decl of each other
+    # to fix use mk_nest and obj_set-like for fn_decl_map
   }
   for prevent_loop in [0 ... 100]
     break if ctx.change_count.val == 0
