@@ -85,17 +85,17 @@ type_resolve = (type, ctx)->
 
 @default_type_map_gen = ()->
   ret = {
-    bool    : true
-    array   : true
-    string  : true
-    address : true
+    bool    : new Type "struct"
+    array   : new Type "struct"
+    string  : new Type "struct"
+    address : new Type "struct"
   }
   
   for type in config.any_int_type_list
-    ret[type] = true
+    ret[type] = new Type "struct"
   
   for type in config.bytes_type_list
-    ret[type] = true
+    ret[type] = new Type "struct"
   
   ret
 
@@ -219,6 +219,7 @@ class @Ti_context
   current_class : null
   var_map  : {}
   type_map : {}
+  library_map : {}
 
   # external params
   # we call ctx.walk so we can sometimes make calls to previous stage, but continue using current walk
@@ -229,6 +230,7 @@ class @Ti_context
   constructor:()->
     @var_map = module.default_var_map_gen()
     @type_map= module.default_type_map_gen()
+    @library_map = {}
   
   mk_nest : ()->
     ret = new Ti_context
@@ -238,6 +240,7 @@ class @Ti_context
     ret.first_stage_walk = @first_stage_walk
     ret.walk = @walk
     obj_set ret.type_map, @type_map
+    ret.library_map = @library_map
     ret
   
   type_proxy : (cls)->

@@ -4,6 +4,7 @@ Type = require "type"
 config = require "../config"
 require "../type_safe"
 ti = require "./common"
+type_generalize = require "../type_generalize"
 
 @walk = (root, ctx)->
   switch root.constructor.name
@@ -93,7 +94,31 @@ ti = require "./common"
               field_map = ti.bytes_field_map
             else
               class_decl = ctx.check_type root_type.main
-              field_map = class_decl._prepared_field2type
+              if class_decl?._prepared_field2type
+                field_map = class_decl._prepared_field2type
+              else
+                type = type_generalize root_type.main
+                using_list = ctx.current_class.using_map[type]
+                if using_list
+                  for using in using_list
+                    class_decl = ctx.check_type using
+                    if !class_decl
+                      perr "CRITICAL WARNING bad using '#{using}'"
+                      continue
+                    continue if !fn_decl = class_decl._prepared_field2type[root.name]
+                    ret_type = fn_decl.clone()
+                    a_type = ret_type.nest_list[0].nest_list.shift()
+                    if !a_type.cmp root_type
+                      perr "CRITICAL WARNING bad using '#{using}' types for self are not same #{a_type} != #{root_type}"
+                    
+                    root.type = ti.type_spread_left root.type, ret_type, ctx
+                    return root.type
+                  
+                  perr "CRITICAL WARNING can't find #{root.name} for Field_access"
+                  return root_type
+                else
+                  perr "CRITICAL WARNING can't find declaration for Field_access .#{root.name}"
+                  return root_type
 
       if !field_map.hasOwnProperty root.name
         # perr root.t

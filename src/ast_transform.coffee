@@ -14,7 +14,6 @@ module = @
 {mark_last} = require "./transforms/mark_last"
 {router_collector} = require "./transforms/router_collector"
 {add_router} = require "./transforms/add_router"
-{collect_fn_decl} = require "./transforms/collect_fn_decl"
 {call_storage_and_oplist_inject} = require "./transforms/call_storage_and_oplist_inject"
 {replace_enums_by_nat} = require "./transforms/replace_enums_by_nat"
 {intrinsics_converter} = require "./transforms/intrinsics_converter"
@@ -52,8 +51,7 @@ module = @
   root = var_translate root
   root = deep_check_storage_and_oplist_use root
   root = decl_storage_and_oplist_inject root, opt
-  func_decls = collect_fn_decl root
-  root = call_storage_and_oplist_inject root, {func_decls}
+  root = call_storage_and_oplist_inject root
   
   root = mark_last root, opt
   if opt.router
