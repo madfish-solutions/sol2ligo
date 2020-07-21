@@ -30,6 +30,12 @@
             Need some time to load. Loading...
           </span>
         </div>
+        <div class="panel">
+          <input type=checkbox id="router" checked onchange="onPanelChange()"/> router
+          <input type=checkbox id="disable_enums_to_nat" onchange="onPanelChange()"/> disable enums to nat
+          <input type=checkbox id="prefer_erc721" onchange="onPanelChange()"/> prefer erc721
+          <input type=text id="contract" value="" onblur="onPanelChange()"/> contract
+        </div>
       </div>
       <span>
         <a style="background: transparent;" href="https://github.com/madfish-solutions/sol2ligo" target="_blanc"><img alt="GitHub stars" src="https://img.shields.io/github/stars/madfish-solutions/sol2ligo?label=Github%20Stars&logo=github&style=for-the-badge"></a>
@@ -178,7 +184,18 @@
       document.querySelector("#load_msg").innerText =
         "Very experimental. Use it at your own RISK.";
       var warning_list;
+      var argv = {
+        router : true,
+        contract : "",
+        disable_enums_to_nat : false,
+        prefer_erc721 : false
+      }
       function compile(code) {
+        argv.router = window.router.checked
+        argv.disable_enums_to_nat = window.disable_enums_to_nat.checked
+        argv.prefer_erc721 = window.prefer_erc721.checked
+        argv.contract = window.contract.value
+
         return new Promise((res, rej) => {
           var perr_old = window.perr;
           var puts_old = window.puts;
@@ -198,12 +215,18 @@
             warning_list.push(Array.prototype.join.call(arguments, " "));
           }
           try {
+            opt = {
+              router  : argv.router,
+              contract : argv.contract,
+              replace_enums_by_nats: !argv.disable_enums_to_nat,
+              prefer_erc721: argv.prefer_erc721
+            }
             const solidity_ast = ast_gen(code);
             let ast = solidity_to_ast4gen.gen(solidity_ast);
-            ast = ast_transform.pre_ti(ast);
-            ast = type_inference.gen(ast);
-            ast = ast_transform.post_ti(ast);
-            const result = translate_ligo.gen(ast);
+            ast = ast_transform.pre_ti(ast, opt);
+            ast = type_inference.gen(ast, opt);
+            ast = ast_transform.post_ti(ast, opt);
+            const result = translate_ligo.gen(ast, opt);
             res(result);
           } catch (err) {
             warning_list.push(err.stack)
@@ -381,11 +404,11 @@
 
         onChange(solidityEditor.getValue());
 
-        solidityEditor.onDidChangeModelContent(_e => {
+        window.onPanelChange = ()=> {
           const code = solidityEditor.getValue();
-
           onChange(code);
-        });
+        }
+        solidityEditor.onDidChangeModelContent(onPanelChange);
 
         function onChangeTab(fromId, toId) {
           console.log(event);
