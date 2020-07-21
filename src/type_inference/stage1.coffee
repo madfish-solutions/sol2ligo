@@ -161,8 +161,12 @@ type_generalize = require "../type_generalize"
         return root.type
       
       offset = 0
-      for arg in root.arg_list
+      for arg,i in root.arg_list
         ctx.walk arg, ctx
+        if root_type.main != "struct"
+          expected_type = root_type.nest_list[0].nest_list[i+offset]
+          arg.type = ti.type_spread_left arg.type, expected_type, ctx
+      
       
       if root_type.main == "struct"
         # this is contract(address) case

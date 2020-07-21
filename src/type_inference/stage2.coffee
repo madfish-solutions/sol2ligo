@@ -48,7 +48,8 @@ get_list_sign = (list)->
           "Ternary",\
           "New",\    
           "Tuple",\ 
-          "Event_decl" 
+          "Event_decl",\
+          "Fn_call"
       ctx.first_stage_walk root, ctx
 
     when "Bin_op"
@@ -262,49 +263,6 @@ get_list_sign = (list)->
       
       root.type
     
-    when "Fn_call"
-      switch root.fn.constructor.name
-        when "Var"
-          if root.fn.name == "super"
-            perr "CRITICAL WARNING skip super() call"
-            for arg in root.arg_list
-              ctx.walk arg, ctx
-            
-            return root.type
-        
-        when "Field_access"
-          if root.fn.t.constructor.name == "Var"
-            if root.fn.t.name == "super"
-              perr "CRITICAL WARNING skip super.fn call"
-              for arg in root.arg_list
-                ctx.walk arg, ctx
-              
-              return root.type
-      
-      root_type = ctx.walk root.fn, ctx
-      root_type = ti.type_resolve root_type, ctx
-      if !root_type
-        perr "CRITICAL WARNING can't resolve function type for Fn_call"
-        return root.type
-      
-      offset = 0
-      for arg,i in root.arg_list
-        ctx.walk arg, ctx
-        if root_type.main != "struct"
-          expected_type = root_type.nest_list[0].nest_list[i+offset]
-          arg.type = ti.type_spread_left arg.type, expected_type, ctx
-      
-      if root_type.main == "struct"
-        # this is contract(address) case
-        if root.arg_list.length != 1
-          perr "CRITICAL WARNING contract(address) call should have 1 argument. real=#{root.arg_list.length}"
-          return root.type
-        [arg] = root.arg_list
-        arg.type = ti.type_spread_left arg.type, new Type("address"), ctx
-        root.type = ti.type_spread_left root.type, root_type, ctx
-      else
-        root.type = ti.type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
-        
     when "Array_init"
       for v in root.list
         ctx.walk v, ctx
