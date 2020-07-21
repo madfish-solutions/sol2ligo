@@ -49,7 +49,8 @@ get_list_sign = (list)->
           "New",\    
           "Tuple",\ 
           "Event_decl",\
-          "Fn_call"
+          "Fn_call", \ 
+          "Array_init"
       ctx.first_stage_walk root, ctx
 
     when "Bin_op"
@@ -263,26 +264,6 @@ get_list_sign = (list)->
       
       root.type
     
-    when "Array_init"
-      for v in root.list
-        ctx.walk v, ctx
-      
-      nest_type = null
-      if root.type
-        if root.type.main != "array"
-          throw new Error "Array_init can have only array type"
-        nest_type = root.type.nest_list[0]
-      
-      for v in root.list
-        nest_type = ti.type_spread_left nest_type, v.type, ctx
-      
-      for v in root.list
-        v.type = ti.type_spread_left v.type, nest_type, ctx
-      
-      type = new Type "array<#{nest_type}>"
-      root.type = ti.type_spread_left root.type, type, ctx
-      root.type
-        
     else
       ### !pragma coverage-skip-block ###
       perr root
