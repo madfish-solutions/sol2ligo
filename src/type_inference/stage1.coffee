@@ -349,7 +349,7 @@ type_generalize = require "../type_generalize"
         v.type = ti.type_spread_left v.type, nest_type, ctx
       
       type = new Type "array<>"
-      type.nest_list[0] = nest_type
+      type.nest_list[0] = nest_type.clone()
       root.type = ti.type_spread_left root.type, type, ctx
       root.type
     
