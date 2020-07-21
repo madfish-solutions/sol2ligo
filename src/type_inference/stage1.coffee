@@ -103,27 +103,27 @@ type_generalize = require "../type_generalize"
                   for using in using_list
                     class_decl = ctx.check_type using
                     if !class_decl
-                      perr "CRITICAL WARNING bad using '#{using}'"
+                      perr "TI WARNING bad using '#{using}'"
                       continue
                     continue if !fn_decl = class_decl._prepared_field2type[root.name]
                     ret_type = fn_decl.clone()
                     a_type = ret_type.nest_list[0].nest_list.shift()
                     if !a_type.cmp root_type
-                      perr "CRITICAL WARNING bad using '#{using}' types for self are not same #{a_type} != #{root_type}"
+                      perr "TI WARNING bad using '#{using}' types for self are not same #{a_type} != #{root_type}"
                     
                     root.type = ti.type_spread_left root.type, ret_type, ctx
                     return root.type
                   
-                  perr "CRITICAL WARNING can't find #{root.name} for Field_access"
+                  perr "TI WARNING can't find #{root.name} for Field_access"
                   return root_type
                 else
-                  perr "CRITICAL WARNING can't find declaration for Field_access .#{root.name}"
+                  perr "TI WARNING can't find declaration for Field_access .#{root.name}"
                   return root_type
 
       if !field_map.hasOwnProperty root.name
         # perr root.t
         # perr field_map
-        perr "CRITICAL WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_map).join ', '}]"
+        perr "TI WARNING unknown field. '#{root.name}' at type '#{root_type}'. Allowed fields [#{Object.keys(field_map).join ', '}]"
         return root.type
       field_type = field_map[root.name]
       
@@ -139,7 +139,7 @@ type_generalize = require "../type_generalize"
       switch root.fn.constructor.name
         when "Var"
           if root.fn.name == "super"
-            perr "CRITICAL WARNING skip super() call"
+            perr "TI WARNING skipping super() call"
             for arg in root.arg_list
               ctx.walk arg, ctx
             
@@ -148,7 +148,7 @@ type_generalize = require "../type_generalize"
         when "Field_access"
           if root.fn.t.constructor.name == "Var"
             if root.fn.t.name == "super"
-              perr "CRITICAL WARNING skip super.fn call"
+              perr "TI WARNING skipping super.fn call"
               for arg in root.arg_list
                 ctx.walk arg, ctx
               
@@ -157,7 +157,7 @@ type_generalize = require "../type_generalize"
       root_type = ctx.walk root.fn, ctx
       root_type = ti.type_resolve root_type, ctx
       if !root_type
-        perr "CRITICAL WARNING can't resolve function type for Fn_call"
+        perr "TI WARNING can't resolve function type for Fn_call"
         return root.type
       
       offset = 0
@@ -167,7 +167,7 @@ type_generalize = require "../type_generalize"
       if root_type.main == "struct"
         # this is contract(address) case
         if root.arg_list.length != 1
-          perr "CRITICAL WARNING contract(address) call should have 1 argument. real=#{root.arg_list.length}"
+          perr "TI WARNING contract(address) call should have 1 argument. real=#{root.arg_list.length}"
           return root.type
         [arg] = root.arg_list
         arg.type = ti.type_spread_left arg.type, new Type("address"), ctx
@@ -179,7 +179,7 @@ type_generalize = require "../type_generalize"
       root_type = ctx.walk root.fn, ctx
       root_type = ti.type_resolve root_type, ctx
       if !root_type
-        perr "CRITICAL WARNING can't resolve function type for Struct_init"
+        perr "TI WARNING can't resolve function type for Struct_init"
         return root.type
       for arg,i in root.val_list
         ctx.walk arg, ctx
