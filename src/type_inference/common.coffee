@@ -333,7 +333,7 @@ class @Ti_context
     if b_type.main in ["number", "unsigned_number", "signed_number"]
       unless is_defined_number_or_byte_type a_type
         if a_type.main == "address"
-          perr "CRITICAL WARNING address <-> number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO"
+          perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
           return a_type
         throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
     # p "NOTE Reverse spread collision detected", new Error "..."
@@ -384,15 +384,15 @@ class @Ti_context
         return a_type
       
       if a_type.main == "address" and config.any_int_type_map.hasOwnProperty(b_type)
-        perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
+        perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
         return a_type
       
       if b_type.main == "address" and config.any_int_type_map.hasOwnProperty(a_type)
-        perr "CRITICAL WARNING address <-> defined number operation detected '#{a_type}' '#{b_type}'. We can't fix this yet. So generated code will be not compileable by LIGO"
+        perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
         return a_type
       
       if config.bytes_type_map.hasOwnProperty(a_type.main) and config.bytes_type_map.hasOwnProperty(b_type.main)
-        perr "WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
+        perr "TI WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
         return a_type
       
       # throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"

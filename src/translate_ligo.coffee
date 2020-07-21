@@ -130,7 +130,7 @@ number2bytes = (val, precision = 32)->
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
-      perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
+      perr "WARNING BIT_NOT ( ~#{a} ) translation may be incorrect"
       module.warning_counter++
     if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
@@ -138,7 +138,7 @@ number2bytes = (val, precision = 32)->
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx, ast)->
-    perr "RET_INC can have not fully correct implementation"
+    perr "RET_INC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -150,7 +150,7 @@ number2bytes = (val, precision = 32)->
       ctx.trim_expr = "(#{a} - #{one})"
   
   RET_DEC : (a, ctx, ast)->
-    perr "RET_DEC can have not fully correct implementation"
+    perr "RET_DEC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -162,7 +162,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "(#{a} + #{one})"
   
   INC_RET : (a, ctx, ast)->
-    perr "INC_RET can have not fully correct implementation"
+    perr "INC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -171,7 +171,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "#{a}"
   
   DEC_RET : (a, ctx, ast)->
-    perr "DEC_RET can have not fully correct implementation"
+    perr "DEC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -279,7 +279,7 @@ number2bytes = (val, precision = 32)->
       else if type.main.match ///^#{config.storage}_///
         type.main
       else
-        perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
+        perr "WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
@@ -330,7 +330,7 @@ number2bytes = (val, precision = 32)->
             name = "#{ctx.current_class.name}_#{type.main}"
           return "#{name}_default"
 
-      perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
+      perr "WARNING. Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 # ###################################################################################################
@@ -604,7 +604,7 @@ walk = (root, ctx)->
     when "Field_access"
       t = walk root.t, ctx
       if !root.t.type
-        perr "CRITICAL WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+        perr "WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
       else
         switch root.t.type.main
           when "array"
@@ -677,27 +677,27 @@ walk = (root, ctx)->
             return "sha_256(#{msg})"
           
           when "sha3", "keccak256"
-            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
 
           when "selfdestruct"
-            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo"
+            perr "WARNING #{root.fn.name} does not exist in LIGO. Statement translated as is"
             msg = arg_list[0]
-            return "selfdestruct(#{msg})"
+            return "selfdestruct(#{msg}) (* unsupported *)"
 
           when "blockhash"
             msg = arg_list[0]
-            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo. Replaced with (\"#{msg}\" : bytes)."
+            perr "WARNING #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
             return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
-            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           when "ecrecover"
-            perr "WARNING ecrecover function is not present in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
@@ -707,7 +707,6 @@ walk = (root, ctx)->
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
             # TODO config match_action, config.callback_address
-            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
             return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str}))) end"
           
           when "@respond_append"
@@ -715,7 +714,6 @@ walk = (root, ctx)->
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
             return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str})) end)"
           
           else
@@ -767,7 +765,7 @@ walk = (root, ctx)->
           call_expr
         else if ret_types_list.length == 1 and returns_value
           ctx.terminate_expr_replace_fn = ()->
-            perr "WARNING #{call_expr} was terminated with dummy var_decl"
+            perr "WARNING #{call_expr} was terminated with dummy variable declaration"
             tmp_var = "terminate_tmp_#{ctx.tmp_idx++}"
             "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
           ctx.terminate_expr_check = call_expr
@@ -835,10 +833,10 @@ walk = (root, ctx)->
         "(* #{root.text} *)"
     
     when "Continue"
-      "(* CRITICAL WARNING continue is not supported *)"
+      "(* `continue` statement is not supported in LIGO *)"
     
     when "Break"
-      "(* CRITICAL WARNING break is not supported *)"
+      "(* `break` statement is not supported in LIGO *)"
     
     when "Var_decl"
       name = root.name
@@ -886,8 +884,7 @@ walk = (root, ctx)->
         #{join_list jl}
         """
       else
-        perr "CRITICAL WARNING Var_decl_multi with no assign value should be unreachable, but something goes wrong"
-        perr "CRITICAL WARNING We can't guarantee that smart contract would work at all"
+        perr "WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong"
         module.warning_counter++
         jl = []
         for _var in root.list

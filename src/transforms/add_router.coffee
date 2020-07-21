@@ -15,7 +15,7 @@ func2struct = (name)->
   name = name.capitalize()
   if name.length > 31
     new_name = name.substr 0, 31
-    perr "WARNING ligo doesn't understand id for enum longer than 31 char so we trim #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
+    perr "WARNING entrypoint names longer than 31 character are not supported in LIGO. We trimmed #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
     name = new_name
   name
 
@@ -145,7 +145,7 @@ walk = (root, ctx)->
             if !func.returns_value
               _case.scope.list.push comment = new ast.Comment
               comment.text = "This function does nothing, but it's present in router"
-              perr "WARNING. Some function does nothing, but it's present in router"
+              perr "WARNING. Function named ${func.name} does nothing, but it's present in router"
             # tmp var is needed in any case
             _case.scope.list.push tmp = new ast.Var_decl
             tmp.name = "tmp"

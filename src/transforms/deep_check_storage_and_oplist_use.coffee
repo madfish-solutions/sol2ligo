@@ -14,7 +14,7 @@ walk = (root, ctx)->
           ctx_lvalue.lvalue = true
           root.a.a = walk root.a.a, ctx_lvalue
         else
-          perr "WARNING DELETE without INDEX_ACCESS can be handled not properly (extra state pass + return)"
+          perr "WARNING DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)"
           # fallback
           root.a = walk root.a, ctx_lvalue
       

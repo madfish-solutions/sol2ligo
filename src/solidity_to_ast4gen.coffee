@@ -647,14 +647,14 @@ walk = (root, ctx)->
       ret
     
     when "Continue"
-      perr "CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Break"
-      perr "CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Break
       [ret.pos, ret.line] = parse_line_pos(root.src)

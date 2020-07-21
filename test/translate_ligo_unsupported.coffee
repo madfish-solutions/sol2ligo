@@ -29,8 +29,8 @@ describe "translate ligo section unsupported", ()->
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         while (False) block {
-          (* CRITICAL WARNING break is not supported *);
-          (* CRITICAL WARNING continue is not supported *);
+          (* `break` statement is not supported in LIGO *);
+          (* `continue` statement is not supported in LIGO *);
         };
       } with (unit);
     """#"

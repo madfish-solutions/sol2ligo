@@ -32,7 +32,7 @@ process_file = (file)->
   new_ast = solidity_to_ast4gen ast
   
   if new_ast.need_prevent_deploy
-    puts "CRITICAL WARNING. Generated code is not 100% correct. DO NOT DEPLOY IT! Otherwise YOU WILL BE FIRED"
+    puts "WARNING. Generated code is not correct. DO NOT deploy it without prior thorough checking!"
   
   new_ast = ast_transform.pre_ti new_ast
   new_ast = type_inference new_ast
@@ -64,7 +64,7 @@ process_file = (file)->
       puts fs.readFileSync "./ligo_tmp.log", "utf-8"
   
   if new_ast.need_prevent_deploy
-    puts "CRITICAL WARNING. Generated code is not 100% correct. DO NOT DEPLOY IT! Otherwise YOU WILL BE FIRED"
+    puts "WARNING. Generated code is not correct. DO NOT deploy it without prior thorough checking!"
   
   return
 

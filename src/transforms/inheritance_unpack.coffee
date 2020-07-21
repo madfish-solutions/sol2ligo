@@ -53,7 +53,7 @@ walk = (root, ctx)->
       add_fn_decl = (v)->
         if fn_decl_set.has v.name
           if ctx.fn_dedupe_translate_map.has v.name
-            perr "CRITICAL WARNING. only 1 level of shadowing is allowed. Translated code would be not functional"
+            perr "WARNING. only 1 level of shadowing is allowed. Translated code will be not functional"
           else
             new_name = pick_name v.name
             ctx.fn_dedupe_translate_map.set v.name, new_name
