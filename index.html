@@ -30,12 +30,6 @@
             Need some time to load. Loading...
           </span>
         </div>
-        <div class="panel">
-          <input type=checkbox id="router" checked onchange="onPanelChange()"/> router
-          <input type=checkbox id="disable_enums_to_nat" onchange="onPanelChange()"/> disable enums to nat
-          <input type=checkbox id="prefer_erc721" onchange="onPanelChange()"/> prefer erc721
-          <input type=text id="contract" value="" onblur="onPanelChange()"/> contract
-        </div>
       </div>
       <span>
         <a style="background: transparent;" href="https://github.com/madfish-solutions/sol2ligo" target="_blanc"><img alt="GitHub stars" src="https://img.shields.io/github/stars/madfish-solutions/sol2ligo?label=Github%20Stars&logo=github&style=for-the-badge"></a>
@@ -263,6 +257,54 @@
       };
 
       require(["vs/editor/editor.main"], () => {
+        const settingsOverlayWidget = {
+          height: 120, // in px
+          domNode: null,
+          getId: function() {
+            return "settings.overlay.widget";
+          },
+          getDomNode: function() {
+            if (!this.domNode) {
+              this.domNode = document.createElement("div");
+              this.domNode.innerHTML = `
+                <div class="panel-row">
+                  <h4 style="margin: 0;">Compilation Options</h4>
+                </div>
+                <div class="panel-row">
+                  <div class="contract-name-input">
+                    <label>Contract name:</label>
+                    <input type=text id="contract" value="" placeholder="Counter" onblur="onPanelChange()"/>
+                  </div>
+                </div>
+                <div class="panel-row">
+                  <div class="panel-checkbox">
+                    <input type=checkbox id="router" name="router" checked onchange="onPanelChange()"/>
+                    <label for="router">Add router</label>
+                  </div>
+                  <div class="panel-checkbox">
+                    <input type=checkbox id="disable_enums_to_nat" name="disable_enums_to_nat" onchange="onPanelChange()"/>
+                    <label for="disable_enums_to_nat">Disable enums to nat conversion</label>
+                  </div>
+                  <div class="panel-checkbox">
+                    <input type=checkbox id="prefer_erc721" name="prefer_erc721" onchange="onPanelChange()"/>
+                    <label for="prefer_erc721">Prefer ERC721</label>
+                  </div>
+                </div>
+              `;
+              this.domNode.classList.add('panel');
+              this.domNode.style.position = "absolute";
+              this.domNode.style.width = "calc(100% - 14px)"; // take scrollbars into account
+              this.domNode.style.height = this.height + "px";
+              this.domNode.style.zIndex = "20";
+              this.domNode.style.left = "0";
+              this.domNode.style.top = (solidityEditor.getContentHeight() - this.height) + 'px';
+            }
+            return this.domNode;
+          },
+          getPosition: function() {
+            return null;
+          },
+        };
         const overlayWidget = {
           domNode: null,
           getId: function() {
@@ -342,6 +384,7 @@
         );
 
         solidityEditor.addOverlayWidget(overlayWidget);
+        solidityEditor.addOverlayWidget(settingsOverlayWidget);
 
         const slimData = example_list.reduce((acc, example) => {
           const {title, code} = example;
