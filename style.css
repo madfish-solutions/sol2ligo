@@ -205,3 +205,34 @@ footer {
   border-color: black !important;
   color: #fff !important;
 }
+
+.panel {
+  display: flex;
+  box-sizing: border-box;
+  flex-flow: column nowrap;
+  justify-content: space-around;
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid black;
+  padding: 5px 15px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"
+}
+
+.panel-row {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.contract-name-input {
+  padding: 0 5px;
+}
+
+.contract-name-input > input {
+  margin-left: 5px;
+}
+
+.panel-checkbox {
+  margin-right: 20px;
+}
