@@ -341,3 +341,43 @@ describe "translate ligo section library", ()->
       end);
     """
     make_test text_i, text_o, router: true
+  
+  it "library libname.method (using for *)", ()->
+    text_i = """
+    pragma solidity ^0.4.22;
+    
+    library ExactMath {
+      function exactAdd(uint self, uint other) internal returns (uint sum) {
+        sum = self + other;
+        require(sum >= self);
+      }
+    }
+    
+    contract MathExamples {
+      using ExactMath for *;
+      // Add exact uints example.
+      function uintExactAddOverflowExample() public {
+        var n = uint(~0);
+        n.exactAdd(1);
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function exactMath_exactAdd (const test_reserved_long___self : nat; const other : nat) : (nat) is
+      block {
+        const sum : nat = 0n;
+        sum := (test_reserved_long___self + other);
+        assert((sum >= test_reserved_long___self));
+      } with (sum);
+    (* UsingForDirective *)
+    
+    function uintExactAddOverflowExample (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const n : nat = abs(not (0));
+        const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
+      } with (unit);
+    """#"
+    make_test text_i, text_o
+  

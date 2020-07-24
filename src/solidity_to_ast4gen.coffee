@@ -257,7 +257,11 @@ walk = (root, ctx)->
       ret.text = "UsingForDirective"
       [ret.pos, ret.line] = parse_line_pos(root.src)
       
-      type = type_generalize root.typeName.name
+      if root.typeName == null
+        type = "*"
+      else
+        type = type_generalize root.typeName.name
+      
       ctx.contract.using_map[type] ?= []
       ctx.contract.using_map[type].push root.libraryName.name
 

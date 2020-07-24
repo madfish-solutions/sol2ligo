@@ -98,7 +98,7 @@ type_generalize = require "../type_generalize"
                 field_map = class_decl._prepared_field2type
               else
                 type = type_generalize root_type.main
-                using_list = ctx.current_class.using_map[type]
+                using_list = ctx.current_class.using_map[type] or ctx.current_class.using_map["*"]
                 if using_list
                   for using in using_list
                     class_decl = ctx.check_type using
