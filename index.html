@@ -124,15 +124,17 @@
     <script src="web/lib/type_safe.js"></script>
     <script src="web/common/ast4gen.js"></script>
     <script src="web/lib/ast.js"></script>
+    <script src="web/lib/type_generalize.js"></script>
     <script src="web/lib/solidity_to_ast4gen.js"></script>
     <script src="web/lib/translate_var_name.js"></script>
-    <script src="web/lib/translate_ligo.js"></script>
-    <script src="web/lib/translate_ligo_default_state.js"></script>
     
     <script src="web/lib/type_inference/common.js"></script>
     <script src="web/lib/type_inference/stage1.js"></script>
     <script src="web/lib/type_inference/stage2.js"></script>
     <script src="web/lib/type_inference.js"></script>
+    
+    <script src="web/lib/translate_ligo.js"></script>
+    <script src="web/lib/translate_ligo_default_state.js"></script>
     
     <script src="web/lib/ast_builder.js"></script>
     <script src="web/lib/transforms/default_walk.js"></script>
@@ -148,7 +150,9 @@
     <script src="web/lib/transforms/ass_op_unpack.js"></script>
     <script src="web/lib/transforms/modifier_unpack.js"></script>
     <script src="web/lib/transforms/inheritance_unpack.js"></script>
+    <script src="web/lib/transforms/deep_check_storage_and_oplist_use.js"></script>
     <script src="web/lib/transforms/decl_storage_and_oplist_inject.js"></script>
+    <script src="web/lib/transforms/mark_last.js"></script>
     <script src="web/lib/transforms/router_collector.js"></script>
     <script src="web/lib/transforms/add_router.js"></script>
     <script src="web/lib/transforms/collect_fn_decl.js"></script>
@@ -159,6 +163,7 @@
     <script src="web/lib/transforms/erc721_converter.js"></script>
     <script src="web/lib/transforms/return_op_list_count.js"></script>
     <script src="web/lib/transforms/address_calls_converter.js"></script>
+    <script src="web/lib/transforms/split_nested_index_access.js"></script>
     
     <script src="web/lib/ast_transform.js"></script>
     <script src="web/example_list.js"></script>

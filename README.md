@@ -57,6 +57,13 @@ npm i -g iced-coffee-script
 npm i -g madfish-solutions/sol2ligo
 ```
 
+Optional. You can install ligo compiler for tests
+
+```
+curl -o /tmp/ligo.deb https://ligolang.org/deb/ligo.deb
+dpkg -i /tmp/ligo.deb
+```
+
 ## 🌈️ Usage
 
 ```sh

@@ -55,8 +55,7 @@
       blockmap: new Type("function2<function<address>,function<bytes32>>"),
       keccak256: new Type("function2<function<bytes>,function<bytes32>>"),
       ripemd160: new Type("function2<function<bytes>,function<bytes20>>"),
-      ecrecover: new Type("function2<function<bytes, uint8, bytes32, bytes32>,function<address>>"),
-      "@respond": new Type("function2<function<>,function<>>")
+      ecrecover: new Type("function2<function<bytes, uint8, bytes32, bytes32>,function<address>>")
     };
   };
 
@@ -113,20 +112,20 @@
   this.default_type_map_gen = function() {
     var ret, type, _i, _j, _len, _len1, _ref, _ref1;
     ret = {
-      bool: true,
-      array: true,
-      string: true,
-      address: true
+      bool: new Type("struct"),
+      array: new Type("struct"),
+      string: new Type("struct"),
+      address: new Type("struct")
     };
     _ref = config.any_int_type_list;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       type = _ref[_i];
-      ret[type] = true;
+      ret[type] = new Type("struct");
     }
     _ref1 = config.bytes_type_list;
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
       type = _ref1[_j];
-      ret[type] = true;
+      ret[type] = new Type("struct");
     }
     return ret;
   };
@@ -343,6 +342,8 @@
 
     Ti_context.prototype.type_map = {};
 
+    Ti_context.prototype.library_map = {};
+
     Ti_context.prototype.walk = null;
 
     Ti_context.prototype.first_stage_walk = null;
@@ -352,6 +353,7 @@
     function Ti_context() {
       this.var_map = module.default_var_map_gen();
       this.type_map = module.default_type_map_gen();
+      this.library_map = {};
     }
 
     Ti_context.prototype.mk_nest = function() {
@@ -363,6 +365,7 @@
       ret.first_stage_walk = this.first_stage_walk;
       ret.walk = this.walk;
       obj_set(ret.type_map, this.type_map);
+      ret.library_map = this.library_map;
       return ret;
     };
 
@@ -496,7 +499,7 @@
       if ((_ref7 = b_type.main) === "number" || _ref7 === "unsigned_number" || _ref7 === "signed_number") {
         if (!is_defined_number_or_byte_type(a_type)) {
           if (a_type.main === "address") {
-            perr("CRITICAL WARNING address <-> number operation detected. We can't fix this yet. So generated code will be not compileable by LIGO");
+            perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
             return a_type;
           }
           throw new Error("can't spread '" + b_type + "' to '" + a_type + "'. Reverse spread collision detected");
@@ -550,15 +553,15 @@
           return a_type;
         }
         if (a_type.main === "address" && config.any_int_type_map.hasOwnProperty(b_type)) {
-          perr("CRITICAL WARNING address <-> defined number operation detected '" + a_type + "' '" + b_type + "'. We can't fix this yet. So generated code will be not compileable by LIGO");
+          perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
           return a_type;
         }
         if (b_type.main === "address" && config.any_int_type_map.hasOwnProperty(a_type)) {
-          perr("CRITICAL WARNING address <-> defined number operation detected '" + a_type + "' '" + b_type + "'. We can't fix this yet. So generated code will be not compileable by LIGO");
+          perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
           return a_type;
         }
         if (config.bytes_type_map.hasOwnProperty(a_type.main) && config.bytes_type_map.hasOwnProperty(b_type.main)) {
-          perr("WARNING bytes with different sizes are in type collision '" + a_type + "' '" + b_type + "'. This can lead to runtime error.");
+          perr("TI WARNING bytes with different sizes are in type collision '" + a_type + "' '" + b_type + "'. This can lead to runtime error.");
           return a_type;
         }
       }

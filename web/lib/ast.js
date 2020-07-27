@@ -35,6 +35,8 @@
 
     Class_decl.prototype.inheritance_list = [];
 
+    Class_decl.prototype.using_map = {};
+
     Class_decl.prototype.line = 0;
 
     Class_decl.prototype.pos = 0;
@@ -43,6 +45,7 @@
       this.scope = new module.Scope;
       this._prepared_field2type = {};
       this.inheritance_list = [];
+      this.using_map = {};
     }
 
     Class_decl.prototype.clone = function() {
@@ -93,8 +96,6 @@
 
     Var.prototype.type = null;
 
-    Var.prototype.left_unpack = false;
-
     Var.prototype.line = 0;
 
     Var.prototype.pos = 0;
@@ -107,7 +108,6 @@
         ret.type = this.type.clone();
       }
       ret.line = this.line;
-      ret.left_unpack = this.left_unpack;
       ret.pos = this.pos;
       return ret;
     };
@@ -135,6 +135,8 @@
 
     Var_decl.prototype.assign_value_list = null;
 
+    Var_decl.prototype.is_enum_decl = false;
+
     Var_decl.prototype.line = 0;
 
     Var_decl.prototype.pos = 0;
@@ -161,12 +163,93 @@
           ret.assign_value_list.push(v.clone());
         }
       }
+      ret.is_enum_decl = this.is_enum_decl;
       ret.line = this.line;
       ret.pos = this.pos;
       return ret;
     };
 
     return Var_decl;
+
+  })();
+
+  this.Fn_call = (function() {
+    Fn_call.prototype.fn = null;
+
+    Fn_call.prototype.arg_list = [];
+
+    Fn_call.prototype.splat_fin = false;
+
+    Fn_call.prototype.type = null;
+
+    Fn_call.prototype.left_unpack = true;
+
+    Fn_call.prototype.fn_decl = null;
+
+    Fn_call.prototype.is_fn_decl_from_using = false;
+
+    Fn_call.prototype.fn_name_using = null;
+
+    Fn_call.prototype.line = 0;
+
+    Fn_call.prototype.pos = 0;
+
+    function Fn_call() {
+      this.arg_list = [];
+    }
+
+    Fn_call.prototype.validate = function(ctx) {
+      var arg, _i, _len, _ref;
+      if (ctx == null) {
+        ctx = new module.Validation_context;
+      }
+      if (!this.fn) {
+        throw new Error("Fn_call validation error line=" + this.line + " pos=" + this.pos + ". fn missing");
+      }
+      this.fn.validate(ctx);
+      if (this.fn.type.main !== "function") {
+        throw new Error("Fn_call validation error line=" + this.line + " pos=" + this.pos + ". Can't call type '@fn.type'. You can call only function");
+      }
+      if (!this.type.cmp(void_type)) {
+        type_validate(this.type, ctx);
+      }
+      if (!this.type.cmp(this.fn.type.nest_list[0])) {
+        throw new Error("Fn_call validation error line=" + this.line + " pos=" + this.pos + ". Return type and function decl return type doesn't match " + this.fn.type.nest_list[0] + " != " + this.type);
+      }
+      if (this.fn.type.nest_list.length - 1 !== this.arg_list.length) {
+        throw new Error("Fn_call validation error line=" + this.line + " pos=" + this.pos + ". Expected arg count=" + (this.fn.type.nest_list.length - 1) + " found=" + this.arg_list.length);
+      }
+      _ref = this.arg_list;
+      for (k = _i = 0, _len = _ref.length; _i < _len; k = ++_i) {
+        arg = _ref[k];
+        arg.validate(ctx);
+        if (!this.fn.type.nest_list[k + 1].cmp(arg.type)) {
+          throw new Error("Fn_call validation error line=" + this.line + " pos=" + this.pos + ". arg[" + k + "] type mismatch. Expected=" + this.fn.type.nest_list[k + 1] + " found=" + arg.type);
+        }
+      }
+    };
+
+    Fn_call.prototype.clone = function() {
+      var ret, _i, _len, _ref;
+      ret = new module.Fn_call;
+      ret.fn = this.fn.clone();
+      _ref = this.arg_list;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        ret.arg_list.push(v.clone());
+      }
+      ret.splat_fin = this.splat_fin;
+      if (this.type) {
+        ret.type = this.type.clone();
+      }
+      ret.left_unpack = this.left_unpack;
+      ret.fn_decl = this.fn_decl;
+      ret.line = this.line;
+      ret.pos = this.pos;
+      return ret;
+    };
+
+    return Fn_call;
 
   })();
 
@@ -201,13 +284,20 @@
 
     Fn_decl_multiret.prototype.modifier_list = [];
 
+    Fn_decl_multiret.prototype.returns_op_list = false;
+
+    Fn_decl_multiret.prototype.uses_storage = false;
+
+    Fn_decl_multiret.prototype.modifies_storage = false;
+
+    Fn_decl_multiret.prototype.returns_value = false;
+
     function Fn_decl_multiret() {
       this.arg_name_list = [];
       this.scope = new ast.Scope;
       this.modifier_list = [];
       this.contract_name = "";
       this.contract_type = "";
-      this.should_ret_args = false;
     }
 
     Fn_decl_multiret.prototype.clone = function() {

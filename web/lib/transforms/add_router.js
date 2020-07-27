@@ -23,18 +23,18 @@
     name = name.capitalize();
     if (name.length > 31) {
       new_name = name.substr(0, 31);
-      perr("WARNING ligo doesn't understand id for enum longer than 31 char so we trim " + name + " to " + new_name + ". Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types");
+      perr("WARNING entrypoint names longer than 31 character are not supported in LIGO. We trimmed " + name + " to " + new_name + ". Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types");
       name = new_name;
     }
     return name;
   };
 
   walk = function(root, ctx) {
-    var arg, arg_name, call, decl, func, idx, match_shoulder, record, ret, value, _case, _enum, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _main, _ref, _ref1, _ref2, _ref3, _ref4, _switch, _var;
+    var access_gen, arg, arg_name, arg_num, call, comment, decl, func, idx, match_shoulder, ops_extract, proxy_call, record, ret, ret_tuple, ret_val, start, tmp, value, var_tmp, _case, _enum, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _main, _ref, _ref1, _ref2, _ref3, _ref4, _switch, _var;
     walk = ctx.walk;
     switch (root.constructor.name) {
       case "Class_decl":
-        if (root.is_contract) {
+        if (root.is_contract && root.is_last) {
           if (ctx.contract && root.name !== ctx.contract) {
             return ctx.next_gen(root, ctx);
           }
@@ -44,19 +44,21 @@
             root.scope.list.push(record = new ast.Class_decl);
             record.name = func2args_struct(func.name);
             record.namespace_name = false;
-            _ref1 = func.arg_name_list;
+            start = 0;
+            if (func.uses_storage) {
+              start++;
+            }
+            if (func.returns_op_list) {
+              start++;
+            }
+            _ref1 = func.arg_name_list.slice(start);
             for (idx = _j = 0, _len1 = _ref1.length; _j < _len1; idx = ++_j) {
               value = _ref1[idx];
-              if (func.state_mutability !== "pure") {
-                if (idx < 1) {
-                  continue;
-                }
-              }
               record.scope.list.push(arg = new ast.Var_decl);
               arg.name = value;
-              arg.type = func.type_i.nest_list[idx];
+              arg.type = func.type_i.nest_list[start + idx];
             }
-            if (func.state_mutability === "pure") {
+            if (func.returns_value) {
               record.scope.list.push(arg = new ast.Var_decl);
               arg.name = config.callback_address;
               arg.type = new Type("address");
@@ -95,8 +97,8 @@
             _case.var_decl.name = "match_action";
             _case.var_decl.type = new Type(_case.struct_name);
             call = new ast.Fn_call;
+            call.left_unpack = false;
             call.fn = new ast.Var;
-            call.fn.left_unpack = true;
             call.fn.name = func.name;
             call.fn.type = new Type("function2");
             call.fn.type.nest_list[0] = func.type_i;
@@ -104,38 +106,117 @@
             _ref4 = func.arg_name_list;
             for (idx = _m = 0, _len4 = _ref4.length; _m < _len4; idx = ++_m) {
               arg_name = _ref4[idx];
-              if (arg_name === "self") {
-                arg = new ast.Var;
-                arg.name = arg_name;
-                arg.type = new Type(config.storage);
-                arg.name_translate = false;
-                call.arg_list.push(arg);
-              } else {
-                arg = new ast.Var;
-                arg.name = _case.var_decl.name;
-                arg.type = _case.var_decl.type;
-                call.arg_list.push(match_shoulder = new ast.Field_access);
-                match_shoulder.name = arg_name;
-                match_shoulder.t = arg;
+              switch (arg_name) {
+                case config.contract_storage:
+                  arg = new ast.Var;
+                  arg.name = arg_name;
+                  arg.type = new Type(config.storage);
+                  arg.name_translate = false;
+                  call.arg_list.push(arg);
+                  break;
+                case config.op_list:
+                  arg = new ast.Const;
+                  arg.type = new Type("built_in_op_list");
+                  call.arg_list.push(arg);
+                  break;
+                default:
+                  arg = new ast.Var;
+                  arg.name = _case.var_decl.name;
+                  arg.type = _case.var_decl.type;
+                  call.arg_list.push(match_shoulder = new ast.Field_access);
+                  match_shoulder.name = arg_name;
+                  match_shoulder.t = arg;
               }
             }
-            if (!func.returns_op_list && func.modifies_storage) {
+            if (!func.returns_value && (func.returns_op_list || func.modifies_storage)) {
               _case.scope.need_nest = false;
-              _case.scope.list.push(ret = new ast.Tuple);
-              ret.list.push(_var = new ast.Const);
-              _var.type = new Type("built_in_op_list");
-              ret.list.push(call);
-            } else if (!func.modifies_storage) {
-              _case.scope.need_nest = false;
-              _case.scope.list.push(ret = new ast.Tuple);
-              ret.list.push(call);
-              ret.list.push(_var = new ast.Var);
-              _var.type = new Type(config.storage);
-              _var.name = config.contract_storage;
-              _var.name_translate = false;
+              if (func.returns_op_list && func.modifies_storage) {
+                _case.scope.list.push(call);
+              } else {
+                _case.scope.list.push(ret_tuple = new ast.Tuple);
+                if (!func.returns_op_list) {
+                  ret_tuple.list.push(_var = new ast.Const);
+                  _var.type = new Type("built_in_op_list");
+                }
+                ret_tuple.list.push(call);
+                if (!func.modifies_storage) {
+                  ret_tuple.list.push(_var = new ast.Var);
+                  _var.type = new Type(config.storage);
+                  _var.name = config.contract_storage;
+                  _var.name_translate = false;
+                }
+              }
             } else {
-              _case.scope.need_nest = false;
-              _case.scope.list.push(call);
+              _case.scope.need_nest = true;
+              if (!func.returns_value) {
+                _case.scope.list.push(comment = new ast.Comment);
+                comment.text = "This function does nothing, but it's present in router";
+                perr("WARNING. Function named ${func.name} does nothing, but it's present in router");
+              }
+              _case.scope.list.push(tmp = new ast.Var_decl);
+              tmp.name = "tmp";
+              tmp.assign_value = call;
+              tmp.type = func.type_o.clone();
+              tmp.type.main = "tuple";
+              ret_tuple = new ast.Tuple;
+              arg_num = 0;
+              access_gen = function() {
+                var tmp_access, var_tmp;
+                tmp_access = new ast.Field_access;
+                tmp_access.type = tmp.type.nest_list[arg_num];
+                tmp_access.name = arg_num.toString();
+                arg_num++;
+                tmp_access.t = var_tmp = new ast.Var;
+                var_tmp.name = "tmp";
+                return tmp_access;
+              };
+              if (+func.returns_op_list + +func.modifies_storage + +func.returns_value === 1) {
+                access_gen = function() {
+                  var var_tmp;
+                  var_tmp = new ast.Var;
+                  var_tmp.name = "tmp";
+                  var_tmp.type = tmp.type.nest_list[0];
+                  return var_tmp;
+                };
+              }
+              if (func.returns_op_list) {
+                ret_tuple.list.push(access_gen());
+              } else {
+                if (func.returns_value) {
+                  ret_tuple.list.push(_var = new ast.Var);
+                  _var.name = config.op_list;
+                } else {
+                  ret_tuple.list.push(_var = new ast.Const);
+                  _var.type = new Type("built_in_op_list");
+                }
+              }
+              if (func.modifies_storage) {
+                ret_tuple.list.push(access_gen());
+              } else {
+                ret_tuple.list.push(_var = new ast.Var);
+                _var.type = new Type(config.storage);
+                _var.name = config.contract_storage;
+                _var.name_translate = false;
+              }
+              arg_num = 0;
+              ret_val = access_gen();
+              if (func.returns_value) {
+                _case.scope.list.push(proxy_call = new ast.Fn_call);
+                proxy_call.fn = new ast.Var;
+                if (func.returns_op_list) {
+                  ops_extract = new ast.Field_access;
+                  ops_extract.name = "0";
+                  ops_extract.t = var_tmp = new ast.Var;
+                  var_tmp.name = "tmp";
+                  proxy_call.fn.name = "@respond_append";
+                  proxy_call.arg_list = [ops_extract, ret_val];
+                } else {
+                  proxy_call.fn.name = "@respond";
+                  proxy_call.arg_list = [ret_val];
+                }
+              }
+              _case.scope.list.push(ret = new ast.Ret_multi);
+              ret.t_list.push(ret_tuple);
             }
           }
           return root;

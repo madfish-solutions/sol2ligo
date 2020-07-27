@@ -40,6 +40,18 @@
     return ret;
   };
 
+  this.contract_addr_transform = function(in_addr_expr) {
+    var address_expr;
+    if (in_addr_expr.type.main === "struct" && in_addr_expr.arg_list.length === 1) {
+      address_expr = new ast.Type_cast;
+      address_expr.t = in_addr_expr.arg_list[0];
+      address_expr.target_type = new Type("address");
+    } else {
+      address_expr = in_addr_expr;
+    }
+    return address_expr;
+  };
+
   this.transaction = function(input_args, entrypoint_expr, cost) {
     var inject, params;
     inject = new ast.Fn_call;

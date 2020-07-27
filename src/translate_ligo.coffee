@@ -1,7 +1,12 @@
 module = @
 require "fy/codegen"
 config = require "./config"
+Type = require "type"
 {translate_var_name, spec_id_translate} = require "./translate_var_name"
+{default_var_map_gen} = require "./type_inference/common"
+{type_generalize} = require "./type_generalize"
+ti_map = default_var_map_gen()
+ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
 module.warning_counter = 0
 # ###################################################################################################
@@ -45,10 +50,11 @@ some2nat = (val, type)->
 
 number2bytes = (val, precision = 32)->
   ret = []
+  val = BigInt(val)
   for i in [0 ... precision]
-    hex = val & 0xFF
+    hex = val & BigInt("0xFF")
     ret.push hex.toString(16).rjust 2, "0"
-    val >>= 8
+    val >>= BigInt(8)
   ret.push "0x"
   ret.reverse()
   ret.join ""
@@ -124,7 +130,7 @@ number2bytes = (val, precision = 32)->
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
-      perr "WARNING BIT_NOT ( ~#{a} ) translation can be incorrect"
+      perr "WARNING BIT_NOT ( ~#{a} ) translation may be incorrect"
       module.warning_counter++
     if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
@@ -132,7 +138,7 @@ number2bytes = (val, precision = 32)->
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx, ast)->
-    perr "RET_INC can have not fully correct implementation"
+    perr "RET_INC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -144,7 +150,7 @@ number2bytes = (val, precision = 32)->
       ctx.trim_expr = "(#{a} - #{one})"
   
   RET_DEC : (a, ctx, ast)->
-    perr "RET_DEC can have not fully correct implementation"
+    perr "RET_DEC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -156,7 +162,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "(#{a} + #{one})"
   
   INC_RET : (a, ctx, ast)->
-    perr "INC_RET can have not fully correct implementation"
+    perr "INC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -165,7 +171,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "#{a}"
   
   DEC_RET : (a, ctx, ast)->
-    perr "DEC_RET can have not fully correct implementation"
+    perr "DEC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -230,7 +236,10 @@ number2bytes = (val, precision = 32)->
       list = []
       for v in type.nest_list
         list.push translate_type v, ctx
-      "(#{list.join ' * '})"
+      if list.length == 0
+        "unit"
+      else
+        "(#{list.join ' * '})"
     
     when "map"
       key   = translate_type type.nest_list[0], ctx
@@ -270,7 +279,7 @@ number2bytes = (val, precision = 32)->
       else if type.main.match ///^#{config.storage}_///
         type.main
       else
-        perr "CRITICAL WARNING. translate_type unknown solidity type '#{type}'"
+        perr "WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
@@ -321,7 +330,7 @@ number2bytes = (val, precision = 32)->
             name = "#{ctx.current_class.name}_#{type.main}"
           return "#{name}_default"
 
-      perr "CRITICAL WARNING. type2default_value unknown solidity type '#{type}'"
+      perr "WARNING. Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 # ###################################################################################################
@@ -338,6 +347,8 @@ class @Gen_context
   
   contract          : false
   trim_expr         : ""
+  terminate_expr_check    : ""
+  terminate_expr_replace_fn: null
   storage_sink_list : {}
   sink_list         : []
   type_decl_sink_list: []
@@ -446,6 +457,9 @@ walk = (root, ctx)->
               if ctx.trim_expr == code
                 ctx.trim_expr = ""
                 continue
+              if ctx.terminate_expr_check == code
+                ctx.terminate_expr_check = ""
+                code = ctx.terminate_expr_replace_fn()
               if code
                 if v.constructor.name not in ["Comment", "Scope"]
                   code += ";" if !/;$/.test code
@@ -489,7 +503,7 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Var"
       name = root.name
-      return "" if name == "this"
+      return "" if name in ["this", "super"]
       if ctx.contract_var_map.hasOwnProperty name
         "#{config.contract_storage}.#{name}"
       else
@@ -560,9 +574,9 @@ walk = (root, ctx)->
         if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
           switch op
             when "="
-              "bitwise_not(bitwise_xor(#{_a}, #{_b}))"
+              "(#{_a} = #{_b})"
             when "=/="
-              "bitwise_xor(#{_a}, #{_b})"
+              "(#{_a} =/= #{_b})"
             when ">"
               "(#{_a} and not #{_b})"
             when "<" 
@@ -590,7 +604,7 @@ walk = (root, ctx)->
     when "Field_access"
       t = walk root.t, ctx
       if !root.t.type
-        perr "CRITICAL WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+        perr "WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
       else
         switch root.t.type.main
           when "array"
@@ -629,15 +643,16 @@ walk = (root, ctx)->
       for v in root.arg_list
         arg_list.push walk v, ctx
       
+      field_access_translation = null
       if root.fn.constructor.name == "Field_access"
-        t = walk root.fn.t, ctx
+        field_access_translation =  walk root.fn.t, ctx
         if root.fn.t.type
           switch root.fn.t.type.main
             when "array"
               switch root.fn.name
                 when "push"
                   tmp_var = "tmp_#{ctx.tmp_idx++}"
-                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{t};"
+                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};"
                   return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
                 
                 else
@@ -662,59 +677,124 @@ walk = (root, ctx)->
             return "sha_256(#{msg})"
           
           when "sha3", "keccak256"
-            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
 
           when "selfdestruct"
-            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo"
+            perr "WARNING #{root.fn.name} does not exist in LIGO. Statement translated as is"
             msg = arg_list[0]
-            return "selfdestruct(#{msg})"
+            return "selfdestruct(#{msg}) (* unsupported *)"
 
           when "blockhash"
             msg = arg_list[0]
-            perr "CRITICAL WARNING #{root.fn.name} is not implemented in ligo. Replaced with (\"#{msg}\" : bytes)."
+            perr "WARNING #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
             return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
-            perr "CRITICAL WARNING #{root.fn.name} hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           when "ecrecover"
-            perr "WARNING ecrecover function is not present in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
           when "@respond"
-            perr "CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw"
-            # p root
-            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, #{config.receiver_name}) end"
+            type_list = []
+            for v in root.arg_list
+              type_list.push translate_type v.type, ctx
+            type_str = type_list.join " * "
+            # TODO config match_action, config.callback_address
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str}))) end"
+          
+          when "@respond_append"
+            type_list = []
+            for v in root.arg_list
+              type_list.push translate_type v.type, ctx
+            type_str = type_list.join " * "
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str})) end)"
+          
           else
             fn = root.fn.name
       else
         fn = walk root.fn, ctx
-    
+      
       if arg_list.length == 0
         arg_list.push "unit"
       
-      ret_types_list = []
-      # type can be null
-      # type can be contract name, so no nest_list
-      return_types = root.fn.type?.nest_list[1]
-      for v in return_types?.nest_list or []
-        ret_types_list.push translate_type v, ctx
       
-      tmp_var = "tmp_#{ctx.tmp_idx++}"
       call_expr = "#{fn}(#{arg_list.join ', '})";
-
-      if not root.left_unpack
-        "#{call_expr}"
+      
+      if not root.left_unpack or fn in ["get_contract", "transaction"]
+        call_expr
       else
-        if ret_types_list.length == 1
-          ctx.sink_list.push "const #{tmp_var} : #{ret_types_list[0]} = #{call_expr}"
+        if root.fn_decl
+          {
+            returns_op_list
+            uses_storage
+            modifies_storage
+            returns_value
+          } = root.fn_decl
+          {type_o} = root.fn_decl
+          if root.is_fn_decl_from_using
+            # TODO same for op list
+            shift_self = arg_list.shift() if uses_storage
+            arg_list.unshift field_access_translation
+            arg_list.unshift shift_self   if uses_storage
+            call_expr = "#{root.fn_name_using}(#{arg_list.join ', '})"
+        else if type_decl = ti_map[root.fn.name]
+          returns_op_list = false
+          modifies_storage= false
+          returns_value   = type_decl.nest_list[1].nest_list.length > 0
+          type_o          = type_decl.nest_list[1]
+        else if ctx.contract_var_map.hasOwnProperty root.fn.name
+          decl = ctx.contract_var_map[root.fn.name]
+          return call_expr if decl.constructor.name == "Fn_decl_multiret"
+          return "#{config.contract_storage}.#{root.fn.name}"
         else
-          ctx.sink_list.push "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+          perr "WARNING !root.fn_decl #{root.fn.name}"
+          return call_expr
+        
+        ret_types_list = []
+        for v in type_o.nest_list
+          ret_types_list.push translate_type v, ctx
+        
+        if ret_types_list.length == 0
+          call_expr
+        else if ret_types_list.length == 1 and returns_value
+          ctx.terminate_expr_replace_fn = ()->
+            perr "WARNING #{call_expr} was terminated with dummy variable declaration"
+            tmp_var = "terminate_tmp_#{ctx.tmp_idx++}"
+            "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+          ctx.terminate_expr_check = call_expr
+        else
+          if ret_types_list.length == 1
+            # no tmp_var
+            if returns_op_list
+              "#{config.op_list} := #{call_expr}"
+            else if modifies_storage
+              "#{config.contract_storage} := #{call_expr}"
+            else
+              throw new Error "WTF !returns_op_list !modifies_storage"
+          else
+            tmp_var = "tmp_#{ctx.tmp_idx++}"
+            ctx.sink_list.push "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
+            
+            arg_num = 0
+            get_tmp = ()->
+              if ret_types_list.length == 1
+                tmp_var
+              else
+                "#{tmp_var}.#{arg_num++}"
+            
+            if returns_op_list
+              ctx.sink_list.push "#{config.op_list} := #{get_tmp()}"
+            if modifies_storage
+              ctx.sink_list.push "#{config.contract_storage} := #{get_tmp()}"
+              
+            ctx.trim_expr = get_tmp()
     
     when "Struct_init"
       arg_list = []
@@ -753,10 +833,10 @@ walk = (root, ctx)->
         "(* #{root.text} *)"
     
     when "Continue"
-      "(* CRITICAL WARNING continue is not supported *)"
+      "(* `continue` statement is not supported in LIGO *)"
     
     when "Break"
-      "(* CRITICAL WARNING break is not supported *)"
+      "(* `break` statement is not supported in LIGO *)"
     
     when "Var_decl"
       name = root.name
@@ -804,8 +884,7 @@ walk = (root, ctx)->
         #{join_list jl}
         """
       else
-        perr "CRITICAL WARNING Var_decl_multi with no assign value should be unreachable, but something goes wrong"
-        perr "CRITICAL WARNING We can't guarantee that smart contract would work at all"
+        perr "WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong"
         module.warning_counter++
         jl = []
         for _var in root.list
@@ -827,7 +906,8 @@ walk = (root, ctx)->
       jl = []
       for v,idx in root.t_list
         jl.push walk v, ctx
-        
+      
+      jl.push "unit" if jl.length == 0
       """
       with (#{jl.join ', '})
       """
@@ -853,7 +933,7 @@ walk = (root, ctx)->
       cond = walk root.cond, ctx
       ctx = ctx.mk_nest()
       jl = []
-      for _case in root.scope.list        
+      for _case in root.scope.list
         case_scope = walk _case.scope, ctx
         case_scope = case_scope[0..-2] if /;$/.test case_scope
         
@@ -884,6 +964,8 @@ walk = (root, ctx)->
         type = translate_type v, ctx
         ret_jl.push "#{type}"
       
+      ret_jl.push "unit" if ret_jl.length == 0
+      
       body = walk root.scope, ctx
       """
       function #{root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
@@ -893,11 +975,14 @@ walk = (root, ctx)->
     when "Class_decl"
       return "" if root.need_skip
       return "" if root.is_interface # skip for now
+      return "" if root.is_contract and !root.is_last
       orig_ctx = ctx
       prefix = ""
       if ctx.parent and ctx.current_class and root.namespace_name
         ctx.parent.type_decl_map["#{ctx.current_class.name}.#{root.name}"] = root
         prefix = ctx.current_class.name
+      
+      ctx.type_decl_map[root.name] = root
       
       ctx = ctx.mk_nest()
       ctx.current_class = root
@@ -919,7 +1004,7 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-              field_decl_jl.push walk v, ctx
+            field_decl_jl.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_map[v.name] = v
@@ -964,8 +1049,6 @@ walk = (root, ctx)->
       
       if root.is_contract or root.is_library
         state_name = config.storage
-        if ctx.contract and ctx.contract != root.name
-          state_name = "#{state_name}_#{root.name}"
         orig_ctx.storage_sink_list[state_name] ?= []
         orig_ctx.storage_sink_list[state_name].append field_decl_jl
       else
@@ -1079,5 +1162,4 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  ctx.contract = opt.contract if opt.contract
   walk root, ctx

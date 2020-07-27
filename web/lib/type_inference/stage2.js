@@ -41,7 +41,7 @@
   };
 
   this.walk = function(root, ctx) {
-    var a, a_type_list, arg, b, b_type_list, bruteforce_a, bruteforce_b, bruteforce_ret, expected_type, filter_found_list, found_list, i, list, nest_type, new_type, offset, ret, ret_type_list, root_type, tuple, type, v, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _w, _x, _y, _z;
+    var a, a_type_list, b, b_type_list, bruteforce_a, bruteforce_b, bruteforce_ret, filter_found_list, found_list, list, new_type, ret, ret_type_list, tuple, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _s, _t;
     switch (root.constructor.name) {
       case "Var":
       case "Const":
@@ -66,6 +66,8 @@
       case "New":
       case "Tuple":
       case "Event_decl":
+      case "Fn_call":
+      case "Array_init":
         return ctx.first_stage_walk(root, ctx);
       case "Bin_op":
         ctx.walk(root.a, ctx);
@@ -318,86 +320,6 @@
             }
           }
         }
-        return root.type;
-      case "Fn_call":
-        switch (root.fn.constructor.name) {
-          case "Var":
-            if (root.fn.name === "super") {
-              perr("CRITICAL WARNING skip super() call");
-              _ref6 = root.arg_list;
-              for (_u = 0, _len12 = _ref6.length; _u < _len12; _u++) {
-                arg = _ref6[_u];
-                ctx.walk(arg, ctx);
-              }
-              return root.type;
-            }
-            break;
-          case "Field_access":
-            if (root.fn.t.constructor.name === "Var") {
-              if (root.fn.t.name === "super") {
-                perr("CRITICAL WARNING skip super.fn call");
-                _ref7 = root.arg_list;
-                for (_v = 0, _len13 = _ref7.length; _v < _len13; _v++) {
-                  arg = _ref7[_v];
-                  ctx.walk(arg, ctx);
-                }
-                return root.type;
-              }
-            }
-        }
-        root_type = ctx.walk(root.fn, ctx);
-        root_type = ti.type_resolve(root_type, ctx);
-        if (!root_type) {
-          perr("CRITICAL WARNING can't resolve function type for Fn_call");
-          return root.type;
-        }
-        offset = 0;
-        _ref8 = root.arg_list;
-        for (i = _w = 0, _len14 = _ref8.length; _w < _len14; i = ++_w) {
-          arg = _ref8[i];
-          ctx.walk(arg, ctx);
-          if (root_type.main !== "struct") {
-            expected_type = root_type.nest_list[0].nest_list[i + offset];
-            arg.type = ti.type_spread_left(arg.type, expected_type, ctx);
-          }
-        }
-        if (root_type.main === "struct") {
-          if (root.arg_list.length !== 1) {
-            perr("CRITICAL WARNING contract(address) call should have 1 argument. real=" + root.arg_list.length);
-            return root.type;
-          }
-          arg = root.arg_list[0];
-          arg.type = ti.type_spread_left(arg.type, new Type("address"), ctx);
-          return root.type = ti.type_spread_left(root.type, root_type, ctx);
-        } else {
-          return root.type = ti.type_spread_left(root.type, root_type.nest_list[1].nest_list[offset], ctx);
-        }
-        break;
-      case "Array_init":
-        _ref9 = root.list;
-        for (_x = 0, _len15 = _ref9.length; _x < _len15; _x++) {
-          v = _ref9[_x];
-          ctx.walk(v, ctx);
-        }
-        nest_type = null;
-        if (root.type) {
-          if (root.type.main !== "array") {
-            throw new Error("Array_init can have only array type");
-          }
-          nest_type = root.type.nest_list[0];
-        }
-        _ref10 = root.list;
-        for (_y = 0, _len16 = _ref10.length; _y < _len16; _y++) {
-          v = _ref10[_y];
-          nest_type = ti.type_spread_left(nest_type, v.type, ctx);
-        }
-        _ref11 = root.list;
-        for (_z = 0, _len17 = _ref11.length; _z < _len17; _z++) {
-          v = _ref11[_z];
-          v.type = ti.type_spread_left(v.type, nest_type, ctx);
-        }
-        type = new Type("array<" + nest_type + ">");
-        root.type = ti.type_spread_left(root.type, type, ctx);
         return root.type;
       default:
 

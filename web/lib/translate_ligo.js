@@ -1,5 +1,5 @@
 (function() {
-  var config, last_bracket_state, module, number2bytes, some2nat, spec_id_translate, string2bytes, translate_type, translate_var_name, type2default_value, walk, _ref;
+  var Type, config, default_var_map_gen, last_bracket_state, module, number2bytes, some2nat, spec_id_translate, string2bytes, ti_map, translate_type, translate_var_name, type2default_value, type_generalize, walk, _ref;
 
   module = this;
 
@@ -7,7 +7,17 @@
 
   config = require("./config");
 
+  Type = window.Type;
+
   _ref = require("./translate_var_name"), translate_var_name = _ref.translate_var_name, spec_id_translate = _ref.spec_id_translate;
+
+  default_var_map_gen = require("./type_inference/common").default_var_map_gen;
+
+  type_generalize = require("./type_generalize").type_generalize;
+
+  ti_map = default_var_map_gen();
+
+  ti_map["encodePacked"] = new Type("function2<function<bytes>,function<bytes>>");
 
   module.warning_counter = 0;
 
@@ -57,10 +67,11 @@
       precision = 32;
     }
     ret = [];
+    val = BigInt(val);
     for (i = _i = 0; 0 <= precision ? _i < precision : _i > precision; i = 0 <= precision ? ++_i : --_i) {
-      hex = val & 0xFF;
+      hex = val & BigInt("0xFF");
       ret.push(hex.toString(16).rjust(2, "0"));
-      val >>= 8;
+      val >>= BigInt(8);
     }
     ret.push("0x");
     ret.reverse();
@@ -158,7 +169,7 @@
     },
     BIT_NOT: function(a, ctx, ast) {
       if (!ast.type) {
-        perr("WARNING BIT_NOT ( ~" + a + " ) translation can be incorrect");
+        perr("WARNING BIT_NOT ( ~" + a + " ) translation may be incorrect");
         module.warning_counter++;
       }
       if (ast.type && config.uint_type_map.hasOwnProperty(ast.type.main)) {
@@ -172,7 +183,7 @@
     },
     RET_INC: function(a, ctx, ast) {
       var is_uint, one;
-      perr("RET_INC can have not fully correct implementation");
+      perr("RET_INC may have not fully correct implementation");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -188,7 +199,7 @@
     },
     RET_DEC: function(a, ctx, ast) {
       var is_uint, one;
-      perr("RET_DEC can have not fully correct implementation");
+      perr("RET_DEC may have not fully correct implementation");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -204,7 +215,7 @@
     },
     INC_RET: function(a, ctx, ast) {
       var is_uint, one;
-      perr("INC_RET can have not fully correct implementation");
+      perr("INC_RET may have not fully correct implementation");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -216,7 +227,7 @@
     },
     DEC_RET: function(a, ctx, ast) {
       var is_uint, one;
-      perr("DEC_RET can have not fully correct implementation");
+      perr("DEC_RET may have not fully correct implementation");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -272,7 +283,12 @@
           v = _ref1[_i];
           list.push(translate_type(v, ctx));
         }
-        return "(" + (list.join(' * ')) + ")";
+        if (list.length === 0) {
+          return "unit";
+        } else {
+          return "(" + (list.join(' * ')) + ")";
+        }
+        break;
       case "map":
         key = translate_type(type.nest_list[0], ctx);
         value = translate_type(type.nest_list[1], ctx);
@@ -311,7 +327,7 @@
         } else if (type.main.match(RegExp("^" + config.storage + "_"))) {
           return type.main;
         } else {
-          perr("CRITICAL WARNING. translate_type unknown solidity type '" + type + "'");
+          perr("WARNING. translate_type unknown solidity type '" + type + "'");
           return "UNKNOWN_TYPE_" + type;
         }
     }
@@ -365,7 +381,7 @@
             return "" + name + "_default";
           }
         }
-        perr("CRITICAL WARNING. type2default_value unknown solidity type '" + type + "'");
+        perr("WARNING. Can't translate unknown Solidity type '" + type + "'");
         return "UNKNOWN_TYPE_DEFAULT_VALUE_" + type;
     }
   };
@@ -388,6 +404,10 @@
     Gen_context.prototype.contract = false;
 
     Gen_context.prototype.trim_expr = "";
+
+    Gen_context.prototype.terminate_expr_check = "";
+
+    Gen_context.prototype.terminate_expr_replace_fn = null;
 
     Gen_context.prototype.storage_sink_list = {};
 
@@ -433,7 +453,7 @@
   last_bracket_state = false;
 
   walk = function(root, ctx) {
-    var a, arg, arg_jl, arg_list, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decls, entry, f, field_decl_jl, fn, i, idx, jl, k, loc_code, msg, name, op, orig_ctx, prefix, ret, ret_jl, ret_types_list, return_types, scope, state_name, str, t, target_type, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, k, loc_code, modifies_storage, msg, name, op, orig_ctx, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
     last_bracket_state = false;
     switch (root.constructor.name) {
       case "Scope":
@@ -512,6 +532,10 @@
                   ctx.trim_expr = "";
                   continue;
                 }
+                if (ctx.terminate_expr_check === code) {
+                  ctx.terminate_expr_check = "";
+                  code = ctx.terminate_expr_replace_fn();
+                }
                 if (code) {
                   if ((_ref7 = v.constructor.name) !== "Comment" && _ref7 !== "Scope") {
                     if (!/;$/.test(code)) {
@@ -555,7 +579,7 @@
         break;
       case "Var":
         name = root.name;
-        if (name === "this") {
+        if (name === "this" || name === "super") {
           return "";
         }
         if (ctx.contract_var_map.hasOwnProperty(name)) {
@@ -624,9 +648,9 @@
             if (((root.a.type && root.a.type.main === 'bool') || (root.b.type && root.b.type.main === 'bool')) && (op === '>=' || op === '=/=' || op === '<=' || op === '>' || op === '<' || op === '=')) {
               switch (op) {
                 case "=":
-                  return "bitwise_not(bitwise_xor(" + _a + ", " + _b + "))";
+                  return "(" + _a + " = " + _b + ")";
                 case "=/=":
-                  return "bitwise_xor(" + _a + ", " + _b + ")";
+                  return "(" + _a + " =/= " + _b + ")";
                 case ">":
                   return "(" + _a + " and not " + _b + ")";
                 case "<":
@@ -658,7 +682,7 @@
       case "Field_access":
         t = walk(root.t, ctx);
         if (!root.t.type) {
-          perr("CRITICAL WARNING some of types in Field_access aren't resolved. This can cause invalid code generated");
+          perr("WARNING some of types in Field_access aren't resolved. This can cause invalid code generated");
         } else {
           switch (root.t.type.main) {
             case "array":
@@ -699,15 +723,16 @@
           v = _ref9[_m];
           arg_list.push(walk(v, ctx));
         }
+        field_access_translation = null;
         if (root.fn.constructor.name === "Field_access") {
-          t = walk(root.fn.t, ctx);
+          field_access_translation = walk(root.fn.t, ctx);
           if (root.fn.t.type) {
             switch (root.fn.t.type.main) {
               case "array":
                 switch (root.fn.name) {
                   case "push":
                     tmp_var = "tmp_" + (ctx.tmp_idx++);
-                    ctx.sink_list.push("const " + tmp_var + " : " + (translate_type(root.fn.t.type, ctx)) + " = " + t + ";");
+                    ctx.sink_list.push("const " + tmp_var + " : " + (translate_type(root.fn.t.type, ctx)) + " = " + field_access_translation + ";");
                     return "" + tmp_var + "[size(" + tmp_var + ")] := " + arg_list[0];
                   default:
                     throw new Error("unknown array field function " + root.fn.name);
@@ -736,28 +761,43 @@
               return "sha_256(" + msg + ")";
             case "sha3":
             case "keccak256":
-              perr("CRITICAL WARNING " + root.fn.name + " hash function would be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
+              perr("WARNING " + root.fn.name + " hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
               msg = arg_list[0];
               return "sha_256(" + msg + ")";
             case "selfdestruct":
-              perr("CRITICAL WARNING " + root.fn.name + " is not implemented in ligo");
+              perr("WARNING " + root.fn.name + " does not exist in LIGO. Statement translated as is");
               msg = arg_list[0];
-              return "selfdestruct(" + msg + ")";
+              return "selfdestruct(" + msg + ") (* unsupported *)";
             case "blockhash":
               msg = arg_list[0];
-              perr("CRITICAL WARNING " + root.fn.name + " is not implemented in ligo. Replaced with (\"" + msg + "\" : bytes).");
+              perr("WARNING " + root.fn.name + " does not exist in LIGO. We replaced it with (\"" + msg + "\" : bytes).");
               return "(\"00\" : bytes) (* Should be blockhash of " + msg + " *)";
             case "ripemd160":
-              perr("CRITICAL WARNING " + root.fn.name + " hash function would be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
+              perr("WARNING " + root.fn.name + " hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
               msg = arg_list[0];
               return "blake2b(" + msg + ")";
             case "ecrecover":
-              perr("WARNING ecrecover function is not present in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
+              perr("WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover");
               fn = "ecrecover";
               break;
             case "@respond":
-              perr("CRITICAL WARNING we don't check balance in send function. So runtime error will be ignored and no throw");
-              return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, " + config.receiver_name + ") end";
+              type_list = [];
+              _ref10 = root.arg_list;
+              for (_n = 0, _len5 = _ref10.length; _n < _len5; _n++) {
+                v = _ref10[_n];
+                type_list.push(translate_type(v.type, ctx));
+              }
+              type_str = type_list.join(" * ");
+              return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, (get_contract(match_action.callbackAddress) : contract(" + type_str + "))) end";
+            case "@respond_append":
+              type_list = [];
+              _ref11 = root.arg_list;
+              for (_o = 0, _len6 = _ref11.length; _o < _len6; _o++) {
+                v = _ref11[_o];
+                type_list.push(translate_type(v.type, ctx));
+              }
+              type_str = type_list.join(" * ");
+              return "var " + config.op_list + " : list(operation) := cons(" + arg_list[0] + ", list transaction((" + (arg_list.slice(1).join(' * ')) + "), 0mutez, (get_contract(match_action.callbackAddress) : contract(" + type_str + ")) end)";
             default:
               fn = root.fn.name;
           }
@@ -767,28 +807,87 @@
         if (arg_list.length === 0) {
           arg_list.push("unit");
         }
-        ret_types_list = [];
-        return_types = (_ref10 = root.fn.type) != null ? _ref10.nest_list[1] : void 0;
-        _ref11 = (return_types != null ? return_types.nest_list : void 0) || [];
-        for (_n = 0, _len5 = _ref11.length; _n < _len5; _n++) {
-          v = _ref11[_n];
-          ret_types_list.push(translate_type(v, ctx));
-        }
-        tmp_var = "tmp_" + (ctx.tmp_idx++);
         call_expr = "" + fn + "(" + (arg_list.join(', ')) + ")";
-        if (!root.left_unpack) {
-          return "" + call_expr;
+        if (!root.left_unpack || (fn === "get_contract" || fn === "transaction")) {
+          return call_expr;
         } else {
-          if (ret_types_list.length === 1) {
-            return ctx.sink_list.push("const " + tmp_var + " : " + ret_types_list[0] + " = " + call_expr);
+          if (root.fn_decl) {
+            _ref12 = root.fn_decl, returns_op_list = _ref12.returns_op_list, uses_storage = _ref12.uses_storage, modifies_storage = _ref12.modifies_storage, returns_value = _ref12.returns_value;
+            type_o = root.fn_decl.type_o;
+            if (root.is_fn_decl_from_using) {
+              if (uses_storage) {
+                shift_self = arg_list.shift();
+              }
+              arg_list.unshift(field_access_translation);
+              if (uses_storage) {
+                arg_list.unshift(shift_self);
+              }
+              call_expr = "" + root.fn_name_using + "(" + (arg_list.join(', ')) + ")";
+            }
+          } else if (type_decl = ti_map[root.fn.name]) {
+            returns_op_list = false;
+            modifies_storage = false;
+            returns_value = type_decl.nest_list[1].nest_list.length > 0;
+            type_o = type_decl.nest_list[1];
+          } else if (ctx.contract_var_map.hasOwnProperty(root.fn.name)) {
+            decl = ctx.contract_var_map[root.fn.name];
+            if (decl.constructor.name === "Fn_decl_multiret") {
+              return call_expr;
+            }
+            return "" + config.contract_storage + "." + root.fn.name;
           } else {
-            return ctx.sink_list.push("const " + tmp_var + " : (" + (ret_types_list.join(' * ')) + ") = " + call_expr);
+            perr("WARNING !root.fn_decl " + root.fn.name);
+            return call_expr;
+          }
+          ret_types_list = [];
+          _ref13 = type_o.nest_list;
+          for (_p = 0, _len7 = _ref13.length; _p < _len7; _p++) {
+            v = _ref13[_p];
+            ret_types_list.push(translate_type(v, ctx));
+          }
+          if (ret_types_list.length === 0) {
+            return call_expr;
+          } else if (ret_types_list.length === 1 && returns_value) {
+            ctx.terminate_expr_replace_fn = function() {
+              perr("WARNING " + call_expr + " was terminated with dummy variable declaration");
+              tmp_var = "terminate_tmp_" + (ctx.tmp_idx++);
+              return "const " + tmp_var + " : (" + (ret_types_list.join(' * ')) + ") = " + call_expr;
+            };
+            return ctx.terminate_expr_check = call_expr;
+          } else {
+            if (ret_types_list.length === 1) {
+              if (returns_op_list) {
+                return "" + config.op_list + " := " + call_expr;
+              } else if (modifies_storage) {
+                return "" + config.contract_storage + " := " + call_expr;
+              } else {
+                throw new Error("WTF !returns_op_list !modifies_storage");
+              }
+            } else {
+              tmp_var = "tmp_" + (ctx.tmp_idx++);
+              ctx.sink_list.push("const " + tmp_var + " : (" + (ret_types_list.join(' * ')) + ") = " + call_expr);
+              arg_num = 0;
+              get_tmp = function() {
+                if (ret_types_list.length === 1) {
+                  return tmp_var;
+                } else {
+                  return "" + tmp_var + "." + (arg_num++);
+                }
+              };
+              if (returns_op_list) {
+                ctx.sink_list.push("" + config.op_list + " := " + (get_tmp()));
+              }
+              if (modifies_storage) {
+                ctx.sink_list.push("" + config.contract_storage + " := " + (get_tmp()));
+              }
+              return ctx.trim_expr = get_tmp();
+            }
           }
         }
         break;
       case "Struct_init":
         arg_list = [];
-        for (i = _o = 0, _ref12 = root.val_list.length - 1; 0 <= _ref12 ? _o <= _ref12 : _o >= _ref12; i = 0 <= _ref12 ? ++_o : --_o) {
+        for (i = _q = 0, _ref14 = root.val_list.length - 1; 0 <= _ref14 ? _q <= _ref14 : _q >= _ref14; i = 0 <= _ref14 ? ++_q : --_q) {
           arg_list.push("" + root.arg_names[i] + " = " + (walk(root.val_list[i], ctx)));
         }
         return "record [ " + (arg_list.join(";\n  ")) + " ]";
@@ -804,7 +903,7 @@
           return "abs(" + t + ")";
         } else if (target_type === "address" && t === "0") {
           return type2default_value(root.target_type, ctx);
-        } else if (target_type === "bytes" && ((_ref13 = root.t.type) != null ? _ref13.main : void 0) === "string") {
+        } else if (target_type === "bytes" && ((_ref15 = root.t.type) != null ? _ref15.main : void 0) === "string") {
           return "bytes_pack(" + t + ")";
         } else if (target_type === "address" && (t === "0x0" || t === "0")) {
           return "(" + (JSON.stringify(config.default_address)) + " : " + target_type + ")";
@@ -820,9 +919,9 @@
         }
         break;
       case "Continue":
-        return "(* CRITICAL WARNING continue is not supported *)";
+        return "(* `continue` statement is not supported in LIGO *)";
       case "Break":
-        return "(* CRITICAL WARNING break is not supported *)";
+        return "(* `break` statement is not supported in LIGO *)";
       case "Var_decl":
         name = root.name;
         type = translate_type(root.type, ctx);
@@ -835,7 +934,7 @@
           return "" + name + " : " + type + ";";
         } else {
           if (root.assign_value) {
-            if (((_ref14 = root.assign_value) != null ? _ref14.constructor.name : void 0) === "Struct_init") {
+            if (((_ref16 = root.assign_value) != null ? _ref16.constructor.name : void 0) === "Struct_init") {
               type = "" + ctx.current_class.name + "_" + root.type.main;
               type = translate_var_name(type, ctx);
             }
@@ -858,22 +957,21 @@
           tmp_var = "tmp_" + (ctx.tmp_idx++);
           jl = [];
           type_list = [];
-          _ref15 = root.list;
-          for (idx = _p = 0, _len6 = _ref15.length; _p < _len6; idx = ++_p) {
-            _var = _ref15[idx];
+          _ref17 = root.list;
+          for (idx = _r = 0, _len8 = _ref17.length; _r < _len8; idx = ++_r) {
+            _var = _ref17[idx];
             name = _var.name;
             type_list.push(type = translate_type(_var.type, ctx));
             jl.push("const " + name + " : " + type + " = " + tmp_var + "." + idx + ";");
           }
           return "const " + tmp_var + " : (" + (type_list.join(' * ')) + ") = " + val + ";\n" + (join_list(jl));
         } else {
-          perr("CRITICAL WARNING Var_decl_multi with no assign value should be unreachable, but something goes wrong");
-          perr("CRITICAL WARNING We can't guarantee that smart contract would work at all");
+          perr("WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong");
           module.warning_counter++;
           jl = [];
-          _ref16 = root.list;
-          for (_q = 0, _len7 = _ref16.length; _q < _len7; _q++) {
-            _var = _ref16[_q];
+          _ref18 = root.list;
+          for (_s = 0, _len9 = _ref18.length; _s < _len9; _s++) {
+            _var = _ref18[_s];
             name = _var.name;
             type = translate_type(root.type, ctx);
             jl.push("const " + name + " : " + type + " = " + (type2default_value(_var.type, ctx)));
@@ -891,10 +989,13 @@
         break;
       case "Ret_multi":
         jl = [];
-        _ref17 = root.t_list;
-        for (idx = _r = 0, _len8 = _ref17.length; _r < _len8; idx = ++_r) {
-          v = _ref17[idx];
+        _ref19 = root.t_list;
+        for (idx = _t = 0, _len10 = _ref19.length; _t < _len10; idx = ++_t) {
+          v = _ref19[idx];
           jl.push(walk(v, ctx));
+        }
+        if (jl.length === 0) {
+          jl.push("unit");
         }
         return "with (" + (jl.join(', ')) + ")";
       case "If":
@@ -916,9 +1017,9 @@
         cond = walk(root.cond, ctx);
         ctx = ctx.mk_nest();
         jl = [];
-        _ref18 = root.scope.list;
-        for (_s = 0, _len9 = _ref18.length; _s < _len9; _s++) {
-          _case = _ref18[_s];
+        _ref20 = root.scope.list;
+        for (_u = 0, _len11 = _ref20.length; _u < _len11; _u++) {
+          _case = _ref20[_u];
           case_scope = walk(_case.scope, ctx);
           if (/;$/.test(case_scope)) {
             case_scope = case_scope.slice(0, -1);
@@ -935,9 +1036,9 @@
         orig_ctx = ctx;
         ctx = ctx.mk_nest();
         arg_jl = [];
-        _ref19 = root.arg_name_list;
-        for (idx = _t = 0, _len10 = _ref19.length; _t < _len10; idx = ++_t) {
-          v = _ref19[idx];
+        _ref21 = root.arg_name_list;
+        for (idx = _v = 0, _len12 = _ref21.length; _v < _len12; idx = ++_v) {
+          v = _ref21[idx];
           type = translate_type(root.type_i.nest_list[idx], ctx);
           arg_jl.push("const " + v + " : " + type);
         }
@@ -945,11 +1046,14 @@
           arg_jl.push("const " + config.reserved + "__unit : unit");
         }
         ret_jl = [];
-        _ref20 = root.type_o.nest_list;
-        for (_u = 0, _len11 = _ref20.length; _u < _len11; _u++) {
-          v = _ref20[_u];
+        _ref22 = root.type_o.nest_list;
+        for (_w = 0, _len13 = _ref22.length; _w < _len13; _w++) {
+          v = _ref22[_w];
           type = translate_type(v, ctx);
           ret_jl.push("" + type);
+        }
+        if (ret_jl.length === 0) {
+          ret_jl.push("unit");
         }
         body = walk(root.scope, ctx);
         return "function " + root.name + " (" + (arg_jl.join('; ')) + ") : (" + (ret_jl.join(' * ')) + ") is\n  " + (make_tab(body, '  '));
@@ -960,27 +1064,31 @@
         if (root.is_interface) {
           return "";
         }
+        if (root.is_contract && !root.is_last) {
+          return "";
+        }
         orig_ctx = ctx;
         prefix = "";
         if (ctx.parent && ctx.current_class && root.namespace_name) {
           ctx.parent.type_decl_map["" + ctx.current_class.name + "." + root.name] = root;
           prefix = ctx.current_class.name;
         }
+        ctx.type_decl_map[root.name] = root;
         ctx = ctx.mk_nest();
         ctx.current_class = root;
         ctx.is_class_scope = true;
-        _ref21 = root.scope.list;
-        for (_v = 0, _len12 = _ref21.length; _v < _len12; _v++) {
-          v = _ref21[_v];
+        _ref23 = root.scope.list;
+        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
+          v = _ref23[_x];
           switch (v.constructor.name) {
             case "Enum_decl":
             case "Class_decl":
               ctx.type_decl_map[v.name] = v;
               break;
             case "PM_switch":
-              _ref22 = root.scope.list;
-              for (_w = 0, _len13 = _ref22.length; _w < _len13; _w++) {
-                _case = _ref22[_w];
+              _ref24 = root.scope.list;
+              for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
+                _case = _ref24[_y];
                 ctx.type_decl_map[_case.var_decl.type.main] = _case.var_decl;
               }
               break;
@@ -989,9 +1097,9 @@
           }
         }
         field_decl_jl = [];
-        _ref23 = root.scope.list;
-        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
-          v = _ref23[_x];
+        _ref25 = root.scope.list;
+        for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
+          v = _ref25[_z];
           switch (v.constructor.name) {
             case "Var_decl":
               field_decl_jl.push(walk(v, ctx));
@@ -1021,9 +1129,9 @@
         jl = [];
         jl.append(ctx.sink_list);
         ctx.sink_list.clear();
-        _ref24 = root.scope.list;
-        for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
-          v = _ref24[_y];
+        _ref26 = root.scope.list;
+        for (_aa = 0, _len17 = _ref26.length; _aa < _len17; _aa++) {
+          v = _ref26[_aa];
           switch (v.constructor.name) {
             case "Var_decl":
               "skip";
@@ -1045,9 +1153,6 @@
         }
         if (root.is_contract || root.is_library) {
           state_name = config.storage;
-          if (ctx.contract && ctx.contract !== root.name) {
-            state_name = "" + state_name + "_" + root.name;
-          }
           if ((_base = orig_ctx.storage_sink_list)[state_name] == null) {
             _base[state_name] = [];
           }
@@ -1060,9 +1165,9 @@
           name = translate_var_name(name, ctx);
           if (root.is_struct) {
             arg_list = [];
-            _ref25 = root.scope.list;
-            for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
-              v = _ref25[_z];
+            _ref27 = root.scope.list;
+            for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
+              v = _ref27[_ab];
               arg_list.push("" + v.name + " = " + (type2default_value(v.type, ctx)));
             }
             ctx.structs_default_list.push("const " + name + "_default : " + name + " = record [ " + (arg_list.join(";\n  ")) + " ];\n");
@@ -1075,9 +1180,9 @@
         return jl.join("\n\n");
       case "Enum_decl":
         jl = [];
-        _ref26 = root.value_list;
-        for (idx = _aa = 0, _len17 = _ref26.length; _aa < _len17; idx = ++_aa) {
-          v = _ref26[idx];
+        _ref28 = root.value_list;
+        for (idx = _ac = 0, _len19 = _ref28.length; _ac < _len19; idx = ++_ac) {
+          v = _ref28[idx];
           ctx.contract_var_map[v.name] = v;
           aux = "";
           if (v.type) {
@@ -1098,9 +1203,9 @@
         return "(case " + cond + " of | True -> " + t + " | False -> " + f + " end)";
       case "New":
         arg_list = [];
-        _ref27 = root.arg_list;
-        for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
-          v = _ref27[_ab];
+        _ref29 = root.arg_list;
+        for (_ad = 0, _len20 = _ref29.length; _ad < _len20; _ad++) {
+          v = _ref29[_ad];
           arg_list.push(walk(v, ctx));
         }
         args = "" + (join_list(arg_list, ', '));
@@ -1115,24 +1220,24 @@
         break;
       case "Tuple":
         arg_list = [];
-        _ref28 = root.list;
-        for (_ac = 0, _len19 = _ref28.length; _ac < _len19; _ac++) {
-          v = _ref28[_ac];
+        _ref30 = root.list;
+        for (_ae = 0, _len21 = _ref30.length; _ae < _len21; _ae++) {
+          v = _ref30[_ae];
           arg_list.push(walk(v, ctx));
         }
         return "(" + (arg_list.join(', ')) + ")";
       case "Array_init":
         arg_list = [];
-        _ref29 = root.list;
-        for (_ad = 0, _len20 = _ref29.length; _ad < _len20; _ad++) {
-          v = _ref29[_ad];
+        _ref31 = root.list;
+        for (_af = 0, _len22 = _ref31.length; _af < _len22; _af++) {
+          v = _ref31[_af];
           arg_list.push(walk(v, ctx));
         }
         if (root.type.main === "built_in_op_list") {
           return "list [" + (arg_list.join("; ")) + "]";
         } else {
           decls = [];
-          for (i = _ae = 0, _len21 = arg_list.length; _ae < _len21; i = ++_ae) {
+          for (i = _ag = 0, _len23 = arg_list.length; _ag < _len23; i = ++_ag) {
             arg = arg_list[i];
             decls.push("" + i + "n -> " + arg + ";");
           }
@@ -1141,9 +1246,9 @@
         break;
       case "Event_decl":
         args = [];
-        _ref30 = root.arg_list;
-        for (_af = 0, _len22 = _ref30.length; _af < _len22; _af++) {
-          arg = _ref30[_af];
+        _ref32 = root.arg_list;
+        for (_ah = 0, _len24 = _ref32.length; _ah < _len24; _ah++) {
+          arg = _ref32[_ah];
           name = arg._name;
           type = translate_type(arg, ctx);
           args.push("" + name + " : " + type);
@@ -1168,9 +1273,6 @@
     }
     ctx = new module.Gen_context;
     ctx.next_gen = opt.next_gen;
-    if (opt.contract) {
-      ctx.contract = opt.contract;
-    }
     return walk(root, ctx);
   };
 
