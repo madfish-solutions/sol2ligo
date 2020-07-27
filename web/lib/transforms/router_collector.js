@@ -4,7 +4,7 @@
   default_walk = require("./default_walk").default_walk;
 
   walk = function(root, ctx) {
-    var _ref, _ref1;
+    var _ref;
     walk = ctx.walk;
     switch (root.constructor.name) {
       case "Class_decl":
@@ -14,10 +14,13 @@
         if (root.is_library) {
           return root;
         }
+        if (root.is_contract && !root.is_last) {
+          return root;
+        }
         ctx.inheritance_list = root.inheritance_list;
         return ctx.next_gen(root, ctx);
       case "Fn_decl_multiret":
-        if (((_ref = root.visibility) !== "private" && _ref !== "internal") && (!ctx.contract || root.contract_name === ctx.contract || ((_ref1 = ctx.inheritance_list) != null ? _ref1[ctx.contract] : void 0))) {
+        if ((_ref = root.visibility) !== "private" && _ref !== "internal") {
           ctx.router_func_list.push(root);
         }
         return root;

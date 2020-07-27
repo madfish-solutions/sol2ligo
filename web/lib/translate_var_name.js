@@ -126,7 +126,7 @@
       val = bad_spec_id_trans_map[t];
       if (!warning_once_map.hasOwnProperty(t)) {
         warning_once_map.hasOwnProperty[t] = true;
-        perr("CRITICAL WARNING we don't have proper translation for ethereum '" + t + "', so it would be translated as '" + val + "'. That's incorrect");
+        perr("WARNING we don't have a proper translation for Solidity '" + t + "', so it is translated as '" + val + "'");
       }
       return val;
     } else {

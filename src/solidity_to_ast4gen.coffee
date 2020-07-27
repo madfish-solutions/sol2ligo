@@ -1,7 +1,7 @@
 config= require "./config"
 Type  = require "type"
 ast   = require "./ast"
-type_generalize = require "./type_generalize"
+{type_generalize} = require "./type_generalize"
 
 bin_op_map =
   "+"   : "ADD"

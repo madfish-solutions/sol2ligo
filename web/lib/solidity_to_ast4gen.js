@@ -1,11 +1,13 @@
 (function() {
-  var Context, Type, ast, bin_op_map, config, ensure_scope, is_complex_assign_op, parse_line_pos, prev_root, un_op_map, un_op_post_map, un_op_pre_map, unpack_id_type, walk, walk_param, walk_type;
+  var Context, Type, ast, bin_op_map, config, ensure_scope, is_complex_assign_op, parse_line_pos, prev_root, type_generalize, un_op_map, un_op_post_map, un_op_pre_map, unpack_id_type, walk, walk_param, walk_type;
 
   config = require("./config");
 
   Type = window.Type;
 
   ast = require("./ast");
+
+  type_generalize = require("./type_generalize").type_generalize;
 
   bin_op_map = {
     "+": "ADD",
@@ -186,6 +188,12 @@
   };
 
   Context = (function() {
+    Context.prototype.contract = null;
+
+    Context.prototype.contract_name = "";
+
+    Context.prototype.contract_type = "";
+
     Context.prototype.need_prevent_deploy = false;
 
     function Context() {}
@@ -204,7 +212,7 @@
     }
     prev_root = root;
     result = (function() {
-      var _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _ref37, _ref38, _ref39, _ref4, _ref40, _ref41, _ref42, _ref43, _ref44, _ref45, _ref46, _ref47, _ref48, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _w, _x;
+      var _base, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _ref37, _ref38, _ref39, _ref4, _ref40, _ref41, _ref42, _ref43, _ref44, _ref45, _ref46, _ref47, _ref48, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _w, _x;
       switch (root.nodeType) {
         case "SourceUnit":
           ret = new ast.Scope;
@@ -232,6 +240,8 @@
               throw new Error("unknown contractKind " + root.contractKind);
           }
           ret.inheritance_list = [];
+          ret.name = root.name;
+          ctx.contract = ret;
           ctx.contract_name = root.name;
           ctx.contract_type = root.contractKind;
           _ref2 = root.baseContracts;
@@ -250,7 +260,6 @@
               arg_list: arg_list
             });
           }
-          ret.name = root.name;
           _ref4 = root.nodes;
           for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
             node = _ref4[_l];
@@ -264,10 +273,18 @@
           ret.can_skip = true;
           return ret;
         case "UsingForDirective":
-          perr("WARNING UsingForDirective is not supported");
           ret = new ast.Comment;
           ret.text = "UsingForDirective";
           _ref6 = parse_line_pos(root.src), ret.pos = _ref6[0], ret.line = _ref6[1];
+          if (root.typeName === null) {
+            type = "*";
+          } else {
+            type = type_generalize(root.typeName.name);
+          }
+          if ((_base = ctx.contract.using_map)[type] == null) {
+            _base[type] = [];
+          }
+          ctx.contract.using_map[type].push(root.libraryName.name);
           return ret;
         case "StructDefinition":
           ret = new ast.Class_decl;
@@ -637,13 +654,13 @@
           _ref38 = parse_line_pos(root.src), ret.pos = _ref38[0], ret.line = _ref38[1];
           return ret;
         case "Continue":
-          perr("CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
+          perr("WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Continue;
           _ref39 = parse_line_pos(root.src), ret.pos = _ref39[0], ret.line = _ref39[1];
           return ret;
         case "Break":
-          perr("CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
+          perr("WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Break;
           _ref40 = parse_line_pos(root.src), ret.pos = _ref40[0], ret.line = _ref40[1];
@@ -656,9 +673,9 @@
         case "ModifierDefinition":
           ret = ctx.current_function = new ast.Fn_decl_multiret;
           ret.is_modifier = root.nodeType === "ModifierDefinition";
-          ret.is_constructor = root.isConstructor;
+          ret.is_constructor = root.isConstructor || root.kind === "constructor";
           ret.name = root.name || "fallback";
-          if (root.isConstructor) {
+          if (ret.is_constructor) {
             ret.name = "constructor";
           }
           ret.contract_name = ctx.contract_name;

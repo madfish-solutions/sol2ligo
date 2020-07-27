@@ -1,15 +1,28 @@
 (function() {
-  var ast, default_walk, walk;
+  var Type, ast, default_walk, walk;
 
   default_walk = require("./default_walk").default_walk;
+
+  Type = window.Type;
 
   ast = require("../ast");
 
   walk = function(root, ctx) {
-    var class_decl, fn_call, found_constructor, i, inheritance_apply_list, inheritance_list, is_constructor_name, look_list, need_constuctor, need_lookup_list, parent, v, _i, _j, _k, _l, _len, _len1, _len2, _len3, _m, _ref, _ref1;
-    walk = ctx.walk;
+    var add_fn_decl, class_decl, class_set, fn_call, fn_decl_set, found_constructor, i, inheritance_apply_list, inheritance_list, is_constructor_name, look_list, need_constuctor, need_lookup_list, new_name, old, parent, pick_name, v, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3;
     switch (root.constructor.name) {
+      case "Fn_call":
+        if (root.fn.constructor.name === "Field_access") {
+          if (root.fn.t.constructor.name === "Var") {
+            if (root.fn.t.name === "super") {
+              if (new_name = ctx.fn_dedupe_translate_map.get(root.fn.name)) {
+                root.fn.name = new_name;
+              }
+            }
+          }
+        }
+        return root;
       case "Class_decl":
+        ctx.fn_dedupe_translate_map = new Map();
         is_constructor_name = function(name) {
           return name === "constructor" || name === root.name;
         };
@@ -35,19 +48,57 @@
           inheritance_list = need_lookup_list;
         }
         root = root.clone();
-        for (_j = 0, _len = inheritance_apply_list.length; _j < _len; _j++) {
-          parent = inheritance_apply_list[_j];
+        fn_decl_set = new Set();
+        pick_name = function(start_name) {
+          var try_name, _j;
+          for (i = _j = 1; 1 <= Infinity ? _j < Infinity : _j > Infinity; i = 1 <= Infinity ? ++_j : --_j) {
+            try_name = "" + start_name + "_" + i;
+            if (!fn_decl_set.has(try_name)) {
+              return try_name;
+            }
+          }
+          throw new Error("unreachable");
+        };
+        add_fn_decl = function(v) {
+          if (fn_decl_set.has(v.name)) {
+            if (ctx.fn_dedupe_translate_map.has(v.name)) {
+              perr("WARNING. only 1 level of shadowing is allowed. Translated code will be not functional");
+            } else {
+              new_name = pick_name(v.name);
+              ctx.fn_dedupe_translate_map.set(v.name, new_name);
+              v.visibility = "internal";
+              v.name = new_name;
+            }
+          } else {
+            fn_decl_set.add(v.name);
+          }
+        };
+        _ref1 = root.scope.list;
+        for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
+          v = _ref1[_j];
+          if (v.constructor.name !== "Fn_decl_multiret") {
+            continue;
+          }
+          add_fn_decl(v);
+        }
+        class_set = new Set;
+        for (_k = 0, _len1 = inheritance_apply_list.length; _k < _len1; _k++) {
+          parent = inheritance_apply_list[_k];
           if (!ctx.class_map.hasOwnProperty(parent.name)) {
             throw new Error("can't find parent class " + parent.name);
           }
           class_decl = ctx.class_map[parent.name];
+          if (class_set.has(parent.name)) {
+            continue;
+          }
+          class_set.add(parent.name);
           if (class_decl.is_interface) {
             continue;
           }
           look_list = class_decl.scope.list;
           need_constuctor = null;
-          for (_k = 0, _len1 = look_list.length; _k < _len1; _k++) {
-            v = look_list[_k];
+          for (_l = 0, _len2 = look_list.length; _l < _len2; _l++) {
+            v = look_list[_l];
             if (v.constructor.name !== "Fn_decl_multiret") {
               continue;
             }
@@ -57,10 +108,16 @@
               v.visibility = "internal";
               need_constuctor = v;
             }
+            add_fn_decl(v);
             root.scope.list.unshift(v);
+            _ref2 = root.scope.list;
+            for (_m = 0, _len3 = _ref2.length; _m < _len3; _m++) {
+              old = _ref2[_m];
+              walk(old, ctx);
+            }
           }
-          for (_l = 0, _len2 = look_list.length; _l < _len2; _l++) {
-            v = look_list[_l];
+          for (_n = 0, _len4 = look_list.length; _n < _len4; _n++) {
+            v = look_list[_n];
             if (v.constructor.name !== "Var_decl") {
               continue;
             }
@@ -70,9 +127,9 @@
             continue;
           }
           found_constructor = null;
-          _ref1 = root.scope.list;
-          for (_m = 0, _len3 = _ref1.length; _m < _len3; _m++) {
-            v = _ref1[_m];
+          _ref3 = root.scope.list;
+          for (_o = 0, _len5 = _ref3.length; _o < _len5; _o++) {
+            v = _ref3[_o];
             if (v.constructor.name !== "Fn_decl_multiret") {
               continue;
             }
@@ -83,7 +140,7 @@
             break;
           }
           if (!found_constructor) {
-            root.scope.list.unshift(found_constructor = new ast.Fn_decl_multiret);
+            root.scope.list.push(found_constructor = new ast.Fn_decl_multiret);
             found_constructor.name = "constructor";
             found_constructor.type_i = new Type("function");
             found_constructor.type_o = new Type("function");

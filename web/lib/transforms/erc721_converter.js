@@ -13,22 +13,23 @@
 
   declare_callback = function(name, fn, ctx) {
     var cb_decl, return_type;
-    if (!ctx.callbacks_to_declare.hasOwnProperty(name)) {
+    if (!ctx.callbacks_to_declare_map.has(name)) {
       return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS];
       cb_decl = astBuilder.callback_declaration(name, return_type);
-      return ctx.callbacks_to_declare[name] = cb_decl;
+      return ctx.callbacks_to_declare_map.set(name, cb_decl);
     }
   };
 
   tx_node = function(address_expr, arg_list, name, ctx) {
     var entrypoint, tx;
+    address_expr = astBuilder.contract_addr_transform(address_expr);
     entrypoint = astBuilder.foreign_entrypoint(address_expr, name);
     tx = astBuilder.transaction(arg_list, entrypoint);
     return tx;
   };
 
   walk = function(root, ctx) {
-    var action, arg_list_obj, arg_record, args, balance_request, decl, entry, enum_val, list, name, ret, tx, _i, _len, _ref, _ref1, _ref2;
+    var action, arg_list_obj, arg_record, args, balance_request, entry, enum_val, list, name, ret, tx, _i, _len, _ref, _ref1;
     switch (root.constructor.name) {
       case "Class_decl":
         _ref = root.scope.list;
@@ -50,19 +51,17 @@
             }
           }
         }
-        ctx.callbacks_to_declare = {};
+        ctx.callbacks_to_declare_map = new Map;
         root = ctx.next_gen(root, ctx);
-        _ref1 = ctx.callbacks_to_declare;
-        for (name in _ref1) {
-          decl = _ref1[name];
-          root.scope.list.unshift(decl);
-        }
+        ctx.callbacks_to_declare_map.forEach(function(decl) {
+          return root.scope.list.unshift(decl);
+        });
         return root;
       case "Fn_decl_multiret":
         ctx.current_scope_ops_count = 0;
         return ctx.next_gen(root, ctx);
       case "Fn_call":
-        if ((_ref2 = root.fn.t) != null ? _ref2.type : void 0) {
+        if ((_ref1 = root.fn.t) != null ? _ref1.type : void 0) {
           switch (root.fn.t.type.main) {
             case "struct":
               switch (root.fn.name) {

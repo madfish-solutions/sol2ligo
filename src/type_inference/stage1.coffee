@@ -4,7 +4,7 @@ Type = require "type"
 config = require "../config"
 require "../type_safe"
 ti = require "./common"
-type_generalize = require "../type_generalize"
+{type_generalize} = require "../type_generalize"
 
 @walk = (root, ctx)->
   switch root.constructor.name

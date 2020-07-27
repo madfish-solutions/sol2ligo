@@ -27,6 +27,7 @@
 
   tx_node = function(address_expr, arg_list, name, ctx) {
     var entrypoint, tx;
+    address_expr = astBuilder.contract_addr_transform(address_expr);
     entrypoint = astBuilder.foreign_entrypoint(address_expr, name);
     tx = astBuilder.transaction(arg_list, entrypoint);
     return tx;
@@ -36,21 +37,21 @@
     var address_expr, arg_list, cb_decl, cb_name, entrypoint, return_callback, return_type, tx;
     cb_name = name + "Callback";
     return_callback = astBuilder.self_entrypoint("%" + cb_name);
-    if (!ctx.callbacks_to_declare.hasOwnProperty(cb_name)) {
+    if (!ctx.callbacks_to_declare_map.has(cb_name)) {
       return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS];
       cb_decl = callback_declaration(name, return_type);
-      ctx.callbacks_to_declare[cb_name] = cb_decl;
+      ctx.callbacks_to_declare_map.set(cb_name, cb_decl);
     }
     arg_list = root.arg_list;
     arg_list.push(return_callback);
-    address_expr = root.fn.t;
+    address_expr = astBuilder.contract_addr_transform(root.fn.t);
     entrypoint = astBuilder.foreign_entrypoint(address_expr, name);
     tx = astBuilder.transaction(arg_list, entrypoint);
     return tx;
   };
 
   walk = function(root, ctx) {
-    var arg_list, decl, entry, name, ret, sender, _i, _len, _ref, _ref1, _ref2;
+    var arg_list, entry, ret, sender, _i, _len, _ref, _ref1;
     switch (root.constructor.name) {
       case "Class_decl":
         _ref = root.scope.list;
@@ -70,19 +71,17 @@
             }
           }
         }
-        ctx.callbacks_to_declare = {};
+        ctx.callbacks_to_declare_map = new Map;
         root = ctx.next_gen(root, ctx);
-        _ref1 = ctx.callbacks_to_declare;
-        for (name in _ref1) {
-          decl = _ref1[name];
-          root.scope.list.unshift(decl);
-        }
+        ctx.callbacks_to_declare_map.forEach(function(decl) {
+          return root.scope.list.unshift(decl);
+        });
         return root;
       case "Fn_decl_multiret":
         ctx.current_scope_ops_count = 0;
         return ctx.next_gen(root, ctx);
       case "Fn_call":
-        if ((_ref2 = root.fn.t) != null ? _ref2.type : void 0) {
+        if ((_ref1 = root.fn.t) != null ? _ref1.type : void 0) {
           switch (root.fn.t.type.main) {
             case "struct":
               switch (root.fn.name) {

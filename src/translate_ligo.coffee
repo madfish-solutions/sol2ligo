@@ -4,7 +4,7 @@ config = require "./config"
 Type = require "type"
 {translate_var_name, spec_id_translate} = require "./translate_var_name"
 {default_var_map_gen} = require "./type_inference/common"
-type_generalize = require "./type_generalize"
+{type_generalize} = require "./type_generalize"
 ti_map = default_var_map_gen()
 ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
