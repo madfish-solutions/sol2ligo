@@ -58,10 +58,10 @@ describe "translate ligo section struct", ()->
     const ballot_Voter_default : ballot_Voter = record [ votee = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
       voted = False ];
 
-    function ddd (const self : state) : (list(operation) * state) is
+    function ddd (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const v : ballot_Voter = record [ votee = Tezos.sender;
           voted = True ];
-      } with ((nil: list(operation)), self);
+      } with (unit);
     """
     make_test text_i, text_o

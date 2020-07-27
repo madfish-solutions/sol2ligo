@@ -25,10 +25,10 @@ describe "translate ligo section fn", ()->
       value : nat;
     end;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function test (const #{config.contract_storage} : state) : (state) is
       block {
         #{config.contract_storage}.value := 1n;
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (#{config.contract_storage});
     
     """
     make_test text_i, text_o
@@ -55,12 +55,12 @@ describe "translate ligo section fn", ()->
       value : nat;
     end;
     
-    function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+    function expr (const #{config.reserved}__unit : unit) : (int) is
       block {
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with ((nil: list(operation)), #{config.contract_storage}, c);
+      } with (c);
     """
     make_test text_i, text_o
 
@@ -77,10 +77,10 @@ describe "translate ligo section fn", ()->
     text_o = """
     type state is unit;
 
-    function #{config.reserved}__main (const #{config.contract_storage} : state; const b0 : bool) : (state) is
+    function #{config.reserved}__main (const b0 : bool) : (unit) is
       block {
         const b1 : bool = not (not (not (not (not (b0)))));
-      } with (#{config.contract_storage});
+      } with (unit);
     """
     make_test text_i, text_o
   
@@ -102,12 +102,12 @@ describe "translate ligo section fn", ()->
       value : nat;
     end;
     
-    function expr (const #{config.contract_storage} : state) : (list(operation) * state * int) is
+    function expr (const #{config.reserved}__unit : unit) : (int) is
       block {
         const c : int = 0;
         const a : int = 0;
         c := a;
-      } with ((nil: list(operation)), #{config.contract_storage}, c);
+      } with (c);
     """
     make_test text_i, text_o
   
@@ -127,14 +127,14 @@ describe "translate ligo section fn", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state * nat) is
+    function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, 0n);
+      } with (0n);
     """
     make_test text_i, text_o
   
-  it "fn call (BROKEN bad fn call unpack)", ()->
+  it "fn call", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
@@ -150,88 +150,82 @@ describe "translate ligo section fn", ()->
     text_o = """
     type state is unit;
     
-    function call_me (const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
+    function call_me (const a : int) : (int) is
       block {
         skip
-      } with ((nil: list(operation)), #{config.contract_storage}, a);
+      } with (a);
     
-    function test (const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
+    function test (const a : int) : (int) is
       block {
         skip
-      } with ((nil: list(operation)), self, call_me(self, a));
+      } with (call_me(a));
     """
     make_test text_i, text_o
   
-  it "fn call in expr (BROKEN totally. performs transaction instead of function call)"
-    # text_i = """
-    # pragma solidity ^0.5.0;
-    # 
-    # contract Ownable {
-    #     function _msgSender() internal view returns (address payable) {
-    #         return msg.sender;
-    #     }
-    #     address private _owner;
-    #     
-    #     function isOwner() public view returns (bool) {
-    #         return _msgSender() == _owner;
-    #     }
-    # }
-    # """#"
-    # text_o = """
-    # type state is record
-    #   #{config.fix_underscore}__owner : address;
-    # end;
-    # 
-    # function #{config.fix_underscore}__msgSender (const opList : list(operation); const #{config.contract_storage} : state) : (list(operation) * state * address) is
-    #   block {
-    #     skip
-    #   } with (opList, #{config.contract_storage}, sender);
-    # 
-    # function isOwner (const opList : list(operation); const #{config.contract_storage} : state) : (list(operation) * state * bool) is
-    #   block {
-    #     const tmp_0 : (list(operation) * state * address) = #{config.fix_underscore}__msgSender(opList, #{config.contract_storage});
-    #     opList := tmp_0.0;
-    #     #{config.contract_storage} := tmp_0.1;
-    #   } with (opList, #{config.contract_storage}, (tmp_0.2 = #{config.contract_storage}.#{config.fix_underscore}__owner));
-    # """
-    # make_test text_i, text_o
+  it "fn call in expr", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract Ownable {
+      function _msgSender() internal view returns (address payable) {
+        return msg.sender;
+      }
+      address private _owner;
+      
+      function isOwner() public view returns (bool) {
+        return _msgSender() == _owner;
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      owner_ : address;
+    end;
+    
+    function msgSender_ (const #{config.reserved}__unit : unit) : (address) is
+      block {
+        skip
+      } with (Tezos.sender);
+    
+    function isOwner (const #{config.contract_storage} : state) : (bool) is
+      block {
+        skip
+      } with ((msgSender_(unit) = self.owner_));
+    """
+    make_test text_i, text_o
   
-  # it "fn call and after decl", ()->
-  #   text_i = """
-  #   pragma solidity ^0.5.11;
-  #   
-  #   contract Call {
-  #     function test(int a) public returns (int) {
-  #       return call_me(a);
-  #     }
-  #     function call_me(int a) public returns (int) {
-  #       return a;
-  #     }
-  #   }
-  #   """#"
-  #   text_o = """
-  #   type state is record
-  #     #{config.empty_state} : int;
-  #   end;
-  #   
-  #   function test (const opList : list(operation); const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
-  #     block {
-  #       const tmp_0 : (list(operation) * state * int) = call_me(opList, #{config.contract_storage}, a);
-  #       opList := tmp_0.0;
-  #       #{config.contract_storage} := tmp_0.1;
-  #     } with (opList, #{config.contract_storage}, tmp_0.2);
-  #   
-  #   function call_me (const opList : list(operation); const #{config.contract_storage} : state; const a : int) : (list(operation) * state * int) is
-  #     block {
-  #       skip
-  #     } with (opList, #{config.contract_storage}, a);
-  #   """
-  #   make_test text_i, text_o
+  it "fn call and after decl", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Call {
+      function test(int a) public returns (int) {
+        return call_me(a);
+      }
+      function call_me(int a) public returns (int) {
+        return a;
+      }
+    }
+    """#"
+    text_o = """
+    type state is unit;
+    
+    function call_me (const a : int) : (int) is
+      block {
+        skip
+      } with (a);
+    
+    function test (const a : int) : (int) is
+      block {
+        skip
+      } with (call_me(a));
+    """
+    make_test text_i, text_o
   
   # ###################################################################################################
   #    pure
   # ###################################################################################################
-  it "pure decl + router (BROKEN pure)", ()->
+  it "pure decl + router", ()->
     text_i = """
     pragma solidity ^0.4.22;
     
@@ -251,20 +245,23 @@ describe "translate ligo section fn", ()->
     type router_enum is
       | Test of test_args;
     
-    function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
+    function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         skip
-      } with ((nil: list(operation)), 0n);
+      } with (0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
-      | Test(match_action) -> (test(unit), self)
+      | Test(match_action) -> block {
+        const tmp : (nat) = test(unit);
+        var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
+      } with ((opList, self))
       end);
-
+    
     """#"
     make_test text_i, text_o, router: true
   
-  it "pure call + router (BROKEN pure)", ()->
+  it "pure call + router", ()->
     text_i = """
     pragma solidity ^0.4.22;
     
@@ -297,15 +294,18 @@ describe "translate ligo section fn", ()->
         assert((sum >= test_reserved_long___self));
       } with (sum);
     
-    function test (const #{config.reserved}__unit : unit) : (list(operation) * nat) is
+    function test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         const n : nat = abs(not (0));
-        exactAdd(n, 1n);
-      } with ((nil: list(operation)), 0n);
+        const terminate_tmp_0 : (nat) = exactAdd(n, 1n);
+      } with (0n);
     
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       (case action of
-      | Test(match_action) -> (test(unit), self)
+      | Test(match_action) -> block {
+        const tmp : (nat) = test(unit);
+        var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
+      } with ((opList, self))
       end);
     """#"
     make_test text_i, text_o, router: true

@@ -1,6 +1,7 @@
 config= require "./config"
 Type  = require "type"
 ast   = require "./ast"
+type_generalize = require "./type_generalize"
 
 bin_op_map =
   "+"   : "ADD"
@@ -178,6 +179,9 @@ ensure_scope = (t)->
   ret
 
 class Context
+  contract      : null
+  contract_name : ""
+  contract_type : ""
   need_prevent_deploy : false
   constructor:()->
 
@@ -216,6 +220,8 @@ walk = (root, ctx)->
           throw new Error "unknown contractKind #{root.contractKind}"
       
       ret.inheritance_list = []
+      ret.name          = root.name
+      ctx.contract      = ret
       ctx.contract_name = root.name
       ctx.contract_type = root.contractKind
       for v in root.baseContracts
@@ -228,7 +234,6 @@ walk = (root, ctx)->
           name : v.baseName.name
           arg_list
         }
-      ret.name = root.name
       for node in root.nodes
         ret.scope.list.push walk node, ctx
         
@@ -248,10 +253,17 @@ walk = (root, ctx)->
       ret
     
     when "UsingForDirective"
-      perr "WARNING UsingForDirective is not supported"
       ret = new ast.Comment
       ret.text = "UsingForDirective"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      
+      if root.typeName == null
+        type = "*"
+      else
+        type = type_generalize root.typeName.name
+      
+      ctx.contract.using_map[type] ?= []
+      ctx.contract.using_map[type].push root.libraryName.name
 
       ret
     
@@ -639,14 +651,14 @@ walk = (root, ctx)->
       ret
     
     when "Continue"
-      perr "CRITICAL WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret
     
     when "Break"
-      perr "CRITICAL WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Break
       [ret.pos, ret.line] = parse_line_pos(root.src)
@@ -663,9 +675,9 @@ walk = (root, ctx)->
     when "FunctionDefinition", "ModifierDefinition"
       ret = ctx.current_function = new ast.Fn_decl_multiret
       ret.is_modifier = root.nodeType == "ModifierDefinition"
-      ret.is_constructor = root.isConstructor
+      ret.is_constructor = root.isConstructor or root.kind == "constructor"
       ret.name = root.name or "fallback"
-      ret.name = "constructor" if root.isConstructor
+      ret.name = "constructor" if ret.is_constructor
       ret.contract_name = ctx.contract_name
       ret.contract_type = ctx.contract_type
 

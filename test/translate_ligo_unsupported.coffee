@@ -26,13 +26,13 @@ describe "translate ligo section unsupported", ()->
     text_o = """
     type state is unit;
     
-    function test (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         while (False) block {
-          (* CRITICAL WARNING break is not supported *);
-          (* CRITICAL WARNING continue is not supported *);
+          (* `break` statement is not supported in LIGO *);
+          (* `continue` statement is not supported in LIGO *);
         };
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o, allow_need_prevent_deploy:true
   
@@ -50,10 +50,10 @@ describe "translate ligo section unsupported", ()->
     text_o = """
     type state is unit;
     
-    function recover (const hash : bytes; const v : nat; const r : bytes; const s : bytes) : (list(operation) * address) is
+    function recover (const hash : bytes; const v : nat; const r : bytes; const s : bytes) : (address) is
       block {
         skip
-      } with ((nil: list(operation)), ecrecover(hash, v, r, s));
+      } with (ecrecover(hash, v, r, s));
     """#"
     make_test text_i, text_o, no_ligo:true
   
@@ -77,9 +77,9 @@ describe "translate ligo section unsupported", ()->
     text_o = """
     type state is unit;
     
-    function isAuthorized (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function isAuthorized (const #{config.reserved}__unit : unit) : (unit) is
       block {
         dSAuthority(0);
-      } with ((nil: list(operation)), #{config.contract_storage});
+      } with (unit);
     """#"
     make_test text_i, text_o, no_ligo:true

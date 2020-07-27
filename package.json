@@ -9,7 +9,7 @@
     "test-ext-compiler": "EXT_COMPILER=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-emulator": "EMULATOR=1 npm run test-specific emulator",
     "test-ext-compiler-fast": "SKIP_SOLC=1 EXT_COMPILER=1 mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
-    "test-specific": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test -g"
+    "test-specific": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register test -g"
   },
   "bin": {
     "sol2ligo": "bin/sol2ligo"

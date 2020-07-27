@@ -35,7 +35,7 @@ do() =>
             
             if fn_use_refined_map.hasOwnProperty fn.name
               delete fn_use_refined_map[fn.name]
-              perr "CRITICAL WARNING we found that function #{fn.name} has self recursion. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
+              perr "WARNING we found that function #{fn.name} has self recursion. This will produce uncompilable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             fn_dep_map_map[fn.name] = fn_use_refined_map
           
           # phase 3 check no loops
@@ -66,7 +66,7 @@ do() =>
           
           if 0 != h_count clone_fn_dep_map_map
             perr clone_fn_dep_map_map
-            perr "CRITICAL WARNING Can't reorder methods. Loop detected. This will produce uncompileable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
+            perr "WARNING Can't reorder methods. Loop detected. This will produce uncompilable target. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#self-recursion--function-calls"
             break
           
           break if fn_move_list.length == 0
