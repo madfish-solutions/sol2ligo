@@ -24,6 +24,7 @@ class @Class_decl
   using_map : {} # type -> list of library
   line  : 0
   pos   : 0
+  file  : ""
   constructor:()->
     @scope = new module.Scope
     @_prepared_field2type = {}
@@ -57,6 +58,7 @@ class @Class_decl
     
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Var
@@ -65,6 +67,7 @@ class @Var
   type  : null
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Var
@@ -72,6 +75,7 @@ class @Var
     ret.type  = @type.clone() if @type
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Var_decl
@@ -86,6 +90,7 @@ class @Var_decl
   is_enum_decl : false
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Var_decl
@@ -103,6 +108,7 @@ class @Var_decl
     ret.is_enum_decl  = @is_enum_decl
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 
@@ -119,6 +125,7 @@ class @Fn_call
   
   line  : 0
   pos   : 0
+  file  : ""
   constructor:()->
     @arg_list = []
   
@@ -155,6 +162,7 @@ class @Fn_call
     ret.fn_decl      = @fn_decl
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 # ###################################################################################################
 #    New nodes
@@ -199,6 +207,7 @@ class @Fn_decl_multiret
     ret.scope = @scope.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret.visibility      = @visibility
     ret.state_mutability= @state_mutability
 
@@ -224,18 +233,21 @@ class @Ret_multi
       ret.t_list.push v.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Comment
   text  : ""
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Comment
     ret.text  = @text
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Tuple
@@ -254,6 +266,7 @@ class @Tuple
     ret.type  = @type.clone() if @type
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Var_decl_multi # used for var (a,b) = fn_call();
@@ -262,6 +275,7 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
   type  : null
   line  : 0
   pos   : 0
+  file  : ""
   
   constructor:()->
     @list = []
@@ -283,6 +297,7 @@ class @Var_decl_multi # used for var (a,b) = fn_call();
     ret.type  = @type.clone() if @type
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Ternary
@@ -291,6 +306,7 @@ class @Ternary
   f     : null
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Ternary
@@ -299,6 +315,7 @@ class @Ternary
     ret.f     = @f.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @New
@@ -316,6 +333,7 @@ class @New
       ret.arg_list.push v.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
   
 
@@ -324,6 +342,7 @@ class @Type_cast
   t     : null
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Type_cast
@@ -331,6 +350,7 @@ class @Type_cast
     ret.t     = @t.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @For3
@@ -340,6 +360,7 @@ class @For3
   scope : null
   line  : 0
   pos   : 0
+  file  : ""
   constructor:()->
     @scope = new ast.Scope
   
@@ -350,6 +371,7 @@ class @For3
     ret.iter  = @iter.clone() if @init
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
   
 # PM = Pattern matching
@@ -359,6 +381,7 @@ class @PM_switch
   # default : null
   line  : 0
   pos   : 0
+  file  : ""
   constructor: ()->
     @scope   = new ast.Scope
     # @default = new ast.Scope
@@ -369,6 +392,7 @@ class @PM_switch
     ret.scope = @scope.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
   
 # note only 1 level allowed yet
@@ -390,6 +414,7 @@ class @PM_case
     ret.scope = @scope.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
   
 class @Enum_decl
@@ -398,6 +423,7 @@ class @Enum_decl
   int_type: true
   line  : 0
   pos   : 0
+  file  : ""
   
   constructor:()->
     @value_list = []
@@ -409,6 +435,7 @@ class @Enum_decl
       ret.value_list.push v.clone()
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Event_decl
@@ -416,6 +443,7 @@ class @Event_decl
   arg_list: []
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     ret = new module.Event_decl
@@ -423,6 +451,7 @@ class @Event_decl
     ret.arg_list  = @arg_list
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Struct_init
@@ -431,6 +460,7 @@ class @Struct_init
   val_list  : []
   line  : 0
   pos   : 0
+  file  : ""
   constructor:()->
     @val_list = []
     @arg_names = []
@@ -444,15 +474,18 @@ class @Struct_init
       ret.arg_names[idx] = v
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret
 
 class @Include
   path : ""
   line  : 0
   pos   : 0
+  file  : ""
   
   clone : ()->
     path = ""
     ret.line  = @line
     ret.pos   = @pos
+    ret.file  = @file
     ret

@@ -22,6 +22,8 @@ argv.test   ?= false
 argv.disable_enums_to_nat ?= false
 argv.prefer_erc721 ?= false
 argv.outfile ?= null
+argv.print_solidity_ast ?= false
+argv.keep_dir_structure ?= false
 # ###################################################################################################
 
 process_file = (file)->
@@ -31,6 +33,9 @@ process_file = (file)->
     suggest_solc_version  : argv.solc
     silent                : argv.silent
     allow_download        : true
+
+  if argv.print_solidity_ast
+    puts ast
   
   solidity_to_ast4gen = require("./src/solidity_to_ast4gen").gen
   new_ast = solidity_to_ast4gen ast
@@ -49,18 +54,18 @@ process_file = (file)->
   new_ast = ast_transform.pre_ti new_ast, opt
   new_ast = type_inference new_ast, opt
   new_ast = ast_transform.post_ti new_ast, opt
-  code = translate new_ast, opt
+    code = translate new_ast, opt
   code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
   
-  if argv.outfile
-    name = outfile.name
-    if outfile.ext
-      name += outfile.ext
+    if argv.outfile
+      name = outfile.name
+      if outfile.ext
+        name += outfile.ext
+      else
+        name += ".ligo"
+      fs.writeFileSync name, code
     else
-      name += ".ligo"
-    fs.writeFileSync name, code
-  else
-    puts code
+      puts code
 
   
   if argv.ds or argv.outfile
@@ -101,6 +106,8 @@ if !(file = argv._[0])? and !(file = argv.file)
       --test                  test compile with ligo (must be installed)                    default: false
       --disable_enums_to_nat  Do not transform enums to number constants                    default: false
       --prefer_erc721         Treat token interface as ERC721 over ERC20                    default: false
+      --print_solidity_ast    Print parsed Solidity AST before transpiling                  default: false
+      --keep_dir_structure    Preserve directory structure of original contracts            default: false
       --contract  <name>      Name of contract to generate router for                       default: <last contract>
       --outfile <name>        Name for output file. Adds `.ligo` if no extension specified  default: <prints to stdout>
         see test.ligo, test.pp.ligo and ligo_tmp.log

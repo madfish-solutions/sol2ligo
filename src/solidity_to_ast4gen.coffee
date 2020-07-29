@@ -84,6 +84,7 @@ walk_type = (root, ctx)->
       ret = new Type "array"
       ret.nest_list.push walk_type root.baseType, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "Mapping"
@@ -91,6 +92,7 @@ walk_type = (root, ctx)->
       ret.nest_list.push walk_type root.keyType, ctx
       ret.nest_list.push walk_type root.valueType, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     else
@@ -155,6 +157,7 @@ walk_param = (root, ctx)->
       for v in root.parameters
         ret.append walk_param v, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "VariableDeclaration"
@@ -166,6 +169,7 @@ walk_param = (root, ctx)->
       t._name = root.name
       ret.push t
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     else
@@ -202,6 +206,7 @@ walk = (root, ctx)->
       for node in root.nodes
         ret.list.push walk node, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "ContractDefinition"
@@ -211,43 +216,48 @@ walk = (root, ctx)->
         ret = new ast.Comment
         ret.text = "here #{ctx.file} was imported"
         ret
-
-      ret = new ast.Class_decl
-      
-      switch root.contractKind
-        when "contract"
-          ret.is_contract = true
+      else if root.name.startsWith "ImportPlaceholderEnd"
+        ret = new ast.Comment
+        ret.text = "here #{ctx.file} import ended"
+        ret
+      else
+        ret = new ast.Class_decl
         
-        when "library"
-          ret.is_library = true
+        switch root.contractKind
+          when "contract"
+            ret.is_contract = true
+          
+          when "library"
+            ret.is_library = true
+          
+          when "interface"
+            ret.is_interface = true
+          
+          else
+            throw new Error "unknown contractKind #{root.contractKind}"
         
-        when "interface"
-          ret.is_interface = true
+        ret.inheritance_list = []
+        ret.name          = root.name
+        ctx.contract      = ret
+        ctx.contract_name = root.name
+        ctx.contract_type = root.contractKind
+        for v in root.baseContracts
+          arg_list = []
+          if v.arguments
+            for arg in v.arguments
+              arg_list.push walk arg, ctx
+          
+          ret.inheritance_list.push {
+            name : v.baseName.name
+            arg_list
+          }
+        for node in root.nodes
+          ret.scope.list.push walk node, ctx
+          
+        [ret.pos, ret.line] = parse_line_pos(root.src)
+        ret.file = ctx.file
         
-        else
-          throw new Error "unknown contractKind #{root.contractKind}"
-      
-      ret.inheritance_list = []
-      ret.name          = root.name
-      ctx.contract      = ret
-      ctx.contract_name = root.name
-      ctx.contract_type = root.contractKind
-      for v in root.baseContracts
-        arg_list = []
-        if v.arguments
-          for arg in v.arguments
-            arg_list.push walk arg, ctx
-        
-        ret.inheritance_list.push {
-          name : v.baseName.name
-          arg_list
-        }
-      for node in root.nodes
-        ret.scope.list.push walk node, ctx
-        
-      [ret.pos, ret.line] = parse_line_pos(root.src)
-      
-      ret
+        ret
     
     # ###################################################################################################
     #    Unsupported stuff
@@ -264,6 +274,7 @@ walk = (root, ctx)->
       ret = new ast.Comment
       ret.text = "UsingForDirective"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       
       if root.typeName == null
         type = "*"
@@ -282,6 +293,7 @@ walk = (root, ctx)->
       for v in root.members
         ret.scope.list.push walk v, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "InlineAssembly"
@@ -289,6 +301,7 @@ walk = (root, ctx)->
       ret = new ast.Comment
       ret.text = "InlineAssembly #{root.operations}"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -298,6 +311,7 @@ walk = (root, ctx)->
       ret.name = root.name
       ret.arg_list = walk_param root.parameters, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -310,6 +324,7 @@ walk = (root, ctx)->
       arg_names = args.map (arg) -> arg.name
       ret.text = "EmitStatement #{name}(#{arg_names.join(", ")})"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -317,6 +332,7 @@ walk = (root, ctx)->
       ret = new ast.Comment
       ret.text = "COMPILER MSG PlaceholderStatement"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -331,6 +347,7 @@ walk = (root, ctx)->
       catch err
         perr "WARNING can't resolve type #{err}"
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       
       ret
     
@@ -339,6 +356,7 @@ walk = (root, ctx)->
       ret.type  = new Type root.kind
       ret.val   = root.value
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       switch root.subdenomination
         when "seconds"
@@ -417,6 +435,7 @@ walk = (root, ctx)->
       # state   : root.stateVariable
       # visibility   : root.visibility
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -428,6 +447,7 @@ walk = (root, ctx)->
       ret.a = walk root.leftHandSide, ctx
       ret.b = walk root.rightHandSide, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -439,6 +459,7 @@ walk = (root, ctx)->
       ret.a = walk root.leftExpression, ctx
       ret.b = walk root.rightExpression, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -447,6 +468,7 @@ walk = (root, ctx)->
       ret.t = walk root.expression, ctx
       ret.name = root.memberName
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -456,6 +478,7 @@ walk = (root, ctx)->
       ret.a = walk root.baseExpression, ctx
       ret.b = walk root.indexExpression, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -472,6 +495,7 @@ walk = (root, ctx)->
         throw new Error("unknown un_op #{root.operator}")
       ret.a = walk root.subExpression, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -506,6 +530,7 @@ walk = (root, ctx)->
             ret.arg_list = arg_list
 
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -526,6 +551,7 @@ walk = (root, ctx)->
           ret = ret.list[0]
 
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -533,6 +559,7 @@ walk = (root, ctx)->
       ret = new ast.New
       ret.cls = walk_type root.typeName, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -540,6 +567,7 @@ walk = (root, ctx)->
       ret = new ast.Type_cast
       ret.target_type = walk_type root.typeName, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     
@@ -549,6 +577,7 @@ walk = (root, ctx)->
       ret.t     = walk root.trueExpression  , ctx
       ret.f     = walk root.falseExpression , ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
 
       ret
     # ###################################################################################################
@@ -592,6 +621,7 @@ walk = (root, ctx)->
         ret.type.nest_list = type_list
         
         [ret.pos, ret.line] = parse_line_pos(root.src)
+        ret.file = ctx.file
 
         ret
       else
@@ -608,6 +638,7 @@ walk = (root, ctx)->
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         [ret.pos, ret.line] = parse_line_pos(root.src)
+        ret.file = ctx.file
         
         ret
     
@@ -616,6 +647,7 @@ walk = (root, ctx)->
       for node in root.statements
         ret.list.push walk node, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       
       ret
     
@@ -626,6 +658,7 @@ walk = (root, ctx)->
       if root.falseBody
         ret.f    = ensure_scope walk root.falseBody, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       
       ret
     
@@ -634,6 +667,7 @@ walk = (root, ctx)->
       ret.cond = walk root.condition, ctx
       ret.scope= ensure_scope walk root.body, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "ForStatement"
@@ -646,6 +680,7 @@ walk = (root, ctx)->
         ret.iter = walk root.loopExpression, ctx
       ret.scope= ensure_scope walk root.body, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     # ###################################################################################################
@@ -656,6 +691,7 @@ walk = (root, ctx)->
       if root.expression # and ctx.current_function.should_ret_args
         ret.t_list.push walk root.expression, ctx
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "Continue"
@@ -663,6 +699,7 @@ walk = (root, ctx)->
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "Break"
@@ -670,11 +707,13 @@ walk = (root, ctx)->
       ctx.need_prevent_deploy = true
       ret = new ast.Break
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "Throw"
       ret = new ast.Throw
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     # ###################################################################################################
@@ -751,6 +790,7 @@ walk = (root, ctx)->
               
               ret_multi.t_list.push tuple
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     when "EnumDefinition"
@@ -762,6 +802,7 @@ walk = (root, ctx)->
         # decl.type = new Type ret.name
         # skip type declaration since solidity enums aren't typed
       [ret.pos, ret.line] = parse_line_pos(root.src)
+      ret.file = ctx.file
       ret
     
     else
