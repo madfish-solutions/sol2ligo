@@ -347,15 +347,23 @@ class @Gen_context
   
   contract          : false
   trim_expr         : ""
-  terminate_expr_check    : ""
+  
+  # terminates right side expression in case it doesn't return anything.
+  # this might be needed cause LIGO doesn't support procedures
+  terminate_expr_check    : "" 
   terminate_expr_replace_fn: null
-  storage_sink_list : {}
+
+  # in case expression should be split into multiple lines
+  # code to be prepended collected here
   sink_list         : []
+  tmp_idx           : 0
+  
+  # collect things to be placed at the top of the contract
+  storage_sink_list : {}
   type_decl_sink_list: []
   structs_default_list: []
   enum_list: []
-  tmp_idx           : 0
-  
+
   constructor:()->
     @type_decl_map   = {}
     @contract_var_map= {}

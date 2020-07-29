@@ -8,6 +8,9 @@ Type = require "type"
 } = require "./translate_ligo"
 # ###################################################################################################
 
+# this module generates initial storage for the contract which is needed for contract origination
+# this default state is later compiled to Michelson before being passed to a Tezos node
+
 class @Gen_context
   next_gen : null
   var_map : {}
