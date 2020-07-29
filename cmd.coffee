@@ -22,6 +22,8 @@ argv.test   ?= false
 argv.disable_enums_to_nat ?= false
 argv.prefer_erc721 ?= false
 argv.outfile ?= null
+argv.print_solidity_ast ?= false
+  
 # ###################################################################################################
 
 process_file = (file)->
@@ -31,6 +33,9 @@ process_file = (file)->
     suggest_solc_version  : argv.solc
     silent                : argv.silent
     allow_download        : true
+
+  if argv.print_solidity_ast
+    puts ast
   
   solidity_to_ast4gen = require("./src/solidity_to_ast4gen").gen
   new_ast = solidity_to_ast4gen ast
@@ -101,6 +106,7 @@ if !(file = argv._[0])? and !(file = argv.file)
       --test                  test compile with ligo (must be installed)                    default: false
       --disable_enums_to_nat  Do not transform enums to number constants                    default: false
       --prefer_erc721         Treat token interface as ERC721 over ERC20                    default: false
+      --print_solidity_ast    Print parsed Solidity AST before transpiling                  default: false
       --contract  <name>      Name of contract to generate router for                       default: <last contract>
       --outfile <name>        Name for output file. Adds `.ligo` if no extension specified  default: <prints to stdout>
         see test.ligo, test.pp.ligo and ligo_tmp.log
