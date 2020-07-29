@@ -2,6 +2,8 @@ m_path = require "path"
 fs = require "fs"
 {execSync} = require "child_process"
 
+import_placeholder_count = 0
+
 get_folder = (path)->
   list = path.split("/")
   list.pop()
@@ -67,12 +69,15 @@ module.exports = (path, import_cache = {})->
       // IMPORT SKIP
       """
     else
+      # add some valid Solidity code so we can retrieve it from ast and understand what was the import path
       code = module.exports file, import_cache
+      import_placeholder_count += 1
       """
-      // IMPORT RESOLVE #{orig_file}
+      contract ImportPlaceholderStart#{import_placeholder_count} { string name = "#{orig_file}"; }
       #{code}
-      // IMPORT END
+      contract ImportPlaceholderEnd#{import_placeholder_count} { string name = "#{orig_file}"; }
       """
+
   line_list = code.split("\n")
   for line,idx in line_list
     line = line.trim()

@@ -182,6 +182,7 @@ class Context
   contract      : null
   contract_name : ""
   contract_type : ""
+  file          : ""
   need_prevent_deploy : false
   constructor:()->
 
@@ -204,6 +205,13 @@ walk = (root, ctx)->
       ret
     
     when "ContractDefinition"
+      # HACK to know in which file following nodes are located in
+      if root.name.startsWith "ImportPlaceholderStart"
+        ctx.file = root.nodes[0].value.value
+        ret = new ast.Comment
+        ret.text = "here #{ctx.file} was imported"
+        ret
+
       ret = new ast.Class_decl
       
       switch root.contractKind
