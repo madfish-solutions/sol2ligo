@@ -110,7 +110,7 @@ describe "translate ligo section fn api", ()->
     
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
-        const a : address = tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg;
+        const a : address = #{config.default_address};
         const b : nat = 0n;
         const gl : nat = 0n;
         const n : nat = 0n;

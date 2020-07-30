@@ -120,7 +120,7 @@ describe "translate ligo section map", ()->
 
     function nest (const self : state; const dummy : nat) : (state) is
       block {
-        self.nested_mapping[("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)] := map
+        self.nested_mapping[("#{config.default_address}" : address)] := map
           0n -> 0n;
         end;
       } with (self);

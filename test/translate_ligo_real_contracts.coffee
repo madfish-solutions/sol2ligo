@@ -252,12 +252,12 @@ describe "translate ligo real contracts section", ()->
       block {
         assert(isOwner(#{config.contract_storage})) (* "Ownable: caller is not the owner" *);
         (* EmitStatement OwnershipTransferred(_owner, ) *);
-        #{config.contract_storage}.owner_ := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        #{config.contract_storage}.owner_ := ("#{config.default_address}" : address);
       } with ((nil: list(operation)), #{config.contract_storage});
     
     function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (state) is
       block {
-        assert((newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Ownable: new owner is the zero address" *);
+        assert((newOwner =/= ("#{config.default_address}" : address))) (* "Ownable: new owner is the zero address" *);
         (* EmitStatement OwnershipTransferred(_owner, newOwner) *)
         #{config.contract_storage}.owner_ := newOwner;
       } with (#{config.contract_storage});

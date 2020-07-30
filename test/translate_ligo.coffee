@@ -122,7 +122,7 @@ describe "translate ligo section unsorted", ()->
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
-        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const addr : address = ("#{config.default_address}" : address);
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
       } with (unit);

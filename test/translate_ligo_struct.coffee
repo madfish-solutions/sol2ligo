@@ -55,7 +55,7 @@ describe "translate ligo section struct", ()->
     
     type state is unit;
 
-    const ballot_Voter_default : ballot_Voter = record [ votee = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    const ballot_Voter_default : ballot_Voter = record [ votee = ("#{config.default_address}" : address);
       voted = False ];
 
     function ddd (const #{config.reserved}__unit : unit) : (unit) is
