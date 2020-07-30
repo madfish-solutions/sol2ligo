@@ -217,6 +217,7 @@ walk = (root, ctx)->
         ret.text = "here #{ctx.file} was imported"
         ret
       else if root.name.startsWith "ImportPlaceholderEnd"
+        ctx.file = ""
         ret = new ast.Comment
         ret.text = "here #{ctx.file} import ended"
         ret
@@ -791,6 +792,7 @@ walk = (root, ctx)->
               ret_multi.t_list.push tuple
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret.file = ctx.file
+      p "fn decl", ret.name, " is from", ret.file 
       ret
     
     when "EnumDefinition"

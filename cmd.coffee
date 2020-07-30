@@ -21,9 +21,9 @@ argv.ds     ?= false
 argv.test   ?= false
 argv.disable_enums_to_nat ?= false
 argv.prefer_erc721 ?= false
-argv.outfile ?= null
 argv.print_solidity_ast ?= false
-argv.keep_dir_structure ?= false
+argv.outfile ?= null
+argv.outdir ?= null
 # ###################################################################################################
 
 process_file = (file)->
@@ -50,13 +50,28 @@ process_file = (file)->
       contract : argv.contract
       replace_enums_by_nats: not argv.disable_enums_to_nat
       prefer_erc721: argv.prefer_erc721
+      keep_dir_structure: argv.outdir != null
   }
   new_ast = ast_transform.pre_ti new_ast, opt
   new_ast = type_inference new_ast, opt
   new_ast = ast_transform.post_ti new_ast, opt
+  if argv.outdir
+    files = translate new_ast, opt
+    for strpath, code of files
+      if strpath == ""
+        filepath = path.parse(file)
+        filepath.dir = "."
+        filepath.root = "."
+      else
+        filepath = path.parse(strpath)
+      
+      filepath.dir = path.resolve(argv.outdir, filepath.dir)
+      execSync "mkdir -p #{filepath.dir}"
+      fullpath = "#{filepath.dir}/#{filepath.name}.ligo"
+      fs.writeFileSync fullpath, code
+  else
     code = translate new_ast, opt
-  code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
-  
+    code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
     if argv.outfile
       name = outfile.name
       if outfile.ext
@@ -98,18 +113,19 @@ process_file = (file)->
 if !(file = argv._[0])? and !(file = argv.file)
   puts """
     usage ./cmd.coffee <file.sol>
-      --router                generate router                                               default: 1
-      --silent                suppress errors                                               default: false
-      --solc                  suggested solc version if pragma is not specified             default: 0.4.26
-      --solc-force            override solc version in pragma                               default: false
-      --ds                    print default state. You need it for deploy                   default: false
-      --test                  test compile with ligo (must be installed)                    default: false
-      --disable_enums_to_nat  Do not transform enums to number constants                    default: false
-      --prefer_erc721         Treat token interface as ERC721 over ERC20                    default: false
-      --print_solidity_ast    Print parsed Solidity AST before transpiling                  default: false
-      --keep_dir_structure    Preserve directory structure of original contracts            default: false
-      --contract  <name>      Name of contract to generate router for                       default: <last contract>
-      --outfile <name>        Name for output file. Adds `.ligo` if no extension specified  default: <prints to stdout>
+      --router                generate router                                                  default: 1
+      --silent                suppress errors                                                  default: false
+      --solc                  suggested solc version if pragma is not specified                default: 0.4.26
+      --solc-force            override solc version in pragma                                  default: false
+      --ds                    print    default state. You need it for deploy                   default: false
+      --test                  test compile with ligo (must be installed)                       default: false
+      --disable_enums_to_nat  Do not transform enums to number constants                       default: false
+      --prefer_erc721         Treat token interface as ERC721 over ERC20                       default: false
+      --print_solidity_ast    Print parsed Solidity AST before transpiling                     default: false
+      --keep_dir_structure    Preserve directory structure of original contracts               default: false
+      --contract  <name>      Name of contract to generate router for                          default: <last contract>
+      --outfile <name>        Name for output file. Adds `.ligo` if no extension specified     default: <prints to stdout>
+      --outdir <path>         Keep original directory structure and yield multiple ligo files  default: <single file to stdout>
         see test.ligo, test.pp.ligo and ligo_tmp.log
     """
   process.exit()
