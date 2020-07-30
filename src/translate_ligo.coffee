@@ -355,6 +355,7 @@ class @Gen_context
   structs_default_list: []
   enum_list: []
   tmp_idx           : 0
+  files             : null
   
   constructor:()->
     @type_decl_map   = {}
@@ -365,6 +366,7 @@ class @Gen_context
     @structs_default_list= []
     @enum_list= []
     @contract = false
+    @files = null
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -1162,4 +1164,10 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  walk root, ctx
+  if opt.keep_dir_structure
+    ctx.files = new Map
+  ret = walk root, ctx
+  if opt.keep_dir_structure
+    ctx.files
+  else
+    ret
