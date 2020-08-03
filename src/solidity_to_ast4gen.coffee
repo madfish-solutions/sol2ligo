@@ -215,11 +215,13 @@ walk = (root, ctx)->
         ctx.file.unshift root.nodes[0].value.value 
         ret = new ast.Comment
         ret.text = "here #{ctx.file[0]} was imported"
+        ret.can_skip = true
         ret
       else if root.name.startsWith "ImportPlaceholderEnd"
-        ctx.file.shift()
         ret = new ast.Comment
         ret.text = "here #{ctx.file[0]} import ended"
+        ret.can_skip = true
+        ctx.file.shift()
         ret
       else
         ret = new ast.Class_decl
@@ -792,7 +794,6 @@ walk = (root, ctx)->
               ret_multi.t_list.push tuple
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret.file = ctx.file[0]
-      p "fn decl", ret.name, " is from", ret.file 
       ret
     
     when "EnumDefinition"
