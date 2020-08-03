@@ -318,6 +318,7 @@ number2bytes = (val, precision = 32)->
         if t.constructor.name == "Enum_decl"
           first_item = t.value_list[0].name
           if ctx.current_class.name
+            # TODO this prefix is unused right now. Figure out if it should be prepended to enum's name
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"
@@ -326,7 +327,7 @@ number2bytes = (val, precision = 32)->
             return "#{name}(unit)"
         if t.constructor.name == "Class_decl"
           name = type.main
-          if ctx.current_class.name
+          if ctx.current_class?.name
             name = "#{ctx.current_class.name}_#{type.main}"
           return "#{name}_default"
 
