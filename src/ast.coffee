@@ -176,6 +176,7 @@ class @Fn_decl_multiret
   scope   : null
   line    : 0
   pos     : 0
+  file    : ""
   visibility : ""
   state_mutability : ""
   contract_name : ""
@@ -223,6 +224,7 @@ class @Ret_multi
   t_list : []
   line    : 0
   pos     : 0
+  file    : 0
   
   constructor:()->
     @t_list = []
@@ -240,6 +242,7 @@ class @Comment
   text  : ""
   line  : 0
   pos   : 0
+  can_skip : false
   file  : ""
   
   clone : ()->
@@ -248,6 +251,7 @@ class @Comment
     ret.line  = @line
     ret.pos   = @pos
     ret.file  = @file
+    ret.can_skip = @can_skip
     ret
 
 class @Tuple
