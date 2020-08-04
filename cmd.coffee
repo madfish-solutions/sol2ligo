@@ -75,6 +75,9 @@ process_file = (file)->
     else
       name += ".ligo"
     name = path.join outfile.dir, name
+    if outfile.dir
+      execSync "mkdir -p #{outfile.dir}"
+    
     fs.writeFileSync name, code
   else
     puts code
@@ -136,9 +139,6 @@ if argv.dir
     rel = path.relative argv.dir, file
     filepath = path.parse rel
     argv.outfile = path.join filepath.dir, filepath.name
-    p argv.outfile
-    if filepath.dir
-      execSync "mkdir -p #{filepath.dir}"
     process_file file
 else
   process_file file
