@@ -401,8 +401,7 @@ walk = (root, ctx)->
             if code
               if v.constructor.name not in ["Comment", "Scope"]
                 code += ";" if !/;$/.test code
-              if not jls.hasOwnProperty path
-                jls[path] = []
+              jls[path] ?= []
               jls[path].push code
         
           if ctx.structs_default_list.length
@@ -464,8 +463,7 @@ walk = (root, ctx)->
             for v in root.list
               path = v.file if ctx.keep_dir_structure
               path = path or main_file
-              if not jls.hasOwnProperty path
-                jls[path] = []
+              jls[path] ?= []
               code = walk v, ctx
               for loc_code in ctx.sink_list
                 loc_code += ";" if !/;$/.test loc_code
@@ -723,7 +721,6 @@ walk = (root, ctx)->
             fn = "ecrecover"
           
           when "@respond"
-            insp root, 5
             type_list = []
             for v in root.arg_list
               type_list.push translate_type v.type, ctx

@@ -26,14 +26,15 @@ argv.outfile ?= null
 argv.dir ?= null
 # ###################################################################################################
 
-walkSync = (dir, filelist) -> 
+walkSync = (dir, filelist = []) -> 
   files = fs.readdirSync(dir)
   filelist = filelist || []
   files.forEach (file) ->
-    if fs.statSync(dir + file).isDirectory()
-      filelist = walkSync(dir + file + '/', filelist)
+    p = path.join(dir, file)
+    if fs.statSync(p).isDirectory()
+      filelist = walkSync p, filelist
     else
-      filelist.push(dir + file)
+      filelist.push(p)
   filelist
 
 process_file = (file)->
