@@ -45,7 +45,7 @@ describe "translate ligo section ops", ()->
             ret : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (state) is
+          function expr (const contract_storage : state) : (state) is
             block {
               const a : nat = 0n;
               const c : nat = 0n;
@@ -63,13 +63,13 @@ describe "translate ligo section ops", ()->
               c := a;
               a := abs(a - 1n);
               c := a;
-              #{config.contract_storage}.ret := c;
-            } with (#{config.contract_storage});
+              contract_storage.ret := c;
+            } with (contract_storage);
           
-          function getRet (const #{config.contract_storage} : state) : (nat) is
+          function getRet (const contract_storage : state) : (nat) is
             block {
               const ret_val : nat = 0n;
-              ret_val := #{config.contract_storage}.ret;
+              ret_val := contract_storage.ret;
             } with (ret_val);
         """
         make_test text_i, text_o
@@ -308,7 +308,7 @@ describe "translate ligo section ops", ()->
             ret : nat;
           end;
           
-          function expr (const #{config.contract_storage} : state) : (state) is
+          function expr (const contract_storage : state) : (state) is
             block {
               const a : nat = 0n;
               const b : nat = 1n;
@@ -329,13 +329,13 @@ describe "translate ligo section ops", ()->
               c := bitwise_and(c, b);
               c := bitwise_or(c, b);
               c := bitwise_xor(c, b);
-              #{config.contract_storage}.ret := c;
-            } with (#{config.contract_storage});
+              contract_storage.ret := c;
+            } with (contract_storage);
           
-          function getRet (const #{config.contract_storage} : state) : (nat) is
+          function getRet (const contract_storage : state) : (nat) is
             block {
               const ret_val : nat = 0n;
-              ret_val := #{config.contract_storage}.ret;
+              ret_val := contract_storage.ret;
             } with (ret_val);
         """
         make_test text_i, text_o
@@ -814,7 +814,7 @@ describe "translate ligo section ops", ()->
           ret : bool;
         end;
         
-        function expr (const #{config.contract_storage} : state) : (state) is
+        function expr (const contract_storage : state) : (state) is
           block {
             const a : bool = False;
             const b : bool = True;
@@ -824,13 +824,13 @@ describe "translate ligo section ops", ()->
             c := (a = b);
             c := (a =/= b);
             c := not (b);
-            self.ret := c;
-          } with (#{config.contract_storage});
+            contract_storage.ret := c;
+          } with (contract_storage);
         
-        function getRet (const #{config.contract_storage} : state) : (bool) is
+        function getRet (const contract_storage : state) : (bool) is
           block {
             const ret_val : bool = False;
-            ret_val := #{config.contract_storage}.ret;
+            ret_val := contract_storage.ret;
           } with (ret_val);
       """
       make_test text_i, text_o
@@ -921,10 +921,10 @@ describe "translate ligo section ops", ()->
         balances : map(address, nat);
       end;
       
-      function expr (const #{config.contract_storage} : state; const owner : address) : (nat) is
+      function expr (const contract_storage : state; const owner : address) : (nat) is
         block {
           skip
-        } with ((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end));
+        } with ((case contract_storage.balances[owner] of | None -> 0n | Some(x) -> x end));
       """
       make_test text_i, text_o
     

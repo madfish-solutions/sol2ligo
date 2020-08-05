@@ -105,12 +105,12 @@ describe "erc20 conversions", ()->
         const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
       } with (list [op0]);
 
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | GetAllowanceCallback(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = getAllowanceCallback(match_action.arg);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
 
     """#"

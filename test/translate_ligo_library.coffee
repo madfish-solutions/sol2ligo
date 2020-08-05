@@ -86,7 +86,7 @@ describe "translate ligo section library", ()->
         const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
@@ -141,7 +141,7 @@ describe "translate ligo section library", ()->
         const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with (unit);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test_reserved_long___main(match_action) -> block {
         (* This function does nothing, but it's present in router *)
@@ -180,10 +180,10 @@ describe "translate ligo section library", ()->
     
     const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];
     
-    function addPauser_ (const #{config.contract_storage} : state; const account : address) : (state) is
+    function addPauser_ (const contract_storage : state; const account : address) : (state) is
       block {
-        #{config.contract_storage}.pausers_.bearer[account] := True;
-      } with (#{config.contract_storage});
+        contract_storage.pausers_.bearer[account] := True;
+      } with (contract_storage);
     """#"
     make_test text_i, text_o
   # ###################################################################################################
@@ -272,7 +272,7 @@ describe "translate ligo section library", ()->
         const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);

@@ -25,10 +25,10 @@ describe "translate ligo section fn", ()->
       value : nat;
     end;
     
-    function test (const #{config.contract_storage} : state) : (state) is
+    function test (const contract_storage : state) : (state) is
       block {
-        #{config.contract_storage}.value := 1n;
-      } with (#{config.contract_storage});
+        contract_storage.value := 1n;
+      } with (contract_storage);
     
     """
     make_test text_i, text_o
@@ -187,10 +187,10 @@ describe "translate ligo section fn", ()->
         skip
       } with (Tezos.sender);
     
-    function isOwner (const #{config.contract_storage} : state) : (bool) is
+    function isOwner (const contract_storage : state) : (bool) is
       block {
         skip
-      } with ((msgSender_(unit) = self.owner_));
+      } with ((msgSender_(unit) = contract_storage.owner_));
     """
     make_test text_i, text_o
   
@@ -250,12 +250,12 @@ describe "translate ligo section fn", ()->
         skip
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     
     """#"
@@ -300,12 +300,12 @@ describe "translate ligo section fn", ()->
         const terminate_tmp_0 : (nat) = exactAdd(n, 1n);
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
