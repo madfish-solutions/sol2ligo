@@ -396,8 +396,8 @@ walk = (root, ctx)->
           jls[main_file] = []
           for v in root.list
             code = walk v, ctx
-            path = v.file if ctx.keep_dir_structure
-            path = path or main_file
+            path = if ctx.keep_dir_structure then v.file else null
+            path ?= main_file
             if code
               if v.constructor.name not in ["Comment", "Scope"]
                 code += ";" if !/;$/.test code
@@ -461,8 +461,8 @@ walk = (root, ctx)->
             jls = {}
             jls[main_file] = []
             for v in root.list
-              path = v.file if ctx.keep_dir_structure
-              path = path or main_file
+              path = if ctx.keep_dir_structure then v.file else null
+              path ?= main_file
               jls[path] ?= []
               code = walk v, ctx
               for loc_code in ctx.sink_list
