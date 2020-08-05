@@ -30,11 +30,11 @@ walkSync = (dir, filelist = []) ->
   files = fs.readdirSync(dir)
   filelist = filelist || []
   files.forEach (file) ->
-    p = path.join(dir, file)
-    if fs.statSync(p).isDirectory()
-      filelist = walkSync p, filelist
+    thepath = path.join(dir, file)
+    if fs.statSync(thepath).isDirectory()
+      filelist = walkSync thepath, filelist
     else
-      filelist.push(p)
+      filelist.push(thepath)
   filelist
 
 process_file = (file)->
