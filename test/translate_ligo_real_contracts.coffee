@@ -10,6 +10,7 @@ describe "translate ligo real contracts section", ()->
   # ###################################################################################################
   #    simple coin
   # ###################################################################################################
+  # NOTE initialized is removed
   it "simple coin", ()->
     text_i = """
     pragma solidity >=0.5.0 <0.6.0;
@@ -41,7 +42,6 @@ describe "translate ligo real contracts section", ()->
     
     type state is record
       balances : map(address, nat);
-      reserved__initialized : bool;
     end;
     
     function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is

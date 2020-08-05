@@ -27,7 +27,6 @@ cache_content_map = {}
     .replace /\bcallbackAddress\b/g, config.callback_address
     .replace /\btz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg\b/g, config.default_address
     .replace /\breserved__empty_state\b/g, config.empty_state
-    .replace /\breserved__initialized\b/g, config.initialized
     .replace /\bopList\b/g, config.op_list
   assert.strictEqual text_o_real, text_o_expected
   if process.env.EXT_COMPILER and !opt.no_ligo
