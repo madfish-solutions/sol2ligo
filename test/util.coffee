@@ -23,7 +23,6 @@ cache_content_map = {}
   text_o_real     = text_o_real.trim()
   text_o_expected = text_o_expected
     .replace /\bstate\b/g, config.storage
-    .replace /\bself\b/g, config.contract_storage
     .replace /\breceiver\b/g, config.receiver_name
     .replace /\bcallbackAddress\b/g, config.callback_address
     .replace /\btz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg\b/g, config.default_address
