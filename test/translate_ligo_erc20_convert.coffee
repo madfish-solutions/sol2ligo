@@ -59,7 +59,7 @@ describe "erc20 conversions", ()->
         (* This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
     
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
         const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetTotalSupply)));
@@ -100,7 +100,7 @@ describe "erc20 conversions", ()->
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
       } with (list [op0]);
@@ -138,7 +138,7 @@ describe "erc20 conversions", ()->
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(sender) : contract(unit)));

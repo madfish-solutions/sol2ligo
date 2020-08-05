@@ -707,14 +707,14 @@ walk = (root, ctx)->
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
             # TODO config match_action, config.callback_address
-            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str}))) end"
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str}))) end"
           
           when "@respond_append"
             type_list = []
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str})) end)"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
           
           else
             fn = root.fn.name

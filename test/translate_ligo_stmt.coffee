@@ -65,7 +65,7 @@ describe "translate ligo section stmt", ()->
       value : nat;
     end;
     
-    function ifer (const #{config.contract_storage} : #{config.storage}) : (nat) is
+    function ifer (const #{config.contract_storage} : state) : (nat) is
       block {
         const x : nat = 5n;
         const ret : nat = 0n;

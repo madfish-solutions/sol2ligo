@@ -46,7 +46,7 @@ describe "erc721 conversions", ()->
         (* This method should handle return value of Balance_of of foreign contract *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const op0 : operation = transaction((list [record [ from_ = Tezos.sender;
           txs = list [record [ to_ = 0x0;

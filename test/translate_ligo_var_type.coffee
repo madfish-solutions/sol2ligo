@@ -223,7 +223,7 @@ describe "translate ligo section var type", ()->
       timestamp : nat;
     end;
     
-    function test (const #{config.contract_storage} : #{config.storage}) : (#{config.storage}) is
+    function test (const #{config.contract_storage} : state) : (state) is
       block {
         #{config.contract_storage}.#{config.reserved}__sender := Tezos.sender;
         #{config.contract_storage}.#{config.reserved}__source := Tezos.source;
@@ -296,7 +296,7 @@ describe "translate ligo section var type", ()->
       #{config.reserved}__#{config.contract_storage} : nat;
     end;
     
-    function test (const #{config.contract_storage} : #{config.storage}) : (unit) is
+    function test (const #{config.contract_storage} : state) : (unit) is
       block {
         const a : nat = #{config.contract_storage}.#{config.reserved}__#{config.contract_storage};
       } with (unit);

@@ -41,7 +41,7 @@ describe "translate ligo real contracts section", ()->
     
     type state is record
       balances : map(address, nat);
-      #{config.initialized} : bool;
+      reserved__initialized : bool;
     end;
     
     function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
@@ -63,7 +63,7 @@ describe "translate ligo real contracts section", ()->
     function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (#{config.contract_storage}.#{config.initialized}) then block {
+        if (#{config.contract_storage}.reserved__initialized) then block {
           case action of
           | Constructor(match_action) -> block {
             const tmp_0 : (list(operation) * state) = constructor(#{config.contract_storage});
@@ -77,7 +77,7 @@ describe "translate ligo real contracts section", ()->
           }
           end;
         } else block {
-          #{config.contract_storage}.#{config.initialized} := True;
+          #{config.contract_storage}.reserved__initialized := True;
         };
       } with (#{config.contract_storage});
     """#"
