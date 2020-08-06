@@ -10,6 +10,7 @@ describe "translate ligo real contracts section", ()->
   # ###################################################################################################
   #    simple coin
   # ###################################################################################################
+  # NOTE initialized is removed
   it "simple coin", ()->
     text_i = """
     pragma solidity >=0.5.0 <0.6.0;
@@ -41,45 +42,44 @@ describe "translate ligo real contracts section", ()->
     
     type state is record
       balances : map(address, nat);
-      #{config.initialized} : bool;
     end;
     
-    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function constructor (const contract_storage : state) : (list(operation) * state) is
       block {
-        #{config.contract_storage}.balances[sender] := 1000000n;
-      } with (#{config.contract_storage});
+        contract_storage.balances[sender] := 1000000n;
+      } with (contract_storage);
     
-    function transfer (const #{config.contract_storage} : state; const #{config.reserved}__to : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
+    function transfer (const contract_storage : state; const #{config.reserved}__to : address; const #{config.reserved}__amount : nat) : (list(operation) * state) is
       block {
-        if ((case #{config.contract_storage}.balances[sender] of | None -> 0n | Some(x) -> x end) >= #{config.reserved}__amount) then {skip} else failwith("Overdrawn balance");
-        #{config.contract_storage}.balances[sender] := abs((case #{config.contract_storage}.balances[sender] of | None -> 0n | Some(x) -> x end) - #{config.reserved}__amount);
-        #{config.contract_storage}.balances[#{config.reserved}__to] := ((case #{config.contract_storage}.balances[#{config.reserved}__to] of | None -> 0n | Some(x) -> x end) + #{config.reserved}__amount);
-      } with (#{config.contract_storage});
+        if ((case contract_storage.balances[sender] of | None -> 0n | Some(x) -> x end) >= #{config.reserved}__amount) then {skip} else failwith("Overdrawn balance");
+        contract_storage.balances[sender] := abs((case contract_storage.balances[sender] of | None -> 0n | Some(x) -> x end) - #{config.reserved}__amount);
+        contract_storage.balances[#{config.reserved}__to] := ((case contract_storage.balances[#{config.reserved}__to] of | None -> 0n | Some(x) -> x end) + #{config.reserved}__amount);
+      } with (contract_storage);
     
     type router_enum is
       | Constructor of constructor_args
       | Transfer of transfer_args;
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       block {
         const opList : list(operation) = (nil: list(operation));
-        if (#{config.contract_storage}.#{config.initialized}) then block {
+        if (contract_storage.reserved__initialized) then block {
           case action of
           | Constructor(match_action) -> block {
-            const tmp_0 : (list(operation) * state) = constructor(#{config.contract_storage});
+            const tmp_0 : (list(operation) * state) = constructor(contract_storage);
             opList := tmp_0.0;
-            #{config.contract_storage} := tmp_0.1;
+            contract_storage := tmp_0.1;
           }
           | Transfer(match_action) -> block {
-            const tmp_1 : (list(operation) * state) = transfer(#{config.contract_storage}, match_action.#{config.reserved}__to, match_action.#{config.reserved}__amount);
+            const tmp_1 : (list(operation) * state) = transfer(contract_storage, match_action.#{config.reserved}__to, match_action.#{config.reserved}__amount);
             opList := tmp_1.0;
-            #{config.contract_storage} := tmp_1.1;
+            contract_storage := tmp_1.1;
           }
           end;
         } else block {
-          #{config.contract_storage}.#{config.initialized} := True;
+          contract_storage.reserved__initialized := True;
         };
-      } with (#{config.contract_storage});
+      } with (contract_storage);
     """#"
     make_test text_i, text_o, {
       router: true
@@ -213,67 +213,67 @@ describe "translate ligo real contracts section", ()->
     
     (* modifier onlyOwner inlined *)
     
-    function msgSender_ (const #{config.contract_storage} : state) : (list(operation) * state * address) is
+    function msgSender_ (const contract_storage : state) : (list(operation) * state * address) is
       block {
         skip
-      } with (#{config.contract_storage}, sender);
+      } with (contract_storage, sender);
     
-    function context_constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function context_constructor (const contract_storage : state) : (list(operation) * state) is
       block {
         skip
-      } with (#{config.contract_storage});
+      } with (contract_storage);
     
-    function constructor (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function constructor (const contract_storage : state) : (list(operation) * state) is
       block {
-        const tmp_0 : (list(operation) * state) = context_constructor(#{config.contract_storage});
+        const tmp_0 : (list(operation) * state) = context_constructor(contract_storage);
         opList := tmp_0.0;
-        #{config.contract_storage} := tmp_0.1;
-        const tmp_1 : (list(operation) * state * address) = msgSender_(#{config.contract_storage});
+        contract_storage := tmp_0.1;
+        const tmp_1 : (list(operation) * state * address) = msgSender_(contract_storage);
         opList := tmp_1.0;
-        #{config.contract_storage} := tmp_1.1;
+        contract_storage := tmp_1.1;
         const msgSender : address = tmp_1.2;
-        #{config.contract_storage}.owner_ := msgSender;
+        contract_storage.owner_ := msgSender;
         (* EmitStatement *);
-      } with (#{config.contract_storage});
+      } with (contract_storage);
     
-    function owner (const #{config.contract_storage} : state) : (list(operation) * state * address) is
+    function owner (const contract_storage : state) : (list(operation) * state * address) is
       block {
         skip
-      } with (#{config.contract_storage}, #{config.contract_storage}.owner_);
+      } with (contract_storage, contract_storage.owner_);
     
-    function isOwner (const #{config.contract_storage} : state; const receiver : contract(bool)) : (list(operation) * state * bool) is
+    function isOwner (const contract_storage : state; const receiver : contract(bool)) : (list(operation) * state * bool) is
       block {
-        const tmp_0 : (list(operation) * state * address) = msgSender_(#{config.contract_storage});
+        const tmp_0 : (list(operation) * state * address) = msgSender_(contract_storage);
         opList := tmp_0.0;
-        #{config.contract_storage} := tmp_0.1;
-      } with (#{config.contract_storage}, (tmp_0.2 = #{config.contract_storage}.owner_));
+        contract_storage := tmp_0.1;
+      } with (contract_storage, (tmp_0.2 = contract_storage.owner_));
     
-    function renounceOwnership (const #{config.contract_storage} : state) : (list(operation) * state) is
+    function renounceOwnership (const contract_storage : state) : (list(operation) * state) is
       block {
-        assert(isOwner(#{config.contract_storage})) (* "Ownable: caller is not the owner" *);
+        assert(isOwner(contract_storage)) (* "Ownable: caller is not the owner" *);
         (* EmitStatement OwnershipTransferred(_owner, ) *);
-        #{config.contract_storage}.owner_ := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-      } with ((nil: list(operation)), #{config.contract_storage});
+        contract_storage.owner_ := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+      } with ((nil: list(operation)), contract_storage);
     
-    function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (state) is
+    function transferOwnership_ (const contract_storage : state; const newOwner : address) : (state) is
       block {
         assert((newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Ownable: new owner is the zero address" *);
         (* EmitStatement OwnershipTransferred(_owner, newOwner) *)
-        #{config.contract_storage}.owner_ := newOwner;
-      } with (#{config.contract_storage});
+        contract_storage.owner_ := newOwner;
+      } with (contract_storage);
     
-    function transferOwnership (const #{config.contract_storage} : state; const newOwner : address) : (list(operation) * state) is
+    function transferOwnership (const contract_storage : state; const newOwner : address) : (list(operation) * state) is
       block {
-        assert(isOwner(self)) (* "Ownable: caller is not the owner" *);
-        transferOwnership_(self, newOwner);
-      } with ((nil: list(operation)), #{config.contract_storage});
+        assert(isOwner(contract_storage)) (* "Ownable: caller is not the owner" *);
+        transferOwnership_(contract_storage, newOwner);
+      } with ((nil: list(operation)), contract_storage);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
-      | Owner(match_action) -> (owner(self, match_action.receiver), self)
-      | IsOwner(match_action) -> (isOwner(self, match_action.receiver), self)
-      | RenounceOwnership(match_action) -> renounceOwnership(self)
-      | TransferOwnership(match_action) -> transferOwnership(self, match_action.newOwner)
+      | Owner(match_action) -> (owner(contract_storage, match_action.receiver), contract_storage)
+      | IsOwner(match_action) -> (isOwner(contract_storage, match_action.receiver), contract_storage)
+      | RenounceOwnership(match_action) -> renounceOwnership(contract_storage)
+      | TransferOwnership(match_action) -> transferOwnership(contract_storage, match_action.newOwner)
       end);
     """#"
     make_test text_i, text_o, {

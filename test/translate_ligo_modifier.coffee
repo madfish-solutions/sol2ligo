@@ -28,23 +28,23 @@ describe "translate ligo section modifier", ()->
     }
     """
     text_o = """
-    type #{config.storage} is record
+    type state is record
       locked : bool;
       a : bool;
     end;
     
     (* modifier lock inlined *)
     
-    function test (const #{config.contract_storage} : #{config.storage}) : (#{config.storage}) is
+    function test (const contract_storage : state) : (state) is
       block {
-        if (not (#{config.contract_storage}.locked)) then block {
-          #{config.contract_storage}.locked := True;
-          #{config.contract_storage}.a := True;
-          #{config.contract_storage}.locked := False;
+        if (not (contract_storage.locked)) then block {
+          contract_storage.locked := True;
+          contract_storage.a := True;
+          contract_storage.locked := False;
         } else block {
           skip
         };
-      } with (#{config.contract_storage});
+      } with (contract_storage);
     """
     make_test text_i, text_o
   
@@ -67,13 +67,13 @@ describe "translate ligo section modifier", ()->
     }
     """
     text_o = """
-    type #{config.storage} is record
+    type state is record
       val : bool;
     end;
     
     (* modifier greaterThan inlined *)
     
-    function test (const #{config.contract_storage} : #{config.storage}; const a : nat) : (#{config.storage}) is
+    function test (const contract_storage : state; const a : nat) : (state) is
       block {
         const value : nat = a;
         const limit : nat = 10n;
@@ -82,8 +82,8 @@ describe "translate ligo section modifier", ()->
         } else block {
           skip
         };
-        #{config.contract_storage}.val := True;
-      } with (#{config.contract_storage});
+        contract_storage.val := True;
+      } with (contract_storage);
     """#"
     make_test text_i, text_o
   

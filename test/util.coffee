@@ -21,6 +21,21 @@ cache_content_map = {}
   text_o_real     = translate ast, opt
   text_o_expected = text_o_expected.trim()
   text_o_real     = text_o_real.trim()
+  text_o_expected = text_o_expected
+    .replace /\bcontract_storage\b/g, config.contract_storage
+    .replace /\bstate\b/g, config.storage
+    .replace /\breceiver\b/g, config.receiver_name
+    .replace /\bcallbackAddress\b/g, config.callback_address
+    .replace /\btz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg\b/g, config.default_address
+    .replace /\breserved__empty_state\b/g, config.empty_state
+    .replace /\bopList\b/g, config.op_list
+  
+  # in case if we change contract_storage in future
+  if config.contract_storage != "self"
+    text_o_expected = text_o_expected
+      .replace /\btest_reserved_long___self\b/g, "self"
+    
+  
   assert.strictEqual text_o_real, text_o_expected
   if process.env.EXT_COMPILER and !opt.no_ligo
     # strip known non-working code
@@ -29,10 +44,10 @@ cache_content_map = {}
     if !opt.router
       text_o_real = """
       #{text_o_real}
-      function main (const action : nat; const #{config.contract_storage} : state) : (list(operation) * state) is
+      function main (const action : nat; const contract_storage : state) : (list(operation) * state) is
         block {
           const opList : list(operation) = (nil: list(operation));
-        } with (opList, #{config.contract_storage});
+        } with (opList, contract_storage);
       
       """
     

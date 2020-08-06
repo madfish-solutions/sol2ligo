@@ -43,7 +43,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo";
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
@@ -59,7 +59,7 @@ describe "erc20 conversions", ()->
         (* This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
     
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
         const supply : nat = const op0 : operation = transaction((Tezos.self("%GetTotalSupplyCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetTotalSupply)));
@@ -91,7 +91,7 @@ describe "erc20 conversions", ()->
 
     type state is unit;
 
-    #include "fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo";
     type router_enum is
       | GetAllowanceCallback of getAllowanceCallback_args;
 
@@ -100,17 +100,17 @@ describe "erc20 conversions", ()->
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
       } with (list [op0]);
 
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | GetAllowanceCallback(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = getAllowanceCallback(match_action.arg);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
 
     """#"
@@ -132,13 +132,13 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
 
-    #include "fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo";
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const allowance : nat = const op0 : operation = transaction((0x0, Tezos.sender, Tezos.self("%GetAllowanceCallback")), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(GetAllowance)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(sender) : contract(unit)));
