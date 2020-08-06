@@ -356,6 +356,8 @@ class @Gen_context
   structs_default_list: []
   enum_list: []
   tmp_idx           : 0
+  files             : null
+  keep_dir_structure: false
   
   constructor:()->
     @type_decl_map   = {}
@@ -366,6 +368,8 @@ class @Gen_context
     @structs_default_list= []
     @enum_list= []
     @contract = false
+    @files = null
+    @keep_dir_structure = false
   
   mk_nest : ()->
     t = new module.Gen_context
@@ -377,41 +381,48 @@ class @Gen_context
     t.structs_default_list = @structs_default_list
     t.enum_list = @enum_list
     t.contract = @contract
+    t.files = @files
+    t.keep_dir_structure = @keep_dir_structure
     t
 
 last_bracket_state = false
 walk = (root, ctx)->
+  main_file = ""
   last_bracket_state = false
   switch root.constructor.name
     when "Scope"
       switch root.original_node_type
         when "SourceUnit"
-          jl = []
+          jls = {}
+          jls[main_file] = []
           for v in root.list
             code = walk v, ctx
+            path = if ctx.keep_dir_structure then v.file else null
+            path ?= main_file
             if code
               if v.constructor.name not in ["Comment", "Scope"]
                 code += ";" if !/;$/.test code
-              jl.push code
-          
+              jls[path] ?= []
+              jls[path].push code
+        
           if ctx.structs_default_list.length
-            jl.unshift """
+            jls[main_file].unshift """
               #{join_list ctx.structs_default_list}
               """
           name = config.storage
-          jl.unshift ""
+          jls[main_file].unshift ""
           if Object.keys(ctx.storage_sink_list).length == 0
-            jl.unshift """
+            jls[main_file].unshift """
               type #{name} is unit;
               """
           else
             for k,v of ctx.storage_sink_list
               if v.length == 0
-                jl.unshift """
+                jls[main_file].unshift """
                   type #{k} is unit;
                   """
               else
-                jl.unshift """
+                jls[main_file].unshift """
                   type #{k} is record
                     #{join_list v, '  '}
                   end;
@@ -434,25 +445,30 @@ walk = (root, ctx)->
 
                   """
             
-            jl.unshift """
+            jls[main_file].unshift """
               #{join_list type_decl_jl}
               """
             if ctx.enum_list.length 
-              jl.unshift ""
-              jl.unshift """
+              jls[main_file].unshift ""
+              jls[main_file].unshift """
                 #{join_list ctx.enum_list}
                 """
               ctx.enum_list = []
-          join_list jl, ""
-        
+          for path, jl of jls
+            ctx.files[path] = join_list jl, ""
+          ctx.files[main_file]
         else
           if !root.original_node_type
-            jl = []
+            jls = {}
+            jls[main_file] = []
             for v in root.list
+              path = if ctx.keep_dir_structure then v.file else null
+              path ?= main_file
+              jls[path] ?= []
               code = walk v, ctx
               for loc_code in ctx.sink_list
                 loc_code += ";" if !/;$/.test loc_code
-                jl.push loc_code
+                jls[path].push loc_code
               ctx.sink_list.clear()
               # do not add e.g. tmp_XXX stmt which do nothing
               if ctx.trim_expr == code
@@ -464,38 +480,41 @@ walk = (root, ctx)->
               if code
                 if v.constructor.name not in ["Comment", "Scope"]
                   code += ";" if !/;$/.test code
-                jl.push code
+                jls[path].push code
 
-            ret = jl.pop() or ""
-            if 0 != ret.indexOf "with"
-              jl.push ret
-              ret = ""
-            
-            jl = jl.filter (t)-> t != ""
-            
-            if !root.need_nest
-              if jl.length
-                body = join_list jl, ""
+            for path, jl of jls
+              ret = jl.pop() or ""
+              if not ret.startsWith "with"
+                jl.push ret
+                ret = ""
+              jl = jl.filter (t)-> t != ""
+              if !root.need_nest
+                if jl.length
+                  body = join_list jl, ""
+                else
+                  body = ""
+                ret = ""
               else
-                body = ""
-              ret = ""
-            else
-              if jl.length
-                body = """
-                block {
-                  #{join_list jl, '  '}
-                }
-                """
-              else
-                body = """
-                block {
-                  skip
-                }
-                """
-            ret = " #{ret}" if ret
-            """
-            #{body}#{ret}
-            """
+                if jl.length
+                  body = """
+                  block {
+                    #{join_list jl, '  '}
+                  }
+                  """
+                else
+                  body = """
+                  block {
+                    skip
+                  }
+                  """
+              ret = " #{ret}" if ret
+              code = """
+              #{body}#{ret}
+              """
+              ctx.files[path] = code
+
+            ctx.files[main_file]
+              
           else
             puts root
             throw new Error "Unknown root.original_node_type #{root.original_node_type}"
@@ -1163,4 +1182,10 @@ walk = (root, ctx)->
 @gen = (root, opt = {})->
   ctx = new module.Gen_context
   ctx.next_gen = opt.next_gen
-  walk root, ctx
+  ctx.keep_dir_structure = opt.keep_dir_structure
+  ctx.files = {}
+  ret = walk root, ctx
+  if opt.keep_dir_structure
+    ctx.files[""]
+  else
+    ret
