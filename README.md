@@ -12,7 +12,7 @@ Input solidity code
 
 ```solidity
 contract FooBarContract {
-  function foo(uint number) internal returns (int) {
+  function foo(uint number) returns (int) {
     string[2] memory arr = ["hello", "world"];
     bool isEven = number % 2 == 0;
     int result = 42 * 42;
@@ -23,7 +23,17 @@ contract FooBarContract {
 
 Translated LIGO code
 ```js
-function foo (const self : state; const number : nat) : (state * int) is
+type foo_args is record
+  number : nat;
+  callbackAddress : address;
+end;
+
+type state is unit;
+
+type router_enum is
+  | Foo of foo_args;
+
+function foo (const number : nat) : (int) is
   block {
     const arr : map(nat, string) = map
       0n -> "hello";
@@ -31,7 +41,15 @@ function foo (const self : state; const number : nat) : (state * int) is
     end;
     const isEven : bool = ((number mod 2n) = 0n);
     const result : int = (42 * 42);
-  } with (self, (case isEven of | True -> -(1) | False -> result end));
+  } with ((case isEven of | True -> -(1) | False -> result end));
+
+function main (const action : router_enum; const self : state) : (list(operation) * state) is
+  (case action of
+  | Foo(match_action) -> block {
+    const tmp : (int) = foo(match_action.number);
+    var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(int))) end;
+  } with ((opList, self))
+  end);
 ```
 
 ### 📚️ More examples 
