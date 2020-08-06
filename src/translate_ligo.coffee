@@ -483,7 +483,7 @@ walk = (root, ctx)->
 
             for path, jl of jls
               ret = jl.pop() or ""
-              if ret.includes "with"
+              if not ret.startsWith "with"
                 jl.push ret
                 ret = ""
               jl = jl.filter (t)-> t != ""
