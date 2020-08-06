@@ -91,7 +91,7 @@ describe "translate ligo section library", ()->
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -146,7 +146,7 @@ describe "translate ligo section library", ()->
       | Test_reserved_long___main(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = test_reserved_long___main(match_action.test_reserved_long___self, match_action.other);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -277,7 +277,7 @@ describe "translate ligo section library", ()->
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -316,28 +316,28 @@ describe "translate ligo section library", ()->
       const_ONES : nat;
     end;
     
-    function bits_setBit (const self : state; const tmp_self : nat; const index : nat) : (nat) is
+    function bits_setBit (const contract_storage : state; const tmp_self : nat; const index : nat) : (nat) is
       block {
         skip
-      } with (bitwise_or(tmp_self, bitwise_lsl(self.const_ONE, index)));
+      } with (bitwise_or(tmp_self, bitwise_lsl(contract_storage.const_ONE, index)));
     type router_enum is
       | SetBitExample of setBitExample_args;
     
     (* UsingForDirective *)
     
-    function setBitExample (const self : state) : (unit) is
+    function setBitExample (const contract_storage : state) : (unit) is
       block {
         const n : nat = 0n;
-        n := bits_setBit(self, n, 0n);
+        n := bits_setBit(contract_storage, n, 0n);
         assert((n = 1n));
       } with (unit);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | SetBitExample(match_action) -> block {
         (* This function does nothing, but it's present in router *)
-        const tmp : unit = setBitExample(self);
-      } with (((nil: list(operation)), self))
+        const tmp : unit = setBitExample(contract_storage);
+      } with (((nil: list(operation)), contract_storage))
       end);
     """
     make_test text_i, text_o, router: true

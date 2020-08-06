@@ -30,6 +30,12 @@ cache_content_map = {}
     .replace /\breserved__empty_state\b/g, config.empty_state
     .replace /\bopList\b/g, config.op_list
   
+  # in case if we change contract_storage in future
+  if config.contract_storage != "self"
+    text_o_expected = text_o_expected
+      .replace /\btest_reserved_long___self\b/g, "self"
+    
+  
   assert.strictEqual text_o_real, text_o_expected
   if process.env.EXT_COMPILER and !opt.no_ligo
     # strip known non-working code
