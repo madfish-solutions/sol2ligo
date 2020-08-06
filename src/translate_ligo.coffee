@@ -847,7 +847,10 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Comment"
       # TODO multiline comments
-      if root.can_skip
+      if ctx.keep_dir_structure and root.text.startsWith "#include"
+        text = root.text.replace ".sol", ".ligo"
+        text
+      else if root.can_skip
         ""
       else
         "(* #{root.text} *)"

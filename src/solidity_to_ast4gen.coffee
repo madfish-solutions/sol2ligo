@@ -214,13 +214,14 @@ walk = (root, ctx)->
       # HACK to know in which file following nodes are located in
       if root.name.startsWith "ImportPlaceholderStart"
         ctx.file_stack.push root.nodes[0].value.value 
+        # HACK this comment starting with "#include" will be caught at a later stages to be translated to actual include
         ret = new ast.Comment
-        ret.text = "here #{ctx.file_stack.last()} was imported"
+        ret.text = "#include \"#{ctx.file_stack.last()}\""
         ret.can_skip = true
         ret
       else if root.name.startsWith "ImportPlaceholderEnd"
         ret = new ast.Comment
-        ret.text = "here #{ctx.file_stack.last()} import ended"
+        ret.text = "end of include #{ctx.file_stack.last()}"
         ret.can_skip = true
         ctx.file_stack.pop()
         ret
