@@ -125,9 +125,10 @@ ast = require "./ast"
   cb_decl.arg_name_list.push "arg"
   cb_decl.type_i.nest_list.push arg_type
 
-  hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract"
-  cb_decl.scope.list.push hint
+  # full doc link: https://github.com/madfish-solutions/sol2ligo/wiki/Foreign-contract-callback-stub
+  failwith = new ast.Throw
+  failwith.t = @string_val "This method should handle return value of #{name} of foreign contract. Read more at https://git.io/JfDxR"
+  cb_decl.scope.list.push failwith
   return cb_decl
 
 @tezos_var = (name) ->
@@ -144,3 +145,9 @@ ast = require "./ast"
   enum_val.fn.name = name
   enum_val.arg_list = payload
   return enum_val
+
+@string_val = (str) ->
+  ret = new ast.Const
+  ret.type = new Type "string"
+  ret.val = str
+  return ret

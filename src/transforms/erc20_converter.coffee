@@ -13,22 +13,6 @@ astBuilder = require "../ast_builder"
 # transferFrom(address from, address to, uint tokens) returns (bool success) -> Transfer of (address * address * amt)
 # approve(address spender, uint tokens) returns (bool success) -> Approve of (address * amt)
 
-callback_declaration = (name, arg_type) ->
-  cb_decl = new ast.Fn_decl_multiret
-  cb_decl.name = name + "Callback"
-  
-  cb_decl.type_i = new Type "function"
-  cb_decl.type_o =  new Type "function"
-  
-  cb_decl.arg_name_list.push "arg"
-  cb_decl.type_i.nest_list.push arg_type
-
-  # full doc link: https://github.com/madfish-solutions/sol2ligo/wiki/Foreign-contract-callback-stub
-  hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract. Read more at https://git.io/JfDxR"
-  cb_decl.scope.list.push hint
-  return cb_decl
-
 tx_node = (address_expr, arg_list, name, ctx) ->
   address_expr = astBuilder.contract_addr_transform address_expr
   entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
@@ -42,7 +26,7 @@ callback_tx_node = (name, root, ctx) ->
   if not ctx.callbacks_to_declare_map.has cb_name
     # TODO why are we using nest_list of nest_list?
     return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = callback_declaration(name, return_type)
+    cb_decl = astBuilder.callback_declaration(name, return_type)
     ctx.callbacks_to_declare_map.set cb_name, cb_decl
 
   arg_list = root.arg_list
