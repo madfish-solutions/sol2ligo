@@ -33,7 +33,7 @@ argv.prefer_erc721 ?= false
 argv.print_solidity_ast ?= false
 argv.outfile ?= null
 argv.dir ?= null
-argv.outdir ?= '.'
+argv.outdir ?= "."
 # ###################################################################################################
 
 walkSync = (dir, filelist = []) -> 
@@ -126,7 +126,7 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
   puts """
     usage ./cmd.coffee <file.sol>
       --router                generate router                                                  default: 1
-      --silent                suppress errors                                                  default: false
+      -q, --silent            suppress errors                                                  default: false
       --solc                  suggested solc version if pragma is not specified                default: 0.4.26
       --solc-force            override solc version in pragma                                  default: false
       --ds                    print default state. You need it for deploy                      default: false
