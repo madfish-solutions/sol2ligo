@@ -11,7 +11,16 @@ translate       = require("./src/translate_ligo").gen
 translate_ds    = require("./src/translate_ligo_default_state").gen
 {execSync}      = require "child_process"
 # ###################################################################################################
-argv = require("minimist")(process.argv.slice(2))
+argv = require("minimist") process.argv.slice(2),
+  boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat",
+    "prefer_erc721", "print_solidity_ast"]
+  string: ["solc", "outfile", "dir", "outdir"]
+  alias:
+    "o": "outfile"
+    "d": "dir"
+    "D": "outdir"
+    "q": "silent"
+    "a": "print_solidity_ast"
 argv.router ?= true
 argv.silent ?= false
 argv.contract ?= false
@@ -24,6 +33,7 @@ argv.prefer_erc721 ?= false
 argv.print_solidity_ast ?= false
 argv.outfile ?= null
 argv.dir ?= null
+argv.outdir ?= '.'
 # ###################################################################################################
 
 walkSync = (dir, filelist = []) -> 
@@ -119,15 +129,16 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
       --silent                suppress errors                                                  default: false
       --solc                  suggested solc version if pragma is not specified                default: 0.4.26
       --solc-force            override solc version in pragma                                  default: false
-      --ds                    print    default state. You need it for deploy                   default: false
+      --ds                    print default state. You need it for deploy                      default: false
       --test                  test compile with ligo (must be installed)                       default: false
       --disable_enums_to_nat  Do not transform enums to number constants                       default: false
       --prefer_erc721         Treat token interface as ERC721 over ERC20                       default: false
-      --print_solidity_ast    Print parsed Solidity AST before transpiling                     default: false
+      -a,--print_solidity_ast Print parsed Solidity AST before transpiling                     default: false
       --keep_dir_structure    Preserve directory structure of original contracts               default: false
       --contract  <name>      Name of contract to generate router for                          default: <last contract>
-      --outfile <name>        Name for output file. Adds `.ligo` if no extension specified     default: <prints to stdout>
-      --dir <path>         Keep original directory structure and yield multiple ligo files  default: <single file to stdout>
+      -o, --outfile <name>    Name for output file. Adds `.ligo` if no extension specified     default: <prints to stdout>
+      -d, --dir <path>        Keep original directory structure and yield multiple ligo files  default: <single file to stdout>
+      -D, --outdir <path>     Output directory to be used with -d option, otherwise ignored    default: <current dir>
         see test.ligo, test.pp.ligo and ligo_tmp.log
     """
   process.exit()
@@ -139,7 +150,7 @@ if argv.dir
   for file in files
     rel = path.relative argv.dir, file
     filepath = path.parse rel
-    argv.outfile = path.join filepath.dir, filepath.name
+    argv.outfile = path.join argv.outdir, filepath.dir, filepath.name
     process_file file
 else
   process_file file

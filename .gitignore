@@ -16,3 +16,4 @@ build
 # temp
 contracts/Test*.sol
 migrations/*Test*.js
+tmp/
