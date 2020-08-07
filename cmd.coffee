@@ -19,10 +19,10 @@ argv = require("minimist") process.argv.slice(2),
     "o": "outfile"
     "d": "dir"
     "D": "outdir"
-    "q": "silent"
+    "q": "quiet"
     "a": "print_solidity_ast"
 argv.router ?= true
-argv.silent ?= false
+argv.quiet ?= false
 argv.contract ?= false
 argv.solc   ?= "0.4.26"
 argv["solc-force"] ?= false
@@ -52,7 +52,7 @@ process_file = (file)->
   ast = ast_gen code,
     auto_version          : !argv["solc-force"]
     suggest_solc_version  : argv.solc
-    silent                : argv.silent
+    quiet                 : argv.quiet
     allow_download        : true
 
   if argv.print_solidity_ast
@@ -126,7 +126,7 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
   puts """
     usage ./cmd.coffee <file.sol>
       --router                generate router                                                  default: 1
-      -q, --silent            suppress errors                                                  default: false
+      -q, --quiet             suppress errors                                                  default: false
       --solc                  suggested solc version if pragma is not specified                default: 0.4.26
       --solc-force            override solc version in pragma                                  default: false
       --ds                    print default state. You need it for deploy                      default: false
