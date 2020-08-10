@@ -87,7 +87,7 @@ module.exports = (code, opt={})->
   is_ok = true
   for error in output.errors or []
     if error.type == "Warning"
-      unless opt.silent
+      unless opt.quiet
         perr "WARNING", error
       continue
     is_ok = false
