@@ -93,17 +93,17 @@ describe "emulator section", ()->
   it "init", (done)->
     @timeout 30000
     # https://developer.kyber.network/docs/Reserves-Ganache/
-    execSync shellEscape ["rm", "-rf", "build"]
-    execSync shellEscape ["rm", "-rf", "db"]
-    execSync shellEscape ["rm", "-rf", "contracts/Test*.sol"]
-    execSync shellEscape ["rm", "-rf", "migrations/*Test*.js"]
-    global.__sandbox_proc = spawn shellEscape ["./node_modules/.bin/ganache-cli",
-      "--db", "db",
-      "--accounts", "10",
+    execSync "rm -rf build"
+    execSync "rm -rf db"
+    execSync "rm -rf contracts/Test*.sol"
+    execSync "rm -rf migrations/*Test*.js"
+    global.__sandbox_proc = spawn "./node_modules/.bin/ganache-cli", [
+      "--db", "db"
+      "--accounts", "10"
       "--defaultBalanceEther", "1000",
-      "--mnemonic", "gesture rather obey video awake genuine patient base soon parrot upset lounge",
-      "--networkId", "5777",
-      "--port", "7545",
+      "--mnemonic", "gesture rather obey video awake genuine patient base soon parrot upset lounge"
+      "--networkId", "5777"
+      "--port", "7545"
       "--debug"
     ]
     stdout = []
