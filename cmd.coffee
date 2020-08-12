@@ -10,6 +10,7 @@ type_inference  = require("./src/type_inference").gen
 translate       = require("./src/translate_ligo").gen
 translate_ds    = require("./src/translate_ligo_default_state").gen
 {execSync}      = require "child_process"
+shellEscape     = require "shell-escape"
 # ###################################################################################################
 argv = require("minimist") process.argv.slice(2),
   boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat",
@@ -87,7 +88,7 @@ process_file = (file)->
       name += ".ligo"
     name = path.join outfile.dir, name
     if outfile.dir
-      execSync "mkdir -p #{outfile.dir}"
+      execSync shellEscape ["mkdir", "-p", outfile.dir]
     
     fs.writeFileSync name, code
   else

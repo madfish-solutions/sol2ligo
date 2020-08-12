@@ -10,6 +10,7 @@ fs = require "fs"
   translate_ligo
   tez_account_list
 } = require("./util")
+shellEscape = require "shell-escape"
 
 truffle_config      = require "@truffle/config"
 truffle_environment = require "@truffle/environment"
@@ -66,14 +67,14 @@ global.make_emulator_test = (opt, on_end)->
   value_list = []
   for ligo_arg in ligo_arg_list
     try
-      res = execSync [
-        "ligo dry-run test.ligo"
-        "--sender #{JSON.stringify tez_account_list[0]}"
-        "--syntax pascaligo"
-        "main" # router name
-        ligo_arg
+      res = execSync shellEscape [
+        "ligo", "dry-run", "test.ligo",
+        "--sender", JSON.stringify tez_account_list[0],
+        "--syntax pascaligo",
+        "main", # router name
+        ligo_arg,
         JSON.stringify ligo_state
-      ].join " "
+      ]
     catch err
       return on_end err
     if reg_ret = /ret -> ([\+\-]?\d+)/.exec res
@@ -92,17 +93,17 @@ describe "emulator section", ()->
   it "init", (done)->
     @timeout 30000
     # https://developer.kyber.network/docs/Reserves-Ganache/
-    execSync "rm -rf build"
-    execSync "rm -rf db"
-    execSync "rm -rf contracts/Test*.sol"
-    execSync "rm -rf migrations/*Test*.js"
-    global.__sandbox_proc = spawn "./node_modules/.bin/ganache-cli", [
-      "--db", "db"
-      "--accounts", "10"
+    execSync shellEscape ["rm", "-rf", "build"]
+    execSync shellEscape ["rm", "-rf", "db"]
+    execSync shellEscape ["rm", "-rf", "contracts/Test*.sol"]
+    execSync shellEscape ["rm", "-rf", "migrations/*Test*.js"]
+    global.__sandbox_proc = spawn shellEscape ["./node_modules/.bin/ganache-cli",
+      "--db", "db",
+      "--accounts", "10",
       "--defaultBalanceEther", "1000",
-      "--mnemonic", "gesture rather obey video awake genuine patient base soon parrot upset lounge"
-      "--networkId", "5777"
-      "--port", "7545"
+      "--mnemonic", "gesture rather obey video awake genuine patient base soon parrot upset lounge",
+      "--networkId", "5777",
+      "--port", "7545",
       "--debug"
     ]
     stdout = []

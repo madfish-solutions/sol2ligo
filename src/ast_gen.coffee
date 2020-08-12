@@ -1,7 +1,8 @@
 require "fy"
 fs = require "fs"
-setupMethods = require "solc/wrapper"
-{execSync} = require "child_process"
+setupMethods= require "solc/wrapper"
+{execSync}  = require "child_process"
+shellEscape = require "shell-escape"
 
 solc_map = {}
 
@@ -18,8 +19,8 @@ module.exports = (code, opt={})->
   target_dir = "#{__dirname}/../solc-bin/bin"
   if allow_download and !fs.existsSync "#{target_dir}/list.js"
     perr "download solc catalog"
-    execSync "mkdir -p #{target_dir}"
-    execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js --output #{target_dir}/list.js"
+    execSync shellEscape ["mkdir", "-p", target_dir]
+    execSync shellEscape ["curl", "https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js", "--output", "#{target_dir}/list.js"]
   
   release_map = require("../solc-bin/bin/list.js").releases
   
@@ -57,7 +58,7 @@ module.exports = (code, opt={})->
     path = "#{target_dir}/#{solc_full_name}"
     if allow_download and !fs.existsSync path
       perr "download #{solc_full_name}"
-      execSync "curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/#{solc_full_name} --output #{target_dir}/#{solc_full_name}"
+      execSync shellEscape ["curl", "https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/#{solc_full_name}", "--output", "#{target_dir}/#{solc_full_name}"]
       
     perr "loading solc #{solc_full_name}"
     solc_map[solc_full_name] = solc = setupMethods require path
