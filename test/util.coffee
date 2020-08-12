@@ -44,10 +44,10 @@ cache_content_map = {}
     if !opt.router
       text_o_real = """
       #{text_o_real}
-      function main (const action : nat; const contract_storage : state) : (list(operation) * state) is
+      function main (const action : nat; const #{config.contract_storage} : #{config.storage}) : (list(operation) * #{config.storage}) is
         block {
-          const opList : list(operation) = (nil: list(operation));
-        } with (opList, contract_storage);
+          const #{config.op_list} : list(operation) = (nil: list(operation));
+        } with (#{config.op_list}, #{config.contract_storage});
       
       """
     
