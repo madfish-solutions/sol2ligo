@@ -151,3 +151,16 @@ ast = require "./ast"
   ret.type = new Type "string"
   ret.val = str
   return ret
+
+@to_right_comb = (args) ->
+  namespace = new ast.Var
+  namespace.name = "@Layout"
+
+  call = new ast.Fn_call
+  call.fn = new ast.Field_access
+  call.fn.name = "convert_to_right_comb"
+  call.fn.t = namespace
+
+  call.arg_list = args
+
+  return call

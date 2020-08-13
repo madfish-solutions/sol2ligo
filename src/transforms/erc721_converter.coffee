@@ -71,46 +71,54 @@ walk = (root, ctx)->
               when "transferFrom"
                 args = root.arg_list
 
-                tx = astBuilder.struct_init {
-                  to_: args[1],
-                  token_id: args[2],
-                  amount: astBuilder.nat_literal(1)
-                }
-                
-                arg_record = astBuilder.struct_init {
-                  from_ : args[0],
-                  txs :  astBuilder.list_init([tx])
-                }
-                
-                arg_list_obj = astBuilder.list_init([arg_record])
-                args = root.arg_list
+                dst = new ast.Tuple
+                dst.list.push args[1] # to
+                dst.list.push astBuilder.nat_literal(1) # amount always 1 because nft
 
-                return tx_node(root.fn.t, [arg_list_obj], "Transfer", ctx)
+                token_and_dst = new ast.Tuple
+                token_and_dst.list.push args[2] # token_id
+                token_and_dst.list.push dst
+
+                transfer = new ast.Tuple
+                transfer.list.push astBuilder.list_init([token_and_dst]) # txs
+                transfer.list.push args[0] # from
+
+                transfers = astBuilder.list_init([transfer])
+
+                call = astBuilder.enum_val("@Transfer", [transfers])
+
+                return tx_node(root.fn.t, [call], "fa2_entry_points", ctx)
               when "balanceOf"
                 name = "Balance_of"
                 args = root.arg_list
-                balance_request = astBuilder.struct_init {
-                  owner : args[0],
-                  token_id : root.fn.t
-                }
-                arg_record = astBuilder.struct_init {
-                  requests: astBuilder.list_init [balance_request]
-                  callback : astBuilder.self_entrypoint "%#{name}Callback"
-                }
+
+                param = new ast.Tuple
+
+                # DOC there is no direct translation of this call to FA2
+                # Solidity asks how many tokens address possesses
+                # LIGO must specify token ID, which means only balance of one type of token can be retrieved 
+                param.list.push astBuilder.nat_literal(0)  # token_id
+                param.list.push args[0] # owner
+                
+                request = new ast.Tuple
+                request.list.push astBuilder.list_init [param]
+                request.list.push astBuilder.self_entrypoint "%#{name}Callback"
 
                 declare_callback name, root.fn, ctx
                 
-                return tx_node(root.fn.t, [arg_record], name, ctx)
+                return tx_node(root.fn.t, [request], "fa2_entry_points", ctx)
               when "approve"
-                arg_record = astBuilder.struct_init {
-                  owner : astBuilder.tezos_var("sender")
-                  operator : root.arg_list[0]
-                }
+                param = new ast.Tuple
+                param.list.push astBuilder.tezos_var("sender")
+                param.list.push root.arg_list[0]
 
-                enum_val = astBuilder.enum_val("@Add_operator", [arg_record])
+                add = astBuilder.enum_val("@Add_operator", [param])
+                right_comb_add = astBuilder.to_right_comb [add]
+                add_list = astBuilder.list_init [right_comb_add]
 
-                list = astBuilder.list_init [enum_val]
-                return tx_node(root.fn.t, [list], "Update_operators", ctx)
+                update = astBuilder.enum_val("@Update_operators", [add_list])
+
+                return tx_node(root.fn.t, [update], "fa2_entry_points", ctx)
               when "setApprovalForAll"
                 args = root.arg_list
                 arg_record = astBuilder.struct_init {
