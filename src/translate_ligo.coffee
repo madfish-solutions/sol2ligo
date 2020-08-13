@@ -224,12 +224,14 @@ number2bytes = (val, precision = 32)->
     when "built_in_op_list"
       "list(operation)"
     
+    when "list"
+      nest = translate_type type.nest_list[0], ctx
+      "list(#{nest})"
     # ###################################################################################################
     #    collections
     # ###################################################################################################
     when "array"
       nest   = translate_type type.nest_list[0], ctx
-      # "list(#{nest})"
       "map(nat, #{nest})"
     
     when "tuple"

@@ -19,16 +19,15 @@ astBuilder = require "../ast_builder"
 # function getApproved(uint256 _tokenId) external view returns (address); -> ???
 # function isApprovedForAll(address _owner, address _operator) external view returns (bool); -> Is_operator(record [ operator = record [ owner = arg[0], operator = arg[1] ], callback = Tezos.self("%is_operator_callback") ])
 
-declare_callback = (name, fn, ctx) ->
+declare_callback = (name, arg_type, ctx) ->
   if not ctx.callbacks_to_declare_map.has name
     # TODO why are we using nest_list of nest_list?
-    return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = astBuilder.callback_declaration(name, return_type)
+    cb_decl = astBuilder.callback_declaration(name, arg_type)
     ctx.callbacks_to_declare_map.set name, cb_decl # no "Callback" suffix for key
 
-tx_node = (address_expr, arg_list, name, ctx) ->
+tx_node = (address_expr, arg_list, ctx) ->
   address_expr = astBuilder.contract_addr_transform address_expr
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, "fa2_entry_points")
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
 
@@ -87,7 +86,7 @@ walk = (root, ctx)->
 
                 call = astBuilder.enum_val("@Transfer", [transfers])
 
-                return tx_node(root.fn.t, [call], "fa2_entry_points", ctx)
+                return tx_node(root.fn.t, [call], ctx)
               when "balanceOf"
                 name = "Balance_of"
                 args = root.arg_list
@@ -104,10 +103,15 @@ walk = (root, ctx)->
                 request.list.push astBuilder.list_init [param]
                 request.list.push astBuilder.self_entrypoint "%#{name}Callback"
 
-                declare_callback name, root.fn, ctx
+                arg_type = new Type "list<>"
+                arg_type.nest_list[0] = new Type "balance_of_response_michelson"
+                declare_callback name, arg_type, ctx
+
+                call = astBuilder.enum_val("@Balance_of", [request])
                 
-                return tx_node(root.fn.t, [request], "fa2_entry_points", ctx)
+                return tx_node(root.fn.t, [call], ctx)
               when "approve"
+                # DOC we can't set token_id in LIGO like we do in Solidity
                 param = new ast.Tuple
                 param.list.push astBuilder.tezos_var("sender")
                 param.list.push root.arg_list[0]
@@ -118,23 +122,24 @@ walk = (root, ctx)->
 
                 update = astBuilder.enum_val("@Update_operators", [add_list])
 
-                return tx_node(root.fn.t, [update], "fa2_entry_points", ctx)
+                return tx_node(root.fn.t, [update], ctx)
               when "setApprovalForAll"
                 args = root.arg_list
-                arg_record = astBuilder.struct_init {
-                  owner : astBuilder.tezos_var("sender")
-                  operator : args[0]
-                }
+                param = new ast.Tuple
+                param.list.push astBuilder.tezos_var("sender")
+                param.list.push root.arg_list[0]
 
                 if args[1].val == 'true'
                   action = "@Add_operator"
                 else
                   action = "@Remove_operator"
 
-                enum_val = astBuilder.enum_val(action, [arg_record])             
+                action_enum = astBuilder.enum_val(action, [param])
+                right_comb_action = astBuilder.to_right_comb [action_enum]
+                action_list = astBuilder.list_init [right_comb_action]
+                update = astBuilder.enum_val("@Update_operators", [action_list])
 
-                list = astBuilder.list_init [enum_val]
-                return tx_node(root.fn.t, [list], "Update_operators", ctx)
+                return tx_node(root.fn.t, [update], ctx)
 
       ctx.next_gen root, ctx
     
