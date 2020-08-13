@@ -46,17 +46,17 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
-        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
+        failwith("This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
     
     function getBalanceCallback (const arg : nat) : (unit) is
       block {
-        (* This method should handle return value of GetBalance of foreign contract. Read more at https://git.io/JfDxR *)
+        failwith("This method should handle return value of GetBalance of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
     
     function getTotalSupplyCallback (const arg : nat) : (unit) is
       block {
-        (* This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR *)
+        failwith("This method should handle return value of GetTotalSupply of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
     
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
@@ -97,7 +97,7 @@ describe "erc20 conversions", ()->
 
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
-        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
+        failwith("This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
 
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
@@ -135,7 +135,7 @@ describe "erc20 conversions", ()->
     #include "fa1.2.ligo";
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
-        (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
+        failwith("This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
 
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
