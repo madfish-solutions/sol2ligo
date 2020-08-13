@@ -13,8 +13,7 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 shellEscape     = require "shell-escape"
 # ###################################################################################################
 argv = require("minimist") process.argv.slice(2),
-  boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat",
-    "prefer_erc721", "print_solidity_ast"]
+  boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat", "print_solidity_ast"]
   string: ["solc", "outfile", "dir", "outdir"]
   alias:
     "o": "outfile"
@@ -30,7 +29,6 @@ argv["solc-force"] ?= false
 argv.ds     ?= false
 argv.test   ?= false
 argv.disable_enums_to_nat ?= false
-argv.prefer_erc721 ?= false
 argv.print_solidity_ast ?= false
 argv.outfile ?= null
 argv.dir ?= null
@@ -71,7 +69,6 @@ process_file = (file)->
       router  : argv.router,
       contract : argv.contract
       replace_enums_by_nats: not argv.disable_enums_to_nat
-      prefer_erc721: argv.prefer_erc721
       keep_dir_structure: argv.dir != null
   }
   new_ast = ast_transform.pre_ti new_ast, opt
@@ -133,7 +130,6 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
       --ds                    print default state. You need it for deploy                      default: false
       --test                  test compile with ligo (must be installed)                       default: false
       --disable_enums_to_nat  Do not transform enums to number constants                       default: false
-      --prefer_erc721         Treat token interface as ERC721 over ERC20                       default: false
       -a,--print_solidity_ast Print parsed Solidity AST before transpiling                     default: false
       --keep_dir_structure    Preserve directory structure of original contracts               default: false
       --contract  <name>      Name of contract to generate router for                          default: <last contract>
