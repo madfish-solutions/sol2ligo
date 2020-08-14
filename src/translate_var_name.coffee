@@ -16,6 +16,11 @@ reserved_map =
   "source"          : true
   "sender"          : true
   "failwith"        : true
+  "bitwise_or"      : true
+  "bitwise_and"     : true
+  "bitwise_xor"     : true
+  "bitwise_lsl"     : true
+  "bitwise_lsr"     : true
   "Bitwise"         : true
   "string_concat"   : true
   "string_slice"    : true
