@@ -427,7 +427,7 @@ walk = (root, ctx)->
     
     when "VariableDeclaration"
       ret = new ast.Var_decl
-      ret._const = root.constant
+      ret.is_const = root.constant
       ret.name = root.name
       ret.contract_name = ctx.contract_name
       ret.contract_type = ctx.contract_type

@@ -311,33 +311,34 @@ describe "translate ligo section library", ()->
     """
     text_o = """
     type setBitExample_args is unit;
-    type state is record
-      const_ONE : nat;
-      const_ONES : nat;
-    end;
+    type state is unit;
     
-    function bits_setBit (const contract_storage : state; const tmp_self : nat; const index : nat) : (nat) is
+    const const_ONE : nat = abs(1)
+    
+    const const_ONES : nat = abs(not (0))
+    
+    function bits_setBit (const tmp_self : nat; const index : nat) : (nat) is
       block {
         skip
-      } with (bitwise_or(tmp_self, bitwise_lsl(contract_storage.const_ONE, index)));
+      } with (bitwise_or(tmp_self, bitwise_lsl(const_ONE, index)));
     type router_enum is
       | SetBitExample of setBitExample_args;
     
     (* UsingForDirective *)
     
-    function setBitExample (const contract_storage : state) : (unit) is
+    function setBitExample (const test_reserved_long___unit : unit) : (unit) is
       block {
         const n : nat = 0n;
-        n := bits_setBit(contract_storage, n, 0n);
+        n := bits_setBit(n, 0n);
         assert((n = 1n));
       } with (unit);
     
-    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
+    function main (const action : router_enum; const test_self : state) : (list(operation) * state) is
       (case action of
       | SetBitExample(match_action) -> block {
         (* This function does nothing, but it's present in router *)
-        const tmp : unit = setBitExample(contract_storage);
-      } with (((nil: list(operation)), contract_storage))
+        const tmp : unit = setBitExample(unit);
+      } with (((nil: list(operation)), test_self))
       end);
     """
     make_test text_i, text_o, router: true
