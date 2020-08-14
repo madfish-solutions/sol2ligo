@@ -61,4 +61,4 @@ describe "erc721 conversions", ()->
           operator = Tezos.sender ])]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Update_operators)));
       } with (list [op0; op1; op2; op3]);
     """
-    make_test text_i, text_o, prefer_erc721: true
+    make_test text_i, text_o
