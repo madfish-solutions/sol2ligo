@@ -104,7 +104,7 @@ walk = (root, ctx)->
                 request.list.push astBuilder.self_entrypoint "%#{name}Callback"
 
                 arg_type = new Type "list<>"
-                arg_type.nest_list[0] = new Type "balance_of_response_michelson"
+                arg_type.nest_list[0] = new Type "@balance_of_response_michelson"
                 declare_callback name, arg_type, ctx
 
                 call = astBuilder.enum_val("@Balance_of", [request])

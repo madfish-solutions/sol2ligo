@@ -15,13 +15,17 @@ astBuilder = require "../ast_builder"
 
 tx_node = (address_expr, arg_list, name, ctx) ->
   address_expr = astBuilder.contract_addr_transform address_expr
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
-  tx = astBuilder.transaction(arg_list, entrypoint)
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, "fa12_action")
+  enum_val = astBuilder.enum_val("@" + name, arg_list)
+  tx = astBuilder.transaction([enum_val], entrypoint)
   return tx
 
 callback_tx_node = (name, root, ctx) ->
-  cb_name = name + "Callback"
-  return_callback = astBuilder.self_entrypoint("%" + cb_name)
+  cb_name = name.substr(0,1).toLowerCase() + name.substr(1) + "Callback"
+
+  contract_type = new Type "contract"
+  contract_type.val = "nat"
+  return_callback = astBuilder.self_entrypoint("%" + cb_name, contract_type)
 
   if not ctx.callbacks_to_declare_map.has cb_name
     # TODO why are we using nest_list of nest_list?
@@ -31,10 +35,7 @@ callback_tx_node = (name, root, ctx) ->
 
   arg_list = root.arg_list
   arg_list.push return_callback
-  address_expr = astBuilder.contract_addr_transform root.fn.t
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
-  tx = astBuilder.transaction(arg_list, entrypoint)
-  return tx
+  return tx_node(root.fn.t, arg_list, name, ctx)
 
 walk = (root, ctx)->
   switch root.constructor.name
@@ -85,7 +86,9 @@ walk = (root, ctx)->
               when "balanceOf"
                 return callback_tx_node("GetBalance", root,  ctx)
               when "totalSupply"
-                return callback_tx_node("GetTotalSupply", root,  ctx)
+                ret = root
+                ret.arg_list.unshift astBuilder.unit()
+                return callback_tx_node("GetTotalSupply", ret,  ctx)
               
       ctx.next_gen root, ctx
     

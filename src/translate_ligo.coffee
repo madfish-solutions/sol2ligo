@@ -280,6 +280,9 @@ number2bytes = (val, precision = 32)->
       # temporary hack for state
       else if type.main.match ///^#{config.storage}_///
         type.main
+      # special case for synthetic types we know for sure will be there
+      else if type.main.startsWith "@"
+        type.main.substr(1)
       else
         perr "WARNING. translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"

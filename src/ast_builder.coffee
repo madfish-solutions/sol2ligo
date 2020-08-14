@@ -64,7 +64,7 @@ ast = require "./ast"
   get_contract = new ast.Fn_call
   get_contract.type = "function2<function<uint>, function<address>>"
   get_contract.fn = new ast.Var
-  get_contract.fn.name = "get_contract"
+  get_contract.fn.name = "@get_contract"
 
   get_contract.arg_list.push address_expr
 
@@ -72,7 +72,7 @@ ast = require "./ast"
 
   return contract_cast
 
-@self_entrypoint = (name) ->
+@self_entrypoint = (name, contract_type) ->
   arg = new ast.Var
   arg.name = "@Tezos"
 
@@ -86,7 +86,15 @@ ast = require "./ast"
   entrypoint_name.val = name
 
   get_entrypoint.arg_list.push entrypoint_name
-  return get_entrypoint
+
+  cast = new ast.Type_cast
+  cast.t = get_entrypoint
+  if not contract_type 
+    contract_type = new Type "contract"
+    contract_type.val = "unit"
+  cast.target_type = contract_type
+
+  return cast
 
 @assignment = (name, rvalue, rtype) ->
   ass = new ast.Bin_op
