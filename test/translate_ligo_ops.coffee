@@ -318,17 +318,17 @@ describe "translate ligo section ops", ()->
               c := (a * b);
               c := (a / b);
               c := (a mod b);
-              c := bitwise_and(a, b);
-              c := bitwise_or(a, b);
-              c := bitwise_xor(a, b);
+              c := Bitwise.and(a, b);
+              c := Bitwise.or(a, b);
+              c := Bitwise.xor(a, b);
               c := (c + b);
               c := abs(c - b);
               c := (c * b);
               c := (c / b);
               c := (c mod b);
-              c := bitwise_and(c, b);
-              c := bitwise_or(c, b);
-              c := bitwise_xor(c, b);
+              c := Bitwise.and(c, b);
+              c := Bitwise.or(c, b);
+              c := Bitwise.xor(c, b);
               contract_storage.ret := c;
             } with (contract_storage);
           
@@ -578,17 +578,17 @@ describe "translate ligo section ops", ()->
   #         c := (a * b);
   #         c := (a / b);
   #         c := (a mod b);
-  #         c := bitwise_and(a, b);
-  #         c := bitwise_or(a, b);
-  #         c := bitwise_xor(a, b);
+  #         c := Bitwise.and(a, b);
+  #         c := Bitwise.or(a, b);
+  #         c := Bitwise.xor(a, b);
   #         c := (c + b);
   #         c := (c - b);
   #         c := (c * b);
   #         c := (c / b);
   #         c := (c mod b);
-  #         c := bitwise_and(c, b);
-  #         c := bitwise_or(c, b);
-  #         c := bitwise_xor(c, b);
+  #         c := Bitwise.and(c, b);
+  #         c := Bitwise.or(c, b);
+  #         c := Bitwise.xor(c, b);
   #       } with (c);
   #     
   #   """

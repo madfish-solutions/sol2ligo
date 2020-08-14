@@ -67,7 +67,7 @@ number2bytes = (val, precision = 32)->
   BIT_AND : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_and(#{a}, #{b})"
+    ret = "Bitwise.and(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -75,7 +75,7 @@ number2bytes = (val, precision = 32)->
   BIT_OR  : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_or(#{a}, #{b})"
+    ret = "Bitwise.or(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -83,7 +83,7 @@ number2bytes = (val, precision = 32)->
   BIT_XOR : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_xor(#{a}, #{b})"
+    ret = "Bitwise.xor(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -91,7 +91,7 @@ number2bytes = (val, precision = 32)->
   SHR     : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsr(#{a}, #{b})"
+    ret = "Bitwise.shift_right(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -99,7 +99,7 @@ number2bytes = (val, precision = 32)->
   SHL     : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsl(#{a}, #{b})"
+    ret = "Bitwise.shift_left(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
