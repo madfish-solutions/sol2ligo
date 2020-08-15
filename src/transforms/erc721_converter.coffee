@@ -140,6 +140,17 @@ walk = (root, ctx)->
                 update = astBuilder.enum_val("@Update_operators", [action_list])
 
                 return tx_node(root.fn.t, [update], ctx)
+              when "isApprovedForAll", \
+                   "getApproved" 
+                block = new ast.Scope
+                block.need_nest = false
+
+                block.list.push comment = new ast.Comment
+                comment.text = "#{root.fn.name} is not supported in LIGO"
+
+                block.list.push root
+
+                return block
 
       ctx.next_gen root, ctx
     
