@@ -400,7 +400,7 @@ walk = (root, ctx)->
             path = if ctx.keep_dir_structure then v.file else null
             path ?= main_file
             if code
-              if v.constructor.name not in ["Comment", "Scope"]
+              if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
               jls[path] ?= []
               jls[path].push code
@@ -478,7 +478,7 @@ walk = (root, ctx)->
                 ctx.terminate_expr_check = ""
                 code = ctx.terminate_expr_replace_fn()
               if code
-                if v.constructor.name not in ["Comment", "Scope"]
+                if v.constructor.name not in ["Comment", "Scope", "Include"]
                   code += ";" if !/;$/.test code
                 jls[path].push code
 

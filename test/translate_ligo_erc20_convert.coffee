@@ -43,7 +43,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "interfaces/fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
@@ -91,7 +91,7 @@ describe "erc20 conversions", ()->
 
     type state is unit;
 
-    #include "interfaces/fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo"
     type router_enum is
       | GetAllowanceCallback of getAllowanceCallback_args;
 
@@ -132,7 +132,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
 
-    #include "interfaces/fa1.2.ligo";
+    #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of GetAllowance of foreign contract. Read more at https://git.io/JfDxR *)
