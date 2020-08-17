@@ -37,6 +37,13 @@ callback_tx_node = (name, root, ctx) ->
   arg_list.push return_callback
   return tx_node(root.fn.t, arg_list, name, ctx)
 
+wrap_typecast_address = (t)->
+  return t if t.type.main == "address"
+  ret = new ast.Type_cast
+  ret.target_type = new Type "address"
+  ret.t = t
+  ret
+
 walk = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
@@ -79,11 +86,11 @@ walk = (root, ctx)->
               when "approve"
                 return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
               when "transferFrom"
-                root.arg_list[1].type = new Type "address"
+                root.arg_list[1] = wrap_typecast_address root.arg_list[1]
                 return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
               
               when "allowance"
-                root.arg_list[0].type = new Type "address"
+                root.arg_list[0] = wrap_typecast_address root.arg_list[0]
                 return callback_tx_node("GetAllowance", root,  ctx)
               when "balanceOf"
                 return callback_tx_node("GetBalance", root,  ctx)
