@@ -67,7 +67,7 @@ number2bytes = (val, precision = 32)->
   BIT_AND : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_and(#{a}, #{b})"
+    ret = "Bitwise.and(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -75,7 +75,7 @@ number2bytes = (val, precision = 32)->
   BIT_OR  : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_or(#{a}, #{b})"
+    ret = "Bitwise.or(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -83,7 +83,7 @@ number2bytes = (val, precision = 32)->
   BIT_XOR : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_xor(#{a}, #{b})"
+    ret = "Bitwise.xor(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -91,7 +91,7 @@ number2bytes = (val, precision = 32)->
   SHR     : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsr(#{a}, #{b})"
+    ret = "Bitwise.shift_right(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -99,7 +99,7 @@ number2bytes = (val, precision = 32)->
   SHL     : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsl(#{a}, #{b})"
+    ret = "Bitwise.shift_left(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -323,6 +323,7 @@ number2bytes = (val, precision = 32)->
         if t.constructor.name == "Enum_decl"
           first_item = t.value_list[0].name
           if ctx.current_class.name
+            # TODO this prefix is unused right now. Figure out if it should be prepended to enum's name
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"
@@ -404,7 +405,7 @@ walk = (root, ctx)->
             path = if ctx.keep_dir_structure then v.file else null
             path ?= main_file
             if code
-              if v.constructor.name not in ["Comment", "Scope"]
+              if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
               jls[path] ?= []
               jls[path].push code
@@ -482,7 +483,7 @@ walk = (root, ctx)->
                 ctx.terminate_expr_check = ""
                 code = ctx.terminate_expr_replace_fn()
               if code
-                if v.constructor.name not in ["Comment", "Scope"]
+                if v.constructor.name not in ["Comment", "Scope", "Include"]
                   code += ";" if !/;$/.test code
                 jls[path].push code
 
@@ -731,14 +732,14 @@ walk = (root, ctx)->
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
             # TODO config match_action, config.callback_address
-            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str}))) end"
+            return "var #{config.op_list} : list(operation) := list transaction((#{arg_list.join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str}))) end"
           
           when "@respond_append"
             type_list = []
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.callbackAddress) : contract(#{type_str})) end)"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
           
           else
             fn = root.fn.name
@@ -851,7 +852,10 @@ walk = (root, ctx)->
     # ###################################################################################################
     when "Comment"
       # TODO multiline comments
-      if root.can_skip
+      if ctx.keep_dir_structure and root.text.startsWith "#include"
+        text = root.text.replace ".sol", ".ligo"
+        text
+      else if root.can_skip
         ""
       else
         "(* #{root.text} *)"
@@ -865,7 +869,7 @@ walk = (root, ctx)->
     when "Var_decl"
       name = root.name
       type = translate_type root.type, ctx
-      if ctx.is_class_scope
+      if ctx.is_class_scope and !root.is_const
         if root.special_type # FIXME user-defined type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
@@ -1028,7 +1032,10 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+            if !v.is_const
+              field_decl_jl.push walk v, ctx
+            else
+              ctx.sink_list.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_map[v.name] = v

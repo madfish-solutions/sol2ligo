@@ -48,7 +48,7 @@ walk = (root, ctx)->
                  "isApprovedForAll"
               # replace whole class (interface) declaration if we are converting it to FA2 anyway
               ret = new ast.Include
-              ret.path = "fa2.ligo"
+              ret.path = "interfaces/fa2.ligo"
               return ret
       
       # collect callback declaration dummies

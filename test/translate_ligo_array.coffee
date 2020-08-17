@@ -77,10 +77,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (nat) is
+    function array (const contract_storage : state) : (nat) is
       block {
         skip
-      } with (size(#{config.contract_storage}.storageArray));
+      } with (size(contract_storage.storageArray));
     
     """
     make_test text_i, text_o
@@ -102,10 +102,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (nat) is
+    function array (const contract_storage : state) : (nat) is
       block {
         skip
-      } with (size(#{config.contract_storage}.storageArray));
+      } with (size(contract_storage.storageArray));
     
     """
     make_test text_i, text_o
@@ -128,11 +128,11 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (state * nat) is
+    function array (const contract_storage : state) : (state * nat) is
       block {
-        const tmp_0 : map(nat, int) = #{config.contract_storage}.storageArray;
+        const tmp_0 : map(nat, int) = contract_storage.storageArray;
         tmp_0[size(tmp_0)] := 0;
-      } with (#{config.contract_storage}, 0n);
+      } with (contract_storage, 0n);
     
     """
     make_test text_i, text_o
@@ -155,15 +155,15 @@ describe "translate ligo section array", ()->
       arr : map(nat, int);
     end;
 
-    function expr (const #{config.contract_storage} : state) : (state) is
+    function expr (const contract_storage : state) : (state) is
       block {
         const memArr : map(nat, nat) = map
           0n -> 0n;
         end;
-        #{config.contract_storage}.arr := map
+        contract_storage.arr := map
           0n -> 0;
         end;
-      } with (#{config.contract_storage});
+      } with (contract_storage);
     """
     make_test text_i, text_o
 
@@ -241,10 +241,10 @@ describe "translate ligo section array", ()->
       storageArray : map(nat, int);
     end;
     
-    function array (const #{config.contract_storage} : state) : (state * nat) is
+    function array (const contract_storage : state) : (state * nat) is
       block {
-        remove 0n from map #{config.contract_storage}.storageArray;
-      } with (#{config.contract_storage}, 0n);
+        remove 0n from map contract_storage.storageArray;
+      } with (contract_storage, 0n);
     
     """
     make_test text_i, text_o
@@ -290,14 +290,14 @@ describe "translate ligo section array", ()->
       twodim : map(nat, map(nat, nat));
     end;
     
-    function test (const self : state; const dummy : nat) : (state) is
+    function test (const contract_storage : state; const dummy : nat) : (state) is
       block {
-        self.twodim[0n] := map
+        contract_storage.twodim[0n] := map
           0n -> 1n;
           1n -> 2n;
           2n -> 3n;
         end;
-      } with (self);
+      } with (contract_storage);
     """
     make_test text_i, text_o
 

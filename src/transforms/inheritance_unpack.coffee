@@ -99,6 +99,7 @@ walk = (root, ctx)->
         # import all vars (on top of fn)
         for v in look_list
           continue if v.constructor.name != "Var_decl"
+          continue if v.is_const
           root.scope.list.unshift v.clone()
         
         # inject constructor call on top of my constructor (create my constructor if not exists)

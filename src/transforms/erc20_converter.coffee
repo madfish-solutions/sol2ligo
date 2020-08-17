@@ -52,7 +52,7 @@ walk = (root, ctx)->
                  "transferFrom"
               # replace whole class (interface) declaration if we are converting it to FA1.2 anyway
               ret = new ast.Include
-              ret.path = "fa1.2.ligo"
+              ret.path = "interfaces/fa1.2.ligo"
               return ret
       
       # collect callback declaration dummies

@@ -40,13 +40,13 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "fa2.ligo";
+    #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : list(balance_of_response_michelson)) : (unit) is
       block {
         failwith("This method should handle return value of Balance_of of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const op0 : operation = transaction((Transfer(list [(list [(32n, (0x0, 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
         const b : nat = const op1 : operation = transaction((Balance_of((list [(0n, Tezos.sender)], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
@@ -54,7 +54,7 @@ describe "erc721 conversions", ()->
         const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
       } with (list [op0; op1; op2; op3]);
     """
-    make_test text_i, text_o, prefer_erc721: true
+    make_test text_i, text_o
 
   it "erc721 unsupported", ()->
     #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
@@ -74,7 +74,7 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "fa2.ligo";
+    #include "interfaces/fa2.ligo"
     function test (const test_reserved_long___unit : unit) : (unit) is
       block {
         const approvedAddress : address = ERC721(0x0).getApproved(0n);
@@ -83,7 +83,7 @@ describe "erc721 conversions", ()->
         (* ^ safeTransferFrom is not supported in LIGO. Read more https://git.io/JJFij ^ *)
       } with (unit);
     """
-    make_test text_i, text_o, prefer_erc721: true
+    make_test text_i, text_o
  
 
 

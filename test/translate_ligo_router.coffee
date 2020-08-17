@@ -40,16 +40,16 @@ describe "translate ligo section router", ()->
         skip
       } with (unit);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | OneArgFunction(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = oneArgFunction(match_action.test_reserved_long___amount);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       | TwoArgsFunction(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = twoArgsFunction(match_action.dest, match_action.test_reserved_long___amount);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
     """
     make_test text_i, text_o, {
@@ -86,12 +86,12 @@ describe "translate ligo section router", ()->
         skip
       } with (unit);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | TwoArgsFunction(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = twoArgsFunction(match_action.dest, match_action.test_reserved_long___amount);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
     """
     make_test text_i, text_o, {
@@ -128,12 +128,12 @@ describe "translate ligo section router", ()->
         skip
       } with (unit);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | TwoArgsFunction(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = twoArgsFunction(match_action.dest, match_action.test_reserved_long___amount);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
     """
     make_test text_i, text_o, {

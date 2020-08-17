@@ -6,14 +6,12 @@
 // required for copyright to apply.  As a result, this is free and
 // unencumbered software belonging to the public domain.
 
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.26;
 
-contract ERC20Events {
+contract ERC20 {
     event Approval(address indexed src, address indexed guy, uint wad);
     event Transfer(address indexed src, address indexed dst, uint wad);
-}
 
-contract ERC20 is ERC20Events {
     function totalSupply() public view returns (uint);
     function balanceOf(address guy) public view returns (uint);
     function allowance(address src, address guy) public view returns (uint);
