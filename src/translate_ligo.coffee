@@ -736,6 +736,9 @@ walk = (root, ctx)->
             type_str = type_list.join " * "
             return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
           
+          when "transaction"
+            return "var #{config.op_list} : list(operation) := cons(#{config.op_list}, list transaction(#{arg_list.join ', '}) end)"
+          
           else
             fn = root.fn.name
       else
