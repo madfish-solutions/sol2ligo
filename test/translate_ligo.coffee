@@ -318,3 +318,21 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  it "global const", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal one = uint(1);
+      uint constant internal ones = uint(~0);
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const one : nat = abs(1)
+    
+    const ones : nat = abs(not (0));
+    """
+    make_test text_i, text_o
+  

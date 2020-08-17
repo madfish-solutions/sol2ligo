@@ -864,7 +864,7 @@ walk = (root, ctx)->
     when "Var_decl"
       name = root.name
       type = translate_type root.type, ctx
-      if ctx.is_class_scope
+      if ctx.is_class_scope and !root.is_const
         if root.special_type # FIXME user-defined type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
@@ -1027,7 +1027,10 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+            if !v.is_const
+              field_decl_jl.push walk v, ctx
+            else
+              ctx.sink_list.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_map[v.name] = v
