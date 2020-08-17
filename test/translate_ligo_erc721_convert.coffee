@@ -41,24 +41,17 @@ describe "erc721 conversions", ()->
     type state is unit;
     
     #include "fa2.ligo";
-    function balance_ofCallback (const arg : nat) : (unit) is
+    function balance_ofCallback (const arg : list(balance_of_response_michelson)) : (unit) is
       block {
-        (* This method should handle return value of Balance_of of foreign contract *)
+        failwith("This method should handle return value of Balance_of of foreign contract. Read more at https://git.io/JfDxR");
       } with (unit);
 
     function test (const #{config.op_list} : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((list [record [ from_ = Tezos.sender;
-          txs = list [record [ to_ = 0x0;
-          token_id = 32n;
-          amount = 1n ]] ]]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Transfer)));
-        const b : nat = const op1 : operation = transaction((record [ requests = list [record [ owner = Tezos.sender;
-          token_id = ERC721(0x0) ]];
-          callback = Tezos.self("%Balance_ofCallback") ]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Balance_of)));
-        const op2 : operation = transaction((list [Add_operator(record [ owner = Tezos.sender;
-          operator = Tezos.sender ])]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Update_operators)));
-        const op3 : operation = transaction((list [Remove_operator(record [ owner = Tezos.sender;
-          operator = Tezos.sender ])]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Update_operators)));
+        const op0 : operation = transaction((Transfer(list [(list [(32n, (0x0, 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const b : nat = const op1 : operation = transaction((Balance_of((list [(0n, Tezos.sender)], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
       } with (list [op0; op1; op2; op3]);
     """
     make_test text_i, text_o, prefer_erc721: true

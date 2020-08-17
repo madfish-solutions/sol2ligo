@@ -99,12 +99,16 @@ walk = (root, ctx)->
                 param.list.push astBuilder.nat_literal(0)  # token_id
                 param.list.push args[0] # owner
                 
-                request = new ast.Tuple
-                request.list.push astBuilder.list_init [param]
-                request.list.push astBuilder.self_entrypoint "%#{name}Callback"
-
                 arg_type = new Type "list<>"
                 arg_type.nest_list[0] = new Type "@balance_of_response_michelson"
+
+                contract_type = new Type "contract"
+                contract_type.nest_list.push(arg_type)
+
+                request = new ast.Tuple
+                request.list.push astBuilder.list_init [param]
+                request.list.push astBuilder.self_entrypoint "%#{name}Callback", contract_type
+
                 declare_callback name, arg_type, ctx
 
                 call = astBuilder.enum_val("@Balance_of", [request])
