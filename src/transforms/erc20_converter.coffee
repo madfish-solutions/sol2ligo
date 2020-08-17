@@ -79,9 +79,11 @@ walk = (root, ctx)->
               when "approve"
                 return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
               when "transferFrom"
+                root.arg_list[1].type = new Type "address"
                 return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
               
               when "allowance"
+                root.arg_list[0].type = new Type "address"
                 return callback_tx_node("GetAllowance", root,  ctx)
               when "balanceOf"
                 return callback_tx_node("GetBalance", root,  ctx)

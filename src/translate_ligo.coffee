@@ -565,6 +565,14 @@ walk = (root, ctx)->
 
         when "mutez"
           "#{root.val}mutez"
+
+        when "address"
+          t = root.val
+          target_type = root.type.main
+          if target_type == "address" and (t == "0x0" or  t == "0")
+            "(#{JSON.stringify config.default_address} : #{target_type})"
+          else
+            root.val
         
         when "string"
           JSON.stringify root.val
