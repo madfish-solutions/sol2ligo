@@ -55,3 +55,35 @@ describe "erc721 conversions", ()->
       } with (list [op0; op1; op2; op3]);
     """
     make_test text_i, text_o, prefer_erc721: true
+
+  it "erc721 unsupported", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    #{sol_erc721face_template}
+
+    contract eee {
+      function test() private {
+        address approvedAddress = ERC721(0x0).getApproved(0);
+        ERC721(0x0).safeTransferFrom(msg.sender, 0x0, 32);
+      }
+    }
+    """
+    #TODO this is some crazy input type due to bug: last line being comment breaks return type inference
+    text_o = """
+    type state is unit;
+    
+    #include "fa2.ligo";
+    function test (const test_reserved_long___unit : unit) : (unit) is
+      block {
+        const approvedAddress : address = ERC721(0x0).getApproved(0n);
+        (* ^ getApproved is not supported in LIGO. Read more https://git.io/JJFij ^ *);
+        ERC721(0x0).safeTransferFrom(Tezos.sender, 0x0, 32n);
+        (* ^ safeTransferFrom is not supported in LIGO. Read more https://git.io/JJFij ^ *)
+      } with (unit);
+    """
+    make_test text_i, text_o, prefer_erc721: true
+ 
+
+

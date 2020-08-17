@@ -67,7 +67,8 @@ walk = (root, ctx)->
         switch root.fn.t.type.main
           when "struct"
             switch root.fn.name
-              when "transferFrom"
+              when "transferFrom", \
+                   "safeTransferFrom"
                 args = root.arg_list
 
                 dst = new ast.Tuple
@@ -86,7 +87,17 @@ walk = (root, ctx)->
 
                 call = astBuilder.enum_val("@Transfer", [transfers])
 
-                return tx_node(root.fn.t, [call], ctx)
+                tx = tx_node(root.fn.t, [call], ctx)
+
+                if root.fn.name == "safeTransferFrom"
+                  block = new ast.Scope
+                  block.need_nest = false
+                  block.list.push root
+                  block.list.push comment = new ast.Comment
+                  comment.text = "^ #{root.fn.name} is not supported in LIGO. Read more https://git.io/JJFij ^"
+                  return block
+                else
+                  return tx
               when "balanceOf"
                 name = "Balance_of"
                 args = root.arg_list
@@ -149,10 +160,10 @@ walk = (root, ctx)->
                 block = new ast.Scope
                 block.need_nest = false
 
-                block.list.push comment = new ast.Comment
-                comment.text = "#{root.fn.name} is not supported in LIGO"
-
                 block.list.push root
+
+                block.list.push comment = new ast.Comment
+                comment.text = "^ #{root.fn.name} is not supported in LIGO. Read more https://git.io/JJFij ^"
 
                 return block
 
