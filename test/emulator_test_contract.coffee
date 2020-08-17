@@ -35,12 +35,12 @@ describe "emulator section", ()->
     
     fs.writeFileSync "test.ligo", ligo_code
     res = execSync shellEscape [
-      "ligo dry-run test.ligo",
-      "--sender", JSON.stringify(tez_account_list[0]),
+      "ligo", "dry-run", "test.ligo",
+      "--sender", tez_account_list[0],
       "--syntax", "pascaligo",
       "main", # router name
-      '"Add(record a=1;b=2 end)"',
-      JSON.stringify "record ret = 100; end"
+      "Add(record a=1;b=2 end)",
+      "record ret = 100; end"
     ]
     reg_ret = /ret -> (\d+)/.exec res
     return on_end new Error "!reg_ret #{res}" if !reg_ret
