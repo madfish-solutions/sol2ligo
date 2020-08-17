@@ -19,10 +19,13 @@ reserved_map =
   "bitwise_or"      : true
   "bitwise_and"     : true
   "bitwise_xor"     : true
+  "bitwise_lsl"     : true
+  "bitwise_lsr"     : true
+  "Bitwise"         : true
   "string_concat"   : true
   "string_slice"    : true
   "crypto_check"    : true
-  "crypto_map_key" : true
+  "crypto_map_key"  : true
   "bytes_concat"    : true
   "bytes_slice"     : true
   "bytes_pack"      : true

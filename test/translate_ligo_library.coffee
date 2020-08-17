@@ -320,7 +320,7 @@ describe "translate ligo section library", ()->
     function bits_setBit (const tmp_self : nat; const index : nat) : (nat) is
       block {
         skip
-      } with (bitwise_or(tmp_self, bitwise_lsl(const_ONE, index)));
+      } with (Bitwise.or(tmp_self, Bitwise.shift_left(const_ONE, index)));
     type router_enum is
       | SetBitExample of setBitExample_args;
     

@@ -36,8 +36,8 @@ describe "emulator section", ()->
     fs.writeFileSync "test.ligo", ligo_code
     res = execSync shellEscape [
       "ligo dry-run test.ligo",
-      "--sender", JSON.stringify tez_account_list[0],
-      "--syntax pascaligo",
+      "--sender", JSON.stringify(tez_account_list[0]),
+      "--syntax", "pascaligo",
       "main", # router name
       '"Add(record a=1;b=2 end)"',
       JSON.stringify "record ret = 100; end"

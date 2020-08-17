@@ -40,7 +40,7 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "interfaces/fa2.ligo";
+    #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of Balance_of of foreign contract *)
