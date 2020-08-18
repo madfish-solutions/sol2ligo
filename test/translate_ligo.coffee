@@ -336,3 +336,25 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  it "uppercase ids", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal ONE = uint(1);
+      
+      function GetRet() public {}
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const oNE : nat = abs(1)
+    
+    function getRet (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        skip
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
