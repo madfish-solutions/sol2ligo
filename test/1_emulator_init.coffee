@@ -69,11 +69,11 @@ global.make_emulator_test = (opt, on_end)->
     try
       res = execSync shellEscape [
         "ligo", "dry-run", "test.ligo",
-        "--sender", JSON.stringify(tez_account_list[0]),
+        "--sender", tez_account_list[0],
         "--syntax", "pascaligo",
         "main", # router name
         ligo_arg,
-        JSON.stringify ligo_state
+        ligo_state
       ]
     catch err
       return on_end err

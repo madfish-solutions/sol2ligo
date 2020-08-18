@@ -77,7 +77,7 @@ describe "translate ligo section ops", ()->
           await make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr"']
+            ligo_arg_list : ["Expr"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, on_end)->
               await contract.expr().cb defer(err, result); return on_end err if err
@@ -113,7 +113,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -145,7 +145,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -177,7 +177,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -209,7 +209,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -241,7 +241,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -351,7 +351,7 @@ describe "translate ligo section ops", ()->
           await make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr"']
+            ligo_arg_list : ["Expr"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, on_end)->
               await contract.expr().cb defer(err, result); return on_end err if err
@@ -398,7 +398,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                  "Expr(record a=#{v[0]}n; b=#{v[1]}n end)"
                 ligo_state    : "record ret = 99999n; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -444,7 +444,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                  "Expr(record a=#{v[0]}n; b=#{v[1]}n end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -728,7 +728,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                  "Expr(record a=#{v[0]}; b=#{v[1]} end)"
                 ligo_state    : "record ret = 99999; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -773,7 +773,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                  "Expr(record a=#{v[0]}; b=#{v[1]} end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -846,7 +846,7 @@ describe "translate ligo section ops", ()->
         await make_emulator_test {
           sol_code      : text_i
           contract_name : "Expr"
-          ligo_arg_list : ['"Expr"']
+          ligo_arg_list : ["Expr"]
           ligo_state    : "record ret = False; end"
           sol_test_fn   : (contract, on_end)->
             await contract.expr().cb defer(err, result); return on_end err if err
@@ -893,7 +893,7 @@ describe "translate ligo section ops", ()->
                   [a,b] = v
                   a = JSON.stringify(a).capitalize()
                   b = JSON.stringify(b).capitalize()
-                  "\"Expr(record a=#{a}; b=#{b} end)\""
+                  "Expr(record a=#{a}; b=#{b} end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -961,8 +961,8 @@ describe "translate ligo section ops", ()->
           sol_code      : text_i
           contract_name : "Expr"
           ligo_arg_list : [
-            '"Call_set(record key=1n; value=100n end)"'
-            '"Call_get(record key=2n end)"'
+            "Call_set(record key=1n; value=100n end)"
+            "Call_get(record key=2n end)"
           ]
           ligo_state    : "record ret = 99999n; store_map = (map [2n->100n] : map(nat,nat)) end"
           sol_test_fn   : (contract, loc_on_end)->
