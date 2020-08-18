@@ -77,7 +77,7 @@ You need clone github repository and install packages
 ```
 git clone https://github.com/madfish-solutions/sol2ligo
 cd sol2ligo
-npm i
+npm ci
 ```
 
 For full test run

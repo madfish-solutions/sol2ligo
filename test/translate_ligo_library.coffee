@@ -86,12 +86,12 @@ describe "translate ligo section library", ()->
         const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -141,12 +141,12 @@ describe "translate ligo section library", ()->
         const src : nat = bytes_fromBytes(test_reserved_long___self);
       } with (unit);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test_reserved_long___main(match_action) -> block {
         (* This function does nothing, but it's present in router *)
         const tmp : unit = test_reserved_long___main(match_action.test_reserved_long___self, match_action.other);
-      } with (((nil: list(operation)), self))
+      } with (((nil: list(operation)), contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -180,10 +180,10 @@ describe "translate ligo section library", ()->
     
     const roles_Role_default : roles_Role = record [ bearer = (map end : map(address, bool)) ];
     
-    function addPauser_ (const #{config.contract_storage} : state; const account : address) : (state) is
+    function addPauser_ (const contract_storage : state; const account : address) : (state) is
       block {
-        #{config.contract_storage}.pausers_.bearer[account] := True;
-      } with (#{config.contract_storage});
+        contract_storage.pausers_.bearer[account] := True;
+      } with (contract_storage);
     """#"
     make_test text_i, text_o
   # ###################################################################################################
@@ -272,12 +272,12 @@ describe "translate ligo section library", ()->
         const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
       } with (0n);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Test(match_action) -> block {
         const tmp : (nat) = test(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """#"
     make_test text_i, text_o, router: true
@@ -311,33 +311,74 @@ describe "translate ligo section library", ()->
     """
     text_o = """
     type setBitExample_args is unit;
-    type state is record
-      const_ONE : nat;
-      const_ONES : nat;
-    end;
+    type state is unit;
     
-    function bits_setBit (const self : state; const tmp_self : nat; const index : nat) : (nat) is
+    const const_ONE : nat = abs(1)
+    
+    const const_ONES : nat = abs(not (0))
+    
+    function bits_setBit (const tmp_self : nat; const index : nat) : (nat) is
       block {
         skip
-      } with (bitwise_or(tmp_self, bitwise_lsl(self.const_ONE, index)));
+      } with (Bitwise.or(tmp_self, Bitwise.shift_left(const_ONE, index)));
     type router_enum is
       | SetBitExample of setBitExample_args;
     
     (* UsingForDirective *)
     
-    function setBitExample (const self : state) : (unit) is
+    function setBitExample (const test_reserved_long___unit : unit) : (unit) is
       block {
         const n : nat = 0n;
-        n := bits_setBit(self, n, 0n);
+        n := bits_setBit(n, 0n);
         assert((n = 1n));
       } with (unit);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const test_self : state) : (list(operation) * state) is
       (case action of
       | SetBitExample(match_action) -> block {
         (* This function does nothing, but it's present in router *)
-        const tmp : unit = setBitExample(self);
-      } with (((nil: list(operation)), self))
+        const tmp : unit = setBitExample(unit);
+      } with (((nil: list(operation)), test_self))
       end);
     """
     make_test text_i, text_o, router: true
+  
+  it "library libname.method (using for *)", ()->
+    text_i = """
+    pragma solidity ^0.4.22;
+    
+    library ExactMath {
+      function exactAdd(uint self, uint other) internal returns (uint sum) {
+        sum = self + other;
+        require(sum >= self);
+      }
+    }
+    
+    contract MathExamples {
+      using ExactMath for *;
+      // Add exact uints example.
+      function uintExactAddOverflowExample() public {
+        var n = uint(~0);
+        n.exactAdd(1);
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function exactMath_exactAdd (const test_reserved_long___self : nat; const other : nat) : (nat) is
+      block {
+        const sum : nat = 0n;
+        sum := (test_reserved_long___self + other);
+        assert((sum >= test_reserved_long___self));
+      } with (sum);
+    (* UsingForDirective *)
+    
+    function uintExactAddOverflowExample (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const n : nat = abs(not (0));
+        const terminate_tmp_0 : (nat) = exactMath_exactAdd(n, 1n);
+      } with (unit);
+    """#"
+    make_test text_i, text_o
+  

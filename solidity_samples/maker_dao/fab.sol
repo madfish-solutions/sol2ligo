@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.26;
 
 import "ds-auth/auth.sol";
 import 'ds-token/token.sol';

@@ -1,6 +1,9 @@
 m_path = require "path"
 fs = require "fs"
-{execSync} = require "child_process"
+{execSync}  = require "child_process"
+shellEscape = require "shell-escape"
+
+import_placeholder_count = 0
 
 get_folder = (path)->
   list = path.split("/")
@@ -28,9 +31,8 @@ url_resolve = (url)->
   pseudo_path = "import_url_cache/#{pseudo_path}"
   if !fs.existsSync pseudo_path
     folder = get_folder pseudo_path
-    # NOTE insecure shell
-    execSync "mkdir -p #{folder}"
-    execSync "curl #{url} > #{pseudo_path}"
+    execSync shellEscape ["mkdir", "-p", folder]
+    execSync "#{shellEscape ["curl", url]} > #{shellEscape [pseudo_path]}"
   
   code = fs.readFileSync pseudo_path, "utf-8"
   if /^404: Not Found/.test code
@@ -67,12 +69,15 @@ module.exports = (path, import_cache = {})->
       // IMPORT SKIP
       """
     else
+      # add some valid Solidity code so we can retrieve it from ast and understand what was the import path
       code = module.exports file, import_cache
+      import_placeholder_count += 1
       """
-      // IMPORT RESOLVE #{orig_file}
+      contract ImportPlaceholderStart#{import_placeholder_count} { string name = "#{orig_file}"; }
       #{code}
-      // IMPORT END
+      contract ImportPlaceholderEnd#{import_placeholder_count} { string name = "#{orig_file}"; }
       """
+
   line_list = code.split("\n")
   for line,idx in line_list
     line = line.trim()

@@ -19,10 +19,13 @@ reserved_map =
   "bitwise_or"      : true
   "bitwise_and"     : true
   "bitwise_xor"     : true
+  "bitwise_lsl"     : true
+  "bitwise_lsr"     : true
+  "Bitwise"         : true
   "string_concat"   : true
   "string_slice"    : true
   "crypto_check"    : true
-  "crypto_map_key" : true
+  "crypto_map_key"  : true
   "bytes_concat"    : true
   "bytes_slice"     : true
   "bytes_pack"      : true
@@ -69,6 +72,7 @@ reserved_map =
   "to"              : true
   "args"            : true
   "main"            : true
+  "Tezos"           : true
   # note not reserved, but we don't want collide with types
   
   "map"             : true
@@ -85,10 +89,8 @@ reserved_map[config.op_list] = true
     # if name starts with undescore, just move it to the end
     name = name.replace("_","") + "_";
   
-  #if name isn't all uppercase
-  if name.toUpperCase() != name
-    # make the first letter lowercase
-    name = name.substr(0,1).toLowerCase() + name.substr 1
+  # make the first letter lowercase
+  name = name[0].toLowerCase() + name.substr 1
   
   # names created from code are preceded with @ so they don't get prepended with "reserved"
   if name.startsWith "@"

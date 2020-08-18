@@ -10,6 +10,7 @@ fs = require "fs"
   translate_ligo
   tez_account_list
 } = require("./util")
+shellEscape = require "shell-escape"
 
 truffle_config      = require "@truffle/config"
 truffle_environment = require "@truffle/environment"
@@ -66,14 +67,14 @@ global.make_emulator_test = (opt, on_end)->
   value_list = []
   for ligo_arg in ligo_arg_list
     try
-      res = execSync [
-        "ligo dry-run test.ligo"
-        "--sender #{JSON.stringify tez_account_list[0]}"
-        "--syntax pascaligo"
-        "main" # router name
-        ligo_arg
+      res = execSync shellEscape [
+        "ligo", "dry-run", "test.ligo",
+        "--sender", JSON.stringify(tez_account_list[0]),
+        "--syntax", "pascaligo",
+        "main", # router name
+        ligo_arg,
         JSON.stringify ligo_state
-      ].join " "
+      ]
     catch err
       return on_end err
     if reg_ret = /ret -> ([\+\-]?\d+)/.exec res

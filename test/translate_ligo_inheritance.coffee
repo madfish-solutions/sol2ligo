@@ -76,7 +76,7 @@ describe "translate ligo section inheritance", ()->
     
     function constructor (const #{config.reserved}__unit : unit) : (unit) is
       block {
-        ownable_constructor(self);
+        ownable_constructor(contract_storage);
       } with (unit);
     
     function #{config.reserved}__some (const i : nat) : (unit) is
@@ -124,12 +124,12 @@ describe "translate ligo section inheritance", ()->
         ret_val := 1n;
       } with (ret_val);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Method(match_action) -> block {
         const tmp : (nat) = method(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """
     make_test text_i, text_o, router: true
@@ -172,12 +172,12 @@ describe "translate ligo section inheritance", ()->
         ret_val := method_1(unit);
       } with (ret_val);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Method(match_action) -> block {
         const tmp : (nat) = method(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(nat))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """
     make_test text_i, text_o, router: true
@@ -208,14 +208,14 @@ describe "translate ligo section inheritance", ()->
     type router_enum is
       | Method of method_args;
     
-    function method (const self : state) : (state) is
+    function method (const contract_storage : state) : (state) is
       block {
-        self.ret := (self.ret + 1n);
-      } with (self);
+        contract_storage.ret := (contract_storage.ret + 1n);
+      } with (contract_storage);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
-      | Method(match_action) -> ((nil: list(operation)), method(self))
+      | Method(match_action) -> ((nil: list(operation)), method(contract_storage))
       end);
     """
     make_test text_i, text_o, router: true
@@ -250,14 +250,14 @@ describe "translate ligo section inheritance", ()->
     type router_enum is
       | Method of method_args;
     
-    function method (const self : state) : (state) is
+    function method (const contract_storage : state) : (state) is
       block {
-        self.ret := (self.ret + 1n);
-      } with (self);
+        contract_storage.ret := (contract_storage.ret + 1n);
+      } with (contract_storage);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
-      | Method(match_action) -> ((nil: list(operation)), method(self))
+      | Method(match_action) -> ((nil: list(operation)), method(contract_storage))
       end);
     """
     make_test text_i, text_o, {
@@ -291,19 +291,19 @@ describe "translate ligo section inheritance", ()->
     type router_enum is
       | Constructor of constructor_args;
     
-    function dupe_parent_constructor (const self : state) : (state) is
+    function dupe_parent_constructor (const contract_storage : state) : (state) is
       block {
-        self.ret := (self.ret + 1n);
-      } with (self);
+        contract_storage.ret := (contract_storage.ret + 1n);
+      } with (contract_storage);
     
-    function constructor (const self : state) : (state) is
+    function constructor (const contract_storage : state) : (state) is
       block {
-        self := dupe_parent_constructor(self);
-      } with (self);
+        contract_storage := dupe_parent_constructor(contract_storage);
+      } with (contract_storage);
     
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
-      | Constructor(match_action) -> ((nil: list(operation)), constructor(self))
+      | Constructor(match_action) -> ((nil: list(operation)), constructor(contract_storage))
       end);
     """
     make_test text_i, text_o, {
@@ -341,5 +341,30 @@ describe "translate ligo section inheritance", ()->
         const ret_val : nat = 0n;
         ret_val := method1(unit);
       } with (ret_val);
+    """
+    make_test text_i, text_o
+  
+  it "const access", ()->
+    text_i = """
+    pragma solidity ^0.4.24;
+    
+    contract UpgradeabilityProxy {
+        int constant implementation_slot = 5;
+        function _implementation() {
+            int slot = implementation_slot;
+        }
+    }
+    
+    contract AdminUpgradeabilityProxy is UpgradeabilityProxy {}
+    """
+    text_o = """
+    type state is unit;
+    
+    const implementation_slot : int = 5
+    
+    function implementation_ (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const slot : int = implementation_slot;
+      } with (unit);
     """
     make_test text_i, text_o

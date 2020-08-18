@@ -39,7 +39,11 @@ walk = (root, ctx)->
     # ###################################################################################################
     #    stmt
     # ###################################################################################################
-    when "Comment", "Fn_decl_multiret", "Enum_decl"
+    when "Comment", \
+         "Fn_decl_multiret", \
+         "Enum_decl", \
+         "Event_decl", \
+         "Include"
       "nothing"
     
     when "Var_decl"

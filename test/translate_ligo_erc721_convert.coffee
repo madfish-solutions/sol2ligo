@@ -40,13 +40,13 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
-    #include "fa2.ligo";
+    #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : nat) : (unit) is
       block {
         (* This method should handle return value of Balance_of of foreign contract *)
       } with (unit);
 
-    function test (const #{config.op_list} : list(operation)) : (list(operation)) is
+    function test (const opList : list(operation)) : (list(operation)) is
       block {
         const op0 : operation = transaction((list [record [ from_ = Tezos.sender;
           txs = list [record [ to_ = 0x0;
@@ -61,4 +61,4 @@ describe "erc721 conversions", ()->
           operator = Tezos.sender ])]), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(Update_operators)));
       } with (list [op0; op1; op2; op3]);
     """
-    make_test text_i, text_o, prefer_erc721: true
+    make_test text_i, text_o
