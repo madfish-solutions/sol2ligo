@@ -107,6 +107,7 @@ class @Var_decl
       for v in @assign_value_list
         ret.assign_value_list.push v.clone()
     ret.is_enum_decl  = @is_enum_decl
+    ret.is_const      = @is_const
     ret.line  = @line
     ret.pos   = @pos
     ret.file  = @file
