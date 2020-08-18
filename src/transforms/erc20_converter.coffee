@@ -77,14 +77,23 @@ walk = (root, ctx)->
                 arg_list.unshift(sender)
                 return tx_node(root.fn.t, arg_list, "Transfer", ctx)
               when "approve"
-                return tx_node(root.fn.t, root.arg_list, "Approve", ctx)
+                arg_list = root.arg_list
+                arg_list[0] = astBuilder.cast_to_address arg_list[0]
+                return tx_node(root.fn.t, arg_list, "Approve", ctx)
               when "transferFrom"
-                return tx_node(root.fn.t, root.arg_list, "Transfer", ctx)
+                arg_list = root.arg_list
+                arg_list[1] = astBuilder.cast_to_address arg_list[1]
+                return tx_node(root.fn.t, arg_list, "Transfer", ctx)
               
               when "allowance"
-                return callback_tx_node("GetAllowance", root,  ctx)
+                ret = root
+                ret.arg_list[0] = astBuilder.cast_to_address ret.arg_list[0]
+                ret.arg_list[1] = astBuilder.cast_to_address ret.arg_list[1]
+                return callback_tx_node("GetAllowance", ret,  ctx)
               when "balanceOf"
-                return callback_tx_node("GetBalance", root,  ctx)
+                ret = root
+                ret.arg_list[0] = astBuilder.cast_to_address ret.arg_list[0]
+                return callback_tx_node("GetBalance", ret,  ctx)
               when "totalSupply"
                 ret = root
                 ret.arg_list.unshift astBuilder.unit()
