@@ -343,3 +343,28 @@ describe "translate ligo section inheritance", ()->
       } with (ret_val);
     """
     make_test text_i, text_o
+  
+  it "const access", ()->
+    text_i = """
+    pragma solidity ^0.4.24;
+    
+    contract UpgradeabilityProxy {
+        int constant implementation_slot = 5;
+        function _implementation() {
+            int slot = implementation_slot;
+        }
+    }
+    
+    contract AdminUpgradeabilityProxy is UpgradeabilityProxy {}
+    """
+    text_o = """
+    type state is unit;
+    
+    const implementation_slot : int = 5
+    
+    function implementation_ (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const slot : int = implementation_slot;
+      } with (unit);
+    """
+    make_test text_i, text_o
