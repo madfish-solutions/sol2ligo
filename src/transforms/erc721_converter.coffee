@@ -19,16 +19,15 @@ astBuilder = require "../ast_builder"
 # function getApproved(uint256 _tokenId) external view returns (address); -> ???
 # function isApprovedForAll(address _owner, address _operator) external view returns (bool); -> Is_operator(record [ operator = record [ owner = arg[0], operator = arg[1] ], callback = Tezos.self("%is_operator_callback") ])
 
-declare_callback = (name, fn, ctx) ->
+declare_callback = (name, arg_type, ctx) ->
   if not ctx.callbacks_to_declare_map.has name
     # TODO why are we using nest_list of nest_list?
-    return_type = fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = astBuilder.callback_declaration(name, return_type)
+    cb_decl = astBuilder.callback_declaration(name, arg_type)
     ctx.callbacks_to_declare_map.set name, cb_decl # no "Callback" suffix for key
 
-tx_node = (address_expr, arg_list, name, ctx) ->
+tx_node = (address_expr, arg_list, ctx) ->
   address_expr = astBuilder.contract_addr_transform address_expr
-  entrypoint = astBuilder.foreign_entrypoint(address_expr, name)
+  entrypoint = astBuilder.foreign_entrypoint(address_expr, "fa2_entry_points")
   tx = astBuilder.transaction(arg_list, entrypoint)
   return tx
 
@@ -68,65 +67,105 @@ walk = (root, ctx)->
         switch root.fn.t.type.main
           when "struct"
             switch root.fn.name
-              when "transferFrom"
+              when "transferFrom", \
+                   "safeTransferFrom"
                 args = root.arg_list
 
-                tx = astBuilder.struct_init {
-                  to_: args[1],
-                  token_id: args[2],
-                  amount: astBuilder.nat_literal(1)
-                }
-                
-                arg_record = astBuilder.struct_init {
-                  from_ : args[0],
-                  txs :  astBuilder.list_init([tx])
-                }
-                
-                arg_list_obj = astBuilder.list_init([arg_record])
-                args = root.arg_list
+                dst = new ast.Tuple
+                dst.list.push astBuilder.cast_to_address args[1] # to
+                dst.list.push astBuilder.nat_literal(1) # amount always 1 because nft
 
-                return tx_node(root.fn.t, [arg_list_obj], "Transfer", ctx)
+                token_and_dst = new ast.Tuple
+                token_and_dst.list.push args[2] # token_id
+                token_and_dst.list.push dst
+
+                transfer = new ast.Tuple
+                transfer.list.push astBuilder.list_init([token_and_dst]) # txs
+                transfer.list.push astBuilder.cast_to_address args[0] # from
+
+                transfers = astBuilder.list_init([transfer])
+
+                call = astBuilder.enum_val("@Transfer", [transfers])
+
+                tx = tx_node(root.fn.t, [call], ctx)
+
+                if root.fn.name == "safeTransferFrom"
+                  block = new ast.Scope
+                  block.need_nest = false
+                  block.list.push root
+                  block.list.push comment = new ast.Comment
+                  comment.text = "^ #{root.fn.name} is not supported in LIGO. Read more https://git.io/JJFij ^"
+                  return block
+                else
+                  return tx
               when "balanceOf"
                 name = "Balance_of"
                 args = root.arg_list
-                balance_request = astBuilder.struct_init {
-                  owner : args[0],
-                  token_id : root.fn.t
-                }
-                arg_record = astBuilder.struct_init {
-                  requests: astBuilder.list_init [balance_request]
-                  callback : astBuilder.self_entrypoint "%#{name}Callback"
-                }
 
-                declare_callback name, root.fn, ctx
+                param = new ast.Tuple
+
+                # DOC there is no direct translation of this call to FA2
+                # Solidity asks how many tokens address possesses
+                # LIGO must specify token ID, which means only balance of one type of token can be retrieved 
+                param.list.push astBuilder.nat_literal(0)  # token_id
+                param.list.push astBuilder.cast_to_address args[0] # owner
                 
-                return tx_node(root.fn.t, [arg_record], name, ctx)
+                arg_type = new Type "list<>"
+                arg_type.nest_list[0] = new Type "@balance_of_response_michelson"
+
+                contract_type = new Type "contract"
+                contract_type.nest_list.push(arg_type)
+
+                request = new ast.Tuple
+                request.list.push astBuilder.list_init [param]
+                request.list.push astBuilder.self_entrypoint "%#{name}Callback", contract_type
+
+                declare_callback name, arg_type, ctx
+
+                call = astBuilder.enum_val("@Balance_of", [request])
+                
+                return tx_node(root.fn.t, [call], ctx)
               when "approve"
-                arg_record = astBuilder.struct_init {
-                  owner : astBuilder.tezos_var("sender")
-                  operator : root.arg_list[0]
-                }
+                # DOC we can't set token_id in LIGO like we do in Solidity
+                param = new ast.Tuple
+                param.list.push astBuilder.tezos_var("sender")
+                param.list.push astBuilder.cast_to_address root.arg_list[0] #_approved
 
-                enum_val = astBuilder.enum_val("@Add_operator", [arg_record])
+                add = astBuilder.enum_val("@Add_operator", [param])
+                right_comb_add = astBuilder.to_right_comb [add]
+                add_list = astBuilder.list_init [right_comb_add]
 
-                list = astBuilder.list_init [enum_val]
-                return tx_node(root.fn.t, [list], "Update_operators", ctx)
+                update = astBuilder.enum_val("@Update_operators", [add_list])
+
+                return tx_node(root.fn.t, [update], ctx)
               when "setApprovalForAll"
                 args = root.arg_list
-                arg_record = astBuilder.struct_init {
-                  owner : astBuilder.tezos_var("sender")
-                  operator : args[0]
-                }
+                param = new ast.Tuple
+                param.list.push astBuilder.tezos_var("sender")
+                param.list.push astBuilder.cast_to_address root.arg_list[0] #operator
 
                 if args[1].val == 'true'
                   action = "@Add_operator"
                 else
                   action = "@Remove_operator"
 
-                enum_val = astBuilder.enum_val(action, [arg_record])             
+                action_enum = astBuilder.enum_val(action, [param])
+                right_comb_action = astBuilder.to_right_comb [action_enum]
+                action_list = astBuilder.list_init [right_comb_action]
+                update = astBuilder.enum_val("@Update_operators", [action_list])
 
-                list = astBuilder.list_init [enum_val]
-                return tx_node(root.fn.t, [list], "Update_operators", ctx)
+                return tx_node(root.fn.t, [update], ctx)
+              when "isApprovedForAll", \
+                   "getApproved" 
+                block = new ast.Scope
+                block.need_nest = false
+
+                block.list.push root
+
+                block.list.push comment = new ast.Comment
+                comment.text = "^ #{root.fn.name} is not supported in LIGO. Read more https://git.io/JJFij ^"
+
+                return block
 
       ctx.next_gen root, ctx
     
