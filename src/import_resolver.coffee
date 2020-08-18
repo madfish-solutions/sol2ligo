@@ -3,6 +3,9 @@ fs = require "fs"
 {execSync}  = require "child_process"
 shellEscape = require "shell-escape"
 
+# resolves and embeds files in Solidity `import` clauses
+# optionally downloads from remote urls as well
+
 import_placeholder_count = 0
 
 get_folder = (path)->

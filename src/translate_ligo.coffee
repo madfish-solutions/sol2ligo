@@ -8,6 +8,8 @@ type_generalize = require "./type_generalize"
 ti_map = default_var_map_gen()
 ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
+# in this module AST structure gets translated into actual textual code representation
+
 module.warning_counter = 0
 # ###################################################################################################
 #    *_op
@@ -353,14 +355,24 @@ class @Gen_context
   
   contract          : false
   trim_expr         : ""
-  terminate_expr_check    : ""
+  
+  # terminates right side expression in case it doesn't return anything.
+  # this might be needed cause LIGO doesn't support procedures
+  terminate_expr_check    : "" 
   terminate_expr_replace_fn: null
-  storage_sink_list : {}
+
+  # in case expression should be split into multiple lines
+  # code to be prepended collected here
   sink_list         : []
+  tmp_idx           : 0
+  
+  # collect things to be placed at the top of the contract
+  storage_sink_list : {}
   type_decl_sink_list: []
   structs_default_list: []
   enum_list: []
-  tmp_idx           : 0
+
+  # special fields for mode attempting file separation
   files             : null
   keep_dir_structure: false
   
@@ -397,7 +409,7 @@ walk = (root, ctx)->
   switch root.constructor.name
     when "Scope"
       switch root.original_node_type
-        when "SourceUnit"
+        when "SourceUnit" #top-level scope
           jls = {}
           jls[main_file] = []
           for v in root.list
@@ -462,7 +474,7 @@ walk = (root, ctx)->
           for path, jl of jls
             ctx.files[path] = join_list jl, ""
           ctx.files[main_file]
-        else
+        else # local scope
           if !root.original_node_type
             jls = {}
             jls[main_file] = []
