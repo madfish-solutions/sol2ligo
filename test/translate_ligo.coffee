@@ -336,6 +336,29 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  it "inline assembly", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Inline_assembly {
+      function test() public {
+        assembly {
+          let x := 7
+        }
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        failwith("Unsupported InlineAssembly");
+        (* InlineAssembly { let x := 7 } *)
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
   it "uppercase ids", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -357,4 +380,3 @@ describe "translate ligo section unsorted", ()->
       } with (unit);
     """
     make_test text_i, text_o
-  

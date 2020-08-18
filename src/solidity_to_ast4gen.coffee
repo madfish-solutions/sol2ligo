@@ -303,8 +303,17 @@ walk = (root, ctx)->
     
     when "InlineAssembly"
       perr "WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler"
-      ret = new ast.Comment
-      ret.text = "InlineAssembly #{root.operations}"
+      failwith_msg = new ast.Const
+      failwith_msg.val = "Unsupported InlineAssembly"
+      failwith_msg.type = new Type "string"
+      failwith = new ast.Throw
+      failwith.t = failwith_msg
+      comment = new ast.Comment
+      comment.text = "InlineAssembly #{root.operations}"
+      ret = new ast.Scope
+      ret.need_nest = false
+      ret.list.push failwith
+      ret.list.push comment
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret.file = ctx.file_stack.last()
 
