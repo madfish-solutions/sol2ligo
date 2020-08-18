@@ -22,6 +22,11 @@ describe "erc20 conversions", ()->
   @timeout 10000
   it "erc20_convert", ()->
     #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    ### TODO mechanism and tests for returned values like
+      uint supply = ERC20TokenFace(0x0).totalSupply();
+      uint bal = ERC20TokenFace(0x0).balanceOf(msg.sender);
+      uint allowance = ERC20TokenFace(0x0).allowance(0x0, msg.sender);
+    ###
     text_i = """
     pragma solidity ^0.4.16;
 
@@ -29,17 +34,15 @@ describe "erc20 conversions", ()->
 
     contract eee {
       function test() private {
-        ERC20TokenFace token = ERC20TokenFace(0x0);
-        uint supply = ERC20TokenFace(0x0).totalSupply();
-        uint bal = ERC20TokenFace(0x0).balanceOf(msg.sender);
-        uint allowance = ERC20TokenFace(0x0).allowance(0x0, msg.sender);
+        ERC20TokenFace(0x0).totalSupply();
+        ERC20TokenFace(0x0).balanceOf(msg.sender);
+        ERC20TokenFace(0x0).allowance(0x0, msg.sender);
         ERC20TokenFace(0x0).transferFrom(msg.sender, 0x0, 50);
         ERC20TokenFace(0x0).transfer(msg.sender, 50);
         ERC20TokenFace(0x0).approve(msg.sender, 5);
       }
     }
     """
-    #TODO UNKNOWN_TYPE_ERC20TokenFace
     text_o = """
     type state is unit;
     
@@ -61,11 +64,10 @@ describe "erc20 conversions", ()->
     
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
-        const supply : nat = const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const bal : nat = const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const allowance : nat = const op2 : operation = transaction((GetAllowance(0x0, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op3 : operation = transaction((Transfer(Tezos.sender, 0x0, 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op2 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op3 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
         const op4 : operation = transaction((Transfer(Tezos.sender, Tezos.sender, 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
         const op5 : operation = transaction((Approve(Tezos.sender, 5n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
       } with (list [op0; op1; op2; op3; op4; op5]);
@@ -80,7 +82,7 @@ describe "erc20 conversions", ()->
 
     contract CBD {
       function test() private {
-        uint allowance = ERC20TokenFace(0x0).allowance(0x0, msg.sender);
+        ERC20TokenFace(0x0).allowance(0x0, msg.sender);
       }
     }
     """
@@ -102,7 +104,7 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const allowance : nat = const op0 : operation = transaction((GetAllowance(0x0, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
       } with (list [op0]);
 
     function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
@@ -124,7 +126,7 @@ describe "erc20 conversions", ()->
 
     contract CBD {
       function test() private {
-        uint allowance = ERC20TokenFace(0x0).allowance(0x0, msg.sender);
+        ERC20TokenFace(0x0).allowance(0x0, msg.sender);
         msg.sender.transfer(40);
       }
     }
@@ -140,7 +142,7 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const allowance : nat = const op0 : operation = transaction((GetAllowance(0x0, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(Tezos.sender) : contract(unit)));
       } with (list [op0; op1]);
     """#"

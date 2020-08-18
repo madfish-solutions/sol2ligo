@@ -31,7 +31,7 @@ describe "erc721 conversions", ()->
     contract eee {
       function test() private {
         ERC721(0x0).transferFrom(msg.sender, 0x0, 32);
-        uint b = ERC721(0x0).balanceOf(msg.sender);
+        ERC721(0x0).balanceOf(address(0));
         ERC721(0x0).approve(msg.sender, 0);
         ERC721(0x0).setApprovalForAll(msg.sender, false);
       }
@@ -48,8 +48,8 @@ describe "erc721 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((Transfer(list [(list [(32n, (0x0, 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const b : nat = const op1 : operation = transaction((Balance_of((list [(0n, Tezos.sender)], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op0 : operation = transaction((Transfer(list [(list [(32n, (("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op1 : operation = transaction((Balance_of((list [(0n, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
         const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
         const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
       } with (list [op0; op1; op2; op3]);
@@ -77,9 +77,9 @@ describe "erc721 conversions", ()->
     #include "interfaces/fa2.ligo"
     function test (const test_reserved_long___unit : unit) : (unit) is
       block {
-        const approvedAddress : address = ERC721(0x0).getApproved(0n);
+        const approvedAddress : address = eRC721(0x0).getApproved(0n);
         (* ^ getApproved is not supported in LIGO. Read more https://git.io/JJFij ^ *);
-        ERC721(0x0).safeTransferFrom(Tezos.sender, 0x0, 32n);
+        eRC721(0x0).safeTransferFrom(Tezos.sender, 0x0, 32n);
         (* ^ safeTransferFrom is not supported in LIGO. Read more https://git.io/JJFij ^ *)
       } with (unit);
     """
