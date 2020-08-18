@@ -72,7 +72,7 @@ walk = (root, ctx)->
                 args = root.arg_list
 
                 dst = new ast.Tuple
-                dst.list.push args[1] # to
+                dst.list.push astBuilder.cast_to_address args[1] # to
                 dst.list.push astBuilder.nat_literal(1) # amount always 1 because nft
 
                 token_and_dst = new ast.Tuple
@@ -81,7 +81,7 @@ walk = (root, ctx)->
 
                 transfer = new ast.Tuple
                 transfer.list.push astBuilder.list_init([token_and_dst]) # txs
-                transfer.list.push args[0] # from
+                transfer.list.push astBuilder.cast_to_address args[0] # from
 
                 transfers = astBuilder.list_init([transfer])
 
@@ -108,7 +108,7 @@ walk = (root, ctx)->
                 # Solidity asks how many tokens address possesses
                 # LIGO must specify token ID, which means only balance of one type of token can be retrieved 
                 param.list.push astBuilder.nat_literal(0)  # token_id
-                param.list.push args[0] # owner
+                param.list.push astBuilder.cast_to_address args[0] # owner
                 
                 arg_type = new Type "list<>"
                 arg_type.nest_list[0] = new Type "@balance_of_response_michelson"
@@ -129,7 +129,7 @@ walk = (root, ctx)->
                 # DOC we can't set token_id in LIGO like we do in Solidity
                 param = new ast.Tuple
                 param.list.push astBuilder.tezos_var("sender")
-                param.list.push root.arg_list[0]
+                param.list.push astBuilder.cast_to_address root.arg_list[0] #_approved
 
                 add = astBuilder.enum_val("@Add_operator", [param])
                 right_comb_add = astBuilder.to_right_comb [add]
@@ -142,7 +142,7 @@ walk = (root, ctx)->
                 args = root.arg_list
                 param = new ast.Tuple
                 param.list.push astBuilder.tezos_var("sender")
-                param.list.push root.arg_list[0]
+                param.list.push astBuilder.cast_to_address root.arg_list[0] #operator
 
                 if args[1].val == 'true'
                   action = "@Add_operator"
