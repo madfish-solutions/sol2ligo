@@ -8,6 +8,8 @@ type_generalize = require "./type_generalize"
 ti_map = default_var_map_gen()
 ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
+# in this module AST structure gets translated into actual textual code representation
+
 module.warning_counter = 0
 # ###################################################################################################
 #    *_op
@@ -402,7 +404,7 @@ walk = (root, ctx)->
   switch root.constructor.name
     when "Scope"
       switch root.original_node_type
-        when "SourceUnit"
+        when "SourceUnit" #top-level scope
           jls = {}
           jls[main_file] = []
           for v in root.list
@@ -467,7 +469,7 @@ walk = (root, ctx)->
           for path, jl of jls
             ctx.files[path] = join_list jl, ""
           ctx.files[main_file]
-        else
+        else # local scope
           if !root.original_node_type
             jls = {}
             jls[main_file] = []
