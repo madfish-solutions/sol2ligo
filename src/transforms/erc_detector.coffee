@@ -14,25 +14,26 @@ walk = (root, ctx)->
       erc721_methods_count = 0
       for entry in root.scope.list
         if entry.constructor.name == "Fn_decl_multiret"
-          switch entry.name
-            when "approve",\
-                 "totalSupply",\
-                 "balanceOf",\ 
-                 "allowance",\ 
-                 "transfer",\
-                 "transferFrom"
-              erc20_methods_count += 1
-          
-          switch entry.name
-            when "balanceOf", \
-                 "ownerOf", \
-                 "safeTransferFrom", \
-                 "transferFrom", \
-                 "approve", \
-                 "setApprovalForAll", \
-                 "getApproved", \
-                 "isApprovedForAll"
-              erc721_methods_count += 1
+          if entry.scope.list.length == 0 # only replace interfaces
+            switch entry.name
+              when "approve",\
+                  "totalSupply",\
+                  "balanceOf",\ 
+                  "allowance",\ 
+                  "transfer",\
+                  "transferFrom"
+                erc20_methods_count += 1
+            
+            switch entry.name
+              when "balanceOf", \
+                  "ownerOf", \
+                  "safeTransferFrom", \
+                  "transferFrom", \
+                  "approve", \
+                  "setApprovalForAll", \
+                  "getApproved", \
+                  "isApprovedForAll"
+                erc721_methods_count += 1
 
       # replace whole class (interface) declaration if we are converting it to FA anyway
       if erc20_methods_count == ERC20_METHODS_TOTAL
