@@ -64,7 +64,7 @@ ast = require "./ast"
   get_contract = new ast.Fn_call
   get_contract.type = "function2<function<uint>, function<address>>"
   get_contract.fn = new ast.Var
-  get_contract.fn.name = "get_contract"
+  get_contract.fn.name = "@get_contract"
 
   get_contract.arg_list.push address_expr
 
@@ -72,7 +72,7 @@ ast = require "./ast"
 
   return contract_cast
 
-@self_entrypoint = (name) ->
+@self_entrypoint = (name, contract_type) ->
   arg = new ast.Var
   arg.name = "@Tezos"
 
@@ -86,7 +86,15 @@ ast = require "./ast"
   entrypoint_name.val = name
 
   get_entrypoint.arg_list.push entrypoint_name
-  return get_entrypoint
+
+  cast = new ast.Type_cast
+  cast.t = get_entrypoint
+  if not contract_type 
+    contract_type = new Type "contract"
+    contract_type.val = "unit"
+  cast.target_type = contract_type
+
+  return cast
 
 @assignment = (name, rvalue, rtype) ->
   ass = new ast.Bin_op
@@ -125,9 +133,10 @@ ast = require "./ast"
   cb_decl.arg_name_list.push "arg"
   cb_decl.type_i.nest_list.push arg_type
 
-  hint = new ast.Comment
-  hint.text = "This method should handle return value of #{name} of foreign contract"
-  cb_decl.scope.list.push hint
+  # full doc link: https://github.com/madfish-solutions/sol2ligo/wiki/Foreign-contract-callback-stub
+  failwith = new ast.Throw
+  failwith.t = @string_val "This method should handle return value of #{name} of foreign contract. Read more at https://git.io/JfDxR"
+  cb_decl.scope.list.push failwith
   return cb_decl
 
 @tezos_var = (name) ->
@@ -144,3 +153,31 @@ ast = require "./ast"
   enum_val.fn.name = name
   enum_val.arg_list = payload
   return enum_val
+
+@string_val = (str) ->
+  ret = new ast.Const
+  ret.type = new Type "string"
+  ret.val = str
+  return ret
+
+@to_right_comb = (args) ->
+  namespace = new ast.Var
+  namespace.name = "@Layout"
+
+  call = new ast.Fn_call
+  call.fn = new ast.Field_access
+  call.fn.name = "convert_to_right_comb"
+  call.fn.t = namespace
+
+  call.arg_list = args
+
+  return call
+
+# creates typecast to address if node isn't already address
+@cast_to_address = (t)->
+  return t if t.type.main == "address"
+  ret = new ast.Type_cast
+  ret.target_type = new Type "address"
+  ret.t = t
+  ret
+

@@ -1,6 +1,8 @@
 (function() {
   var Context, Type, ast, bin_op_map, config, ensure_scope, is_complex_assign_op, parse_line_pos, prev_root, type_generalize, un_op_map, un_op_post_map, un_op_pre_map, unpack_id_type, walk, walk_param, walk_type;
 
+  
+
   config = require("./config");
 
   Type = window.Type;
@@ -89,12 +91,14 @@
         ret = new Type("array");
         ret.nest_list.push(walk_type(root.baseType, ctx));
         _ref = parse_line_pos(root.src), ret.pos = _ref[0], ret.line = _ref[1];
+        ret.file = ctx.file_stack.last();
         return ret;
       case "Mapping":
         ret = new Type("map");
         ret.nest_list.push(walk_type(root.keyType, ctx));
         ret.nest_list.push(walk_type(root.valueType, ctx));
         _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
+        ret.file = ctx.file_stack.last();
         return ret;
       default:
         perr(root);
@@ -160,6 +164,7 @@
           ret.append(walk_param(v, ctx));
         }
         _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
+        ret.file = ctx.file_stack.last();
         return ret;
       case "VariableDeclaration":
         if (root.value) {
@@ -170,6 +175,7 @@
         t._name = root.name;
         ret.push(t);
         _ref2 = parse_line_pos(root.src), ret.pos = _ref2[0], ret.line = _ref2[1];
+        ret.file = ctx.file_stack.last();
         return ret;
       default:
         perr(root);
@@ -194,6 +200,8 @@
 
     Context.prototype.contract_type = "";
 
+    Context.prototype.file_stack = [];
+
     Context.prototype.need_prevent_deploy = false;
 
     function Context() {}
@@ -205,7 +213,7 @@
   prev_root = null;
 
   walk = function(root, ctx) {
-    var arg, arg_list, arg_names, args, ast_mod, decl, err, exp, fn, list, member, modifier, mult, name, node, parameter, result, ret, ret_multi, scope_prepend_list, tuple, type, type_list, v, var_decl, _var;
+    var arg, arg_list, arg_names, args, ast_mod, comment, decl, err, exp, failwith, failwith_msg, fn, list, member, modifier, mult, name, node, parameter, result, ret, ret_multi, scope_prepend_list, tuple, type, type_list, v, var_decl, _var;
     if (!root) {
       perr(prev_root);
       throw new Error("!root");
@@ -223,50 +231,67 @@
             ret.list.push(walk(node, ctx));
           }
           _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "ContractDefinition":
-          ret = new ast.Class_decl;
-          switch (root.contractKind) {
-            case "contract":
-              ret.is_contract = true;
-              break;
-            case "library":
-              ret.is_library = true;
-              break;
-            case "interface":
-              ret.is_interface = true;
-              break;
-            default:
-              throw new Error("unknown contractKind " + root.contractKind);
-          }
-          ret.inheritance_list = [];
-          ret.name = root.name;
-          ctx.contract = ret;
-          ctx.contract_name = root.name;
-          ctx.contract_type = root.contractKind;
-          _ref2 = root.baseContracts;
-          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-            v = _ref2[_j];
-            arg_list = [];
-            if (v["arguments"]) {
-              _ref3 = v["arguments"];
-              for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
-                arg = _ref3[_k];
-                arg_list.push(walk(arg, ctx));
-              }
+          if (root.name.startsWith("ImportPlaceholderStart")) {
+            ctx.file_stack.push(root.nodes[0].value.value);
+            ret = new ast.Comment;
+            ret.text = "#include \"" + (ctx.file_stack.last()) + "\"";
+            ret.can_skip = true;
+            return ret;
+          } else if (root.name.startsWith("ImportPlaceholderEnd")) {
+            ret = new ast.Comment;
+            ret.text = "end of include " + (ctx.file_stack.last());
+            ret.can_skip = true;
+            ctx.file_stack.pop();
+            return ret;
+          } else {
+            ret = new ast.Class_decl;
+            switch (root.contractKind) {
+              case "contract":
+                ret.is_contract = true;
+                break;
+              case "library":
+                ret.is_library = true;
+                break;
+              case "interface":
+                ret.is_interface = true;
+                break;
+              default:
+                throw new Error("unknown contractKind " + root.contractKind);
             }
-            ret.inheritance_list.push({
-              name: v.baseName.name,
-              arg_list: arg_list
-            });
+            ret.inheritance_list = [];
+            ret.name = root.name;
+            ctx.contract = ret;
+            ctx.contract_name = root.name;
+            ctx.contract_type = root.contractKind;
+            _ref2 = root.baseContracts;
+            for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+              v = _ref2[_j];
+              arg_list = [];
+              if (v["arguments"]) {
+                _ref3 = v["arguments"];
+                for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
+                  arg = _ref3[_k];
+                  arg_list.push(walk(arg, ctx));
+                }
+              }
+              ret.inheritance_list.push({
+                name: v.baseName.name,
+                arg_list: arg_list
+              });
+            }
+            _ref4 = root.nodes;
+            for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
+              node = _ref4[_l];
+              ret.scope.list.push(walk(node, ctx));
+            }
+            _ref5 = parse_line_pos(root.src), ret.pos = _ref5[0], ret.line = _ref5[1];
+            ret.file = ctx.file_stack.last();
+            return ret;
           }
-          _ref4 = root.nodes;
-          for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
-            node = _ref4[_l];
-            ret.scope.list.push(walk(node, ctx));
-          }
-          _ref5 = parse_line_pos(root.src), ret.pos = _ref5[0], ret.line = _ref5[1];
-          return ret;
+          break;
         case "PragmaDirective":
           ret = new ast.Comment;
           ret.text = "PragmaDirective " + (root.literals.join(' '));
@@ -276,6 +301,7 @@
           ret = new ast.Comment;
           ret.text = "UsingForDirective";
           _ref6 = parse_line_pos(root.src), ret.pos = _ref6[0], ret.line = _ref6[1];
+          ret.file = ctx.file_stack.last();
           if (root.typeName === null) {
             type = "*";
           } else {
@@ -296,12 +322,23 @@
             ret.scope.list.push(walk(v, ctx));
           }
           _ref8 = parse_line_pos(root.src), ret.pos = _ref8[0], ret.line = _ref8[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "InlineAssembly":
           perr("WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler");
-          ret = new ast.Comment;
-          ret.text = "InlineAssembly " + root.operations;
+          failwith_msg = new ast.Const;
+          failwith_msg.val = "Unsupported InlineAssembly";
+          failwith_msg.type = new Type("string");
+          failwith = new ast.Throw;
+          failwith.t = failwith_msg;
+          comment = new ast.Comment;
+          comment.text = "InlineAssembly " + root.operations;
+          ret = new ast.Scope;
+          ret.need_nest = false;
+          ret.list.push(failwith);
+          ret.list.push(comment);
           _ref9 = parse_line_pos(root.src), ret.pos = _ref9[0], ret.line = _ref9[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "EventDefinition":
           perr("WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
@@ -309,6 +346,7 @@
           ret.name = root.name;
           ret.arg_list = walk_param(root.parameters, ctx);
           _ref10 = parse_line_pos(root.src), ret.pos = _ref10[0], ret.line = _ref10[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "EmitStatement":
           perr("WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
@@ -321,11 +359,13 @@
           });
           ret.text = "EmitStatement " + name + "(" + (arg_names.join(", ")) + ")";
           _ref12 = parse_line_pos(root.src), ret.pos = _ref12[0], ret.line = _ref12[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "PlaceholderStatement":
           ret = new ast.Comment;
           ret.text = "COMPILER MSG PlaceholderStatement";
           _ref13 = parse_line_pos(root.src), ret.pos = _ref13[0], ret.line = _ref13[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Identifier":
           ret = new ast.Var;
@@ -337,12 +377,14 @@
             perr("WARNING can't resolve type " + err);
           }
           _ref14 = parse_line_pos(root.src), ret.pos = _ref14[0], ret.line = _ref14[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Literal":
           ret = new ast.Const;
           ret.type = new Type(root.kind);
           ret.val = root.value;
           _ref15 = parse_line_pos(root.src), ret.pos = _ref15[0], ret.line = _ref15[1];
+          ret.file = ctx.file_stack.last();
           switch (root.subdenomination) {
             case "seconds":
               return ret;
@@ -408,7 +450,7 @@
           break;
         case "VariableDeclaration":
           ret = new ast.Var_decl;
-          ret._const = root.constant;
+          ret.is_const = root.constant;
           ret.name = root.name;
           ret.contract_name = ctx.contract_name;
           ret.contract_type = ctx.contract_type;
@@ -417,6 +459,7 @@
             ret.assign_value = walk(root.value, ctx);
           }
           _ref16 = parse_line_pos(root.src), ret.pos = _ref16[0], ret.line = _ref16[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Assignment":
           ret = new ast.Bin_op;
@@ -427,6 +470,7 @@
           ret.a = walk(root.leftHandSide, ctx);
           ret.b = walk(root.rightHandSide, ctx);
           _ref17 = parse_line_pos(root.src), ret.pos = _ref17[0], ret.line = _ref17[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "BinaryOperation":
           ret = new ast.Bin_op;
@@ -437,12 +481,14 @@
           ret.a = walk(root.leftExpression, ctx);
           ret.b = walk(root.rightExpression, ctx);
           _ref18 = parse_line_pos(root.src), ret.pos = _ref18[0], ret.line = _ref18[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "MemberAccess":
           ret = new ast.Field_access;
           ret.t = walk(root.expression, ctx);
           ret.name = root.memberName;
           _ref19 = parse_line_pos(root.src), ret.pos = _ref19[0], ret.line = _ref19[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "IndexAccess":
           ret = new ast.Bin_op;
@@ -450,6 +496,7 @@
           ret.a = walk(root.baseExpression, ctx);
           ret.b = walk(root.indexExpression, ctx);
           _ref20 = parse_line_pos(root.src), ret.pos = _ref20[0], ret.line = _ref20[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "UnaryOperation":
           ret = new ast.Un_op;
@@ -467,6 +514,7 @@
           }
           ret.a = walk(root.subExpression, ctx);
           _ref21 = parse_line_pos(root.src), ret.pos = _ref21[0], ret.line = _ref21[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "FunctionCall":
           fn = walk(root.expression, ctx);
@@ -504,6 +552,7 @@
               }
           }
           _ref23 = parse_line_pos(root.src), ret.pos = _ref23[0], ret.line = _ref23[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "TupleExpression":
           if (root.isInlineArray) {
@@ -526,16 +575,19 @@
             }
           }
           _ref25 = parse_line_pos(root.src), ret.pos = _ref25[0], ret.line = _ref25[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "NewExpression":
           ret = new ast.New;
           ret.cls = walk_type(root.typeName, ctx);
           _ref26 = parse_line_pos(root.src), ret.pos = _ref26[0], ret.line = _ref26[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "ElementaryTypeNameExpression":
           ret = new ast.Type_cast;
           ret.target_type = walk_type(root.typeName, ctx);
           _ref27 = parse_line_pos(root.src), ret.pos = _ref27[0], ret.line = _ref27[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Conditional":
           ret = new ast.Ternary;
@@ -543,6 +595,7 @@
           ret.t = walk(root.trueExpression, ctx);
           ret.f = walk(root.falseExpression, ctx);
           _ref28 = parse_line_pos(root.src), ret.pos = _ref28[0], ret.line = _ref28[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "ExpressionStatement":
           return walk(root.expression, ctx);
@@ -588,6 +641,7 @@
             ret.type = new Type("tuple<>");
             ret.type.nest_list = type_list;
             _ref31 = parse_line_pos(root.src), ret.pos = _ref31[0], ret.line = _ref31[1];
+            ret.file = ctx.file_stack.last();
             return ret;
           } else {
             decl = root.declarations[0];
@@ -605,6 +659,7 @@
               ret.assign_value = walk(root.initialValue, ctx);
             }
             _ref32 = parse_line_pos(root.src), ret.pos = _ref32[0], ret.line = _ref32[1];
+            ret.file = ctx.file_stack.last();
             return ret;
           }
           break;
@@ -616,6 +671,7 @@
             ret.list.push(walk(node, ctx));
           }
           _ref34 = parse_line_pos(root.src), ret.pos = _ref34[0], ret.line = _ref34[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "IfStatement":
           ret = new ast.If;
@@ -625,12 +681,14 @@
             ret.f = ensure_scope(walk(root.falseBody, ctx));
           }
           _ref35 = parse_line_pos(root.src), ret.pos = _ref35[0], ret.line = _ref35[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "WhileStatement":
           ret = new ast.While;
           ret.cond = walk(root.condition, ctx);
           ret.scope = ensure_scope(walk(root.body, ctx));
           _ref36 = parse_line_pos(root.src), ret.pos = _ref36[0], ret.line = _ref36[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "ForStatement":
           ret = new ast.For3;
@@ -645,6 +703,7 @@
           }
           ret.scope = ensure_scope(walk(root.body, ctx));
           _ref37 = parse_line_pos(root.src), ret.pos = _ref37[0], ret.line = _ref37[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Return":
           ret = new ast.Ret_multi;
@@ -652,22 +711,26 @@
             ret.t_list.push(walk(root.expression, ctx));
           }
           _ref38 = parse_line_pos(root.src), ret.pos = _ref38[0], ret.line = _ref38[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Continue":
           perr("WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Continue;
           _ref39 = parse_line_pos(root.src), ret.pos = _ref39[0], ret.line = _ref39[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Break":
           perr("WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Break;
           _ref40 = parse_line_pos(root.src), ret.pos = _ref40[0], ret.line = _ref40[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "Throw":
           ret = new ast.Throw;
           _ref41 = parse_line_pos(root.src), ret.pos = _ref41[0], ret.line = _ref41[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "FunctionDefinition":
         case "ModifierDefinition":
@@ -759,6 +822,7 @@
             }
           }
           _ref46 = parse_line_pos(root.src), ret.pos = _ref46[0], ret.line = _ref46[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         case "EnumDefinition":
           ret = new ast.Enum_decl;
@@ -770,6 +834,7 @@
             decl.name = member.name;
           }
           _ref48 = parse_line_pos(root.src), ret.pos = _ref48[0], ret.line = _ref48[1];
+          ret.file = ctx.file_stack.last();
           return ret;
         default:
           perr(root);

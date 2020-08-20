@@ -8,6 +8,9 @@ Type = require "type"
 } = require "./translate_ligo"
 # ###################################################################################################
 
+# this module generates initial storage for the contract which is needed for contract origination
+# default state is later compiled to Michelson before being passed to a Tezos node
+
 class @Gen_context
   next_gen : null
   var_map : {}
@@ -36,7 +39,11 @@ walk = (root, ctx)->
     # ###################################################################################################
     #    stmt
     # ###################################################################################################
-    when "Comment", "Fn_decl_multiret", "Enum_decl"
+    when "Comment", \
+         "Fn_decl_multiret", \
+         "Enum_decl", \
+         "Event_decl", \
+         "Include"
       "nothing"
     
     when "Var_decl"

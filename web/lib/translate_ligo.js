@@ -89,7 +89,7 @@
       var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      ret = "bitwise_and(" + a + ", " + b + ")";
+      ret = "Bitwise.and(" + a + ", " + b + ")";
       if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
         return "int(" + ret + ")";
       } else {
@@ -100,7 +100,7 @@
       var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      ret = "bitwise_or(" + a + ", " + b + ")";
+      ret = "Bitwise.or(" + a + ", " + b + ")";
       if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
         return "int(" + ret + ")";
       } else {
@@ -111,7 +111,7 @@
       var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      ret = "bitwise_xor(" + a + ", " + b + ")";
+      ret = "Bitwise.xor(" + a + ", " + b + ")";
       if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
         return "int(" + ret + ")";
       } else {
@@ -122,7 +122,7 @@
       var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      ret = "bitwise_lsr(" + a + ", " + b + ")";
+      ret = "Bitwise.shift_right(" + a + ", " + b + ")";
       if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
         return "int(" + ret + ")";
       } else {
@@ -133,7 +133,7 @@
       var ret;
       a = some2nat(a, ast.a.type.main);
       b = some2nat(b, ast.b.type.main);
-      ret = "bitwise_lsl(" + a + ", " + b + ")";
+      ret = "Bitwise.shift_left(" + a + ", " + b + ")";
       if (config.int_type_map.hasOwnProperty(ast.a.type.main) && config.int_type_map.hasOwnProperty(ast.b.type.main)) {
         return "int(" + ret + ")";
       } else {
@@ -273,6 +273,9 @@
         return "operation";
       case "built_in_op_list":
         return "list(operation)";
+      case "list":
+        nest = translate_type(type.nest_list[0], ctx);
+        return "list(" + nest + ")";
       case "array":
         nest = translate_type(type.nest_list[0], ctx);
         return "map(nat, " + nest + ")";
@@ -326,6 +329,8 @@
           return "int";
         } else if (type.main.match(RegExp("^" + config.storage + "_"))) {
           return type.main;
+        } else if (type.main.startsWith("@")) {
+          return type.main.substr(1);
         } else {
           perr("WARNING. translate_type unknown solidity type '" + type + "'");
           return "UNKNOWN_TYPE_" + type;
@@ -334,7 +339,7 @@
   };
 
   this.type2default_value = type2default_value = function(type, ctx) {
-    var first_item, name, prefix, t;
+    var first_item, name, prefix, t, _ref1;
     if (config.uint_type_map.hasOwnProperty(type.main)) {
       return "0n";
     }
@@ -375,7 +380,7 @@
           }
           if (t.constructor.name === "Class_decl") {
             name = type.main;
-            if (ctx.current_class.name) {
+            if ((_ref1 = ctx.current_class) != null ? _ref1.name : void 0) {
               name = "" + ctx.current_class.name + "_" + type.main;
             }
             return "" + name + "_default";
@@ -409,9 +414,11 @@
 
     Gen_context.prototype.terminate_expr_replace_fn = null;
 
-    Gen_context.prototype.storage_sink_list = {};
-
     Gen_context.prototype.sink_list = [];
+
+    Gen_context.prototype.tmp_idx = 0;
+
+    Gen_context.prototype.storage_sink_list = {};
 
     Gen_context.prototype.type_decl_sink_list = [];
 
@@ -419,7 +426,9 @@
 
     Gen_context.prototype.enum_list = [];
 
-    Gen_context.prototype.tmp_idx = 0;
+    Gen_context.prototype.files = null;
+
+    Gen_context.prototype.keep_dir_structure = false;
 
     function Gen_context() {
       this.type_decl_map = {};
@@ -430,6 +439,8 @@
       this.structs_default_list = [];
       this.enum_list = [];
       this.contract = false;
+      this.files = null;
+      this.keep_dir_structure = false;
     }
 
     Gen_context.prototype.mk_nest = function() {
@@ -443,6 +454,8 @@
       t.structs_default_list = this.structs_default_list;
       t.enum_list = this.enum_list;
       t.contract = this.contract;
+      t.files = this.files;
+      t.keep_dir_structure = this.keep_dir_structure;
       return t;
     };
 
@@ -453,41 +466,50 @@
   last_bracket_state = false;
 
   walk = function(root, ctx) {
-    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, k, loc_code, modifies_storage, msg, name, op, orig_ctx, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, jls, k, loc_code, main_file, modifies_storage, msg, name, op, orig_ctx, path, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, text, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    main_file = "";
     last_bracket_state = false;
     switch (root.constructor.name) {
       case "Scope":
         switch (root.original_node_type) {
           case "SourceUnit":
-            jl = [];
+            jls = {};
+            jls[main_file] = [];
             _ref1 = root.list;
             for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
               v = _ref1[_i];
               code = walk(v, ctx);
+              path = ctx.keep_dir_structure ? v.file : null;
+              if (path == null) {
+                path = main_file;
+              }
               if (code) {
-                if ((_ref2 = v.constructor.name) !== "Comment" && _ref2 !== "Scope") {
+                if ((_ref2 = v.constructor.name) !== "Comment" && _ref2 !== "Scope" && _ref2 !== "Include") {
                   if (!/;$/.test(code)) {
                     code += ";";
                   }
                 }
-                jl.push(code);
+                if (jls[path] == null) {
+                  jls[path] = [];
+                }
+                jls[path].push(code);
               }
             }
             if (ctx.structs_default_list.length) {
-              jl.unshift("" + (join_list(ctx.structs_default_list)));
+              jls[main_file].unshift("" + (join_list(ctx.structs_default_list)));
             }
             name = config.storage;
-            jl.unshift("");
+            jls[main_file].unshift("");
             if (Object.keys(ctx.storage_sink_list).length === 0) {
-              jl.unshift("type " + name + " is unit;");
+              jls[main_file].unshift("type " + name + " is unit;");
             } else {
               _ref3 = ctx.storage_sink_list;
               for (k in _ref3) {
                 v = _ref3[k];
                 if (v.length === 0) {
-                  jl.unshift("type " + k + " is unit;");
+                  jls[main_file].unshift("type " + k + " is unit;");
                 } else {
-                  jl.unshift("type " + k + " is record\n  " + (join_list(v, '  ')) + "\nend;");
+                  jls[main_file].unshift("type " + k + " is record\n  " + (join_list(v, '  ')) + "\nend;");
                 }
               }
             }
@@ -504,20 +526,32 @@
                   type_decl_jl.push("type " + name + " is record\n  " + (join_list(field_decl_jl, '  ')) + "\nend;\n");
                 }
               }
-              jl.unshift("" + (join_list(type_decl_jl)));
+              jls[main_file].unshift("" + (join_list(type_decl_jl)));
               if (ctx.enum_list.length) {
-                jl.unshift("");
-                jl.unshift("" + (join_list(ctx.enum_list)));
+                jls[main_file].unshift("");
+                jls[main_file].unshift("" + (join_list(ctx.enum_list)));
                 ctx.enum_list = [];
               }
             }
-            return join_list(jl, "");
+            for (path in jls) {
+              jl = jls[path];
+              ctx.files[path] = join_list(jl, "");
+            }
+            return ctx.files[main_file];
           default:
             if (!root.original_node_type) {
-              jl = [];
+              jls = {};
+              jls[main_file] = [];
               _ref5 = root.list;
               for (_k = 0, _len2 = _ref5.length; _k < _len2; _k++) {
                 v = _ref5[_k];
+                path = ctx.keep_dir_structure ? v.file : null;
+                if (path == null) {
+                  path = main_file;
+                }
+                if (jls[path] == null) {
+                  jls[path] = [];
+                }
                 code = walk(v, ctx);
                 _ref6 = ctx.sink_list;
                 for (_l = 0, _len3 = _ref6.length; _l < _len3; _l++) {
@@ -525,7 +559,7 @@
                   if (!/;$/.test(loc_code)) {
                     loc_code += ";";
                   }
-                  jl.push(loc_code);
+                  jls[path].push(loc_code);
                 }
                 ctx.sink_list.clear();
                 if (ctx.trim_expr === code) {
@@ -537,40 +571,45 @@
                   code = ctx.terminate_expr_replace_fn();
                 }
                 if (code) {
-                  if ((_ref7 = v.constructor.name) !== "Comment" && _ref7 !== "Scope") {
+                  if ((_ref7 = v.constructor.name) !== "Comment" && _ref7 !== "Scope" && _ref7 !== "Include") {
                     if (!/;$/.test(code)) {
                       code += ";";
                     }
                   }
-                  jl.push(code);
+                  jls[path].push(code);
                 }
               }
-              ret = jl.pop() || "";
-              if (0 !== ret.indexOf("with")) {
-                jl.push(ret);
-                ret = "";
-              }
-              jl = jl.filter(function(t) {
-                return t !== "";
-              });
-              if (!root.need_nest) {
-                if (jl.length) {
-                  body = join_list(jl, "");
+              for (path in jls) {
+                jl = jls[path];
+                ret = jl.pop() || "";
+                if (!ret.startsWith("with")) {
+                  jl.push(ret);
+                  ret = "";
+                }
+                jl = jl.filter(function(t) {
+                  return t !== "";
+                });
+                if (!root.need_nest) {
+                  if (jl.length) {
+                    body = join_list(jl, "");
+                  } else {
+                    body = "";
+                  }
+                  ret = "";
                 } else {
-                  body = "";
+                  if (jl.length) {
+                    body = "block {\n  " + (join_list(jl, '  ')) + "\n}";
+                  } else {
+                    body = "block {\n  skip\n}";
+                  }
                 }
-                ret = "";
-              } else {
-                if (jl.length) {
-                  body = "block {\n  " + (join_list(jl, '  ')) + "\n}";
-                } else {
-                  body = "block {\n  skip\n}";
+                if (ret) {
+                  ret = " " + ret;
                 }
+                code = "" + body + ret;
+                ctx.files[path] = code;
               }
-              if (ret) {
-                ret = " " + ret;
-              }
-              return "" + body + ret;
+              return ctx.files[main_file];
             } else {
               puts(root);
               throw new Error("Unknown root.original_node_type " + root.original_node_type);
@@ -788,7 +827,7 @@
                 type_list.push(translate_type(v.type, ctx));
               }
               type_str = type_list.join(" * ");
-              return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, (get_contract(match_action.callbackAddress) : contract(" + type_str + "))) end";
+              return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, (get_contract(match_action." + config.callback_address + ") : contract(" + type_str + "))) end";
             case "@respond_append":
               type_list = [];
               _ref11 = root.arg_list;
@@ -797,7 +836,7 @@
                 type_list.push(translate_type(v.type, ctx));
               }
               type_str = type_list.join(" * ");
-              return "var " + config.op_list + " : list(operation) := cons(" + arg_list[0] + ", list transaction((" + (arg_list.slice(1).join(' * ')) + "), 0mutez, (get_contract(match_action.callbackAddress) : contract(" + type_str + ")) end)";
+              return "var " + config.op_list + " : list(operation) := cons(" + arg_list[0] + ", list transaction((" + (arg_list.slice(1).join(' * ')) + "), 0mutez, (get_contract(match_action." + config.callback_address + ") : contract(" + type_str + ")) end)";
             default:
               fn = root.fn.name;
           }
@@ -912,7 +951,10 @@
         }
         break;
       case "Comment":
-        if (root.can_skip) {
+        if (ctx.keep_dir_structure && root.text.startsWith("#include")) {
+          text = root.text.replace(".sol", ".ligo");
+          return text;
+        } else if (root.can_skip) {
           return "";
         } else {
           return "(* " + root.text + " *)";
@@ -925,7 +967,7 @@
       case "Var_decl":
         name = root.name;
         type = translate_type(root.type, ctx);
-        if (ctx.is_class_scope) {
+        if (ctx.is_class_scope && !root.is_const) {
           if (root.special_type) {
             type = "" + ctx.current_class.name + "_" + root.type.main;
           }
@@ -1102,7 +1144,11 @@
           v = _ref25[_z];
           switch (v.constructor.name) {
             case "Var_decl":
-              field_decl_jl.push(walk(v, ctx));
+              if (!v.is_const) {
+                field_decl_jl.push(walk(v, ctx));
+              } else {
+                ctx.sink_list.push(walk(v, ctx));
+              }
               break;
             case "Fn_decl_multiret":
               ctx.contract_var_map[v.name] = v;
@@ -1267,13 +1313,20 @@
   };
 
   this.gen = function(root, opt) {
-    var ctx;
+    var ctx, ret;
     if (opt == null) {
       opt = {};
     }
     ctx = new module.Gen_context;
     ctx.next_gen = opt.next_gen;
-    return walk(root, ctx);
+    ctx.keep_dir_structure = opt.keep_dir_structure;
+    ctx.files = {};
+    ret = walk(root, ctx);
+    if (opt.keep_dir_structure) {
+      return ctx.files[""];
+    } else {
+      return ret;
+    }
   };
 
 }).call(window.require_register("./translate_ligo"));

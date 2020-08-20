@@ -22,6 +22,9 @@
     "bitwise_or": true,
     "bitwise_and": true,
     "bitwise_xor": true,
+    "bitwise_lsl": true,
+    "bitwise_lsr": true,
+    "Bitwise": true,
     "string_concat": true,
     "string_slice": true,
     "crypto_check": true,
@@ -72,6 +75,7 @@
     "to": true,
     "args": true,
     "main": true,
+    "Tezos": true,
     "map": true,
     "some": true
   };
@@ -84,9 +88,7 @@
     if (name[0] === "_") {
       name = name.replace("_", "") + "_";
     }
-    if (name.toUpperCase() !== name) {
-      name = name.substr(0, 1).toLowerCase() + name.substr(1);
-    }
+    name = name[0].toLowerCase() + name.substr(1);
     if (name.startsWith("@")) {
       return name.substr(1);
     } else if (reserved_map.hasOwnProperty(name)) {

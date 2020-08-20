@@ -29,11 +29,11 @@ describe "translate ligo section map", ()->
       allowedIntegers : map(nat, bool);
     end;
     
-    function #{config.reserved}__map (const #{config.contract_storage} : state) : (state * nat) is
+    function #{config.reserved}__map (const contract_storage : state) : (state * nat) is
       block {
-        #{config.contract_storage}.allowedIntegers[0n] := True;
-        remove 0n from map #{config.contract_storage}.allowedIntegers;
-      } with (#{config.contract_storage}, 0n);
+        contract_storage.allowedIntegers[0n] := True;
+        remove 0n from map contract_storage.allowedIntegers;
+      } with (contract_storage, 0n);
     
     """
     make_test text_i, text_o
@@ -41,7 +41,7 @@ describe "translate ligo section map", ()->
   # TODO
   it "nested map"
   ###
-  (case #{config.contract_storage}.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
+  (case contract_storage.addresses[0] of | None -> (map end : map(nat, nat)) | Some(x) -> x end)[0n] := 0n;
   this is not proper assign...
   TODO FIXME
   ###
@@ -63,10 +63,10 @@ describe "translate ligo section map", ()->
   #     allowedIntegers : map(int, bool);
   #   end;
     
-  #   function #{config.reserved}__map (const #{config.contract_storage} : state) : (state * nat) is
+  #   function #{config.reserved}__map (const contract_storage : state) : (state * nat) is
   #     block {
-  #       #{config.contract_storage}.allowedIntegers[0][0n] := 0n;
-  #     } with (#{config.contract_storage}, 0);
+  #       contract_storage.allowedIntegers[0][0n] := 0n;
+  #     } with (contract_storage, 0);
     
   #   """ #"
   #   make_test text_i, text_o
@@ -118,12 +118,12 @@ describe "translate ligo section map", ()->
       nested_mapping : map(address, map(nat, nat));
     end;
 
-    function nest (const self : state; const dummy : nat) : (state) is
+    function nest (const contract_storage : state; const dummy : nat) : (state) is
       block {
-        self.nested_mapping[("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)] := map
+        contract_storage.nested_mapping[("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)] := map
           0n -> 0n;
         end;
-      } with (self);
+      } with (contract_storage);
     """ #"
     make_test text_i, text_o
 
@@ -148,17 +148,17 @@ describe "translate ligo section map", ()->
       threefold : map(int, map(nat, map(nat, nat)));
     end;
 
-    function test (const self : state) : (nat) is
+    function test (const contract_storage : state) : (nat) is
       block {
-        const temp_idx_access0 : map(nat, map(nat, nat)) = (case self.threefold[0] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
+        const temp_idx_access0 : map(nat, map(nat, nat)) = (case contract_storage.threefold[0] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
         const temp_idx_access1 : map(nat, nat) = (case temp_idx_access0[1n] of | None -> (map end : map(nat, nat)) | Some(x) -> x end);
         temp_idx_access1[2n] := 0n;
-        const temp_idx_access0 : map(nat, map(nat, nat)) = (case self.threefold[4] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
+        const temp_idx_access0 : map(nat, map(nat, nat)) = (case contract_storage.threefold[4] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
         const temp_idx_access1 : map(nat, nat) = (case temp_idx_access0[5n] of | None -> (map end : map(nat, nat)) | Some(x) -> x end);
         if ((case temp_idx_access1[6n] of | None -> 0n | Some(x) -> x end) = 25n) then block {
-          const temp_idx_access0 : map(nat, map(nat, nat)) = (case self.threefold[7] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
+          const temp_idx_access0 : map(nat, map(nat, nat)) = (case contract_storage.threefold[7] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
           const temp_idx_access1 : map(nat, nat) = (case temp_idx_access0[8n] of | None -> (map end : map(nat, nat)) | Some(x) -> x end);
-          const temp_idx_access2 : map(nat, map(nat, nat)) = (case self.threefold[10] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
+          const temp_idx_access2 : map(nat, map(nat, nat)) = (case contract_storage.threefold[10] of | None -> (map end : map(nat, map(nat, nat))) | Some(x) -> x end);
           const temp_idx_access3 : map(nat, nat) = (case temp_idx_access2[11n] of | None -> (map end : map(nat, nat)) | Some(x) -> x end);
           temp_idx_access1[9n] := (case temp_idx_access3[12n] of | None -> 0n | Some(x) -> x end);
         } else block {

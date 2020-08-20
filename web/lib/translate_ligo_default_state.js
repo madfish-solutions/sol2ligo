@@ -54,6 +54,8 @@
       case "Comment":
       case "Fn_decl_multiret":
       case "Enum_decl":
+      case "Event_decl":
+      case "Include":
         return "nothing";
       case "Var_decl":
         ctx.var_map[root.name] = {

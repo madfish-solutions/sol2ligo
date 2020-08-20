@@ -23,6 +23,8 @@ module = @
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 
+{erc_detector} = require "./transforms/erc_detector"
+
 {translate_var_name} = require "./translate_var_name"
 {translate_type} = require "./translate_ligo"
 
@@ -42,7 +44,6 @@ module = @
 
 @post_ti = (root, opt={}) ->
   opt.router ?= true
-  opt.prefer_erc721 ?= false
   
   root = split_nested_index_access root
   root = address_calls_converter root
@@ -61,13 +62,11 @@ module = @
   root = return_op_list_count root, opt
   root
 
-# add this weird multiplexer until we figure out better interface detection
 ercs_translate = (root, opt) ->
-  if opt.prefer_erc721
+  {root, ctx} = erc_detector root
+  if ctx.has_erc721
     root = erc721_converter root
+  else if ctx.has_erc20
     root = erc20_converter root
-  else
-    root = erc20_converter root
-    root = erc721_converter root
 
   root

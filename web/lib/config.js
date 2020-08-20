@@ -22,8 +22,6 @@
 
   this.empty_state = "reserved__empty_state";
 
-  this.initialized = "reserved__initialized";
-
   this.op_list = "opList";
 
   this.fix_underscore = "fx";

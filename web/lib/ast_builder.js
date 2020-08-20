@@ -77,14 +77,14 @@
     get_contract = new ast.Fn_call;
     get_contract.type = "function2<function<uint>, function<address>>";
     get_contract.fn = new ast.Var;
-    get_contract.fn.name = "get_contract";
+    get_contract.fn.name = "@get_contract";
     get_contract.arg_list.push(address_expr);
     contract_cast.t = get_contract;
     return contract_cast;
   };
 
-  this.self_entrypoint = function(name) {
-    var arg, entrypoint_name, get_entrypoint;
+  this.self_entrypoint = function(name, contract_type) {
+    var arg, cast, entrypoint_name, get_entrypoint;
     arg = new ast.Var;
     arg.name = "@Tezos";
     get_entrypoint = new ast.Fn_call;
@@ -95,7 +95,14 @@
     entrypoint_name.type = new Type("string");
     entrypoint_name.val = name;
     get_entrypoint.arg_list.push(entrypoint_name);
-    return get_entrypoint;
+    cast = new ast.Type_cast;
+    cast.t = get_entrypoint;
+    if (!contract_type) {
+      contract_type = new Type("contract");
+      contract_type.val = "unit";
+    }
+    cast.target_type = contract_type;
+    return cast;
   };
 
   this.assignment = function(name, rvalue, rtype) {
@@ -127,16 +134,16 @@
   };
 
   this.callback_declaration = function(name, arg_type) {
-    var cb_decl, hint;
+    var cb_decl, failwith;
     cb_decl = new ast.Fn_decl_multiret;
     cb_decl.name = name + "Callback";
     cb_decl.type_i = new Type("function");
     cb_decl.type_o = new Type("function");
     cb_decl.arg_name_list.push("arg");
     cb_decl.type_i.nest_list.push(arg_type);
-    hint = new ast.Comment;
-    hint.text = "This method should handle return value of " + name + " of foreign contract";
-    cb_decl.scope.list.push(hint);
+    failwith = new ast.Throw;
+    failwith.t = this.string_val("This method should handle return value of " + name + " of foreign contract. Read more at https://git.io/JfDxR");
+    cb_decl.scope.list.push(failwith);
     return cb_decl;
   };
 
@@ -156,6 +163,37 @@
     enum_val.fn.name = name;
     enum_val.arg_list = payload;
     return enum_val;
+  };
+
+  this.string_val = function(str) {
+    var ret;
+    ret = new ast.Const;
+    ret.type = new Type("string");
+    ret.val = str;
+    return ret;
+  };
+
+  this.to_right_comb = function(args) {
+    var call, namespace;
+    namespace = new ast.Var;
+    namespace.name = "@Layout";
+    call = new ast.Fn_call;
+    call.fn = new ast.Field_access;
+    call.fn.name = "convert_to_right_comb";
+    call.fn.t = namespace;
+    call.arg_list = args;
+    return call;
+  };
+
+  this.cast_to_address = function(t) {
+    var ret;
+    if (t.type.main === "address") {
+      return t;
+    }
+    ret = new ast.Type_cast;
+    ret.target_type = new Type("address");
+    ret.t = t;
+    return ret;
   };
 
 }).call(window.require_register("./ast_builder"));

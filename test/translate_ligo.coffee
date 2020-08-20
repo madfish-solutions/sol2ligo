@@ -166,17 +166,17 @@ describe "translate ligo section unsorted", ()->
         amountEther : nat;
       end;
       
-      function test (const #{config.contract_storage} : state) : (state) is
+      function test (const contract_storage : state) : (state) is
         block {
-          #{config.contract_storage}.timesSeconds := 100n;
-          #{config.contract_storage}.timeMinutes := (12n * 60n);
-          #{config.contract_storage}.timeHours := (3n * 604800n);
-          #{config.contract_storage}.timeWeeks := (11n * 3600n);
-          #{config.contract_storage}.timeDays := (1n * 86400n);
-          #{config.contract_storage}.amountSzabo := 12n;
-          #{config.contract_storage}.amountFinney := (3n * 1000n);
-          #{config.contract_storage}.amountEther := (11n * 1000000n);
-        } with (#{config.contract_storage});
+          contract_storage.timesSeconds := 100n;
+          contract_storage.timeMinutes := (12n * 60n);
+          contract_storage.timeHours := (3n * 604800n);
+          contract_storage.timeWeeks := (11n * 3600n);
+          contract_storage.timeDays := (1n * 86400n);
+          contract_storage.amountSzabo := 12n;
+          contract_storage.amountFinney := (3n * 1000n);
+          contract_storage.amountEther := (11n * 1000000n);
+        } with (contract_storage);
       """#"
       make_test text_i, text_o
   
@@ -249,9 +249,9 @@ describe "translate ligo section unsorted", ()->
     """#"
     ###
       THIS was more correct
-        const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, #{config.contract_storage}, newOwner);
+        const tmp_0 : (list(operation) * state) = #{config.fix_underscore}__transferOwnership(opList, contract_storage, newOwner);
         opList := tmp_0.0;
-        #{config.contract_storage} := tmp_0.1;
+        contract_storage := tmp_0.1;
     ###
     
     text_o = """
@@ -271,21 +271,21 @@ describe "translate ligo section unsorted", ()->
       | TransferOwnership_ of transferOwnership__args
      | TransferOwnership of transferOwnership_args;
     
-    function transferOwnership_ (const #{config.contract_storage} : state; const newOwner : address) : (state) is
+    function transferOwnership_ (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        #{config.contract_storage}.owner := newOwner;
-      } with (#{config.contract_storage});
+        contract_storage.owner := newOwner;
+      } with (contract_storage);
     
-    function transferOwnership (const #{config.contract_storage} : state; const newOwner : address) : (state) is
+    function transferOwnership (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        #{config.contract_storage} := transferOwnership_(#{config.contract_storage}, newOwner);
-        #{config.contract_storage}.owner := self_address;
-      } with (#{config.contract_storage});
+        contract_storage := transferOwnership_(contract_storage, newOwner);
+        contract_storage.owner := self_address;
+      } with (contract_storage);
     
-    function main (const action : router_enum; const #{config.contract_storage} : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
-      | TransferOwnership_(match_action) -> ((nil: list(operation)), transferOwnership_(#{config.contract_storage}, match_action.newOwner))
-      | TransferOwnership(match_action) -> ((nil: list(operation)), transferOwnership(#{config.contract_storage}, match_action.newOwner))
+      | TransferOwnership_(match_action) -> ((nil: list(operation)), transferOwnership_(contract_storage, match_action.newOwner))
+      | TransferOwnership(match_action) -> ((nil: list(operation)), transferOwnership(contract_storage, match_action.newOwner))
       end);
     """#"
     make_test text_i, text_o, {
@@ -310,11 +310,73 @@ describe "translate ligo section unsorted", ()->
       ret : nat;
     end;
     
-    function getRet (const #{config.contract_storage} : state) : (nat) is
+    function getRet (const contract_storage : state) : (nat) is
       block {
         const ret_val : nat = 0n;
-        ret_val := #{config.contract_storage}.ret;
+        ret_val := contract_storage.ret;
       } with (ret_val);
     """
     make_test text_i, text_o
   
+  it "global const", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal one = uint(1);
+      uint constant internal ones = uint(~0);
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const one : nat = abs(1)
+    
+    const ones : nat = abs(not (0));
+    """
+    make_test text_i, text_o
+  
+  it "inline assembly", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Inline_assembly {
+      function test() public {
+        assembly {
+          let x := 7
+        }
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        failwith("Unsupported InlineAssembly");
+        (* InlineAssembly { let x := 7 } *)
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
+  it "uppercase ids", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal ONE = uint(1);
+      
+      function GetRet() public {}
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const oNE : nat = abs(1)
+    
+    function getRet (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        skip
+      } with (unit);
+    """
+    make_test text_i, text_o

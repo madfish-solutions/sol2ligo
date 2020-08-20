@@ -54,9 +54,9 @@ describe "translate ligo section fn api", ()->
       balances : map(address, nat);
     end;
     
-    function test (const #{config.contract_storage} : state; const owner : address) : (nat) is
+    function test (const contract_storage : state; const owner : address) : (nat) is
       block {
-        assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n)) (* "Overdrawn balance" *);
+        assert(((case contract_storage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n)) (* "Overdrawn balance" *);
       } with (0n);
     """#"
     make_test text_i, text_o
@@ -140,9 +140,9 @@ describe "translate ligo section fn api", ()->
       balances : map(address, nat);
     end;
     
-    function test (const #{config.contract_storage} : state; const owner : address) : (nat) is
+    function test (const contract_storage : state; const owner : address) : (nat) is
       block {
-        assert(((case #{config.contract_storage}.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n));
+        assert(((case contract_storage.balances[owner] of | None -> 0n | Some(x) -> x end) >= 0n));
       } with (0n);
     """#"
     make_test text_i, text_o
