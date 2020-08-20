@@ -41,6 +41,8 @@
 
     Class_decl.prototype.pos = 0;
 
+    Class_decl.prototype.file = "";
+
     function Class_decl() {
       this.scope = new module.Scope;
       this._prepared_field2type = {};
@@ -80,6 +82,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -100,6 +103,8 @@
 
     Var.prototype.pos = 0;
 
+    Var.prototype.file = "";
+
     Var.prototype.clone = function() {
       var ret;
       ret = new module.Var;
@@ -109,6 +114,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -137,9 +143,13 @@
 
     Var_decl.prototype.is_enum_decl = false;
 
+    Var_decl.prototype.is_const = false;
+
     Var_decl.prototype.line = 0;
 
     Var_decl.prototype.pos = 0;
+
+    Var_decl.prototype.file = "";
 
     Var_decl.prototype.clone = function() {
       var ret, _i, _len, _ref;
@@ -164,8 +174,10 @@
         }
       }
       ret.is_enum_decl = this.is_enum_decl;
+      ret.is_const = this.is_const;
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -193,6 +205,8 @@
     Fn_call.prototype.line = 0;
 
     Fn_call.prototype.pos = 0;
+
+    Fn_call.prototype.file = "";
 
     function Fn_call() {
       this.arg_list = [];
@@ -246,6 +260,7 @@
       ret.fn_decl = this.fn_decl;
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -269,6 +284,8 @@
     Fn_decl_multiret.prototype.line = 0;
 
     Fn_decl_multiret.prototype.pos = 0;
+
+    Fn_decl_multiret.prototype.file = "";
 
     Fn_decl_multiret.prototype.visibility = "";
 
@@ -311,6 +328,7 @@
       ret.scope = this.scope.clone();
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       ret.visibility = this.visibility;
       ret.state_mutability = this.state_mutability;
       ret.contract_name = this.contract_name;
@@ -322,6 +340,10 @@
         v = _ref[_i];
         ret.modifier_list.push(v.clone());
       }
+      ret.returns_op_list = this.returns_op_list;
+      ret.uses_storage = this.uses_storage;
+      ret.modifies_storage = this.modifies_storage;
+      ret.returns_value = this.returns_value;
       return ret;
     };
 
@@ -335,6 +357,8 @@
     Ret_multi.prototype.line = 0;
 
     Ret_multi.prototype.pos = 0;
+
+    Ret_multi.prototype.file = 0;
 
     function Ret_multi() {
       this.t_list = [];
@@ -350,6 +374,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -366,12 +391,18 @@
 
     Comment.prototype.pos = 0;
 
+    Comment.prototype.can_skip = false;
+
+    Comment.prototype.file = "";
+
     Comment.prototype.clone = function() {
       var ret;
       ret = new module.Comment;
       ret.text = this.text;
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
+      ret.can_skip = this.can_skip;
       return ret;
     };
 
@@ -405,6 +436,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -422,6 +454,8 @@
     Var_decl_multi.prototype.line = 0;
 
     Var_decl_multi.prototype.pos = 0;
+
+    Var_decl_multi.prototype.file = "";
 
     function Var_decl_multi() {
       this.list = [];
@@ -451,6 +485,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -471,6 +506,8 @@
 
     Ternary.prototype.pos = 0;
 
+    Ternary.prototype.file = "";
+
     Ternary.prototype.clone = function() {
       var ret;
       ret = new module.Ternary;
@@ -479,6 +516,7 @@
       ret.f = this.f.clone();
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -510,6 +548,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -528,6 +567,8 @@
 
     Type_cast.prototype.pos = 0;
 
+    Type_cast.prototype.file = "";
+
     Type_cast.prototype.clone = function() {
       var ret;
       ret = new module.Type_cast;
@@ -535,6 +576,7 @@
       ret.t = this.t.clone();
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -555,6 +597,8 @@
 
     For3.prototype.pos = 0;
 
+    For3.prototype.file = "";
+
     function For3() {
       this.scope = new ast.Scope;
     }
@@ -573,6 +617,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -589,6 +634,8 @@
 
     PM_switch.prototype.pos = 0;
 
+    PM_switch.prototype.file = "";
+
     function PM_switch() {
       this.scope = new ast.Scope;
     }
@@ -600,6 +647,7 @@
       ret.scope = this.scope.clone();
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -631,6 +679,7 @@
       ret.scope = this.scope.clone();
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -649,6 +698,8 @@
 
     Enum_decl.prototype.pos = 0;
 
+    Enum_decl.prototype.file = "";
+
     function Enum_decl() {
       this.value_list = [];
     }
@@ -664,6 +715,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -682,6 +734,8 @@
 
     Event_decl.prototype.pos = 0;
 
+    Event_decl.prototype.file = "";
+
     Event_decl.prototype.clone = function() {
       var ret;
       ret = new module.Event_decl;
@@ -689,6 +743,7 @@
       ret.arg_list = this.arg_list;
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -706,6 +761,8 @@
     Struct_init.prototype.line = 0;
 
     Struct_init.prototype.pos = 0;
+
+    Struct_init.prototype.file = "";
 
     function Struct_init() {
       this.val_list = [];
@@ -728,6 +785,7 @@
       }
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 
@@ -744,11 +802,14 @@
 
     Include.prototype.pos = 0;
 
+    Include.prototype.file = "";
+
     Include.prototype.clone = function() {
       var path;
       path = "";
       ret.line = this.line;
       ret.pos = this.pos;
+      ret.file = this.file;
       return ret;
     };
 

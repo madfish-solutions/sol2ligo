@@ -1,5 +1,5 @@
 (function() {
-  var Type, ast, astBuilder, callback_declaration, callback_tx_node, config, default_walk, tx_node, walk;
+  var Type, ast, astBuilder, callback_tx_node, config, default_walk, tx_node, walk;
 
   default_walk = require("./default_walk").default_walk;
 
@@ -11,43 +11,29 @@
 
   astBuilder = require("../ast_builder");
 
-  callback_declaration = function(name, arg_type) {
-    var cb_decl, hint;
-    cb_decl = new ast.Fn_decl_multiret;
-    cb_decl.name = name + "Callback";
-    cb_decl.type_i = new Type("function");
-    cb_decl.type_o = new Type("function");
-    cb_decl.arg_name_list.push("arg");
-    cb_decl.type_i.nest_list.push(arg_type);
-    hint = new ast.Comment;
-    hint.text = "This method should handle return value of " + name + " of foreign contract. Read more at https://git.io/JfDxR";
-    cb_decl.scope.list.push(hint);
-    return cb_decl;
-  };
-
   tx_node = function(address_expr, arg_list, name, ctx) {
-    var entrypoint, tx;
+    var entrypoint, enum_val, tx;
     address_expr = astBuilder.contract_addr_transform(address_expr);
-    entrypoint = astBuilder.foreign_entrypoint(address_expr, name);
-    tx = astBuilder.transaction(arg_list, entrypoint);
+    entrypoint = astBuilder.foreign_entrypoint(address_expr, "fa12_action");
+    enum_val = astBuilder.enum_val("@" + name, arg_list);
+    tx = astBuilder.transaction([enum_val], entrypoint);
     return tx;
   };
 
   callback_tx_node = function(name, root, ctx) {
-    var address_expr, arg_list, cb_decl, cb_name, entrypoint, return_callback, return_type, tx;
-    cb_name = name + "Callback";
-    return_callback = astBuilder.self_entrypoint("%" + cb_name);
+    var arg_list, cb_decl, cb_name, contract_type, return_callback, return_type;
+    cb_name = name.substr(0, 1).toLowerCase() + name.substr(1) + "Callback";
+    contract_type = new Type("contract");
+    contract_type.val = "nat";
+    return_callback = astBuilder.self_entrypoint("%" + cb_name, contract_type);
     if (!ctx.callbacks_to_declare_map.has(cb_name)) {
       return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS];
-      cb_decl = callback_declaration(name, return_type);
+      cb_decl = astBuilder.callback_declaration(name, return_type);
       ctx.callbacks_to_declare_map.set(cb_name, cb_decl);
     }
     arg_list = root.arg_list;
     arg_list.push(return_callback);
-    address_expr = astBuilder.contract_addr_transform(root.fn.t);
-    entrypoint = astBuilder.foreign_entrypoint(address_expr, name);
-    tx = astBuilder.transaction(arg_list, entrypoint);
-    return tx;
+    return tx_node(root.fn.t, arg_list, name, ctx);
   };
 
   walk = function(root, ctx) {
@@ -66,7 +52,7 @@
               case "transfer":
               case "transferFrom":
                 ret = new ast.Include;
-                ret.path = "fa1.2.ligo";
+                ret.path = "interfaces/fa1.2.ligo";
                 return ret;
             }
           }
@@ -91,15 +77,26 @@
                   arg_list.unshift(sender);
                   return tx_node(root.fn.t, arg_list, "Transfer", ctx);
                 case "approve":
-                  return tx_node(root.fn.t, root.arg_list, "Approve", ctx);
+                  arg_list = root.arg_list;
+                  arg_list[0] = astBuilder.cast_to_address(arg_list[0]);
+                  return tx_node(root.fn.t, arg_list, "Approve", ctx);
                 case "transferFrom":
-                  return tx_node(root.fn.t, root.arg_list, "Transfer", ctx);
+                  arg_list = root.arg_list;
+                  arg_list[1] = astBuilder.cast_to_address(arg_list[1]);
+                  return tx_node(root.fn.t, arg_list, "Transfer", ctx);
                 case "allowance":
-                  return callback_tx_node("GetAllowance", root, ctx);
+                  ret = root;
+                  ret.arg_list[0] = astBuilder.cast_to_address(ret.arg_list[0]);
+                  ret.arg_list[1] = astBuilder.cast_to_address(ret.arg_list[1]);
+                  return callback_tx_node("GetAllowance", ret, ctx);
                 case "balanceOf":
-                  return callback_tx_node("GetBalance", root, ctx);
+                  ret = root;
+                  ret.arg_list[0] = astBuilder.cast_to_address(ret.arg_list[0]);
+                  return callback_tx_node("GetBalance", ret, ctx);
                 case "totalSupply":
-                  return callback_tx_node("GetTotalSupply", root, ctx);
+                  ret = root;
+                  ret.arg_list.unshift(astBuilder.unit());
+                  return callback_tx_node("GetTotalSupply", ret, ctx);
               }
           }
         }

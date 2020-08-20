@@ -1,5 +1,5 @@
 (function() {
-  var execSync, fs, setupMethods, solc_map;
+  var execSync, fs, setupMethods, shellEscape, solc_map;
 
   
 
@@ -8,6 +8,8 @@
   setupMethods = require("solc/wrapper");
 
   execSync = require("child_process").execSync;
+
+  shellEscape = require("shell-escape");
 
   solc_map = {};
 
@@ -23,8 +25,8 @@
     target_dir = "" + __dirname + "/../solc-bin/bin";
     if (allow_download && !fs.existsSync("" + target_dir + "/list.js")) {
       perr("download solc catalog");
-      execSync("mkdir -p " + target_dir);
-      execSync("curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js --output " + target_dir + "/list.js");
+      execSync(shellEscape(["mkdir", "-p", target_dir]));
+      execSync(shellEscape(["curl", "https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/list.js", "--output", "" + target_dir + "/list.js"]));
     }
     release_map = require("../solc-bin/bin/list.js").releases;
     solc_full_name = null;
@@ -68,7 +70,7 @@
       path = "" + target_dir + "/" + solc_full_name;
       if (allow_download && !fs.existsSync(path)) {
         perr("download " + solc_full_name);
-        execSync("curl https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/" + solc_full_name + " --output " + target_dir + "/" + solc_full_name);
+        execSync(shellEscape(["curl", "https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/" + solc_full_name, "--output", "" + target_dir + "/" + solc_full_name]));
       }
       perr("loading solc " + solc_full_name);
       solc_map[solc_full_name] = solc = setupMethods(require(path));
@@ -98,7 +100,7 @@
     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
       error = _ref[_j];
       if (error.type === "Warning") {
-        if (!opt.silent) {
+        if (!opt.quiet) {
           perr("WARNING", error);
         }
         continue;

@@ -40,7 +40,7 @@
         root.b = walk(root.b, ctx);
         return root;
       case "Var_decl":
-        if (!ctx.loc_var_decl && !root.is_enum_decl) {
+        if (!ctx.loc_var_decl && !root.is_enum_decl && !root.is_const) {
           ctx.global_var_decl_map.set(root.name, true);
         }
         if (root.assign_value != null) {

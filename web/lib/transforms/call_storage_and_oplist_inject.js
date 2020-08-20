@@ -22,7 +22,7 @@
           return ctx.next_gen(root, ctx);
         }
         if (!root.fn_decl) {
-          perr("WARNING no Fn_decl for Fn call named ${root.fn.name}");
+          perr("WARNING no Fn_decl for Fn call named " + root.fn.name);
           return ctx.next_gen(root, ctx);
         }
         if (root.fn_decl.uses_storage) {

@@ -1,5 +1,5 @@
 (function() {
-  var add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc721_converter, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_nested_index_access, translate_type, translate_var_name, var_translate;
+  var add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc721_converter, erc_detector, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_nested_index_access, translate_type, translate_var_name, var_translate;
 
   module = this;
 
@@ -47,6 +47,8 @@
 
   split_nested_index_access = require("./transforms/split_nested_index_access").split_nested_index_access;
 
+  erc_detector = require("./transforms/erc_detector").erc_detector;
+
   translate_var_name = require("./translate_var_name").translate_var_name;
 
   translate_type = require("./translate_ligo").translate_type;
@@ -80,9 +82,6 @@
     if (opt.router == null) {
       opt.router = true;
     }
-    if (opt.prefer_erc721 == null) {
-      opt.prefer_erc721 = false;
-    }
     root = split_nested_index_access(root);
     root = address_calls_converter(root);
     root = ercs_translate(root, opt);
@@ -103,12 +102,12 @@
   };
 
   ercs_translate = function(root, opt) {
-    if (opt.prefer_erc721) {
+    var ctx, _ref;
+    _ref = erc_detector(root), root = _ref.root, ctx = _ref.ctx;
+    if (ctx.has_erc721) {
       root = erc721_converter(root);
+    } else if (ctx.has_erc20) {
       root = erc20_converter(root);
-    } else {
-      root = erc20_converter(root);
-      root = erc721_converter(root);
     }
     return root;
   };

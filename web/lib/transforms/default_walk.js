@@ -73,8 +73,10 @@
           walk(root.t, ctx);
         }
         return root;
-      case "Enum_decl":
       case "Type_cast":
+        walk(root.t, ctx);
+        return root;
+      case "Enum_decl":
       case "PM_switch":
         return root;
       case "Ret_multi":

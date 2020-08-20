@@ -151,7 +151,7 @@
               if (!func.returns_value) {
                 _case.scope.list.push(comment = new ast.Comment);
                 comment.text = "This function does nothing, but it's present in router";
-                perr("WARNING. Function named ${func.name} does nothing, but it's present in router");
+                perr("WARNING. Function named " + func.name + " does nothing, but we put it in the router nonetheless");
               }
               _case.scope.list.push(tmp = new ast.Var_decl);
               tmp.name = "tmp";
