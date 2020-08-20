@@ -34,23 +34,6 @@ tx_node = (address_expr, arg_list, ctx) ->
 walk = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
-      # ignore ERC20 interface declaration
-      for entry in root.scope.list
-        if entry.constructor.name == "Fn_decl_multiret"
-          switch entry.name
-            when "balanceOf", \
-                 "ownerOf", \
-                 "safeTransferFrom", \
-                 "transferFrom", \
-                 "approve", \
-                 "setApprovalForAll", \
-                 "getApproved", \
-                 "isApprovedForAll"
-              # replace whole class (interface) declaration if we are converting it to FA2 anyway
-              ret = new ast.Include
-              ret.path = "interfaces/fa2.ligo"
-              return ret
-      
       # collect callback declaration dummies
       ctx.callbacks_to_declare_map = new Map
       root = ctx.next_gen root, ctx
@@ -65,7 +48,7 @@ walk = (root, ctx)->
     when "Fn_call"
       if root.fn.t?.type
         switch root.fn.t.type.main
-          when "struct"
+          when "struct", ctx.interface_name
             switch root.fn.name
               when "transferFrom", \
                    "safeTransferFrom"
@@ -174,4 +157,8 @@ walk = (root, ctx)->
 
 
 @erc721_converter = (root, ctx)-> 
-  walk root, ctx = obj_merge({walk, next_gen: default_walk}, ctx)
+  init_ctx = {
+    walk,
+    next_gen: default_walk,
+  }
+  walk root, obj_merge(init_ctx, ctx)

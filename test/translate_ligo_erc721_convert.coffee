@@ -85,5 +85,31 @@ describe "erc721 conversions", ()->
     """
     make_test text_i, text_o
  
+  it "erc721 preassigned var", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    #{sol_erc721face_template}
+
+    contract eee {
+      function test() private {
+        ERC721 token = ERC721(0x0);
+        token.transferFrom(msg.sender, 0x1, 64);
+      }
+    }
+    """
+    #TODO this is some crazy input type due to bug: last line being comment breaks return type inference
+    text_o = """
+    type state is unit;
+    
+    #include "interfaces/fa2.ligo"
+    function test (const opList : list(operation)) : (list(operation)) is
+      block {
+        const token : UNKNOWN_TYPE_ERC721 = eRC721(0x0);
+        const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
+      } with (list [op0]);
+    """
+    make_test text_i, text_o
 
 

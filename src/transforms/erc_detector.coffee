@@ -37,12 +37,12 @@ walk = (root, ctx)->
 
       # replace whole class (interface) declaration if we are converting it to FA anyway
       if erc20_methods_count == ERC20_METHODS_TOTAL
-        ctx.has_erc20 = true
+        ctx.erc20_name = root.name
         ret = new ast.Include
         ret.path = "interfaces/fa1.2.ligo"
         ret
       else if erc721_methods_count == ERC721_METHODS_TOTAL
-        ctx.has_erc721 = true
+        ctx.erc721_name = root.name
         ret = new ast.Include
         ret.path = "interfaces/fa2.ligo"
         ret
@@ -56,8 +56,8 @@ walk = (root, ctx)->
   ctx = obj_merge ctx, {
     walk,
     next_gen: default_walk
-    has_erc721: false
-    has_erc20: false
+    erc20_name: null
+    erc721_name: null
   }
   root = walk root, ctx
   return {root, ctx}
