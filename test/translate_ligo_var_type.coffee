@@ -223,27 +223,27 @@ describe "translate ligo section var type", ()->
       timestamp : nat;
     end;
     
-    function test (const #{config.contract_storage} : #{config.storage}) : (#{config.storage}) is
+    function test (const contract_storage : state) : (state) is
       block {
-        #{config.contract_storage}.#{config.reserved}__sender := Tezos.sender;
-        #{config.contract_storage}.#{config.reserved}__source := Tezos.source;
-        #{config.contract_storage}.value := (amount / 1mutez);
-        #{config.contract_storage}.data := ("00": bytes);
-        #{config.contract_storage}.time := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
-        #{config.contract_storage}.timestamp := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
-      } with (#{config.contract_storage});
+        contract_storage.#{config.reserved}__sender := Tezos.sender;
+        contract_storage.#{config.reserved}__source := Tezos.source;
+        contract_storage.value := (amount / 1mutez);
+        contract_storage.data := ("00": bytes);
+        contract_storage.time := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
+        contract_storage.timestamp := abs(now - (\"1970-01-01T00:00:00Z\" : timestamp));
+      } with (contract_storage);
     
     """#"
     make_test text_i, text_o
   
-  it "#{config.contract_storage} conflict local", ()->
+  it "self conflict local", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
     contract Globals {
       function test() public payable {
-        uint #{config.contract_storage} = 1;
-        uint a = #{config.contract_storage};
+        uint self = 1;
+        uint a = self;
       }
     }
     """
@@ -252,53 +252,53 @@ describe "translate ligo section var type", ()->
     
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
-        const #{config.reserved}__#{config.contract_storage} : nat = 1n;
-        const a : nat = #{config.reserved}__#{config.contract_storage};
+        const #{config.reserved}__self : nat = 1n;
+        const a : nat = #{config.reserved}__self;
       } with (unit);
     
     """#"
     make_test text_i, text_o
   
-  it "#{config.contract_storage} conflict arg", ()->
+  it "self conflict arg", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
     contract Globals {
-      function test(uint #{config.contract_storage}) public payable {
-        uint a = #{config.contract_storage};
+      function test(uint self) public payable {
+        uint a = self;
       }
     }
     """
     text_o = """
     type state is unit;
     
-    function test (const #{config.reserved}__#{config.contract_storage} : nat) : (unit) is
+    function test (const #{config.reserved}__self : nat) : (unit) is
       block {
-        const a : nat = #{config.reserved}__#{config.contract_storage};
+        const a : nat = #{config.reserved}__self;
       } with (unit);
     
     """#"
     make_test text_i, text_o
   
-  it "#{config.contract_storage} conflict state", ()->
+  it "self conflict state", ()->
     text_i = """
     pragma solidity ^0.5.11;
     
     contract Globals {
-      uint #{config.contract_storage};
+      uint self;
       function test() public payable {
-        uint a = #{config.contract_storage};
+        uint a = self;
       }
     }
     """
     text_o = """
     type state is record
-      #{config.reserved}__#{config.contract_storage} : nat;
+      #{config.reserved}__self : nat;
     end;
     
-    function test (const #{config.contract_storage} : #{config.storage}) : (unit) is
+    function test (const contract_storage : state) : (unit) is
       block {
-        const a : nat = #{config.contract_storage}.#{config.reserved}__#{config.contract_storage};
+        const a : nat = contract_storage.#{config.reserved}__self;
       } with (unit);
     
     """#"
