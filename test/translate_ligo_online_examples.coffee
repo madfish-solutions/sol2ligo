@@ -631,9 +631,9 @@ describe "translate ligo online examples", ()->
     
     function close (const opList : list(operation); const test_self : state; const swapID_ : bytes; const secretKey_ : bytes) : (list(operation) * state) is
       block {
-        assert(((case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end).secretLock = sha_256(secretKey_)));
+        assert(((case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end).secretLock = sha_256(secretKey_)));
         assert(((case test_self.swapStates[swapID_] of | None -> 0n | Some(x) -> x end) = states_OPEN));
-        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end);
+        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
         test_self.swaps[swapID_].secretKey := secretKey_;
         test_self.swapStates[swapID_] := states_CLOSED;
         const op0 : operation = transaction((unit), (swap.value * 1mutez), (get_contract(swap.withdrawTrader) : contract(unit)));
@@ -642,9 +642,9 @@ describe "translate ligo online examples", ()->
     
     function expire (const opList : list(operation); const test_self : state; const swapID_ : bytes) : (list(operation) * state) is
       block {
-        assert((abs(now - ("1970-01-01T00:00:00Z" : timestamp)) >= (case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end).timelock));
+        assert((abs(now - ("1970-01-01T00:00:00Z" : timestamp)) >= (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end).timelock));
         assert(((case test_self.swapStates[swapID_] of | None -> 0n | Some(x) -> x end) = states_OPEN));
-        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end);
+        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
         test_self.swapStates[swapID_] := states_EXPIRED;
         const op0 : operation = transaction((unit), (swap.value * 1mutez), (get_contract(swap.ethTrader) : contract(unit)));
         (* EmitStatement Expire(_swapID) *)
@@ -656,14 +656,14 @@ describe "translate ligo online examples", ()->
         const value : nat = 0n;
         const withdrawTrader : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const secretLock : bytes = ("00": bytes);
-        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end);
+        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
       } with ((swap.timelock, swap.value, swap.withdrawTrader, swap.secretLock));
     
     function checkSecretKey (const test_self : state; const swapID_ : bytes) : (bytes) is
       block {
         assert(((case test_self.swapStates[swapID_] of | None -> 0n | Some(x) -> x end) = states_CLOSED));
         const secretKey : bytes = ("00": bytes);
-        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> AtomicSwapEther_Swap_default | Some(x) -> x end);
+        const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
       } with (swap.secretKey);
     
     function main (const action : router_enum; const test_self : state) : (list(operation) * state) is
@@ -1734,7 +1734,7 @@ describe "translate ligo online examples", ()->
     
     function placeBet (const test_self : state; const betMask : nat; const modulo : nat; const commitLastBlock : nat; const commit : nat; const r : bytes; const s : bytes) : (state) is
       block {
-        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> Dice2Win_Bet_default | Some(x) -> x end);
+        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> dice2Win_Bet_default | Some(x) -> x end);
         assert((bet.gambler = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Bet should be in a 'clean' _state." *);
         const #{config.reserved}__amount : nat = (amount / 1mutez);
         assert(((modulo > 1n) and (modulo <= mAX_MODULO))) (* "Modulo should be within range." *);
@@ -1820,7 +1820,7 @@ describe "translate ligo online examples", ()->
       block {
         assert((Tezos.sender = test_self.croupier)) (* "OnlyCroupier methods called by non-croupier." *);
         const commit : nat = abs(sha_256((reveal)));
-        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> Dice2Win_Bet_default | Some(x) -> x end);
+        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> dice2Win_Bet_default | Some(x) -> x end);
         const placeBlockNumber : nat = bet.placeBlockNumber;
         assert((0n > placeBlockNumber)) (* "settleBet in the same block as placeBet, or before." *);
         assert((0n <= (placeBlockNumber + bET_EXPIRATION_BLOCKS))) (* "Blockhash can't be queried by EVM." *);
@@ -2028,7 +2028,7 @@ describe "translate ligo online examples", ()->
       block {
         assert((Tezos.sender = test_self.croupier)) (* "OnlyCroupier methods called by non-croupier." *);
         const commit : nat = abs(sha_256((reveal)));
-        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> Dice2Win_Bet_default | Some(x) -> x end);
+        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> dice2Win_Bet_default | Some(x) -> x end);
         assert((0n <= (canonicalBlockNumber + bET_EXPIRATION_BLOCKS))) (* "Blockhash can't be queried by EVM." *);
         requireCorrectReceipt((((4 + 32) + 32) + 4n));
         const canonicalHash : bytes = ("00": bytes);
@@ -2042,7 +2042,7 @@ describe "translate ligo online examples", ()->
     
     function refundBet (const opList : list(operation); const test_self : state; const commit : nat) : (list(operation) * state) is
       block {
-        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> Dice2Win_Bet_default | Some(x) -> x end);
+        const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> dice2Win_Bet_default | Some(x) -> x end);
         const #{config.reserved}__amount : nat = bet.#{config.reserved}__amount;
         assert((#{config.reserved}__amount =/= 0n)) (* "Bet should be in an 'active' _state" *);
         assert((0n > (bet.placeBlockNumber + bET_EXPIRATION_BLOCKS))) (* "Blockhash can't be queried by EVM." *);
@@ -2347,7 +2347,7 @@ describe "translate ligo online examples", ()->
     
     function getCreature (const test_self : state; const id : nat) : ((address * nat * nat * nat * nat)) is
       block {
-        const c : creatures_Creature = (case test_self.creatures[id] of | None -> Creatures_Creature_default | Some(x) -> x end);
+        const c : creatures_Creature = (case test_self.creatures[id] of | None -> creatures_Creature_default | Some(x) -> x end);
         const owner : address = (case test_self.creatureIndexToOwner[id] of | None -> ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address) | Some(x) -> x end);
       } with ((owner, c.species, c.subSpecies, c.eyeColor, c.timestamp));
     
