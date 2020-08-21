@@ -62,7 +62,6 @@ module = @
   
   root = return_op_list_count root, opt
   root = add_burn_address root, opt
-  root = add_burn_address root, opt # по два раза по два раза
   root
 
 ercs_translate = (root, opt) ->
