@@ -43,6 +43,7 @@ Type = require "type"
     revert        : new Type "function2<function<string>,function<>>"
     sha256        : new Type "function2<function<bytes>,function<bytes32>>"
     sha3          : new Type "function2<function<bytes>,function<bytes32>>"
+    blockhash     : new Type "function2<function<uint256>,function<bytes32>>"
     selfdestruct  : new Type "function2<function<address>,function<>>"
     blockmap      : new Type "function2<function<address>,function<bytes32>>"
     keccak256     : new Type "function2<function<bytes>,function<bytes32>>"
@@ -327,7 +328,7 @@ class @Ti_context
     else
       throw new Error "unknown is_not_defined_type spread case"
     a_type = b_type.clone()
-    change_count++
+    ctx.change_count++
   else if !@is_not_defined_type(a_type) and @is_not_defined_type(b_type)
     # will check, but not spread
     if b_type.main in ["number", "unsigned_number", "signed_number"]
