@@ -383,7 +383,7 @@
             if ((_ref1 = ctx.current_class) != null ? _ref1.name : void 0) {
               name = "" + ctx.current_class.name + "_" + type.main;
             }
-            return "" + name + "_default";
+            return translate_var_name("" + name + "_default", ctx);
           }
         }
         perr("WARNING. Can't translate unknown Solidity type '" + type + "'");
@@ -836,7 +836,7 @@
                 type_list.push(translate_type(v.type, ctx));
               }
               type_str = type_list.join(" * ");
-              return "var " + config.op_list + " : list(operation) := cons(" + arg_list[0] + ", list transaction((" + (arg_list.slice(1).join(' * ')) + "), 0mutez, (get_contract(match_action." + config.callback_address + ") : contract(" + type_str + ")) end)";
+              return "var " + config.op_list + " : list(operation) := cons(" + arg_list[0] + ", list transaction((" + (arg_list.slice(1).join(' * ')) + "), 0mutez, (get_contract(match_action." + config.callback_address + ") : contract(" + type_str + "))) end)";
             default:
               fn = root.fn.name;
           }

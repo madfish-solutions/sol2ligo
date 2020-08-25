@@ -208,6 +208,8 @@
                   ops_extract.name = "0";
                   ops_extract.t = var_tmp = new ast.Var;
                   var_tmp.name = "tmp";
+                  var_tmp.type = tmp.type.clone();
+                  ops_extract.type = tmp.type.nest_list[0].clone();
                   proxy_call.fn.name = "@respond_append";
                   proxy_call.arg_list = [ops_extract, ret_val];
                 } else {
