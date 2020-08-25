@@ -22,6 +22,7 @@ module = @
 {return_op_list_count}              = require "./transforms/return_op_list_count"
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
+{add_burn_address}                  = require "./transforms/add_burn_address"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -60,6 +61,7 @@ module = @
     root = add_router root, obj_merge {router_func_list}, opt
   
   root = return_op_list_count root, opt
+  root = add_burn_address root, opt
   root
 
 ercs_translate = (root, opt) ->

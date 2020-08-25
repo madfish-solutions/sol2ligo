@@ -111,12 +111,13 @@ describe "translate ligo section var type", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const value_bool : bool = False;
         const value_int : int = 0;
         const value_uint : nat = 0n;
-        const value_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const value_address : address = burn_address;
         const value_string : string = "";
       } with (unit);
     

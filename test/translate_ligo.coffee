@@ -118,11 +118,12 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
-        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const addr : address = burn_address;
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
       } with (unit);

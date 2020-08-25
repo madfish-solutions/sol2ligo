@@ -9,6 +9,7 @@ TODO rename
 @receiver_name = "receiver" # var name
 @callback_address = "callbackAddress" # var name
 @default_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" # const
+@burn_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" # const
 @empty_state = "reserved__empty_state" # var name
 @op_list = "opList" # var name
 @fix_underscore = "fx" # prefix var name

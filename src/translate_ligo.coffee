@@ -304,7 +304,10 @@ number2bytes = (val, precision = 32)->
       "False"
     
     when "address"
-      "(#{JSON.stringify config.default_address} : address)"
+      if !ctx.parent # we're in the top-level scope
+        "(#{JSON.stringify config.burn_address} : address)"
+      else
+        "burn_address"
     
     when "built_in_op_list"
       "(nil: list(operation))"
@@ -840,7 +843,6 @@ walk = (root, ctx)->
       "record [ #{arg_list.join ";\n  "} ]"
 
     when "Type_cast"
-      # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
       t = walk root.t, ctx
       if t == "" and target_type == "address"
@@ -854,8 +856,8 @@ walk = (root, ctx)->
         type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or  t == "0")
-        "(#{JSON.stringify config.default_address} : #{target_type})"
+      else if target_type == "address" and (t == "0x0" or t == "0")
+        "burn_address"
       else
         "(#{t} : #{target_type})"
     
