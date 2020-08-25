@@ -7,13 +7,12 @@ config = require "../src/config"
 # template for convenience
 sol_erc20face_template = """
   contract ERC20TokenFace {
-    function totalSupply() public constant returns (uint256 totalSupply);
-    function balanceOf(address _owner) public constant returns (uint256 balance);
-    // solhint-disable-next-line no-simple-event-func-name
-    function transfer(address _to, uint256 _value) public returns (bool success);
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
-    function approve(address _spender, uint256 _value) public returns (bool success);
-    function allowance(address _owner, address _spender) public constant returns (uint256 remaining);
+    function totalSupply() public constant returns (uint256);
+    function balanceOf(address _owner) public constant returns (uint256);
+    function transfer(address _to, uint256 _value) public returns (bool);
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool);
+    function approve(address _spender, uint256 _value) public returns (bool);
+    function allowance(address _owner, address _spender) public constant returns (uint256);
   }
 """
 
@@ -146,6 +145,33 @@ describe "erc20 conversions", ()->
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(Tezos.sender) : contract(unit)));
       } with (list [op0; op1]);
     """#"
+    make_test text_i, text_o
+
+ it "erc20 preassigned var", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    #{sol_erc20face_template}
+
+    contract eee {
+      function test() private {
+        ERC20TokenFace token = ERC20TokenFace(0x0);
+        token.transferFrom(msg.sender, 0x0, 64);
+      }
+    }
+    """
+    #TODO this is some crazy input type due to bug: last line being comment breaks return type inference
+    text_o = """
+    type state is unit;
+    
+    #include "interfaces/fa1.2.ligo"
+    function test (const opList : list(operation)) : (list(operation)) is
+      block {
+        const token : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const op0 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
+      } with (list [op0]);
+    """
     make_test text_i, text_o
 
 

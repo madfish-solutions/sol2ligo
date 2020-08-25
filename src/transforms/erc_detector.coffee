@@ -14,34 +14,35 @@ walk = (root, ctx)->
       erc721_methods_count = 0
       for entry in root.scope.list
         if entry.constructor.name == "Fn_decl_multiret"
-          switch entry.name
-            when "approve",\
-                 "totalSupply",\
-                 "balanceOf",\ 
-                 "allowance",\ 
-                 "transfer",\
-                 "transferFrom"
-              erc20_methods_count += 1
-          
-          switch entry.name
-            when "balanceOf", \
-                 "ownerOf", \
-                 "safeTransferFrom", \
-                 "transferFrom", \
-                 "approve", \
-                 "setApprovalForAll", \
-                 "getApproved", \
-                 "isApprovedForAll"
-              erc721_methods_count += 1
+          if entry.scope.list.length == 0 # only replace interfaces
+            switch entry.name
+              when "approve",\
+                  "totalSupply",\
+                  "balanceOf",\ 
+                  "allowance",\ 
+                  "transfer",\
+                  "transferFrom"
+                erc20_methods_count += 1
+            
+            switch entry.name
+              when "balanceOf", \
+                  "ownerOf", \
+                  "safeTransferFrom", \
+                  "transferFrom", \
+                  "approve", \
+                  "setApprovalForAll", \
+                  "getApproved", \
+                  "isApprovedForAll"
+                erc721_methods_count += 1
 
       # replace whole class (interface) declaration if we are converting it to FA anyway
       if erc20_methods_count == ERC20_METHODS_TOTAL
-        ctx.has_erc20 = true
+        ctx.erc20_name = root.name
         ret = new ast.Include
         ret.path = "interfaces/fa1.2.ligo"
         ret
       else if erc721_methods_count == ERC721_METHODS_TOTAL
-        ctx.has_erc721 = true
+        ctx.erc721_name = root.name
         ret = new ast.Include
         ret.path = "interfaces/fa2.ligo"
         ret
@@ -55,8 +56,8 @@ walk = (root, ctx)->
   ctx = obj_merge ctx, {
     walk,
     next_gen: default_walk
-    has_erc721: false
-    has_erc20: false
+    erc20_name: null
+    erc721_name: null
   }
   root = walk root, ctx
   return {root, ctx}

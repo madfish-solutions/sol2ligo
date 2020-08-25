@@ -30,7 +30,7 @@ callback_tx_node = (name, root, ctx) ->
   if not ctx.callbacks_to_declare_map.has cb_name
     # TODO why are we using nest_list of nest_list?
     return_type = root.fn.type.nest_list[ast.RETURN_VALUES].nest_list[ast.INPUT_ARGS]
-    cb_decl = astBuilder.callback_declaration(name, return_type)
+    cb_decl = astBuilder.callback_declaration name, return_type
     ctx.callbacks_to_declare_map.set cb_name, cb_decl
 
   arg_list = root.arg_list
@@ -40,21 +40,6 @@ callback_tx_node = (name, root, ctx) ->
 walk = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
-      # ignore ERC20 interface declaration
-      for entry in root.scope.list
-        if entry.constructor.name == "Fn_decl_multiret"
-          switch entry.name
-            when "approve",\
-                 "totalSupply",\
-                 "balanceOf",\ 
-                 "allowance",\ 
-                 "transfer",\
-                 "transferFrom"
-              # replace whole class (interface) declaration if we are converting it to FA1.2 anyway
-              ret = new ast.Include
-              ret.path = "interfaces/fa1.2.ligo"
-              return ret
-      
       # collect callback declaration dummies
       ctx.callbacks_to_declare_map = new Map
       root = ctx.next_gen root, ctx
@@ -62,14 +47,24 @@ walk = (root, ctx)->
         root.scope.list.unshift decl
       return root
 
+    when "Var_decl"
+      if root.type?.main == ctx.interface_name 
+        root.type = new Type "address"
+      ctx.next_gen root, ctx
+
     when "Fn_decl_multiret"
       ctx.current_scope_ops_count = 0
       ctx.next_gen root, ctx
 
     when "Fn_call"
+      # replace constructor
+      if root.fn.name == ctx.interface_name
+        return astBuilder.cast_to_address(root.arg_list[0])
+        
+      # search for interface methods
       if root.fn.t?.type
         switch root.fn.t.type.main
-          when "struct"
+          when "struct", ctx.interface_name
             switch root.fn.name
               when "transfer"
                 sender = astBuilder.tezos_var("sender")
@@ -106,4 +101,8 @@ walk = (root, ctx)->
 
 
 @erc20_converter = (root, ctx)-> 
-  walk root, ctx = obj_merge({walk, next_gen: default_walk}, ctx)
+  init_ctx = {
+    walk,
+    next_gen: default_walk,
+  }
+  walk root, obj_merge(init_ctx, ctx)
