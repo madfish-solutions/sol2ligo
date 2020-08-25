@@ -856,8 +856,8 @@ walk = (root, ctx)->
         type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or  t == "0")
-        "(#{JSON.stringify config.default_address} : #{target_type})"
+      else if target_type == "address" and (t == "0x0" or t == "0")
+        "burn_address"
       else
         "(#{t} : #{target_type})"
     

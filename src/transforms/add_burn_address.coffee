@@ -8,6 +8,9 @@ walk = (root, ctx)->
       if root.target_type.main == "address" and root.t?.val == "0"
         ctx.need_burn_address = true
     
+    when "Class_decl"
+      ctx.scope = "class"
+    
     when "Fn_decl_multiret"
       ctx.scope = "fn"
     
