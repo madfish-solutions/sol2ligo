@@ -50,9 +50,6 @@ foreign_calls_to_external = (root, ctx)->
   }
   collect_local_decls root, obj_merge(ctx, full_ctx)
 
-  p "ctx"
-  insp full_ctx, 5
-  
   foreign_calls_to_external root, obj_merge(full_ctx, {
     walk: foreign_calls_to_external
     next_gen: default_walk
