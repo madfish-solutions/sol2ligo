@@ -46,6 +46,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -64,12 +65,12 @@ describe "erc20 conversions", ()->
     
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op2 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op3 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op4 : operation = transaction((Transfer(Tezos.sender, Tezos.sender, 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op5 : operation = transaction((Approve(Tezos.sender, 5n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op2 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op3 : operation = transaction((Transfer(Tezos.sender, burn_address, 50n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op4 : operation = transaction((Transfer(Tezos.sender, Tezos.sender, 50n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op5 : operation = transaction((Approve(Tezos.sender, 5n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
       } with (list [op0; op1; op2; op3; op4; op5]);
     """#"
     make_test text_i, text_o
@@ -93,6 +94,7 @@ describe "erc20 conversions", ()->
 
     type state is unit;
 
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     type router_enum is
       | GetAllowanceCallback of getAllowanceCallback_args;
@@ -104,7 +106,7 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
       } with (list [op0]);
 
     function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
@@ -134,6 +136,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
 
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -142,7 +145,7 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(Tezos.sender) : contract(unit)));
       } with (list [op0; op1]);
     """#"
