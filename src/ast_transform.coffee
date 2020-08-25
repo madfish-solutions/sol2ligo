@@ -22,6 +22,7 @@ module = @
 {return_op_list_count}              = require "./transforms/return_op_list_count"
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
+{make_calls_external}               = require "./transforms/make_calls_external"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -49,12 +50,15 @@ module = @
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = intrinsics_converter root
+  root = mark_last root, opt
+  root = make_calls_external root, opt
+  
+  # variable names translation step
   root = var_translate root
+  
   root = deep_check_storage_and_oplist_use root
   root = decl_storage_and_oplist_inject root, opt
   root = call_storage_and_oplist_inject root
-  
-  root = mark_last root, opt
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
@@ -64,11 +68,8 @@ module = @
 
 ercs_translate = (root, opt) ->
   {root, ctx} = erc_detector root
-  p "ctx", ctx
   if !!ctx.erc721_name
-    p "erc721"
     root = erc721_converter root, interface_name: ctx.erc721_name
   else if !!ctx.erc20_name
-    p "erc20 detected"
     root = erc20_converter root,  interface_name: ctx.erc20_name
   root

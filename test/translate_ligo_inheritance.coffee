@@ -368,3 +368,35 @@ describe "translate ligo section inheritance", ()->
       } with (unit);
     """
     make_test text_i, text_o
+
+ it "opt.contract transaction mode", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract Foreign {
+        function foreign(int arg) public {
+            arg += 1;
+        }
+    }
+
+    contract Local {
+        function local() public returns (bool) {
+            Foreign foo = new Foreign();
+            foo.foreign(5);
+            return true;
+        }
+    }
+    """
+    
+    text_o = """
+    type state is unit;
+
+    function local (const opList : list(operation)) : (list(operation) * bool) is
+      block {
+        const foo : UNKNOWN_TYPE_Foreign = UNKNOWN_TYPE_Foreign();
+        const op0 : operation = transaction((Foreign(5)), (0n * 1mutez), (get_contract(foo) : contract(foo_router_enum)));
+      } with (list [op0], True);
+    """
+    make_test text_i, text_o, {
+      contract: "Parent1"
+    }
