@@ -168,11 +168,12 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-        const op0 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
+        const token : address = burn_address;
+        const op0 : operation = transaction((Transfer(Tezos.sender, burn_address, 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
       } with (list [op0]);
     """
     make_test text_i, text_o
