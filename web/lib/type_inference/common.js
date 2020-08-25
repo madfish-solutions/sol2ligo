@@ -51,6 +51,7 @@
       revert: new Type("function2<function<string>,function<>>"),
       sha256: new Type("function2<function<bytes>,function<bytes32>>"),
       sha3: new Type("function2<function<bytes>,function<bytes32>>"),
+      blockhash: new Type("function2<function<uint256>,function<bytes32>>"),
       selfdestruct: new Type("function2<function<address>,function<>>"),
       blockmap: new Type("function2<function<address>,function<bytes32>>"),
       keccak256: new Type("function2<function<bytes>,function<bytes32>>"),
@@ -494,7 +495,7 @@
         throw new Error("unknown is_not_defined_type spread case");
       }
       a_type = b_type.clone();
-      change_count++;
+      ctx.change_count++;
     } else if (!this.is_not_defined_type(a_type) && this.is_not_defined_type(b_type)) {
       if ((_ref7 = b_type.main) === "number" || _ref7 === "unsigned_number" || _ref7 === "signed_number") {
         if (!is_defined_number_or_byte_type(a_type)) {

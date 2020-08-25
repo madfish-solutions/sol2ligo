@@ -46,7 +46,8 @@
   };
 
   module.exports = function(path, import_cache) {
-    var code, filter_line_list, folder, idx, is_url, key, line, line_list, mk_import, orig_file, pragma_map, reg_ret, val, _i, _j, _len, _len1, _skip;
+    var code, filter_line_list, folder, idx, is_root, is_url, key, line, line_list, mk_import, orig_file, pragma_map, reg_ret, val, _i, _j, _len, _len1, _skip;
+    is_root = import_cache == null;
     if (import_cache == null) {
       import_cache = {};
     }
@@ -115,6 +116,10 @@
     }
     code = filter_line_list.join("\n");
     code = code.replace(/pragma experimental "v0.5.0";?/g, "");
+    code = code.replace(/^\/\/ SPDX-License-Identifier.*/g, "");
+    if (is_root) {
+      code = "// SPDX-License-Identifier: MIT\n" + code;
+    }
     return import_cache[path] = code;
   };
 
