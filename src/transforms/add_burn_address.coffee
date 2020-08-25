@@ -8,14 +8,22 @@ walk = (root, ctx)->
       if root.target_type.main == "address" and root.t?.val == "0"
         ctx.need_burn_address = true
     
+    when "Fn_decl_multiret"
+      ctx.scope = "fn"
+    
     when "Var_decl"
-      if root.type?.main == "address"
+      if root.type?.main == "address" and !root.assign_value and ctx.scope == "fn"
         ctx.need_burn_address = true
   
   ctx.next_gen root, ctx
 
 @add_burn_address = (root)->
-  ctx = {walk, next_gen: default_walk, need_burn_address: false}
+  ctx = {
+    walk,
+    next_gen: default_walk,
+    need_burn_address: false,
+    scope: ""
+  }
   walk root, ctx
   if ctx.need_burn_address
     decl = new ast.Var_decl
