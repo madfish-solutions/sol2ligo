@@ -336,7 +336,7 @@ number2bytes = (val, precision = 32)->
           name = type.main
           if ctx.current_class?.name
             name = "#{ctx.current_class.name}_#{type.main}"
-          return "#{name}_default"
+          return translate_var_name "#{name}_default", ctx
 
       perr "WARNING. Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
@@ -751,7 +751,7 @@ walk = (root, ctx)->
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str}))) end)"
           
           else
             fn = root.fn.name
