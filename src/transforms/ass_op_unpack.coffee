@@ -8,7 +8,7 @@ walk = (root, ctx)->
       if reg_ret = /^ASS_(.*)/.exec root.op
         ext = new ast.Bin_op
         ext.op = "ASSIGN"
-        ext.a = root.a
+        ext.a = root.a.clone()
         ext.b = root
         root.op = reg_ret[1]
         ext

@@ -28,7 +28,7 @@ do () =>
             current_scope_sink = ctx.scope_sink[0] 
             tmp = new ast.Var_decl
             tmp.name = "temp_idx_access" + current_scope_sink.temp_index
-            tmp.type = root.a.type 
+            tmp.type = root.a.type
             tmp.assign_value = root.a
             current_scope_sink.statements_to_prepend.push tmp
             
