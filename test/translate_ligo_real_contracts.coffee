@@ -203,6 +203,7 @@ describe "translate ligo real contracts section", ()->
       owner_ : address;
     end;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     type router_enum is
       | Owner of owner_args
      | IsOwner of isOwner_args
@@ -252,12 +253,12 @@ describe "translate ligo real contracts section", ()->
       block {
         assert(isOwner(contract_storage)) (* "Ownable: caller is not the owner" *);
         (* EmitStatement OwnershipTransferred(_owner, ) *);
-        contract_storage.owner_ := ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        contract_storage.owner_ := burn_address;
       } with ((nil: list(operation)), contract_storage);
     
     function transferOwnership_ (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        assert((newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Ownable: new owner is the zero address" *);
+        assert((newOwner =/= burn_address)) (* "Ownable: new owner is the zero address" *);
         (* EmitStatement OwnershipTransferred(_owner, newOwner) *)
         contract_storage.owner_ := newOwner;
       } with (contract_storage);
