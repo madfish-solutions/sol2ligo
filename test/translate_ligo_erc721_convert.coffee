@@ -106,7 +106,7 @@ describe "erc721 conversions", ()->
     #include "interfaces/fa2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : UNKNOWN_TYPE_ERC721 = eRC721(0x0);
+        const token : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
       } with (list [op0]);
     """

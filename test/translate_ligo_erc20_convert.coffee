@@ -168,7 +168,7 @@ describe "erc20 conversions", ()->
     #include "interfaces/fa1.2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : UNKNOWN_TYPE_ERC20TokenFace = eRC20TokenFace(0x0);
+        const token : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
         const op0 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
       } with (list [op0]);
     """
