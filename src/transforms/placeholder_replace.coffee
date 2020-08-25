@@ -3,14 +3,20 @@
 walk = (root, ctx)->
   {walk} = ctx
   switch root.constructor.name
+    when "Scope"
+      root = ctx.next_gen root, ctx
+      list = []
+      for v in root.list
+        if v.constructor.name == "Scope"
+          list.append v.list
+        else
+          list.push v
+      root.list = list
+      root
+    
     when "Comment"
       return root if root.text != "COMPILER MSG PlaceholderStatement"
-      ret = ctx.target_ast.clone()
-      unless ctx.need_nest
-        last = ret.list.last()
-        if last and last.constructor.name == "Ret_multi"
-          last = ret.list.pop()
-      ret
+      ctx.target_ast.clone()
     else
       ctx.next_gen root, ctx
 

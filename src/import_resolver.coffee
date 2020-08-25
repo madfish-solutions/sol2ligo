@@ -42,7 +42,9 @@ url_resolve = (url)->
     throw new Error "404. failed to load #{url}"
   return code
 
-module.exports = (path, import_cache = {})->
+module.exports = (path, import_cache)->
+  is_root = !import_cache?
+  import_cache ?= {}
   is_url = /^https?:\/\/(.*)/.test path
   if !is_url
     path = m_path.resolve path
@@ -111,4 +113,10 @@ module.exports = (path, import_cache = {})->
   
   # code = code.replace(/pragma experimental .*/g, "")
   code = code.replace(/pragma experimental "v0.5.0";?/g, "")
+  code = code.replace(/^\/\/ SPDX-License-Identifier.*/g, "")
+  if is_root
+    code = """
+      // SPDX-License-Identifier: MIT
+      #{code}
+      """
   import_cache[path] = code
