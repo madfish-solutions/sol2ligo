@@ -64,11 +64,8 @@ module = @
 
 ercs_translate = (root, opt) ->
   {root, ctx} = erc_detector root
-  p "ctx", ctx
   if !!ctx.erc721_name
-    p "erc721"
     root = erc721_converter root, interface_name: ctx.erc721_name
   else if !!ctx.erc20_name
-    p "erc20 detected"
     root = erc20_converter root,  interface_name: ctx.erc20_name
   root
