@@ -5,14 +5,18 @@ Type = require "type"
 walk = (root, ctx)->
   switch root.constructor.name
     when "Type_cast"
-      if root.target_type.main == "address" and root.t?.val == "0"
+      if root.target_type.main == "address" and (root.t?.val == "0" or root.t?.val == "0x0")
         ctx.need_burn_address = true
     
     when "Class_decl"
       ctx.scope = "class"
     
     when "Fn_decl_multiret"
+      old_scope = ctx.scope
       ctx.scope = "fn"
+      root = ctx.next_gen root, ctx
+      ctx.scope = old_scope
+      return root
     
     when "Var_decl"
       if root.type?.main == "address" and !root.assign_value and ctx.scope == "fn"
