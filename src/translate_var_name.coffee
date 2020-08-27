@@ -111,7 +111,7 @@ spec_id_trans_map =
   "abi.encodePacked": ""
 
 bad_spec_id_trans_map =
-  "block.coinbase"  : config.default_address
+  "block.coinbase"  : "(#{JSON.stringify config.default_address} : address)"
   "block.difficulty": "0n"
   "block.gaslimit"  : "0n"
   "block.number"    : "0n"

@@ -47,11 +47,21 @@ walk = (root, ctx)->
         root.scope.list.unshift decl
       return root
 
+    when "Var_decl"
+      if root.type?.main == ctx.interface_name 
+        root.type = new Type "address"
+      ctx.next_gen root, ctx
+
     when "Fn_decl_multiret"
       ctx.current_scope_ops_count = 0
       ctx.next_gen root, ctx
 
     when "Fn_call"
+      # replace constructor
+      if root.fn.name == ctx.interface_name
+        return astBuilder.cast_to_address(root.arg_list[0])
+        
+      # search for interface methods
       if root.fn.t?.type
         switch root.fn.t.type.main
           when "struct", ctx.interface_name

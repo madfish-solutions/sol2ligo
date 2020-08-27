@@ -118,11 +118,12 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
-        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const addr : address = burn_address;
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
       } with (unit);
@@ -336,6 +337,29 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  it "inline assembly", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Inline_assembly {
+      function test() public {
+        assembly {
+          let x := 7
+        }
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        failwith("Unsupported InlineAssembly");
+        (* InlineAssembly { let x := 7 } *)
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
   it "uppercase ids", ()->
     text_i = """
     pragma solidity ^0.5.11;
@@ -357,4 +381,3 @@ describe "translate ligo section unsorted", ()->
       } with (unit);
     """
     make_test text_i, text_o
-  

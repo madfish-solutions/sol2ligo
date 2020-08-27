@@ -304,7 +304,10 @@ number2bytes = (val, precision = 32)->
       "False"
     
     when "address"
-      "(#{JSON.stringify config.default_address} : address)"
+      if !ctx.parent # we're in the top-level scope
+        "(#{JSON.stringify config.burn_address} : address)"
+      else
+        "burn_address"
     
     when "built_in_op_list"
       "(nil: list(operation))"
@@ -336,7 +339,7 @@ number2bytes = (val, precision = 32)->
           name = type.main
           if ctx.current_class?.name
             name = "#{ctx.current_class.name}_#{type.main}"
-          return "#{name}_default"
+          return translate_var_name "#{name}_default", ctx
 
       perr "WARNING. Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
@@ -751,7 +754,7 @@ walk = (root, ctx)->
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str}))) end)"
           
           else
             fn = root.fn.name
@@ -840,7 +843,6 @@ walk = (root, ctx)->
       "record [ #{arg_list.join ";\n  "} ]"
 
     when "Type_cast"
-      # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
       t = walk root.t, ctx
       if t == "" and target_type == "address"
@@ -854,8 +856,8 @@ walk = (root, ctx)->
         type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or  t == "0")
-        "(#{JSON.stringify config.default_address} : #{target_type})"
+      else if target_type == "address" and (t == "0x0" or t == "0")
+        "burn_address"
       else
         "(#{t} : #{target_type})"
     

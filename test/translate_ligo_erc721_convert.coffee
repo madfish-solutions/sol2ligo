@@ -40,6 +40,7 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : list(balance_of_response_michelson)) : (unit) is
       block {
@@ -48,10 +49,10 @@ describe "erc721 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((Transfer(list [(list [(32n, (("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op1 : operation = transaction((Balance_of((list [(0n, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op0 : operation = transaction((Transfer(list [(list [(32n, (burn_address, 1n))], Tezos.sender)])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op1 : operation = transaction((Balance_of((list [(0n, burn_address)], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
       } with (list [op0; op1; op2; op3]);
     """
     make_test text_i, text_o
@@ -103,10 +104,11 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : UNKNOWN_TYPE_ERC721 = eRC721(0x0);
+        const token : address = burn_address;
         const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
       } with (list [op0]);
     """
