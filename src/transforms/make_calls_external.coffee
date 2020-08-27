@@ -14,11 +14,7 @@ collect_local_decls = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
       ctx.is_cur_contract_main = root.is_last
-      ctx.next_gen root, ctx
-
-    when "Fn_decl_multiret"
-      if ctx.is_cur_contract_main
-        ctx.local_fn_decls.add root.name
+      ctx.foreign_contracts.add root.name 
       ctx.next_gen root, ctx
 
     else
@@ -27,8 +23,10 @@ collect_local_decls = (root, ctx)->
 foreign_calls_to_external = (root, ctx)->
   switch root.constructor.name
     when "Fn_call"
-      is_foreign_call = not ctx.local_fn_decls.has root.fn.name
-      is_foreign_call = is_foreign_call and root.fn.t
+      is_foreign_call = false
+      if root.fn.t?.type?.main
+        is_foreign_call = ctx.foreign_contracts.has root.fn.t.type.main
+
       if is_foreign_call
         name = root.fn.name
                         
@@ -53,7 +51,7 @@ foreign_calls_to_external = (root, ctx)->
     walk: collect_local_decls
     next_gen: default_walk
     is_cur_contract_main: false
-    local_fn_decls: new Set 
+    foreign_contracts: new Set
   }
   collect_local_decls root, obj_merge(ctx, full_ctx)
 
