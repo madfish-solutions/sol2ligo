@@ -128,7 +128,7 @@ warning_once_map = {}
     val = bad_spec_id_trans_map[t]
     if !warning_once_map.hasOwnProperty t
       warning_once_map.hasOwnProperty[t] = true
-      perr "WARNING we don't have a proper translation for Solidity '#{t}', so it is translated as '#{val}'"
+      perr "WARNING (translate). We don't have a proper translation for Solidity '#{t}', so it is translated as '#{val}'"
     val
   else
     name
