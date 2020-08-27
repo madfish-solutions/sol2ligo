@@ -374,15 +374,15 @@ describe "translate ligo section inheritance", ()->
     pragma solidity ^0.4.16;
 
     contract Foreign {
-        function foreign(int arg) public {
-            arg += 1;
-        }
+      function foreign(uint n, string s, bool b) public {
+          n += 1;
+      }
     }
 
     contract Local {
         function local() public returns (bool) {
             Foreign foo = new Foreign();
-            foo.foreign(5);
+            foo.foreign(5, "hello", false);
             return true;
         }
     }
@@ -394,7 +394,7 @@ describe "translate ligo section inheritance", ()->
     function local (const opList : list(operation)) : (list(operation) * bool) is
       block {
         const foo : UNKNOWN_TYPE_Foreign = UNKNOWN_TYPE_Foreign();
-        const op0 : operation = transaction((Foreign(5)), (0n * 1mutez), (get_contract(foo) : contract(foo_router_enum)));
+        const op0 : operation = transaction((5n, "hello", False), 0mutez, (get_entrypoint("%foreign", foo) : contract(nat, string, bool)));
       } with (list [op0], True);
     """
     make_test text_i, text_o, {
