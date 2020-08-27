@@ -27,14 +27,21 @@ collect_local_decls = (root, ctx)->
 foreign_calls_to_external = (root, ctx)->
   switch root.constructor.name
     when "Fn_call"
-      if not ctx.local_fn_decls.has root.fn.name
+      is_foreign_call = not ctx.local_fn_decls.has root.fn.name
+      is_foreign_call = is_foreign_call and root.fn.t
+      if is_foreign_call
         name = root.fn.name
-        name = "@" + name[0].toUpperCase() + name.substr 1 
-        enum_val = astBuilder.enum_val name, root.arg_list
+                        
+        contract_type = new Type "contract"
+        for arg in root.arg_list
+          contract_type.nest_list.push arg.type
 
-        contract_type = new Type root.fn.t.name + "_" + config.router_enum
+        name = astBuilder.string_val("%" + name)
 
-        tx_node([enum_val], astBuilder.nat_literal(0), root.fn.t, contract_type, ctx)
+        entrypoint = astBuilder.get_entrypoint(name, root.fn.t, contract_type)
+
+        tx = astBuilder.transaction(root.arg_list, entrypoint)
+        return tx
       else
         ctx.next_gen root, ctx
     

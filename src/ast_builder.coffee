@@ -72,6 +72,23 @@ ast = require "./ast"
 
   return contract_cast
 
+@get_entrypoint = (name, address, type) ->
+  contract_cast = new ast.Type_cast
+  contract_cast.target_type = type
+  
+  get_entrypoint = new ast.Fn_call
+  get_entrypoint.type = "function2<function<uint>, function<address>>"
+  get_entrypoint.fn = new ast.Var
+  get_entrypoint.fn.name = "@get_entrypoint"
+
+  get_entrypoint.arg_list.push name
+  get_entrypoint.arg_list.push address
+
+  contract_cast.t = get_entrypoint
+
+  return contract_cast
+
+
 @self_entrypoint = (name, contract_type) ->
   arg = new ast.Var
   arg.name = "@Tezos"
