@@ -23,6 +23,7 @@ module = @
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {add_burn_address}                  = require "./transforms/add_burn_address"
+{contract_object_to_address}         = require "./transforms/contract_object_to_address"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -49,6 +50,7 @@ module = @
   root = split_nested_index_access root
   root = address_calls_converter root
   root = ercs_translate root, opt
+  root = contract_object_to_address root, opt
   root = intrinsics_converter root
   root = var_translate root
   root = deep_check_storage_and_oplist_use root
