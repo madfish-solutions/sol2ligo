@@ -24,6 +24,7 @@ module = @
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {make_calls_external}               = require "./transforms/make_calls_external"
 {add_burn_address}                  = require "./transforms/add_burn_address"
+{contract_object_to_address}         = require "./transforms/contract_object_to_address"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -50,6 +51,7 @@ module = @
   root = split_nested_index_access root
   root = address_calls_converter root
   root = ercs_translate root, opt
+  root = contract_object_to_address root, opt
   root = intrinsics_converter root
   root = mark_last root, opt
   root = make_calls_external root, opt
