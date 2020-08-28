@@ -393,7 +393,7 @@ describe "translate ligo section inheritance", ()->
 
     function local (const opList : list(operation)) : (list(operation) * bool) is
       block {
-        const foo : UNKNOWN_TYPE_Foreign = UNKNOWN_TYPE_Foreign();
+        const foo : address = UNKNOWN_TYPE_Foreign();
         const op0 : operation = transaction((5n, "hello", False), 0mutez, (get_entrypoint("%foreign", foo) : contract(nat, string, bool)));
       } with (list [op0], True);
     """
