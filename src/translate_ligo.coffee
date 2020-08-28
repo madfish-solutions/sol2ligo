@@ -132,7 +132,7 @@ number2bytes = (val, precision = 32)->
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
-      perr "WARNING BIT_NOT ( ~#{a} ) translation may be incorrect"
+      perr "WARNING (Translate). BIT_NOT ( ~#{a} ) translation may be incorrect"
       module.warning_counter++
     if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
@@ -140,7 +140,7 @@ number2bytes = (val, precision = 32)->
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx, ast)->
-    perr "RET_INC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_INC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -152,7 +152,7 @@ number2bytes = (val, precision = 32)->
       ctx.trim_expr = "(#{a} - #{one})"
   
   RET_DEC : (a, ctx, ast)->
-    perr "RET_DEC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_DEC may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -164,7 +164,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "(#{a} + #{one})"
   
   INC_RET : (a, ctx, ast)->
-    perr "INC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). INC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -173,7 +173,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "#{a}"
   
   DEC_RET : (a, ctx, ast)->
-    perr "DEC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). DEC_RET may have not fully correct implementation"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -286,7 +286,7 @@ number2bytes = (val, precision = 32)->
       else if type.main.startsWith "@"
         type.main.substr(1)
       else
-        perr "WARNING. translate_type unknown solidity type '#{type}'"
+        perr "WARNING (Translate). translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
@@ -341,7 +341,7 @@ number2bytes = (val, precision = 32)->
             name = "#{ctx.current_class.name}_#{type.main}"
           return translate_var_name "#{name}_default", ctx
 
-      perr "WARNING. Can't translate unknown Solidity type '#{type}'"
+      perr "WARNING (Translate). Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 # ###################################################################################################
@@ -571,7 +571,7 @@ walk = (root, ctx)->
           "unit"
         
         when "number"
-          perr "WARNING number constant passed to translation stage. That's type inference mistake"
+          perr "WARNING (Translate). Number constant passed to the translation stage. That's a type inference mistake"
           module.warning_counter++
           root.val
         
@@ -644,7 +644,7 @@ walk = (root, ctx)->
     when "Field_access"
       t = walk root.t, ctx
       if !root.t.type
-        perr "WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+        perr "WARNING (Translate). Some of types in Field_access aren't resolved. This can cause invalid code generated"
       else
         switch root.t.type.main
           when "array"
@@ -717,27 +717,27 @@ walk = (root, ctx)->
             return "sha_256(#{msg})"
           
           when "sha3", "keccak256"
-            perr "WARNING #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING (Translate). #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
 
           when "selfdestruct"
-            perr "WARNING #{root.fn.name} does not exist in LIGO. Statement translated as is"
+            perr "WARNING (Translate). #{root.fn.name} does not exist in LIGO. Statement translated as is"
             msg = arg_list[0]
             return "selfdestruct(#{msg}) (* unsupported *)"
 
           when "blockhash"
             msg = arg_list[0]
-            perr "WARNING #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
+            perr "WARNING (Translate). #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
             return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
-            perr "WARNING #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING (Translate). #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           when "ecrecover"
-            perr "WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
+            perr "WARNING (Translate). ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
@@ -794,7 +794,7 @@ walk = (root, ctx)->
           return call_expr if decl.constructor.name == "Fn_decl_multiret"
           return "#{config.contract_storage}.#{root.fn.name}"
         else
-          perr "WARNING !root.fn_decl #{root.fn.name}"
+          perr "WARNING (Translate). !root.fn_decl #{root.fn.name}"
           return call_expr
         
         ret_types_list = []
@@ -805,7 +805,7 @@ walk = (root, ctx)->
           call_expr
         else if ret_types_list.length == 1 and returns_value
           ctx.terminate_expr_replace_fn = ()->
-            perr "WARNING #{call_expr} was terminated with dummy variable declaration"
+            perr "WARNING (Translate). #{call_expr} was terminated with dummy variable declaration"
             tmp_var = "terminate_tmp_#{ctx.tmp_idx++}"
             "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
           ctx.terminate_expr_check = call_expr
@@ -926,7 +926,7 @@ walk = (root, ctx)->
         #{join_list jl}
         """
       else
-        perr "WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong"
+        perr "WARNING (Translate). Var_decl_multi with no assign value should be unreachable, but something went wrong"
         module.warning_counter++
         jl = []
         for _var in root.list
