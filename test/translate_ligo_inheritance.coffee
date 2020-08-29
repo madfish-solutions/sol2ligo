@@ -381,7 +381,7 @@ describe "translate ligo section inheritance", ()->
 
     contract Local {
         function local() public returns (bool) {
-            Foreign foo = new Foreign();
+            Foreign foo = Foreign(0xaaddffee22);
             foo.foreign(5, "hello", false);
             return true;
         }
@@ -393,7 +393,7 @@ describe "translate ligo section inheritance", ()->
 
     function local (const opList : list(operation)) : (list(operation) * bool) is
       block {
-        const foo : address = UNKNOWN_TYPE_Foreign();
+        const foo : address = (0xaaddffee22 : address);
         const op0 : operation = transaction((5n, "hello", False), 0mutez, (get_entrypoint("%foreign", foo) : contract(nat, string, bool)));
       } with (list [op0], True);
     """
