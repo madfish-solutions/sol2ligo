@@ -96,7 +96,7 @@ describe "erc721 conversions", ()->
 
     contract eee {
       function test() private {
-        ERC721 token = ERC721(0x0);
+        ERC721 token = ERC721(0x01);
         token.transferFrom(msg.sender, 0x1, 64);
       }
     }
@@ -105,11 +105,10 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
-    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : address = burn_address;
+        const token : address = (0x01 : address);
         const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
       } with (list [op0]);
     """
