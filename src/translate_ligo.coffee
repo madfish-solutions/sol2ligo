@@ -132,7 +132,7 @@ number2bytes = (val, precision = 32)->
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
-      perr "WARNING (Translate). BIT_NOT ( ~#{a} ) translation may be incorrect"
+      perr "WARNING (Translate). BIT_NOT ( ~#{a} ) translation may be incorrect. Read more https://git.io/JUqiS"
       module.warning_counter++
     if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
@@ -140,7 +140,7 @@ number2bytes = (val, precision = 32)->
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx, ast)->
-    perr "WARNING (Translate). RET_INC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_INC may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -152,7 +152,7 @@ number2bytes = (val, precision = 32)->
       ctx.trim_expr = "(#{a} - #{one})"
   
   RET_DEC : (a, ctx, ast)->
-    perr "WARNING (Translate). RET_DEC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_DEC may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -164,7 +164,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "(#{a} + #{one})"
   
   INC_RET : (a, ctx, ast)->
-    perr "WARNING (Translate). INC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). INC_RET may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -173,7 +173,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "#{a}"
   
   DEC_RET : (a, ctx, ast)->
-    perr "WARNING (Translate). DEC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). DEC_RET may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
