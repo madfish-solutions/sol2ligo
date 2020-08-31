@@ -23,6 +23,7 @@ module = @
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {add_burn_address}                  = require "./transforms/add_burn_address"
+{cast_to_address}                   = require "./transforms/cast_to_address"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -54,6 +55,7 @@ module = @
   root = deep_check_storage_and_oplist_use root
   root = decl_storage_and_oplist_inject root, opt
   root = call_storage_and_oplist_inject root
+  root = cast_to_address root, opt
   
   root = mark_last root, opt
   if opt.router

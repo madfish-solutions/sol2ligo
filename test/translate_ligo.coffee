@@ -279,7 +279,7 @@ describe "translate ligo section unsorted", ()->
     
     function transferOwnership (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        contract_storage := transferOwnership_(contract_storage, newOwner);
+        contract_storage := transferOwnership_((contract_storage : address), newOwner);
         contract_storage.owner := self_address;
       } with (contract_storage);
     
