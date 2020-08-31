@@ -14,6 +14,7 @@ TODO rename
 @op_list = "opList" # var name
 @fix_underscore = "fx" # prefix var name
 @reserved = "res" # prefix var name
+@router_enum = "router_enum"
 
 @int_type_list = ["int"]
 for i in [8 .. 256] by 8

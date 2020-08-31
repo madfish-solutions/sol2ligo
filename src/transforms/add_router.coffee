@@ -53,7 +53,7 @@ walk = (root, ctx)->
             arg.type = new Type "address"
         
         root.scope.list.push _enum = new ast.Enum_decl
-        _enum.name = "router_enum"
+        _enum.name = config.router_enum
         for func in ctx.router_func_list
           _enum.value_list.push decl = new ast.Var_decl
           decl.name = func2struct func.name
@@ -70,7 +70,7 @@ walk = (root, ctx)->
         _main.type_o = new Type "function"
         
         _main.arg_name_list.push "action"
-        _main.type_i.nest_list.push new Type "router_enum"
+        _main.type_i.nest_list.push new Type config.router_enum
         _main.arg_name_list.push config.contract_storage
         _main.type_i.nest_list.push new Type config.storage
         

@@ -22,6 +22,7 @@ module = @
 {return_op_list_count}              = require "./transforms/return_op_list_count"
 {address_calls_converter}           = require "./transforms/address_calls_converter"
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
+{make_calls_external}               = require "./transforms/make_calls_external"
 {add_burn_address}                  = require "./transforms/add_burn_address"
 {contract_object_to_address}         = require "./transforms/contract_object_to_address"
 
@@ -52,12 +53,15 @@ module = @
   root = ercs_translate root, opt
   root = contract_object_to_address root, opt
   root = intrinsics_converter root
+  root = mark_last root, opt
+  root = make_calls_external root, opt
+  
+  # variable names translation step
   root = var_translate root
+  
   root = deep_check_storage_and_oplist_use root
   root = decl_storage_and_oplist_inject root, opt
   root = call_storage_and_oplist_inject root
-  
-  root = mark_last root, opt
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt
