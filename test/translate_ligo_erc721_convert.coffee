@@ -75,12 +75,13 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function test (const test_reserved_long___unit : unit) : (unit) is
       block {
         const approvedAddress : address = eRC721(0x0).getApproved(0n);
         (* ^ getApproved is not supported in LIGO. Read more https://git.io/JJFij ^ *);
-        eRC721(0x0).safeTransferFrom(Tezos.sender, 0x0, 32n);
+        eRC721(0x0).safeTransferFrom(Tezos.sender, burn_address, 32n);
         (* ^ safeTransferFrom is not supported in LIGO. Read more https://git.io/JJFij ^ *)
       } with (unit);
     """

@@ -24,7 +24,8 @@ module = @
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {make_calls_external}               = require "./transforms/make_calls_external"
 {add_burn_address}                  = require "./transforms/add_burn_address"
-{contract_object_to_address}         = require "./transforms/contract_object_to_address"
+{cast_to_address}                   = require "./transforms/cast_to_address"
+{contract_object_to_address}        = require "./transforms/contract_object_to_address"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -62,6 +63,8 @@ module = @
   root = deep_check_storage_and_oplist_use root
   root = decl_storage_and_oplist_inject root, opt
   root = call_storage_and_oplist_inject root
+  root = cast_to_address root, opt
+  
   if opt.router
     router_func_list = router_collector root, opt
     root = add_router root, obj_merge {router_func_list}, opt

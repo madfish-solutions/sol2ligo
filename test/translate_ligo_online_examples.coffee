@@ -756,7 +756,7 @@ describe "translate ligo online examples", ()->
         // Some deliberately invalid address to initialize the secret signer with.
         // Forces maintainers to invoke setSecretSigner before processing any bets.
         address constant DUMMY_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    
+        
         // Standard contract ownership transfer.
         address public owner;
         address private nextOwner;
@@ -1622,7 +1622,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+    const dUMMY_ADDRESS : address = (0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
@@ -1708,7 +1708,7 @@ describe "translate ligo online examples", ()->
         assert((Tezos.sender = test_self.owner)) (* "OnlyOwner methods called by non-owner." *);
         assert((withdrawAmount <= self_address.#{config.reserved}__balance)) (* "Increase amount larger than balance." *);
         assert((((test_self.jackpotSize + test_self.lockedInBets) + withdrawAmount) <= self_address.#{config.reserved}__balance)) (* "Not enough funds." *);
-        opList := sendFunds(test_self, beneficiary, withdrawAmount, withdrawAmount);
+        opList := sendFunds((test_self : address), beneficiary, withdrawAmount, withdrawAmount);
       } with (opList);
     
     function kill (const test_self : state) : (unit) is
@@ -1815,7 +1815,7 @@ describe "translate ligo online examples", ()->
         } else block {
           skip
         };
-        opList := sendFunds(test_self, gambler, (case ((diceWin + jackpotWin) = 0n) of | True -> 1n | False -> (diceWin + jackpotWin) end), diceWin);
+        opList := sendFunds((test_self : address), gambler, (case ((diceWin + jackpotWin) = 0n) of | True -> 1n | False -> (diceWin + jackpotWin) end), diceWin);
       } with (opList, test_self);
     
     function settleBet (const opList : list(operation); const test_self : state; const reveal : nat; const blockHash : bytes) : (list(operation) * state) is
@@ -2054,7 +2054,7 @@ describe "translate ligo online examples", ()->
         (diceWinAmount, jackpotFee) := getDiceWinAmount(test_self, #{config.reserved}__amount, bet.modulo, bet.rollUnder);
         test_self.lockedInBets := (test_self.lockedInBets - abs(diceWinAmount));
         test_self.jackpotSize := (test_self.jackpotSize - abs(jackpotFee));
-        opList := sendFunds(test_self, bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
+        opList := sendFunds((test_self : address), bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
       } with (opList, test_self);
     
     function main (const action : router_enum; const test_self : state) : (list(operation) * state) is
@@ -2344,7 +2344,7 @@ describe "translate ligo online examples", ()->
           timestamp = abs(#{config.reserved}__now) ];
         const tmp_0 : map(nat, creatures_Creature) = test_self.creatures;
         const newCreatureID : nat = (tmp_0[size(tmp_0)] := creature_ - 1n);
-        transfer(0, owner_, newCreatureID);
+        transfer(burn_address, owner_, newCreatureID);
         (* EmitStatement CreateCreature(newCreatureID, _owner) *)
       } with (opList, test_self);
     
