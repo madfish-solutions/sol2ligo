@@ -379,6 +379,9 @@ class @Gen_context
   files             : null
   keep_dir_structure: false
   
+  # for fix Ret_multi at non-last position of function
+  scope_root : null
+  
   constructor:()->
     @type_decl_map   = {}
     @contract_var_map= {}
@@ -403,6 +406,7 @@ class @Gen_context
     t.contract = @contract
     t.files = @files
     t.keep_dir_structure = @keep_dir_structure
+    t.scope_root = @scope_root
     t
 
 last_bracket_state = false
@@ -949,16 +953,31 @@ walk = (root, ctx)->
       for v,idx in root.t_list
         jl.push walk v, ctx
       
-      jl.push "unit" if jl.length == 0
-      """
-      with (#{jl.join ', '})
-      """
+      if ctx.scope_root.constructor.name == "Fn_decl_multiret"
+        # TODO fix bug in router, that return value is tuple
+        if ctx.scope_root.name != "main"
+          for type, idx in ctx.scope_root.type_o.nest_list
+            if !root.t_list[idx]
+              jl.push type2default_value type, ctx
+          
+        jl.push "unit" if jl.length == 0
+        """
+        with (#{jl.join ', '})
+        """
+      else
+        perr "WARNING (Translate). Return at non end-of-function position is prohibited"
+        """
+        failwith("return at non end-of-function position is prohibited")
+        """
     
     when "If"
       cond = walk root.cond,  ctx
       cond = "(#{cond})" if !last_bracket_state
+      old_scope_root = ctx.scope_root
+      ctx.scope_root = root
       t    = walk root.t,     ctx
       f    = walk root.f,     ctx
+      ctx.scope_root = old_scope_root
       """
       if #{cond} then #{t} else #{f};
       """
@@ -966,7 +985,10 @@ walk = (root, ctx)->
     when "While"
       cond = walk root.cond,  ctx
       cond = "(#{cond})" if !last_bracket_state
+      old_scope_root = ctx.scope_root
+      ctx.scope_root = root
       scope= walk root.scope, ctx
+      ctx.scope_root = old_scope_root
       """
       while #{cond} #{scope};
       """
@@ -1008,6 +1030,7 @@ walk = (root, ctx)->
       
       ret_jl.push "unit" if ret_jl.length == 0
       
+      ctx.scope_root = root
       body = walk root.scope, ctx
       """
       function #{root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is

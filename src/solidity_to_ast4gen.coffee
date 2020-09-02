@@ -157,8 +157,6 @@ walk_param = (root, ctx)->
       ret = []
       for v in root.parameters
         ret.append walk_param v, ctx
-      [ret.pos, ret.line] = parse_line_pos(root.src)
-      ret.file = ctx.file_stack.last()
       ret
     
     when "VariableDeclaration"
@@ -169,8 +167,6 @@ walk_param = (root, ctx)->
       # HACK INJECT
       t._name = root.name
       ret.push t
-      [ret.pos, ret.line] = parse_line_pos(root.src)
-      ret.file = ctx.file_stack.last()
       ret
     
     else
