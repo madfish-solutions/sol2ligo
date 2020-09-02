@@ -192,7 +192,7 @@ ast = require "./ast"
 
 # creates typecast to address if node isn't already address
 @cast_to_address = (t)->
-  return t if t.type.main == "address"
+  return t if t.type?.main == "address"
   ret = new ast.Type_cast
   ret.target_type = new Type "address"
   ret.t = t
