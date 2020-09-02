@@ -381,3 +381,26 @@ describe "translate ligo section unsorted", ()->
       } with (unit);
     """
     make_test text_i, text_o
+  
+  it "bytes.length", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+
+    contract BytesLength {
+      function bytes_length(string memory s) public returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 l = b.length;
+        return l;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function bytes_length (const s : string) : (nat) is
+      block {
+        const b : bytes = bytes_pack(s);
+        const l : nat = size(b);
+      } with (l);
+    """
+    make_test text_i, text_o

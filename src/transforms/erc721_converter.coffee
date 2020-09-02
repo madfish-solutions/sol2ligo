@@ -9,7 +9,6 @@ astBuilder = require "../ast_builder"
 # function balanceOf(address _owner) external view returns (uint256); -> Balance_of(record [requests = list [ record [owner = arg[0], token_id = callee] ], callback = Tezos.self(%callback))
 # function ownerOf(uint256 _tokenId) external view returns (address); ->?Balance_of(record [ owner = arg[0], operator = Tezos.sender, callback = self("%is_operator_callback")
 
-# TODO translate the following
 # function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes data) external payable; -> ???
 # function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable; -> ???
 
@@ -149,7 +148,8 @@ walk = (root, ctx)->
 
                 return tx_node(root.fn.t, [update], ctx)
               when "isApprovedForAll", \
-                   "getApproved" 
+                   "getApproved", \ 
+                   "ownerOf"
                 block = new ast.Scope
                 block.need_nest = false
 
