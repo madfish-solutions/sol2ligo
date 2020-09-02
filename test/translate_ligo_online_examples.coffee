@@ -755,7 +755,7 @@ describe "translate ligo online examples", ()->
     
         // Some deliberately invalid address to initialize the secret signer with.
         // Forces maintainers to invoke setSecretSigner before processing any bets.
-        const dUMMY_ADDRESS : address = (0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE : address)
+        address constant DUMMY_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         
         // Standard contract ownership transfer.
         address public owner;
@@ -1622,7 +1622,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+    const dUMMY_ADDRESS : address = (0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
@@ -2164,7 +2164,7 @@ describe "translate ligo online examples", ()->
                 timestamp: uint64(now)
             });
             uint256 newCreatureID = creatures.push(_creature) - 1;
-            transfer(burn_address, _owner, newCreatureID);
+            transfer(0, _owner, newCreatureID);
             CreateCreature(newCreatureID, _owner);
         }
         function getCreature(uint256 id)
@@ -2344,7 +2344,7 @@ describe "translate ligo online examples", ()->
           timestamp = abs(#{config.reserved}__now) ];
         const tmp_0 : map(nat, creatures_Creature) = test_self.creatures;
         const newCreatureID : nat = (tmp_0[size(tmp_0)] := creature_ - 1n);
-        transfer(0, owner_, newCreatureID);
+        transfer(burn_address, owner_, newCreatureID);
         (* EmitStatement CreateCreature(newCreatureID, _owner) *)
       } with (opList, test_self);
     
