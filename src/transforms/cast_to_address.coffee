@@ -7,8 +7,6 @@ astBuilder = require "../ast_builder"
 walk = (root, ctx)->
   switch root.constructor.name
     when "Var_decl"
-      p "var decl incoming"
-      insp root, 5
       if root.type?.main == "address"
         if root.assign_value?.type
           if root.assign_value.type.main != "address"
@@ -16,8 +14,6 @@ walk = (root, ctx)->
       ctx.next_gen root, ctx
     
     when "Bin_op"
-      p "bin operator"
-      insp root, 5
       if root.op != "INDEX_ACCESS"
         if root.a.type?.main == "address" and \
            root.b.type?.main != "address"
