@@ -164,21 +164,21 @@ describe "translate ligo section router", ()->
     type router_enum is
       | Method of method_args;
 
-    function method (const res__unit : unit) : (bool) is
+    function method (const #{config.reserved}__unit : unit) : (bool) is
       block {
         if (True) then block {
-          skip
-        } with (True); else block {
-          skip
-        } with (False);;
+          failwith("return at non end-of-function position is prohibited");
+        } else block {
+          failwith("return at non end-of-function position is prohibited");
+        };
       } with (False);
 
-    function main (const action : router_enum; const self : state) : (list(operation) * state) is
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
       (case action of
       | Method(match_action) -> block {
-        const tmp : unit = method(unit);
+        const tmp : (bool) = method(unit);
         var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(bool))) end;
-      } with ((opList, self))
+      } with ((opList, contract_storage))
       end);
     """
     make_test text_i, text_o, router: true

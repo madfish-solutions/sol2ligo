@@ -38,8 +38,6 @@ walk = (root, ctx)->
         root.arg_name_list.unshift config.op_list
         root.type_i.nest_list.unshift new Type "built_in_op_list"
         root.type_o.nest_list.unshift new Type "built_in_op_list"
-      if root.type_o.nest_list.length == 0
-        root.type_o.nest_list.unshift new Type "Unit"
 
       last = root.scope.list.last()
       if !last or last.constructor.name != "Ret_multi"
@@ -47,13 +45,6 @@ walk = (root, ctx)->
         last = walk last, ctx
         root.scope.list.push last
       last = root.scope.list.last()
-      if last and last.constructor.name == "Ret_multi" and last.t_list.length != root.type_o.nest_list.length
-        last = root.scope.list.pop()
-        while last.t_list.length > root.type_o.nest_list.length
-          last.t_list.pop()
-        while root.type_o.nest_list.length > last.t_list.length
-          root.type_o.nest_list.pop()
-        root.scope.list.push last
 
       root
 
