@@ -29,7 +29,6 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
-  POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -126,6 +125,19 @@ number2bytes = (val, precision = 32)->
       "int(#{a} mod #{b})"
     else
       "(#{a} mod #{b})"
+  POW : (a, b, ctx, ast) ->
+    if config.uint_type_map.hasOwnProperty(ast.a.type.main) and config.uint_type_map.hasOwnProperty(ast.b.type.main)
+      """
+      (function (const base : nat; const exp : nat) : nat is
+        block {
+          var ret : nat := 1n;
+          for i := 1 to int(exp) block {
+            ret := ret * base;
+          }
+        } with ret) (#{a}, #{b})
+      """
+    else
+      "failwith('Exponentiation is only available for unsigned types. Here operands #{a} and #{b} have types #{ast.a.type.main} and #{ast.a.type.main}');"
 
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
