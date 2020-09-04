@@ -404,3 +404,30 @@ describe "translate ligo section unsorted", ()->
       } with (l);
     """
     make_test text_i, text_o
+  
+  it "pow", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+
+    contract Pow {
+      function pow_test() public returns (uint256) {
+        uint256 v = 5 ** 2;
+        return v;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function pow_test (const #{config.reserved}__unit : unit) : (nat) is
+      block {
+        const v : nat = (function (const base : nat; const exp : nat) : nat is
+          block {
+            var ret : nat := 1n;
+            for i := 1 to int(exp) block {
+              ret := ret * base;
+            }
+          } with ret) (5n, 2n);
+      } with (v);
+    """
+    make_test text_i, text_o

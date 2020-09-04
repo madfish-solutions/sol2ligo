@@ -285,6 +285,7 @@ describe "translate ligo section ops", ()->
             c = a * b;
             c = a / b;
             c = a % b;
+            c = a ** b;
             c = a & b;
             c = a | b;
             c = a ^ b;
@@ -322,6 +323,13 @@ describe "translate ligo section ops", ()->
               c := (a * b);
               c := (a / b);
               c := (a mod b);
+              c := (function (const base : nat; const exp : nat) : nat is
+                block {
+                  var ret : nat := 1n;
+                  for i := 1 to int(exp) block {
+                    ret := ret * base;
+                  }
+                } with ret) (a, b);
               c := Bitwise.and(a, b);
               c := Bitwise.or(a, b);
               c := Bitwise.xor(a, b);
@@ -367,7 +375,7 @@ describe "translate ligo section ops", ()->
     
     if process.env.EMULATOR
       describe "emulator a op b -> uint", ()->
-        for op in "+ - * / % & | ^ << >>".split /\s+/g
+        for op in "+ - * / % ** & | ^ << >>".split /\s+/g
           do (op)->
             test_value_list = []
             for a in [0 .. 2]
