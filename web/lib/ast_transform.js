@@ -1,5 +1,5 @@
 (function() {
-  var add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc721_converter, erc_detector, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_nested_index_access, translate_type, translate_var_name, var_translate;
+  var add_burn_address, add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, cast_to_address, contract_object_to_address, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc721_converter, erc_detector, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, make_calls_external, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_nested_index_access, translate_type, translate_var_name, var_translate;
 
   module = this;
 
@@ -47,6 +47,14 @@
 
   split_nested_index_access = require("./transforms/split_nested_index_access").split_nested_index_access;
 
+  make_calls_external = require("./transforms/make_calls_external").make_calls_external;
+
+  add_burn_address = require("./transforms/add_burn_address").add_burn_address;
+
+  cast_to_address = require("./transforms/cast_to_address").cast_to_address;
+
+  contract_object_to_address = require("./transforms/contract_object_to_address").contract_object_to_address;
+
   erc_detector = require("./transforms/erc_detector").erc_detector;
 
   translate_var_name = require("./translate_var_name").translate_var_name;
@@ -85,12 +93,15 @@
     root = split_nested_index_access(root);
     root = address_calls_converter(root);
     root = ercs_translate(root, opt);
+    root = contract_object_to_address(root, opt);
     root = intrinsics_converter(root);
+    root = mark_last(root, opt);
+    root = make_calls_external(root, opt);
     root = var_translate(root);
     root = deep_check_storage_and_oplist_use(root);
     root = decl_storage_and_oplist_inject(root, opt);
     root = call_storage_and_oplist_inject(root);
-    root = mark_last(root, opt);
+    root = cast_to_address(root, opt);
     if (opt.router) {
       router_func_list = router_collector(root, opt);
       root = add_router(root, obj_merge({
@@ -98,16 +109,21 @@
       }, opt));
     }
     root = return_op_list_count(root, opt);
+    root = add_burn_address(root, opt);
     return root;
   };
 
   ercs_translate = function(root, opt) {
     var ctx, _ref;
     _ref = erc_detector(root), root = _ref.root, ctx = _ref.ctx;
-    if (ctx.has_erc721) {
-      root = erc721_converter(root);
-    } else if (ctx.has_erc20) {
-      root = erc20_converter(root);
+    if (!!ctx.erc721_name) {
+      root = erc721_converter(root, {
+        interface_name: ctx.erc721_name
+      });
+    } else if (!!ctx.erc20_name) {
+      root = erc20_converter(root, {
+        interface_name: ctx.erc20_name
+      });
     }
     return root;
   };

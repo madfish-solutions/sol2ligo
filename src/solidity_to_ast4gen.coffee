@@ -157,8 +157,6 @@ walk_param = (root, ctx)->
       ret = []
       for v in root.parameters
         ret.append walk_param v, ctx
-      [ret.pos, ret.line] = parse_line_pos(root.src)
-      ret.file = ctx.file_stack.last()
       ret
     
     when "VariableDeclaration"
@@ -169,8 +167,6 @@ walk_param = (root, ctx)->
       # HACK INJECT
       t._name = root.name
       ret.push t
-      [ret.pos, ret.line] = parse_line_pos(root.src)
-      ret.file = ctx.file_stack.last()
       ret
     
     else
@@ -302,7 +298,7 @@ walk = (root, ctx)->
       ret
     
     when "InlineAssembly"
-      perr "WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler"
+      perr "WARNING (AST gen). InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler"
       failwith_msg = new ast.Const
       failwith_msg.val = "Unsupported InlineAssembly"
       failwith_msg.type = new Type "string"
@@ -320,7 +316,7 @@ walk = (root, ctx)->
       ret
     
     when "EventDefinition"
-      perr "WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
+      perr "WARNING (AST gen). EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Event_decl
       ret.name = root.name
       ret.arg_list = walk_param root.parameters, ctx
@@ -330,7 +326,7 @@ walk = (root, ctx)->
       ret
     
     when "EmitStatement"
-      perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
+      perr "WARNING (AST gen). EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
       ret = new ast.Comment
       args = []
       name = root.fn?.name || root.eventCall.name || root.eventCall.expression.name
@@ -359,7 +355,7 @@ walk = (root, ctx)->
       try
         ret.type = unpack_id_type root.typeDescriptions, ctx
       catch err
-        perr "WARNING can't resolve type #{err}"
+        perr "WARNING (AST gen). Can't resolve type #{err}"
       [ret.pos, ret.line] = parse_line_pos(root.src)
       ret.file = ctx.file_stack.last()
       
@@ -618,7 +614,7 @@ walk = (root, ctx)->
             try
               type = unpack_id_type decl.typeDescriptions, ctx
             catch err
-              perr "WARNING can't resolve type #{err}"
+              perr "WARNING (AST gen). Can't resolve type #{err}"
             
             ret.list.push {
               name : decl.name
@@ -709,7 +705,7 @@ walk = (root, ctx)->
       ret
     
     when "Continue"
-      perr "WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING (AST gen). 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Continue
       [ret.pos, ret.line] = parse_line_pos(root.src)
@@ -717,7 +713,7 @@ walk = (root, ctx)->
       ret
     
     when "Break"
-      perr "WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
+      perr "WARNING (AST gen). 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break"
       ctx.need_prevent_deploy = true
       ret = new ast.Break
       [ret.pos, ret.line] = parse_line_pos(root.src)

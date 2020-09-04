@@ -83,6 +83,20 @@
     return contract_cast;
   };
 
+  this.get_entrypoint = function(name, address, type) {
+    var contract_cast, get_entrypoint;
+    contract_cast = new ast.Type_cast;
+    contract_cast.target_type = type;
+    get_entrypoint = new ast.Fn_call;
+    get_entrypoint.type = "function2<function<uint>, function<address>>";
+    get_entrypoint.fn = new ast.Var;
+    get_entrypoint.fn.name = "@get_entrypoint";
+    get_entrypoint.arg_list.push(name);
+    get_entrypoint.arg_list.push(address);
+    contract_cast.t = get_entrypoint;
+    return contract_cast;
+  };
+
   this.self_entrypoint = function(name, contract_type) {
     var arg, cast, entrypoint_name, get_entrypoint;
     arg = new ast.Var;
@@ -186,8 +200,8 @@
   };
 
   this.cast_to_address = function(t) {
-    var ret;
-    if (t.type.main === "address") {
+    var ret, _ref;
+    if (((_ref = t.type) != null ? _ref.main : void 0) === "address") {
       return t;
     }
     ret = new ast.Type_cast;

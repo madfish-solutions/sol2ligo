@@ -77,9 +77,10 @@ describe "translate ligo section unsupported", ()->
     text_o = """
     type state is unit;
     
-    function isAuthorized (const #{config.reserved}__unit : unit) : (unit) is
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    function isAuthorized (const test_reserved_long___unit : unit) : (unit) is
       block {
-        dSAuthority(0);
+        burn_address;
       } with (unit);
     """#"
     make_test text_i, text_o, no_ligo:true

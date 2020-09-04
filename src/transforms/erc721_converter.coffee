@@ -9,7 +9,6 @@ astBuilder = require "../ast_builder"
 # function balanceOf(address _owner) external view returns (uint256); -> Balance_of(record [requests = list [ record [owner = arg[0], token_id = callee] ], callback = Tezos.self(%callback))
 # function ownerOf(uint256 _tokenId) external view returns (address); ->?Balance_of(record [ owner = arg[0], operator = Tezos.sender, callback = self("%is_operator_callback")
 
-# TODO translate the following
 # function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes data) external payable; -> ???
 # function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable; -> ???
 
@@ -34,23 +33,6 @@ tx_node = (address_expr, arg_list, ctx) ->
 walk = (root, ctx)->
   switch root.constructor.name
     when "Class_decl"
-      # ignore ERC20 interface declaration
-      for entry in root.scope.list
-        if entry.constructor.name == "Fn_decl_multiret"
-          switch entry.name
-            when "balanceOf", \
-                 "ownerOf", \
-                 "safeTransferFrom", \
-                 "transferFrom", \
-                 "approve", \
-                 "setApprovalForAll", \
-                 "getApproved", \
-                 "isApprovedForAll"
-              # replace whole class (interface) declaration if we are converting it to FA2 anyway
-              ret = new ast.Include
-              ret.path = "interfaces/fa2.ligo"
-              return ret
-      
       # collect callback declaration dummies
       ctx.callbacks_to_declare_map = new Map
       root = ctx.next_gen root, ctx
@@ -58,14 +40,24 @@ walk = (root, ctx)->
         root.scope.list.unshift decl
       return root
 
+    when "Var_decl"
+      if root.type?.main == ctx.interface_name 
+        root.type = new Type "address"
+      ctx.next_gen root, ctx
+
     when "Fn_decl_multiret"
       ctx.current_scope_ops_count = 0
       ctx.next_gen root, ctx
 
     when "Fn_call"
+      # replace constructor
+      if root.fn.name == ctx.interface_name
+        return astBuilder.cast_to_address(root.arg_list[0])
+        
+      # search for interface methods
       if root.fn.t?.type
         switch root.fn.t.type.main
-          when "struct"
+          when "struct", ctx.interface_name
             switch root.fn.name
               when "transferFrom", \
                    "safeTransferFrom"
@@ -80,7 +72,7 @@ walk = (root, ctx)->
                 token_and_dst.list.push dst
 
                 transfer = new ast.Tuple
-                transfer.list.push astBuilder.list_init([token_and_dst]) # txs
+                transfer.list.push astBuilder.list_init [token_and_dst] # txs
                 transfer.list.push astBuilder.cast_to_address args[0] # from
 
                 transfers = astBuilder.list_init([transfer])
@@ -156,7 +148,8 @@ walk = (root, ctx)->
 
                 return tx_node(root.fn.t, [update], ctx)
               when "isApprovedForAll", \
-                   "getApproved" 
+                   "getApproved", \ 
+                   "ownerOf"
                 block = new ast.Scope
                 block.need_nest = false
 
@@ -166,7 +159,6 @@ walk = (root, ctx)->
                 comment.text = "^ #{root.fn.name} is not supported in LIGO. Read more https://git.io/JJFij ^"
 
                 return block
-
       ctx.next_gen root, ctx
     
     else
@@ -174,4 +166,8 @@ walk = (root, ctx)->
 
 
 @erc721_converter = (root, ctx)-> 
-  walk root, ctx = obj_merge({walk, next_gen: default_walk}, ctx)
+  init_ctx = {
+    walk,
+    next_gen: default_walk,
+  }
+  walk root, obj_merge(init_ctx, ctx)

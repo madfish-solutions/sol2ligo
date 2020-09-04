@@ -108,7 +108,7 @@
   };
 
   bad_spec_id_trans_map = {
-    "block.coinbase": config.default_address,
+    "block.coinbase": "(" + (JSON.stringify(config.default_address)) + " : address)",
     "block.difficulty": "0n",
     "block.gaslimit": "0n",
     "block.number": "0n",
@@ -128,7 +128,7 @@
       val = bad_spec_id_trans_map[t];
       if (!warning_once_map.hasOwnProperty(t)) {
         warning_once_map.hasOwnProperty[t] = true;
-        perr("WARNING we don't have a proper translation for Solidity '" + t + "', so it is translated as '" + val + "'");
+        perr("WARNING (translate). We don't have a proper translation for Solidity '" + t + "', so it is translated as '" + val + "'");
       }
       return val;
     } else {

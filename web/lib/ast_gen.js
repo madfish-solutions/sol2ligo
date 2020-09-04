@@ -101,7 +101,7 @@
       error = _ref[_j];
       if (error.type === "Warning") {
         if (!opt.quiet) {
-          perr("WARNING", error);
+          perr("WARNING (Solidity compiler).", error.formattedMessage);
         }
         continue;
       }

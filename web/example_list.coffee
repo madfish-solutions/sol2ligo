@@ -1208,4 +1208,39 @@ window.example_list = [
       }
     '''
   }
+  {
+    title : 'ERC20 usage'
+    code : '''
+      pragma solidity ^0.4.26;
+      
+      contract IERC20 {
+          function totalSupply() public constant returns (uint256);
+          function balanceOf(address _owner) public constant returns (uint256);
+          function transfer(address _to, uint256 _value) public returns (bool);
+          function transferFrom(address _from, address _to, uint256 _value) public returns (bool);
+          function approve(address _spender, uint256 _value) public returns (bool);
+          function allowance(address _owner, address _spender) public constant returns (uint256);
+      }
+      
+      contract TokenReceiver {
+      
+          IERC20 private _token;
+      
+          event DoneStuff(address from);
+      
+          constructor (IERC20 token) public {
+              _token = token;
+          }
+      
+          function doStuff() external {
+              address from = msg.sender;
+      
+              _token.approve(from, 1000);
+              _token.transferFrom(from, address(this), 1000);
+      
+              emit DoneStuff(from);
+          }
+      }
+    '''
+  }
 ]

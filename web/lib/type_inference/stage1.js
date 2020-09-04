@@ -108,7 +108,7 @@
                       using = using_list[_i];
                       class_decl = ctx.check_type(using);
                       if (!class_decl) {
-                        perr("TI WARNING bad using '" + using + "'");
+                        perr("WARNING (Type inference). Bad using '" + using + "'");
                         continue;
                       }
                       if (!(fn_decl = class_decl._prepared_field2type[root.name])) {
@@ -117,15 +117,15 @@
                       ret_type = fn_decl.clone();
                       a_type = ret_type.nest_list[0].nest_list.shift();
                       if (!a_type.cmp(root_type)) {
-                        perr("TI WARNING bad using '" + using + "' types for self are not same " + a_type + " != " + root_type);
+                        perr("WARNING (Type inference). Bad using '" + using + "' types for self are not same " + a_type + " != " + root_type);
                       }
                       root.type = ti.type_spread_left(root.type, ret_type, ctx);
                       return root.type;
                     }
-                    perr("TI WARNING can't find " + root.name + " for Field_access");
+                    perr("WARNING (Type inference). Can't find " + root.name + " for Field_access");
                     return root_type;
                   } else {
-                    perr("TI WARNING can't find declaration for Field_access ." + root.name);
+                    perr("WARNING (Type inference). Can't find declaration for Field_access ." + root.name);
                     return root_type;
                   }
                 }
@@ -133,7 +133,7 @@
           }
         }
         if (!field_map.hasOwnProperty(root.name)) {
-          perr("TI WARNING unknown field. '" + root.name + "' at type '" + root_type + "'. Allowed fields [" + (Object.keys(field_map).join(', ')) + "]");
+          perr("WARNING (Type inference). Unknown field. '" + root.name + "' at type '" + root_type + "'. Allowed fields [" + (Object.keys(field_map).join(', ')) + "]");
           return root.type;
         }
         field_type = field_map[root.name];
@@ -146,7 +146,7 @@
         switch (root.fn.constructor.name) {
           case "Var":
             if (root.fn.name === "super") {
-              perr("TI WARNING skipping super() call");
+              perr("WARNING (Type inference). Skipping super() call");
               _ref4 = root.arg_list;
               for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
                 arg = _ref4[_j];
@@ -158,7 +158,7 @@
           case "Field_access":
             if (root.fn.t.constructor.name === "Var") {
               if (root.fn.t.name === "super") {
-                perr("TI WARNING skipping super.fn call");
+                perr("WARNING (Type inference). Skipping super.fn call");
                 _ref5 = root.arg_list;
                 for (_k = 0, _len2 = _ref5.length; _k < _len2; _k++) {
                   arg = _ref5[_k];
@@ -171,7 +171,7 @@
         root_type = ctx.walk(root.fn, ctx);
         root_type = ti.type_resolve(root_type, ctx);
         if (!root_type) {
-          perr("TI WARNING can't resolve function type for Fn_call");
+          perr("WARNING (Type inference). Can't resolve function type for Fn_call");
           return root.type;
         }
         offset = 0;
@@ -186,7 +186,7 @@
         }
         if (root_type.main === "struct") {
           if (root.arg_list.length !== 1) {
-            perr("TI WARNING contract(address) call should have 1 argument. real=" + root.arg_list.length);
+            perr("WARNING (Type inference). contract(address) call should have 1 argument. real=" + root.arg_list.length);
             return root.type;
           }
           arg = root.arg_list[0];
@@ -200,7 +200,7 @@
         root_type = ctx.walk(root.fn, ctx);
         root_type = ti.type_resolve(root_type, ctx);
         if (!root_type) {
-          perr("TI WARNING can't resolve function type for Struct_init");
+          perr("WARNING (Type inference). Can't resolve function type for Struct_init");
           return root.type;
         }
         _ref7 = root.val_list;

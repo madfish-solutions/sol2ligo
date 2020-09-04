@@ -25,7 +25,7 @@
     if (opt.contract != null) {
       if (!seek_contract) {
         if (opt.contract) {
-          perr("WARNING Can't find contract '" + opt.contract + "' . Using last contract named '" + (last_contract != null ? last_contract.name : void 0) + "' instead");
+          perr("WARNING (AST transform). Can't find contract '" + opt.contract + "' . Using last contract named '" + (last_contract != null ? last_contract.name : void 0) + "' instead");
         }
       } else {
         if (last_contract) {

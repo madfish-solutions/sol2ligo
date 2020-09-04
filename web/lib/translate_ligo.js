@@ -169,7 +169,7 @@
     },
     BIT_NOT: function(a, ctx, ast) {
       if (!ast.type) {
-        perr("WARNING BIT_NOT ( ~" + a + " ) translation may be incorrect");
+        perr("WARNING (Translate). BIT_NOT ( ~" + a + " ) translation may be incorrect. Read more https://git.io/JUqiS");
         module.warning_counter++;
       }
       if (ast.type && config.uint_type_map.hasOwnProperty(ast.type.main)) {
@@ -183,7 +183,7 @@
     },
     RET_INC: function(a, ctx, ast) {
       var is_uint, one;
-      perr("RET_INC may have not fully correct implementation");
+      perr("WARNING (Translate). RET_INC may have not fully correct implementation. Read more https://git.io/JUqiS");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -199,7 +199,7 @@
     },
     RET_DEC: function(a, ctx, ast) {
       var is_uint, one;
-      perr("RET_DEC may have not fully correct implementation");
+      perr("WARNING (Translate). RET_DEC may have not fully correct implementation. Read more https://git.io/JUqiS");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -215,7 +215,7 @@
     },
     INC_RET: function(a, ctx, ast) {
       var is_uint, one;
-      perr("INC_RET may have not fully correct implementation");
+      perr("WARNING (Translate). INC_RET may have not fully correct implementation. Read more https://git.io/JUqiS");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -227,7 +227,7 @@
     },
     DEC_RET: function(a, ctx, ast) {
       var is_uint, one;
-      perr("DEC_RET may have not fully correct implementation");
+      perr("WARNING (Translate). DEC_RET may have not fully correct implementation. Read more https://git.io/JUqiS");
       module.warning_counter++;
       is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main);
       one = "1";
@@ -332,7 +332,7 @@
         } else if (type.main.startsWith("@")) {
           return type.main.substr(1);
         } else {
-          perr("WARNING. translate_type unknown solidity type '" + type + "'");
+          perr("WARNING (Translate). translate_type unknown solidity type '" + type + "'");
           return "UNKNOWN_TYPE_" + type;
         }
     }
@@ -353,7 +353,12 @@
       case "bool":
         return "False";
       case "address":
-        return "(" + (JSON.stringify(config.default_address)) + " : address)";
+        if (!ctx.parent) {
+          return "(" + (JSON.stringify(config.burn_address)) + " : address)";
+        } else {
+          return "burn_address";
+        }
+        break;
       case "built_in_op_list":
         return "(nil: list(operation))";
       case "contract":
@@ -386,7 +391,7 @@
             return translate_var_name("" + name + "_default", ctx);
           }
         }
-        perr("WARNING. Can't translate unknown Solidity type '" + type + "'");
+        perr("WARNING (Translate). Can't translate unknown Solidity type '" + type + "'");
         return "UNKNOWN_TYPE_DEFAULT_VALUE_" + type;
     }
   };
@@ -430,6 +435,8 @@
 
     Gen_context.prototype.keep_dir_structure = false;
 
+    Gen_context.prototype.scope_root = null;
+
     function Gen_context() {
       this.type_decl_map = {};
       this.contract_var_map = {};
@@ -456,6 +463,7 @@
       t.contract = this.contract;
       t.files = this.files;
       t.keep_dir_structure = this.keep_dir_structure;
+      t.scope_root = this.scope_root;
       return t;
     };
 
@@ -466,7 +474,7 @@
   last_bracket_state = false;
 
   walk = function(root, ctx) {
-    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, jls, k, loc_code, main_file, modifies_storage, msg, name, op, orig_ctx, path, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, text, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, jls, k, loc_code, main_file, modifies_storage, msg, name, old_scope_root, op, orig_ctx, path, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, text, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _ai, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len25, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
     main_file = "";
     last_bracket_state = false;
     switch (root.constructor.name) {
@@ -649,7 +657,7 @@
           case "Unit":
             return "unit";
           case "number":
-            perr("WARNING number constant passed to translation stage. That's type inference mistake");
+            perr("WARNING (Translate). Number constant passed to the translation stage. That's a type inference mistake");
             module.warning_counter++;
             return root.val;
           case "unsigned_number":
@@ -721,7 +729,7 @@
       case "Field_access":
         t = walk(root.t, ctx);
         if (!root.t.type) {
-          perr("WARNING some of types in Field_access aren't resolved. This can cause invalid code generated");
+          perr("WARNING (Translate). Some of types in Field_access aren't resolved. This can cause invalid code generated");
         } else {
           switch (root.t.type.main) {
             case "array":
@@ -800,23 +808,23 @@
               return "sha_256(" + msg + ")";
             case "sha3":
             case "keccak256":
-              perr("WARNING " + root.fn.name + " hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
+              perr("WARNING (Translate). " + root.fn.name + " hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
               msg = arg_list[0];
               return "sha_256(" + msg + ")";
             case "selfdestruct":
-              perr("WARNING " + root.fn.name + " does not exist in LIGO. Statement translated as is");
+              perr("WARNING (Translate). " + root.fn.name + " does not exist in LIGO. Statement translated as is");
               msg = arg_list[0];
               return "selfdestruct(" + msg + ") (* unsupported *)";
             case "blockhash":
               msg = arg_list[0];
-              perr("WARNING " + root.fn.name + " does not exist in LIGO. We replaced it with (\"" + msg + "\" : bytes).");
+              perr("WARNING (Translate). " + root.fn.name + " does not exist in LIGO. We replaced it with (\"" + msg + "\" : bytes).");
               return "(\"00\" : bytes) (* Should be blockhash of " + msg + " *)";
             case "ripemd160":
-              perr("WARNING " + root.fn.name + " hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
+              perr("WARNING (Translate). " + root.fn.name + " hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions");
               msg = arg_list[0];
               return "blake2b(" + msg + ")";
             case "ecrecover":
-              perr("WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover");
+              perr("WARNING (Translate). ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover");
               fn = "ecrecover";
               break;
             case "@respond":
@@ -875,7 +883,7 @@
             }
             return "" + config.contract_storage + "." + root.fn.name;
           } else {
-            perr("WARNING !root.fn_decl " + root.fn.name);
+            perr("WARNING (Translate). !root.fn_decl " + root.fn.name);
             return call_expr;
           }
           ret_types_list = [];
@@ -888,7 +896,7 @@
             return call_expr;
           } else if (ret_types_list.length === 1 && returns_value) {
             ctx.terminate_expr_replace_fn = function() {
-              perr("WARNING " + call_expr + " was terminated with dummy variable declaration");
+              perr("WARNING (Translate). " + call_expr + " was terminated with dummy variable declaration");
               tmp_var = "terminate_tmp_" + (ctx.tmp_idx++);
               return "const " + tmp_var + " : (" + (ret_types_list.join(' * ')) + ") = " + call_expr;
             };
@@ -945,7 +953,7 @@
         } else if (target_type === "bytes" && ((_ref15 = root.t.type) != null ? _ref15.main : void 0) === "string") {
           return "bytes_pack(" + t + ")";
         } else if (target_type === "address" && (t === "0x0" || t === "0")) {
-          return "(" + (JSON.stringify(config.default_address)) + " : " + target_type + ")";
+          return "burn_address";
         } else {
           return "(" + t + " : " + target_type + ")";
         }
@@ -1008,7 +1016,7 @@
           }
           return "const " + tmp_var + " : (" + (type_list.join(' * ')) + ") = " + val + ";\n" + (join_list(jl));
         } else {
-          perr("WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong");
+          perr("WARNING (Translate). Var_decl_multi with no assign value should be unreachable, but something went wrong");
           module.warning_counter++;
           jl = [];
           _ref18 = root.list;
@@ -1036,32 +1044,53 @@
           v = _ref19[idx];
           jl.push(walk(v, ctx));
         }
-        if (jl.length === 0) {
-          jl.push("unit");
+        if (ctx.scope_root.constructor.name === "Fn_decl_multiret") {
+          if (ctx.scope_root.name !== "main") {
+            _ref20 = ctx.scope_root.type_o.nest_list;
+            for (idx = _u = 0, _len11 = _ref20.length; _u < _len11; idx = ++_u) {
+              type = _ref20[idx];
+              if (!root.t_list[idx]) {
+                jl.push(type2default_value(type, ctx));
+              }
+            }
+          }
+          if (jl.length === 0) {
+            jl.push("unit");
+          }
+          return "with (" + (jl.join(', ')) + ")";
+        } else {
+          perr("WARNING (Translate). Return at non end-of-function position is prohibited");
+          return "failwith(\"return at non end-of-function position is prohibited\")";
         }
-        return "with (" + (jl.join(', ')) + ")";
+        break;
       case "If":
         cond = walk(root.cond, ctx);
         if (!last_bracket_state) {
           cond = "(" + cond + ")";
         }
+        old_scope_root = ctx.scope_root;
+        ctx.scope_root = root;
         t = walk(root.t, ctx);
         f = walk(root.f, ctx);
+        ctx.scope_root = old_scope_root;
         return "if " + cond + " then " + t + " else " + f + ";";
       case "While":
         cond = walk(root.cond, ctx);
         if (!last_bracket_state) {
           cond = "(" + cond + ")";
         }
+        old_scope_root = ctx.scope_root;
+        ctx.scope_root = root;
         scope = walk(root.scope, ctx);
+        ctx.scope_root = old_scope_root;
         return "while " + cond + " " + scope + ";";
       case "PM_switch":
         cond = walk(root.cond, ctx);
         ctx = ctx.mk_nest();
         jl = [];
-        _ref20 = root.scope.list;
-        for (_u = 0, _len11 = _ref20.length; _u < _len11; _u++) {
-          _case = _ref20[_u];
+        _ref21 = root.scope.list;
+        for (_v = 0, _len12 = _ref21.length; _v < _len12; _v++) {
+          _case = _ref21[_v];
           case_scope = walk(_case.scope, ctx);
           if (/;$/.test(case_scope)) {
             case_scope = case_scope.slice(0, -1);
@@ -1078,9 +1107,9 @@
         orig_ctx = ctx;
         ctx = ctx.mk_nest();
         arg_jl = [];
-        _ref21 = root.arg_name_list;
-        for (idx = _v = 0, _len12 = _ref21.length; _v < _len12; idx = ++_v) {
-          v = _ref21[idx];
+        _ref22 = root.arg_name_list;
+        for (idx = _w = 0, _len13 = _ref22.length; _w < _len13; idx = ++_w) {
+          v = _ref22[idx];
           type = translate_type(root.type_i.nest_list[idx], ctx);
           arg_jl.push("const " + v + " : " + type);
         }
@@ -1088,15 +1117,16 @@
           arg_jl.push("const " + config.reserved + "__unit : unit");
         }
         ret_jl = [];
-        _ref22 = root.type_o.nest_list;
-        for (_w = 0, _len13 = _ref22.length; _w < _len13; _w++) {
-          v = _ref22[_w];
+        _ref23 = root.type_o.nest_list;
+        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
+          v = _ref23[_x];
           type = translate_type(v, ctx);
           ret_jl.push("" + type);
         }
         if (ret_jl.length === 0) {
           ret_jl.push("unit");
         }
+        ctx.scope_root = root;
         body = walk(root.scope, ctx);
         return "function " + root.name + " (" + (arg_jl.join('; ')) + ") : (" + (ret_jl.join(' * ')) + ") is\n  " + (make_tab(body, '  '));
       case "Class_decl":
@@ -1119,18 +1149,18 @@
         ctx = ctx.mk_nest();
         ctx.current_class = root;
         ctx.is_class_scope = true;
-        _ref23 = root.scope.list;
-        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
-          v = _ref23[_x];
+        _ref24 = root.scope.list;
+        for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
+          v = _ref24[_y];
           switch (v.constructor.name) {
             case "Enum_decl":
             case "Class_decl":
               ctx.type_decl_map[v.name] = v;
               break;
             case "PM_switch":
-              _ref24 = root.scope.list;
-              for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
-                _case = _ref24[_y];
+              _ref25 = root.scope.list;
+              for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
+                _case = _ref25[_z];
                 ctx.type_decl_map[_case.var_decl.type.main] = _case.var_decl;
               }
               break;
@@ -1139,9 +1169,9 @@
           }
         }
         field_decl_jl = [];
-        _ref25 = root.scope.list;
-        for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
-          v = _ref25[_z];
+        _ref26 = root.scope.list;
+        for (_aa = 0, _len17 = _ref26.length; _aa < _len17; _aa++) {
+          v = _ref26[_aa];
           switch (v.constructor.name) {
             case "Var_decl":
               if (!v.is_const) {
@@ -1175,9 +1205,9 @@
         jl = [];
         jl.append(ctx.sink_list);
         ctx.sink_list.clear();
-        _ref26 = root.scope.list;
-        for (_aa = 0, _len17 = _ref26.length; _aa < _len17; _aa++) {
-          v = _ref26[_aa];
+        _ref27 = root.scope.list;
+        for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
+          v = _ref27[_ab];
           switch (v.constructor.name) {
             case "Var_decl":
               "skip";
@@ -1211,9 +1241,9 @@
           name = translate_var_name(name, ctx);
           if (root.is_struct) {
             arg_list = [];
-            _ref27 = root.scope.list;
-            for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
-              v = _ref27[_ab];
+            _ref28 = root.scope.list;
+            for (_ac = 0, _len19 = _ref28.length; _ac < _len19; _ac++) {
+              v = _ref28[_ac];
               arg_list.push("" + v.name + " = " + (type2default_value(v.type, ctx)));
             }
             ctx.structs_default_list.push("const " + name + "_default : " + name + " = record [ " + (arg_list.join(";\n  ")) + " ];\n");
@@ -1226,9 +1256,9 @@
         return jl.join("\n\n");
       case "Enum_decl":
         jl = [];
-        _ref28 = root.value_list;
-        for (idx = _ac = 0, _len19 = _ref28.length; _ac < _len19; idx = ++_ac) {
-          v = _ref28[idx];
+        _ref29 = root.value_list;
+        for (idx = _ad = 0, _len20 = _ref29.length; _ad < _len20; idx = ++_ad) {
+          v = _ref29[idx];
           ctx.contract_var_map[v.name] = v;
           aux = "";
           if (v.type) {
@@ -1249,9 +1279,9 @@
         return "(case " + cond + " of | True -> " + t + " | False -> " + f + " end)";
       case "New":
         arg_list = [];
-        _ref29 = root.arg_list;
-        for (_ad = 0, _len20 = _ref29.length; _ad < _len20; _ad++) {
-          v = _ref29[_ad];
+        _ref30 = root.arg_list;
+        for (_ae = 0, _len21 = _ref30.length; _ae < _len21; _ae++) {
+          v = _ref30[_ae];
           arg_list.push(walk(v, ctx));
         }
         args = "" + (join_list(arg_list, ', '));
@@ -1266,24 +1296,24 @@
         break;
       case "Tuple":
         arg_list = [];
-        _ref30 = root.list;
-        for (_ae = 0, _len21 = _ref30.length; _ae < _len21; _ae++) {
-          v = _ref30[_ae];
+        _ref31 = root.list;
+        for (_af = 0, _len22 = _ref31.length; _af < _len22; _af++) {
+          v = _ref31[_af];
           arg_list.push(walk(v, ctx));
         }
         return "(" + (arg_list.join(', ')) + ")";
       case "Array_init":
         arg_list = [];
-        _ref31 = root.list;
-        for (_af = 0, _len22 = _ref31.length; _af < _len22; _af++) {
-          v = _ref31[_af];
+        _ref32 = root.list;
+        for (_ag = 0, _len23 = _ref32.length; _ag < _len23; _ag++) {
+          v = _ref32[_ag];
           arg_list.push(walk(v, ctx));
         }
         if (root.type.main === "built_in_op_list") {
           return "list [" + (arg_list.join("; ")) + "]";
         } else {
           decls = [];
-          for (i = _ag = 0, _len23 = arg_list.length; _ag < _len23; i = ++_ag) {
+          for (i = _ah = 0, _len24 = arg_list.length; _ah < _len24; i = ++_ah) {
             arg = arg_list[i];
             decls.push("" + i + "n -> " + arg + ";");
           }
@@ -1292,9 +1322,9 @@
         break;
       case "Event_decl":
         args = [];
-        _ref32 = root.arg_list;
-        for (_ah = 0, _len24 = _ref32.length; _ah < _len24; _ah++) {
-          arg = _ref32[_ah];
+        _ref33 = root.arg_list;
+        for (_ai = 0, _len25 = _ref33.length; _ai < _len25; _ai++) {
+          arg = _ref33[_ai];
           name = arg._name;
           type = translate_type(arg, ctx);
           args.push("" + name + " : " + type);

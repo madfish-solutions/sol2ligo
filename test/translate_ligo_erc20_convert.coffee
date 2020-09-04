@@ -7,13 +7,12 @@ config = require "../src/config"
 # template for convenience
 sol_erc20face_template = """
   contract ERC20TokenFace {
-    function totalSupply() public constant returns (uint256 totalSupply);
-    function balanceOf(address _owner) public constant returns (uint256 balance);
-    // solhint-disable-next-line no-simple-event-func-name
-    function transfer(address _to, uint256 _value) public returns (bool success);
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
-    function approve(address _spender, uint256 _value) public returns (bool success);
-    function allowance(address _owner, address _spender) public constant returns (uint256 remaining);
+    function totalSupply() public constant returns (uint256);
+    function balanceOf(address _owner) public constant returns (uint256);
+    function transfer(address _to, uint256 _value) public returns (bool);
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool);
+    function approve(address _spender, uint256 _value) public returns (bool);
+    function allowance(address _owner, address _spender) public constant returns (uint256);
   }
 """
 
@@ -46,6 +45,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -64,12 +64,12 @@ describe "erc20 conversions", ()->
     
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op2 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op3 : operation = transaction((Transfer(Tezos.sender, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op4 : operation = transaction((Transfer(Tezos.sender, Tezos.sender, 50n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
-        const op5 : operation = transaction((Approve(Tezos.sender, 5n)), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetTotalSupply(unit, (Tezos.self("%getTotalSupplyCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op1 : operation = transaction((GetBalance(Tezos.sender, (Tezos.self("%getBalanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op2 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op3 : operation = transaction((Transfer(Tezos.sender, burn_address, 50n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op4 : operation = transaction((Transfer(Tezos.sender, Tezos.sender, 50n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
+        const op5 : operation = transaction((Approve(Tezos.sender, 5n)), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
       } with (list [op0; op1; op2; op3; op4; op5]);
     """#"
     make_test text_i, text_o
@@ -93,6 +93,7 @@ describe "erc20 conversions", ()->
 
     type state is unit;
 
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     type router_enum is
       | GetAllowanceCallback of getAllowanceCallback_args;
@@ -104,7 +105,7 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
       } with (list [op0]);
 
     function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
@@ -134,6 +135,7 @@ describe "erc20 conversions", ()->
     text_o = """
     type state is unit;
 
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -142,10 +144,38 @@ describe "erc20 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((GetAllowance(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa12_action)));
+        const op0 : operation = transaction((GetAllowance(burn_address, Tezos.sender, (Tezos.self("%getAllowanceCallback") : contract(nat)))), 0mutez, (get_contract(burn_address) : contract(fa12_action)));
         const op1 : operation = transaction((unit), (40n * 1mutez), (get_contract(Tezos.sender) : contract(unit)));
       } with (list [op0; op1]);
     """#"
+    make_test text_i, text_o
+
+ it "erc20 preassigned var", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    #{sol_erc20face_template}
+
+    contract eee {
+      function test() private {
+        ERC20TokenFace token = ERC20TokenFace(0x0);
+        token.transferFrom(msg.sender, 0x0, 64);
+      }
+    }
+    """
+    #TODO this is some crazy input type due to bug: last line being comment breaks return type inference
+    text_o = """
+    type state is unit;
+    
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    #include "interfaces/fa1.2.ligo"
+    function test (const opList : list(operation)) : (list(operation)) is
+      block {
+        const token : address = burn_address;
+        const op0 : operation = transaction((Transfer(Tezos.sender, burn_address, 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
+      } with (list [op0]);
+    """
     make_test text_i, text_o
 
 
