@@ -66,7 +66,7 @@ walk dirname, (err, paths) ->
 # ###################################################################################################
 #    examples
 # ###################################################################################################
-code = iced_compiler.compile fs.readFileSync "web/example_list.coffee", "utf-8"
+code = iced_compiler.compile fs.readFileSync("web/example_list.coffee", "utf-8"), bare:true
 fs.writeFileSync "web/example_list.js", code
 # ###################################################################################################
 #    solc
