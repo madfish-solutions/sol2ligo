@@ -24,7 +24,7 @@
                   addmod.op = "MOD";
                   addmod.b = root.arg_list[2];
                   addmod.a = add;
-                  perr("WARNING `addmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types");
+                  perr("WARNING (AST transform). `addmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types");
                   return addmod;
                 case "mulmod":
                   mul = new ast.Bin_op;
@@ -35,7 +35,7 @@
                   mulmod.op = "MOD";
                   mulmod.b = root.arg_list[2];
                   mulmod.a = mul;
-                  perr("WARNING `mulmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types");
+                  perr("WARNING (AST transform). `mulmod` translation may compute incorrectly due to possible overflow. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#number-types");
                   return mulmod;
               }
             }

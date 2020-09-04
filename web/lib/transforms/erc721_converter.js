@@ -28,41 +28,31 @@
   };
 
   walk = function(root, ctx) {
-    var action, action_enum, action_list, add, add_list, arg_type, args, block, call, comment, contract_type, dst, entry, name, param, request, ret, right_comb_action, right_comb_add, token_and_dst, transfer, transfers, tx, update, _i, _len, _ref, _ref1;
+    var action, action_enum, action_list, add, add_list, arg_type, args, block, call, comment, contract_type, dst, name, param, request, right_comb_action, right_comb_add, token_and_dst, transfer, transfers, tx, update, _ref, _ref1;
     switch (root.constructor.name) {
       case "Class_decl":
-        _ref = root.scope.list;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          entry = _ref[_i];
-          if (entry.constructor.name === "Fn_decl_multiret") {
-            switch (entry.name) {
-              case "balanceOf":
-              case "ownerOf":
-              case "safeTransferFrom":
-              case "transferFrom":
-              case "approve":
-              case "setApprovalForAll":
-              case "getApproved":
-              case "isApprovedForAll":
-                ret = new ast.Include;
-                ret.path = "interfaces/fa2.ligo";
-                return ret;
-            }
-          }
-        }
         ctx.callbacks_to_declare_map = new Map;
         root = ctx.next_gen(root, ctx);
         ctx.callbacks_to_declare_map.forEach(function(decl) {
           return root.scope.list.unshift(decl);
         });
         return root;
+      case "Var_decl":
+        if (((_ref = root.type) != null ? _ref.main : void 0) === ctx.interface_name) {
+          root.type = new Type("address");
+        }
+        return ctx.next_gen(root, ctx);
       case "Fn_decl_multiret":
         ctx.current_scope_ops_count = 0;
         return ctx.next_gen(root, ctx);
       case "Fn_call":
+        if (root.fn.name === ctx.interface_name) {
+          return astBuilder.cast_to_address(root.arg_list[0]);
+        }
         if ((_ref1 = root.fn.t) != null ? _ref1.type : void 0) {
           switch (root.fn.t.type.main) {
             case "struct":
+            case ctx.interface_name:
               switch (root.fn.name) {
                 case "transferFrom":
                 case "safeTransferFrom":
@@ -132,6 +122,7 @@
                   return tx_node(root.fn.t, [update], ctx);
                 case "isApprovedForAll":
                 case "getApproved":
+                case "ownerOf":
                   block = new ast.Scope;
                   block.need_nest = false;
                   block.list.push(root);
@@ -148,10 +139,12 @@
   };
 
   this.erc721_converter = function(root, ctx) {
-    return walk(root, ctx = obj_merge({
+    var init_ctx;
+    init_ctx = {
       walk: walk,
       next_gen: default_walk
-    }, ctx));
+    };
+    return walk(root, obj_merge(init_ctx, ctx));
   };
 
 }).call(window.require_register("./transforms/erc721_converter"));

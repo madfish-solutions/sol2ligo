@@ -33,7 +33,7 @@
           case "Field_access":
             if (((_ref = root.t.type) != null ? _ref.main : void 0) === "enum") {
               name = translate_var_name(root.name, ctx);
-              if (((_ref1 = root.t) != null ? _ref1.name : void 0) !== "router_enum") {
+              if (((_ref1 = root.t) != null ? _ref1.name : void 0) !== config.router_enum) {
                 prefix = "";
                 if (ctx.current_class.name) {
                   prefix = "" + ctx.current_class.name + "_";

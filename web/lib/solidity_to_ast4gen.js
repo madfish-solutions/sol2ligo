@@ -154,7 +154,7 @@
   };
 
   walk_param = function(root, ctx) {
-    var ret, t, v, _i, _len, _ref, _ref1, _ref2;
+    var ret, t, v, _i, _len, _ref;
     switch (root.nodeType) {
       case "ParameterList":
         ret = [];
@@ -163,8 +163,6 @@
           v = _ref[_i];
           ret.append(walk_param(v, ctx));
         }
-        _ref1 = parse_line_pos(root.src), ret.pos = _ref1[0], ret.line = _ref1[1];
-        ret.file = ctx.file_stack.last();
         return ret;
       case "VariableDeclaration":
         if (root.value) {
@@ -174,8 +172,6 @@
         t = walk_type(root.typeName, ctx);
         t._name = root.name;
         ret.push(t);
-        _ref2 = parse_line_pos(root.src), ret.pos = _ref2[0], ret.line = _ref2[1];
-        ret.file = ctx.file_stack.last();
         return ret;
       default:
         perr(root);
@@ -325,7 +321,7 @@
           ret.file = ctx.file_stack.last();
           return ret;
         case "InlineAssembly":
-          perr("WARNING InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler");
+          perr("WARNING (AST gen). InlineAssembly is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#inline-assembler");
           failwith_msg = new ast.Const;
           failwith_msg.val = "Unsupported InlineAssembly";
           failwith_msg.type = new Type("string");
@@ -341,7 +337,7 @@
           ret.file = ctx.file_stack.last();
           return ret;
         case "EventDefinition":
-          perr("WARNING EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
+          perr("WARNING (AST gen). EventDefinition is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
           ret = new ast.Event_decl;
           ret.name = root.name;
           ret.arg_list = walk_param(root.parameters, ctx);
@@ -349,7 +345,7 @@
           ret.file = ctx.file_stack.last();
           return ret;
         case "EmitStatement":
-          perr("WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
+          perr("WARNING (AST gen). EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events");
           ret = new ast.Comment;
           args = [];
           name = ((_ref11 = root.fn) != null ? _ref11.name : void 0) || root.eventCall.name || root.eventCall.expression.name;
@@ -374,7 +370,7 @@
             ret.type = unpack_id_type(root.typeDescriptions, ctx);
           } catch (_error) {
             err = _error;
-            perr("WARNING can't resolve type " + err);
+            perr("WARNING (AST gen). Can't resolve type " + err);
           }
           _ref14 = parse_line_pos(root.src), ret.pos = _ref14[0], ret.line = _ref14[1];
           ret.file = ctx.file_stack.last();
@@ -621,7 +617,7 @@
                   type = unpack_id_type(decl.typeDescriptions, ctx);
                 } catch (_error) {
                   err = _error;
-                  perr("WARNING can't resolve type " + err);
+                  perr("WARNING (AST gen). Can't resolve type " + err);
                 }
                 ret.list.push({
                   name: decl.name,
@@ -714,14 +710,14 @@
           ret.file = ctx.file_stack.last();
           return ret;
         case "Continue":
-          perr("WARNING 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
+          perr("WARNING (AST gen). 'continue' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Continue;
           _ref39 = parse_line_pos(root.src), ret.pos = _ref39[0], ret.line = _ref39[1];
           ret.file = ctx.file_stack.last();
           return ret;
         case "Break":
-          perr("WARNING 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
+          perr("WARNING (AST gen). 'break' is not supported by LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#continue--break");
           ctx.need_prevent_deploy = true;
           ret = new ast.Break;
           _ref40 = parse_line_pos(root.src), ret.pos = _ref40[0], ret.line = _ref40[1];

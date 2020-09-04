@@ -23,7 +23,7 @@
             ctx_lvalue.lvalue = true;
             root.a.a = walk(root.a.a, ctx_lvalue);
           } else {
-            perr("WARNING DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)");
+            perr("WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)");
             root.a = walk(root.a, ctx_lvalue);
           }
         }
@@ -226,7 +226,7 @@
       root = walk(root, ctx);
     }
     if (ctx.change_count.val) {
-      perr("WARNING prevent infinite loop trigger catched. Please notify developer about it with code example. Generated code can be invalid");
+      perr("WARNING (AST transform). prevent infinite loop trigger catched. Please notify developer about it with code example. Generated code can be invalid");
     }
     return root;
   };

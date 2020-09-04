@@ -20,6 +20,8 @@
 
   this.default_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
+  this.burn_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
+
   this.empty_state = "reserved__empty_state";
 
   this.op_list = "opList";
@@ -27,6 +29,8 @@
   this.fix_underscore = "fx";
 
   this.reserved = "res";
+
+  this.router_enum = "router_enum";
 
   this.int_type_list = ["int"];
 

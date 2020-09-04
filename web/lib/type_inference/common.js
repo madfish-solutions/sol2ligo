@@ -500,7 +500,7 @@
       if ((_ref7 = b_type.main) === "number" || _ref7 === "unsigned_number" || _ref7 === "signed_number") {
         if (!is_defined_number_or_byte_type(a_type)) {
           if (a_type.main === "address") {
-            perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
+            perr("WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO");
             return a_type;
           }
           throw new Error("can't spread '" + b_type + "' to '" + a_type + "'. Reverse spread collision detected");
@@ -554,15 +554,15 @@
           return a_type;
         }
         if (a_type.main === "address" && config.any_int_type_map.hasOwnProperty(b_type)) {
-          perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
+          perr("WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO");
           return a_type;
         }
         if (b_type.main === "address" && config.any_int_type_map.hasOwnProperty(a_type)) {
-          perr("TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO");
+          perr("WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO");
           return a_type;
         }
         if (config.bytes_type_map.hasOwnProperty(a_type.main) && config.bytes_type_map.hasOwnProperty(b_type.main)) {
-          perr("TI WARNING bytes with different sizes are in type collision '" + a_type + "' '" + b_type + "'. This can lead to runtime error.");
+          perr("WARNING (Type inference). Bytes with different sizes are in type collision '" + a_type + "' '" + b_type + "'. This can lead to runtime error.");
           return a_type;
         }
       }

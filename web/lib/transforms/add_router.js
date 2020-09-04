@@ -23,7 +23,7 @@
     name = name.capitalize();
     if (name.length > 31) {
       new_name = name.substr(0, 31);
-      perr("WARNING entrypoint names longer than 31 character are not supported in LIGO. We trimmed " + name + " to " + new_name + ". Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types");
+      perr("WARNING (AST transform). Entrypoint names longer than 31 character are not supported in LIGO. We trimmed " + name + " to " + new_name + ". Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types");
       name = new_name;
     }
     return name;
@@ -65,7 +65,7 @@
             }
           }
           root.scope.list.push(_enum = new ast.Enum_decl);
-          _enum.name = "router_enum";
+          _enum.name = config.router_enum;
           _ref2 = ctx.router_func_list;
           for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
             func = _ref2[_k];
@@ -78,7 +78,7 @@
           _main.type_i = new Type("function");
           _main.type_o = new Type("function");
           _main.arg_name_list.push("action");
-          _main.type_i.nest_list.push(new Type("router_enum"));
+          _main.type_i.nest_list.push(new Type(config.router_enum));
           _main.arg_name_list.push(config.contract_storage);
           _main.type_i.nest_list.push(new Type(config.storage));
           _main.type_o.nest_list.push(new Type("built_in_op_list"));
@@ -151,7 +151,7 @@
               if (!func.returns_value) {
                 _case.scope.list.push(comment = new ast.Comment);
                 comment.text = "This function does nothing, but it's present in router";
-                perr("WARNING. Function named " + func.name + " does nothing, but we put it in the router nonetheless");
+                perr("WARNING (AST transform). Function named " + func.name + " does nothing, but we put it in the router nonetheless");
               }
               _case.scope.list.push(tmp = new ast.Var_decl);
               tmp.name = "tmp";
