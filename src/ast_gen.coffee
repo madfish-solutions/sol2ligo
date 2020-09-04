@@ -89,7 +89,7 @@ module.exports = (code, opt={})->
   for error in output.errors or []
     if error.type == "Warning"
       unless opt.quiet
-        perr "WARNING", error
+        perr "WARNING (Solidity compiler).", error.formattedMessage
       continue
     is_ok = false
     perr error

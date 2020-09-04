@@ -581,11 +581,12 @@ describe "translate ligo online examples", ()->
     
     const atomicSwapEther_Swap_default : atomicSwapEther_Swap = record [ timelock = 0n;
       value = 0n;
-      ethTrader = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
-      withdrawTrader = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+      ethTrader = burn_address;
+      withdrawTrader = burn_address;
       secretLock = ("00": bytes);
       secretKey = ("00": bytes) ];
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     const states_INVALID : nat = 0n;
     const states_OPEN : nat = 1n;
     const states_CLOSED : nat = 2n;
@@ -654,7 +655,7 @@ describe "translate ligo online examples", ()->
       block {
         const timelock : nat = 0n;
         const value : nat = 0n;
-        const withdrawTrader : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const withdrawTrader : address = burn_address;
         const secretLock : bytes = ("00": bytes);
         const swap : atomicSwapEther_Swap = (case test_self.swaps[swapID_] of | None -> atomicSwapEther_Swap_default | Some(x) -> x end);
       } with ((swap.timelock, swap.value, swap.withdrawTrader, swap.secretLock));
@@ -755,7 +756,7 @@ describe "translate ligo online examples", ()->
         // Some deliberately invalid address to initialize the secret signer with.
         // Forces maintainers to invoke setSecretSigner before processing any bets.
         address constant DUMMY_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    
+        
         // Standard contract ownership transfer.
         address public owner;
         address private nextOwner;
@@ -1580,8 +1581,9 @@ describe "translate ligo online examples", ()->
       rollUnder = 0n;
       placeBlockNumber = 0n;
       mask = 0n;
-      gambler = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address) ];
+      gambler = burn_address ];
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     type router_enum is
       | Constructor of constructor_args
      | ApproveNextOwner of approveNextOwner_args
@@ -1620,7 +1622,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+    const dUMMY_ADDRESS : address = (0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
@@ -1706,7 +1708,7 @@ describe "translate ligo online examples", ()->
         assert((Tezos.sender = test_self.owner)) (* "OnlyOwner methods called by non-owner." *);
         assert((withdrawAmount <= self_address.#{config.reserved}__balance)) (* "Increase amount larger than balance." *);
         assert((((test_self.jackpotSize + test_self.lockedInBets) + withdrawAmount) <= self_address.#{config.reserved}__balance)) (* "Not enough funds." *);
-        opList := sendFunds(test_self, beneficiary, withdrawAmount, withdrawAmount);
+        opList := sendFunds((test_self : address), beneficiary, withdrawAmount, withdrawAmount);
       } with (opList);
     
     function kill (const test_self : state) : (unit) is
@@ -1735,7 +1737,7 @@ describe "translate ligo online examples", ()->
     function placeBet (const test_self : state; const betMask : nat; const modulo : nat; const commitLastBlock : nat; const commit : nat; const r : bytes; const s : bytes) : (state) is
       block {
         const bet : dice2Win_Bet = (case test_self.bets[commit] of | None -> dice2Win_Bet_default | Some(x) -> x end);
-        assert((bet.gambler = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))) (* "Bet should be in a 'clean' _state." *);
+        assert((bet.gambler = burn_address)) (* "Bet should be in a 'clean' _state." *);
         const #{config.reserved}__amount : nat = (amount / 1mutez);
         assert(((modulo > 1n) and (modulo <= mAX_MODULO))) (* "Modulo should be within range." *);
         assert(((#{config.reserved}__amount >= mIN_BET) and (#{config.reserved}__amount <= mAX_AMOUNT))) (* "Amount should be within range." *);
@@ -1813,7 +1815,7 @@ describe "translate ligo online examples", ()->
         } else block {
           skip
         };
-        opList := sendFunds(test_self, gambler, (case ((diceWin + jackpotWin) = 0n) of | True -> 1n | False -> (diceWin + jackpotWin) end), diceWin);
+        opList := sendFunds((test_self : address), gambler, (case ((diceWin + jackpotWin) = 0n) of | True -> 1n | False -> (diceWin + jackpotWin) end), diceWin);
       } with (opList, test_self);
     
     function settleBet (const opList : list(operation); const test_self : state; const reveal : nat; const blockHash : bytes) : (list(operation) * state) is
@@ -2052,7 +2054,7 @@ describe "translate ligo online examples", ()->
         (diceWinAmount, jackpotFee) := getDiceWinAmount(test_self, #{config.reserved}__amount, bet.modulo, bet.rollUnder);
         test_self.lockedInBets := (test_self.lockedInBets - abs(diceWinAmount));
         test_self.jackpotSize := (test_self.jackpotSize - abs(jackpotFee));
-        opList := sendFunds(test_self, bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
+        opList := sendFunds((test_self : address), bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
       } with (opList, test_self);
     
     function main (const action : router_enum; const test_self : state) : (list(operation) * state) is
@@ -2253,6 +2255,7 @@ describe "translate ligo online examples", ()->
       eyeColor = 0n;
       timestamp = 0n ];
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     type router_enum is
       | NewCaller of newCaller_args
      | NewStorage of newStorage_args
@@ -2272,7 +2275,7 @@ describe "translate ligo online examples", ()->
     function newCaller (const test_self : state; const new_ : address) : (state) is
       block {
         assert((Tezos.sender = test_self.ownerAddress));
-        if (new_ =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then block {
+        if (new_ =/= burn_address) then block {
           test_self.callerAddress := new_;
         } else block {
           skip
@@ -2282,7 +2285,7 @@ describe "translate ligo online examples", ()->
     function newStorage (const test_self : state; const new_ : address) : (state) is
       block {
         assert((Tezos.sender = test_self.ownerAddress));
-        if (new_ =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then block {
+        if (new_ =/= burn_address) then block {
           test_self.storageAddress := new_;
         } else block {
           skip
@@ -2292,7 +2295,7 @@ describe "translate ligo online examples", ()->
     function transferOwnership (const test_self : state; const newOwner : address) : (state) is
       block {
         assert((Tezos.sender = test_self.ownerAddress));
-        if (newOwner =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then block {
+        if (newOwner =/= burn_address) then block {
           test_self.ownerAddress := newOwner;
         } else block {
           skip
@@ -2323,7 +2326,7 @@ describe "translate ligo online examples", ()->
       block {
         assert((Tezos.sender = test_self.callerAddress));
         test_self.creatureIndexToOwner[tokenId_] := to_;
-        if (from_ =/= ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) then block {
+        if (from_ =/= burn_address) then block {
           (case test_self.ownershipTokenCount[from_] of | None -> 0n | Some(x) -> x end) := abs((case test_self.ownershipTokenCount[from_] of | None -> 0n | Some(x) -> x end) - 1n);
         } else block {
           skip
@@ -2341,14 +2344,14 @@ describe "translate ligo online examples", ()->
           timestamp = abs(#{config.reserved}__now) ];
         const tmp_0 : map(nat, creatures_Creature) = test_self.creatures;
         const newCreatureID : nat = (tmp_0[size(tmp_0)] := creature_ - 1n);
-        transfer(0, owner_, newCreatureID);
+        transfer(burn_address, owner_, newCreatureID);
         (* EmitStatement CreateCreature(newCreatureID, _owner) *)
       } with (opList, test_self);
     
     function getCreature (const test_self : state; const id : nat) : ((address * nat * nat * nat * nat)) is
       block {
         const c : creatures_Creature = (case test_self.creatures[id] of | None -> creatures_Creature_default | Some(x) -> x end);
-        const owner : address = (case test_self.creatureIndexToOwner[id] of | None -> ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address) | Some(x) -> x end);
+        const owner : address = (case test_self.creatureIndexToOwner[id] of | None -> burn_address | Some(x) -> x end);
       } with ((owner, c.species, c.subSpecies, c.eyeColor, c.timestamp));
     
     function constructor (const test_self : state) : (state) is

@@ -13,8 +13,8 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 shellEscape     = require "shell-escape"
 # ###################################################################################################
 argv = require("minimist") process.argv.slice(2),
-  boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat", "print_solidity_ast"]
-  string: ["solc", "outfile", "dir", "outdir"]
+  boolean: ["router", "silent", "solc-force", "ds", "test", "disable_enums_to_nat", "print_solidity_ast"]
+  string: ["solc", "outfile", "dir", "outdir", "contract"]
   alias:
     "o": "outfile"
     "d": "dir"
@@ -131,12 +131,12 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
       --test                  test compile with ligo (must be installed)                       default: false
       --disable_enums_to_nat  Do not transform enums to number constants                       default: false
       -a,--print_solidity_ast Print parsed Solidity AST before transpiling                     default: false
-      --keep_dir_structure    Preserve directory structure of original contracts               default: false
       --contract  <name>      Name of contract to generate router for                          default: <last contract>
       -o, --outfile <name>    Name for output file. Adds `.ligo` if no extension specified     default: <prints to stdout>
       -d, --dir <path>        Keep original directory structure and yield multiple ligo files  default: <single file to stdout>
       -D, --outdir <path>     Output directory to be used with -d option, otherwise ignored    default: <current dir>
         see test.ligo, test.pp.ligo and ligo_tmp.log
+        for more detailed help take a look at https://github.com/madfish-solutions/sol2ligo/wiki/CLI-usage
     """
   process.exit()
 

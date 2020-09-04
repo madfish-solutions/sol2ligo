@@ -139,3 +139,46 @@ describe "translate ligo section router", ()->
     make_test text_i, text_o, {
       router: true
     }
+
+  it "router no last line return", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+
+    contract router_no_last_return {
+      function method() public returns (bool) {
+          if (true) {
+              return true;
+          } else {
+              return false;
+          }
+      }
+    }
+    """#"
+    text_o = """
+    type method_args is record
+      callbackAddress : address;
+    end;
+
+    type state is unit;
+
+    type router_enum is
+      | Method of method_args;
+
+    function method (const #{config.reserved}__unit : unit) : (bool) is
+      block {
+        if (True) then block {
+          failwith("return at non end-of-function position is prohibited");
+        } else block {
+          failwith("return at non end-of-function position is prohibited");
+        };
+      } with (False);
+
+    function main (const action : router_enum; const contract_storage : state) : (list(operation) * state) is
+      (case action of
+      | Method(match_action) -> block {
+        const tmp : (bool) = method(unit);
+        var opList : list(operation) := list transaction((tmp), 0mutez, (get_contract(match_action.callbackAddress) : contract(bool))) end;
+      } with ((opList, contract_storage))
+      end);
+    """
+    make_test text_i, text_o, router: true

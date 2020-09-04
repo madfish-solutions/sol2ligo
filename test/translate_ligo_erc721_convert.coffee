@@ -40,6 +40,7 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : list(balance_of_response_michelson)) : (unit) is
       block {
@@ -48,10 +49,10 @@ describe "erc721 conversions", ()->
 
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const op0 : operation = transaction((Transfer(list [(list [(32n, (("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op1 : operation = transaction((Balance_of((list [(0n, ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address))], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
-        const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address)) : contract(fa2_entry_points)));
+        const op0 : operation = transaction((Transfer(list [(list [(32n, (burn_address, 1n))], Tezos.sender)])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op1 : operation = transaction((Balance_of((list [(0n, burn_address)], (Tezos.self("%Balance_ofCallback") : contract(list(balance_of_response_michelson)))))), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op2 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Add_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
+        const op3 : operation = transaction((Update_operators(list [Layout.convert_to_right_comb(Remove_operator((Tezos.sender, Tezos.sender)))])), 0mutez, (get_contract(burn_address) : contract(fa2_entry_points)));
       } with (list [op0; op1; op2; op3]);
     """
     make_test text_i, text_o
@@ -74,16 +75,43 @@ describe "erc721 conversions", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     #include "interfaces/fa2.ligo"
     function test (const test_reserved_long___unit : unit) : (unit) is
       block {
         const approvedAddress : address = eRC721(0x0).getApproved(0n);
         (* ^ getApproved is not supported in LIGO. Read more https://git.io/JJFij ^ *);
-        eRC721(0x0).safeTransferFrom(Tezos.sender, 0x0, 32n);
+        eRC721(0x0).safeTransferFrom(Tezos.sender, burn_address, 32n);
         (* ^ safeTransferFrom is not supported in LIGO. Read more https://git.io/JJFij ^ *)
       } with (unit);
     """
     make_test text_i, text_o
  
+  it "erc721 preassigned var", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    #{sol_erc721face_template}
+
+    contract eee {
+      function test() private {
+        ERC721 token = ERC721(0x01);
+        token.transferFrom(msg.sender, 0x1, 64);
+      }
+    }
+    """
+    #TODO this is some crazy input type due to bug: last line being comment breaks return type inference
+    text_o = """
+    type state is unit;
+    
+    #include "interfaces/fa2.ligo"
+    function test (const opList : list(operation)) : (list(operation)) is
+      block {
+        const token : address = (0x01 : address);
+        const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
+      } with (list [op0]);
+    """
+    make_test text_i, text_o
 
 

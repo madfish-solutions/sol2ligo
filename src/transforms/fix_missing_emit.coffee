@@ -12,7 +12,7 @@ do () =>
         when "Fn_call"
           if root.fn.constructor.name == "Var"
             if ctx.emit_decl_map.hasOwnProperty root.fn.name
-              perr "WARNING EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
+              perr "WARNING (AST transform). EmitStatement is not supported. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#solidity-events"
               ret = new ast.Comment
               args = root.arg_list.map (arg) -> arg.name
               ret.text = "EmitStatement #{root.fn.name}(#{args.join(", ")})"

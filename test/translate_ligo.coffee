@@ -118,11 +118,12 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
-        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const addr : address = burn_address;
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
       } with (unit);
@@ -278,7 +279,7 @@ describe "translate ligo section unsorted", ()->
     
     function transferOwnership (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        contract_storage := transferOwnership_(contract_storage, newOwner);
+        contract_storage := transferOwnership_((contract_storage : address), newOwner);
         contract_storage.owner := self_address;
       } with (contract_storage);
     
@@ -378,5 +379,28 @@ describe "translate ligo section unsorted", ()->
       block {
         skip
       } with (unit);
+    """
+    make_test text_i, text_o
+  
+  it "bytes.length", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+
+    contract BytesLength {
+      function bytes_length(string memory s) public returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 l = b.length;
+        return l;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function bytes_length (const s : string) : (nat) is
+      block {
+        const b : bytes = bytes_pack(s);
+        const l : nat = size(b);
+      } with (l);
     """
     make_test text_i, text_o
