@@ -60,6 +60,10 @@ number2bytes = (val, precision = 32)->
   ret.reverse()
   ret.join ""
 
+# patch config to handle an edge case - when Type Inference fails to infer more specific type (such as uint256)
+config.uint_type_map["unsigned_number"] = true
+config.int_type_map["signed_number"] = true
+
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
     if config.bytes_type_map.hasOwnProperty(ast.a.type.main) and ast.b.type.main == "string" and ast.b.constructor.name == "Const"

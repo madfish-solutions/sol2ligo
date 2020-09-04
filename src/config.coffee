@@ -16,11 +16,11 @@ TODO rename
 @reserved = "res" # prefix var name
 @router_enum = "router_enum"
 
-@int_type_list = ["int", "signed_number"]
+@int_type_list = ["int"]
 for i in [8 .. 256] by 8
   @int_type_list.push "int#{i}"
 
-@uint_type_list = ["uint", "unsigned_number"]
+@uint_type_list = ["uint"]
 for i in [8 .. 256] by 8
   @uint_type_list.push "uint#{i}"
 
