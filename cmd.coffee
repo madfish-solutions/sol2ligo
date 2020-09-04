@@ -13,8 +13,8 @@ translate_ds    = require("./src/translate_ligo_default_state").gen
 shellEscape     = require "shell-escape"
 # ###################################################################################################
 argv = require("minimist") process.argv.slice(2),
-  boolean: ["router", "silent", "contract", "solc-force", "ds", "test", "disable_enums_to_nat", "print_solidity_ast"]
-  string: ["solc", "outfile", "dir", "outdir"]
+  boolean: ["router", "silent", "solc-force", "ds", "test", "disable_enums_to_nat", "print_solidity_ast"]
+  string: ["solc", "outfile", "dir", "outdir", "contract"]
   alias:
     "o": "outfile"
     "d": "dir"
