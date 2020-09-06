@@ -5,10 +5,14 @@ fs = require "fs"
 import_resolver = require "./src/import_resolver"
 ast_gen         = require "./src/ast_gen"
 ast_transform   = require("./src/ast_transform")
+ast_transform_smartpy = require("./src/ast_transform_smartpy")
 type_inference  = require("./src/type_inference").gen
 translate       = require("./src/translate_ligo").gen
+translate_smartpy = require("./src/translate_smartpy").gen
 translate_ds    = require("./src/translate_ligo_default_state").gen
+translate_ds_smartpy    = require("./src/translate_smartpy_default_state").gen
 {execSync}      = require "child_process"
+shell_escape    = require "shell-escape"
 argv = require("minimist")(process.argv.slice(2))
 argv.router ?= true
 argv.contract ?= false
@@ -31,7 +35,7 @@ process_file = (file)->
     if new_ast.need_prevent_deploy
       p "FLAG need_prevent_deploy"
   
-  if argv.full
+  if argv.full and !argv.smartpy
     opt = {
       router  : argv.router,
       contract : argv.contract
@@ -50,7 +54,8 @@ process_file = (file)->
         puts "default state:"
         puts ds_code
     
-    if argv.ligo
+    # argv.ligo is old-style and deprecated
+    if argv.ligo or argv.compile
       code = code.replace /\(\* EmitStatement \*\);/g, ""
       fs.writeFileSync "test.ligo", code
       if fs.existsSync "ligo_tmp.log"
@@ -60,6 +65,37 @@ process_file = (file)->
       catch err
         puts "ERROR"
         puts fs.readFileSync "./ligo_tmp.log", "utf-8"
+  
+  if argv.full and argv.smartpy
+    new_ast = ast_transform_smartpy.pre_ti new_ast, opt
+    new_ast = type_inference new_ast
+    new_ast = ast_transform_smartpy.post_ti new_ast, opt
+    code = translate_smartpy new_ast, opt
+    if argv.print
+      puts code 
+    
+    if argv.ds or argv.default_state or argv.compile
+      ds_code = translate_ds_smartpy new_ast
+      if argv.print
+        puts "default state:"
+        puts ds_code
+    
+    if argv.compile
+      fs.writeFileSync "test.py", code
+      if fs.existsSync "smartpy_tmp.log"
+        fs.unlinkSync "smartpy_tmp.log"
+      
+      last_contract_name = "Main"
+      for v in new_ast.list
+        if v.constructor.name == "Class_decl" and v.is_last
+          last_contract_name = v.name
+      
+      try
+        execSync "~/smartpy-cli/SmartPy.sh compile test.py #{shell_escape [ds_code]} tmp > ./smartpy_tmp.log", {stdio: "inherit"}
+      catch err
+        puts "ERROR"
+        puts fs.readFileSync "./smartpy_tmp.log", "utf-8"
+    
   
   return
 

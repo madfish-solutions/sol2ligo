@@ -5,6 +5,7 @@ solc-bin
 test.sol
 test.ligo
 test.pp.ligo
+test.py
 *.log
 report.sh
 .vscode
