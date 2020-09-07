@@ -598,7 +598,6 @@ describe "translate ligo online examples", ()->
      | Check of check_args
      | CheckSecretKey of checkSecretKey_args;
     
-    
     (* EventDefinition Open(swapID_ : bytes; withdrawTrader_ : address; secretLock_ : bytes) *)
     
     (* EventDefinition Expire(swapID_ : bytes) *)
@@ -1647,9 +1646,9 @@ describe "translate ligo online examples", ()->
       } with (test_self);
     
     (* modifier onlyOwner inlined *)
-  
+    
     (* modifier onlyCroupier inlined *)
-
+    
     function approveNextOwner (const test_self : state; const nextOwner_ : address) : (state) is
       block {
         assert((Tezos.sender = test_self.owner)) (* "OnlyOwner methods called by non-owner." *);
