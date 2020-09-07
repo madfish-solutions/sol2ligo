@@ -26,6 +26,7 @@ module = @
 {add_burn_address}                  = require "./transforms/add_burn_address"
 {cast_to_address}                   = require "./transforms/cast_to_address"
 {contract_object_to_address}        = require "./transforms/contract_object_to_address"
+{erc20_interface_converter}         = require "./transforms/erc20_interface_converter"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -79,4 +80,5 @@ ercs_translate = (root, opt) ->
     root = erc721_converter root, interface_name: ctx.erc721_name
   else if !!ctx.erc20_name
     root = erc20_converter root,  interface_name: ctx.erc20_name
+  root = erc20_interface_converter root, opt
   root

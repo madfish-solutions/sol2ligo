@@ -178,4 +178,107 @@ describe "erc20 conversions", ()->
     """
     make_test text_i, text_o
 
+  it "erc20 interface skeleton", ()->
+    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
+    text_i = """
+    pragma solidity ^0.4.26;
+
+    contract ERC20Basic {
+        mapping(address => uint256) balances;
+
+        mapping(address => mapping (address => uint256)) allowed;
+
+        function totalSupply() public view returns (uint256) {
+    	    return 80000;
+        }
+
+        function balanceOf(address tokenOwner) public view returns (uint) {
+            return balances[tokenOwner];
+        }
+
+        function transfer(address receiver, uint numTokens) public returns (bool) {
+          require(numTokens <= balances[msg.sender]);
+          balances[msg.sender] = balances[msg.sender] - numTokens;
+          balances[receiver] = balances[receiver] + numTokens;
+          return true;
+        }
+
+        function approve(address delegate, uint numTokens) public returns (bool) {
+            allowed[msg.sender][delegate] = numTokens;
+            return true;
+        }
+
+        function allowance(address owner, address delegate) public view returns (uint) {
+            return allowed[owner][delegate];
+        }
+
+        function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {
+            require(numTokens <= balances[owner]);    
+            require(numTokens <= allowed[owner][msg.sender]);
+        
+            balances[owner] = balances[owner] - numTokens;
+            allowed[owner][msg.sender] = allowed[owner][msg.sender] - numTokens;
+            balances[buyer] = balances[buyer] - numTokens;
+            return true;
+        }
+    }
+    """
+    text_o = """
+    type state is record
+      balances : map(address, nat);
+      allowed : map(address, map(address, nat));
+    end;
+
+    (* in Tezos `totalSupply` method should not return a value, but perform a transaction to the passed contract callback with a needed value *)
+
+    function getTotalSupply (const callback : contract(nat)) : (nat) is
+      block {
+        skip
+      } with (80000n);
+
+    (* in Tezos `balanceOf` method should not return a value, but perform a transaction to the passed contract callback with a needed value *)
+
+    function getBalance (const test_self : state; const tokenOwner : address; const callback : contract(nat)) : (nat) is
+      block {
+        skip
+      } with ((case test_self.balances[tokenOwner] of | None -> 0n | Some(x) -> x end));
+
+    function transfer (const test_self : state; const from : address; const receiver : address; const numTokens : nat) : (state * bool) is
+      block {
+        assert((numTokens <= (case test_self.balances[Tezos.sender] of | None -> 0n | Some(x) -> x end)));
+        test_self.balances[Tezos.sender] := abs((case test_self.balances[Tezos.sender] of | None -> 0n | Some(x) -> x end) - numTokens);
+        test_self.balances[receiver] := ((case test_self.balances[receiver] of | None -> 0n | Some(x) -> x end) + numTokens);
+      } with (test_self, True);
+
+    function approve (const test_self : state; const delegate : address; const numTokens : nat) : (bool) is
+      block {
+        const temp_idx_access0 : map(address, nat) = (case test_self.allowed[Tezos.sender] of | None -> (map end : map(address, nat)) | Some(x) -> x end);
+        temp_idx_access0[delegate] := numTokens;
+      } with (True);
+
+    (* in Tezos `allowance` method should not return a value, but perform a transaction to the passed contract callback with a needed value *)
+
+    function getAllowance (const test_self : state; const owner : address; const delegate : address; const callback : contract(nat)) : (nat) is
+      block {
+        const temp_idx_access0 : map(address, nat) = (case test_self.allowed[owner] of | None -> (map end : map(address, nat)) | Some(x) -> x end);
+      } with ((case temp_idx_access0[delegate] of | None -> 0n | Some(x) -> x end));
+
+    (* `transferFrom` and `transfer` methods should merged into one in Tezos' FA1.2 *)
+
+    function transferFrom (const test_self : state; const owner : address; const buyer : address; const numTokens : nat) : (state * bool) is
+      block {
+        assert((numTokens <= (case test_self.balances[owner] of | None -> 0n | Some(x) -> x end)));
+        const temp_idx_access0 : map(address, nat) = (case test_self.allowed[owner] of | None -> (map end : map(address, nat)) | Some(x) -> x end);
+        assert((numTokens <= (case temp_idx_access0[Tezos.sender] of | None -> 0n | Some(x) -> x end)));
+        test_self.balances[owner] := abs((case test_self.balances[owner] of | None -> 0n | Some(x) -> x end) - numTokens);
+        const temp_idx_access0 : map(address, nat) = (case test_self.allowed[owner] of | None -> (map end : map(address, nat)) | Some(x) -> x end);
+        const temp_idx_access1 : map(address, nat) = (case test_self.allowed[owner] of | None -> (map end : map(address, nat)) | Some(x) -> x end);
+        temp_idx_access0[Tezos.sender] := abs((case temp_idx_access1[Tezos.sender] of | None -> 0n | Some(x) -> x end) - numTokens);
+        test_self.balances[buyer] := abs((case test_self.balances[buyer] of | None -> 0n | Some(x) -> x end) - numTokens);
+      } with (test_self, True);
+    """
+    make_test text_i, text_o
+
+  
+
 
