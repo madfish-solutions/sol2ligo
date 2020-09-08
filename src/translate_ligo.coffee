@@ -131,15 +131,7 @@ config.int_type_map["signed_number"] = true
       "(#{a} mod #{b})"
   POW : (a, b, ctx, ast) ->
     if config.uint_type_map.hasOwnProperty(ast.a.type.main) and config.uint_type_map.hasOwnProperty(ast.b.type.main)
-      """
-      (function (const base : nat; const exp : nat) : nat is
-        block {
-          var ret : nat := 1n;
-          for i := 1 to int(exp) block {
-            ret := ret * base;
-          }
-        } with ret) (#{a}, #{b})
-      """
+      "pow(#{a}, #{b})"
     else
       "failwith('Exponentiation is only available for unsigned types. Here operands #{a} and #{b} have types #{ast.a.type.main} and #{ast.a.type.main}');"
 
@@ -1029,6 +1021,16 @@ walk = (root, ctx)->
         "unit"
     
     when "Fn_decl_multiret"
+      if root.name == "pow"
+        return """
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var ret : nat := 1n;
+              for i := 1 to int(exp) block {
+                ret := ret * base;
+              }
+            } with ret
+          """
       orig_ctx = ctx
       ctx = ctx.mk_nest()
       arg_jl = []
