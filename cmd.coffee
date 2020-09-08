@@ -76,7 +76,7 @@ process_file = (file)->
   new_ast = ast_transform.post_ti new_ast, opt
 
   code = translate new_ast, opt
-  code += """\n (* this code is generated from #{file} by sol2ligo transpiler *)"""
+  code += """\n(* this code is generated from #{file} by sol2ligo transpiler *)\n"""
   if argv.outfile
     name = outfile.name
     if outfile.ext
