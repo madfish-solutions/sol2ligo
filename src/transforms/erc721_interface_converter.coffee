@@ -40,7 +40,6 @@ walk = (root, ctx)->
                   "isApprovedForAll"
                 erc721_methods_count += 1
             
-      p "721 methods count", erc721_methods_count
       is_erc721 = erc721_methods_count == ERC721_METHODS_TOTAL
       new_scope = []
       if is_erc721
