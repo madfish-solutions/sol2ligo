@@ -1085,7 +1085,7 @@ walk = (root, ctx)->
             ctx.sink_list.push code if code
           
           when "Comment"
-            ctx.sink_list.push walk v, ctx
+            "skip"
           
           when "Event_decl"
             ctx.sink_list.push walk v, ctx
@@ -1106,10 +1106,13 @@ walk = (root, ctx)->
           when "Enum_decl"
             jl.unshift walk v, ctx
 
+          when "Comment"
+            jl.push walk v, ctx
+            
           when "Fn_decl_multiret"
             jl.push walk v, ctx
           
-          when "Class_decl", "Comment", "Event_decl"
+          when "Class_decl", "Event_decl"
             "skip"
           
           else

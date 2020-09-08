@@ -598,13 +598,13 @@ describe "translate ligo online examples", ()->
      | Check of check_args
      | CheckSecretKey of checkSecretKey_args;
     
-    (* enum States converted into list of nats *)
-    
     (* EventDefinition Open(swapID_ : bytes; withdrawTrader_ : address; secretLock_ : bytes) *)
     
     (* EventDefinition Expire(swapID_ : bytes) *)
     
     (* EventDefinition Close(swapID_ : bytes; secretKey_ : bytes) *)
+    
+    (* enum States converted into list of nats *)
     
     (* modifier onlyInvalidSwaps inlined *)
     
@@ -1632,10 +1632,6 @@ describe "translate ligo online examples", ()->
     
     (* EventDefinition Commit(commit : nat) *)
     
-    (* modifier onlyOwner inlined *)
-    
-    (* modifier onlyCroupier inlined *)
-    
     const pOPCNT_MULT : nat = 0x0000000000002000000000100000000008000000000400000000020000000001n
     
     const pOPCNT_MASK : nat = 0x0001041041041041041041041041041041041041041041041041041041041041n
@@ -1648,6 +1644,10 @@ describe "translate ligo online examples", ()->
         test_self.secretSigner := dUMMY_ADDRESS;
         test_self.croupier := dUMMY_ADDRESS;
       } with (test_self);
+    
+    (* modifier onlyOwner inlined *)
+    
+    (* modifier onlyCroupier inlined *)
     
     function approveNextOwner (const test_self : state; const nextOwner_ : address) : (state) is
       block {
