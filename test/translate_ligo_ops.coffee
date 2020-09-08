@@ -313,6 +313,13 @@ describe "translate ligo section ops", ()->
             ret : nat;
           end;
           
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var ret : nat := 1n;
+              for i := 1 to int(exp) block {
+                ret := ret * base;
+              }
+            } with ret;
           function expr (const contract_storage : state) : (state) is
             block {
               const a : nat = 0n;
@@ -323,13 +330,7 @@ describe "translate ligo section ops", ()->
               c := (a * b);
               c := (a / b);
               c := (a mod b);
-              c := (function (const base : nat; const exp : nat) : nat is
-                block {
-                  var ret : nat := 1n;
-                  for i := 1 to int(exp) block {
-                    ret := ret * base;
-                  }
-                } with ret) (a, b);
+              c := pow(a, b);
               c := Bitwise.and(a, b);
               c := Bitwise.or(a, b);
               c := Bitwise.xor(a, b);

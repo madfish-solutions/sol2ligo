@@ -385,7 +385,7 @@ describe "translate ligo section unsorted", ()->
   it "bytes.length", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract BytesLength {
       function bytes_length(string memory s) public returns (uint256) {
         bytes memory b = bytes(s);
@@ -396,7 +396,7 @@ describe "translate ligo section unsorted", ()->
     """
     text_o = """
     type state is unit;
-
+    
     function bytes_length (const s : string) : (nat) is
       block {
         const b : bytes = bytes_pack(s);
@@ -408,7 +408,7 @@ describe "translate ligo section unsorted", ()->
   it "pow", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract Pow {
       function pow_test() public returns (uint256) {
         uint256 v = 5 ** 2;
@@ -418,16 +418,17 @@ describe "translate ligo section unsorted", ()->
     """
     text_o = """
     type state is unit;
-
+    
+    function pow (const base : nat; const exp : nat) : nat is
+      block {
+        var ret : nat := 1n;
+        for i := 1 to int(exp) block {
+          ret := ret * base;
+        }
+      } with ret;
     function pow_test (const #{config.reserved}__unit : unit) : (nat) is
       block {
-        const v : nat = (function (const base : nat; const exp : nat) : nat is
-          block {
-            var ret : nat := 1n;
-            for i := 1 to int(exp) block {
-              ret := ret * base;
-            }
-          } with ret) (5n, 2n);
+        const v : nat = pow(5n, 2n);
       } with (v);
     """
     make_test text_i, text_o
