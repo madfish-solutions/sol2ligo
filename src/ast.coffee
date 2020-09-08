@@ -87,7 +87,8 @@ class @Var_decl
   size  : null
   assign_value      : null
   assign_value_list : null
-  is_enum_decl : false
+  is_enum_decl      : false
+  is_const          : false
   line  : 0
   pos   : 0
   file  : ""
@@ -106,6 +107,7 @@ class @Var_decl
       for v in @assign_value_list
         ret.assign_value_list.push v.clone()
     ret.is_enum_decl  = @is_enum_decl
+    ret.is_const      = @is_const
     ret.line  = @line
     ret.pos   = @pos
     ret.file  = @file
@@ -214,10 +216,15 @@ class @Fn_decl_multiret
 
     ret.contract_name = @contract_name
     ret.contract_type = @contract_type
-    ret.is_modifier = @is_modifier
-    ret.is_constructor = @is_constructor
+    ret.is_modifier   = @is_modifier
+    ret.is_constructor= @is_constructor
     for v in @modifier_list
       ret.modifier_list.push v.clone()
+    
+    ret.returns_op_list = @returns_op_list
+    ret.uses_storage    = @uses_storage
+    ret.modifies_storage= @modifies_storage
+    ret.returns_value   = @returns_value
     ret
 
 class @Ret_multi

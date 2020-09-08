@@ -8,6 +8,8 @@ type_generalize = require "./type_generalize"
 ti_map = default_var_map_gen()
 ti_map["encodePacked"] = new Type "function2<function<bytes>,function<bytes>>"
 
+# in this module AST structure gets translated into actual textual code representation
+
 module.warning_counter = 0
 # ###################################################################################################
 #    *_op
@@ -67,7 +69,7 @@ number2bytes = (val, precision = 32)->
   BIT_AND : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_and(#{a}, #{b})"
+    ret = "Bitwise.and(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -75,7 +77,7 @@ number2bytes = (val, precision = 32)->
   BIT_OR  : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_or(#{a}, #{b})"
+    ret = "Bitwise.or(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -83,7 +85,7 @@ number2bytes = (val, precision = 32)->
   BIT_XOR : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_xor(#{a}, #{b})"
+    ret = "Bitwise.xor(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -91,7 +93,7 @@ number2bytes = (val, precision = 32)->
   SHR     : (a, b, ctx, ast) ->
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsr(#{a}, #{b})"
+    ret = "Bitwise.shift_right(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -99,7 +101,7 @@ number2bytes = (val, precision = 32)->
   SHL     : (a, b, ctx, ast) -> 
     a = some2nat(a, ast.a.type.main)
     b = some2nat(b, ast.b.type.main)
-    ret = "bitwise_lsl(#{a}, #{b})"
+    ret = "Bitwise.shift_left(#{a}, #{b})"
     if config.int_type_map.hasOwnProperty(ast.a.type.main) and config.int_type_map.hasOwnProperty(ast.b.type.main)
       "int(#{ret})"
     else
@@ -130,7 +132,7 @@ number2bytes = (val, precision = 32)->
   PLUS    : (a)->"+(#{a})"
   BIT_NOT : (a, ctx, ast)->
     if !ast.type
-      perr "WARNING BIT_NOT ( ~#{a} ) translation may be incorrect"
+      perr "WARNING (Translate). BIT_NOT ( ~#{a} ) translation may be incorrect. Read more https://git.io/JUqiS"
       module.warning_counter++
     if ast.type and config.uint_type_map.hasOwnProperty ast.type.main
       "abs(not (#{a}))"
@@ -138,7 +140,7 @@ number2bytes = (val, precision = 32)->
       "not (#{a})"
   BOOL_NOT: (a)->"not (#{a})"
   RET_INC : (a, ctx, ast)->
-    perr "RET_INC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_INC may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -150,7 +152,7 @@ number2bytes = (val, precision = 32)->
       ctx.trim_expr = "(#{a} - #{one})"
   
   RET_DEC : (a, ctx, ast)->
-    perr "RET_DEC may have not fully correct implementation"
+    perr "WARNING (Translate). RET_DEC may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -162,7 +164,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "(#{a} + #{one})"
   
   INC_RET : (a, ctx, ast)->
-    perr "INC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). INC_RET may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -171,7 +173,7 @@ number2bytes = (val, precision = 32)->
     ctx.trim_expr = "#{a}"
   
   DEC_RET : (a, ctx, ast)->
-    perr "DEC_RET may have not fully correct implementation"
+    perr "WARNING (Translate). DEC_RET may have not fully correct implementation. Read more https://git.io/JUqiS"
     module.warning_counter++
     is_uint = config.uint_type_map.hasOwnProperty(ast.a.type.main)
     one = "1"
@@ -224,12 +226,14 @@ number2bytes = (val, precision = 32)->
     when "built_in_op_list"
       "list(operation)"
     
+    when "list"
+      nest = translate_type type.nest_list[0], ctx
+      "list(#{nest})"
     # ###################################################################################################
     #    collections
     # ###################################################################################################
     when "array"
       nest   = translate_type type.nest_list[0], ctx
-      # "list(#{nest})"
       "map(nat, #{nest})"
     
     when "tuple"
@@ -278,8 +282,11 @@ number2bytes = (val, precision = 32)->
       # temporary hack for state
       else if type.main.match ///^#{config.storage}_///
         type.main
+      # special case for synthetic types we know for sure will be there
+      else if type.main.startsWith "@"
+        type.main.substr(1)
       else
-        perr "WARNING. translate_type unknown solidity type '#{type}'"
+        perr "WARNING (Translate). translate_type unknown solidity type '#{type}'"
         "UNKNOWN_TYPE_#{type}"
 
 @type2default_value = type2default_value = (type, ctx)->
@@ -297,7 +304,10 @@ number2bytes = (val, precision = 32)->
       "False"
     
     when "address"
-      "(#{JSON.stringify config.default_address} : address)"
+      if !ctx.parent # we're in the top-level scope
+        "(#{JSON.stringify config.burn_address} : address)"
+      else
+        "burn_address"
     
     when "built_in_op_list"
       "(nil: list(operation))"
@@ -329,9 +339,9 @@ number2bytes = (val, precision = 32)->
           name = type.main
           if ctx.current_class?.name
             name = "#{ctx.current_class.name}_#{type.main}"
-          return "#{name}_default"
+          return translate_var_name "#{name}_default", ctx
 
-      perr "WARNING. Can't translate unknown Solidity type '#{type}'"
+      perr "WARNING (Translate). Can't translate unknown Solidity type '#{type}'"
       "UNKNOWN_TYPE_DEFAULT_VALUE_#{type}"
 
 # ###################################################################################################
@@ -348,16 +358,29 @@ class @Gen_context
   
   contract          : false
   trim_expr         : ""
-  terminate_expr_check    : ""
+  
+  # terminates right side expression in case it doesn't return anything.
+  # this might be needed cause LIGO doesn't support procedures
+  terminate_expr_check    : "" 
   terminate_expr_replace_fn: null
-  storage_sink_list : {}
+
+  # in case expression should be split into multiple lines
+  # code to be prepended collected here
   sink_list         : []
+  tmp_idx           : 0
+  
+  # collect things to be placed at the top of the contract
+  storage_sink_list : {}
   type_decl_sink_list: []
   structs_default_list: []
   enum_list: []
-  tmp_idx           : 0
+
+  # special fields for mode attempting file separation
   files             : null
   keep_dir_structure: false
+  
+  # for fix Ret_multi at non-last position of function
+  scope_root : null
   
   constructor:()->
     @type_decl_map   = {}
@@ -383,6 +406,7 @@ class @Gen_context
     t.contract = @contract
     t.files = @files
     t.keep_dir_structure = @keep_dir_structure
+    t.scope_root = @scope_root
     t
 
 last_bracket_state = false
@@ -392,7 +416,7 @@ walk = (root, ctx)->
   switch root.constructor.name
     when "Scope"
       switch root.original_node_type
-        when "SourceUnit"
+        when "SourceUnit" #top-level scope
           jls = {}
           jls[main_file] = []
           for v in root.list
@@ -400,7 +424,7 @@ walk = (root, ctx)->
             path = if ctx.keep_dir_structure then v.file else null
             path ?= main_file
             if code
-              if v.constructor.name not in ["Comment", "Scope"]
+              if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
               jls[path] ?= []
               jls[path].push code
@@ -457,7 +481,7 @@ walk = (root, ctx)->
           for path, jl of jls
             ctx.files[path] = join_list jl, ""
           ctx.files[main_file]
-        else
+        else # local scope
           if !root.original_node_type
             jls = {}
             jls[main_file] = []
@@ -478,7 +502,7 @@ walk = (root, ctx)->
                 ctx.terminate_expr_check = ""
                 code = ctx.terminate_expr_replace_fn()
               if code
-                if v.constructor.name not in ["Comment", "Scope"]
+                if v.constructor.name not in ["Comment", "Scope", "Include"]
                   code += ";" if !/;$/.test code
                 jls[path].push code
 
@@ -551,7 +575,7 @@ walk = (root, ctx)->
           "unit"
         
         when "number"
-          perr "WARNING number constant passed to translation stage. That's type inference mistake"
+          perr "WARNING (Translate). Number constant passed to the translation stage. That's a type inference mistake"
           module.warning_counter++
           root.val
         
@@ -624,7 +648,7 @@ walk = (root, ctx)->
     when "Field_access"
       t = walk root.t, ctx
       if !root.t.type
-        perr "WARNING some of types in Field_access aren't resolved. This can cause invalid code generated"
+        perr "WARNING (Translate). Some of types in Field_access aren't resolved. This can cause invalid code generated"
       else
         switch root.t.type.main
           when "array"
@@ -697,27 +721,27 @@ walk = (root, ctx)->
             return "sha_256(#{msg})"
           
           when "sha3", "keccak256"
-            perr "WARNING #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING (Translate). #{root.fn.name} hash function will be translated as sha_256. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "sha_256(#{msg})"
 
           when "selfdestruct"
-            perr "WARNING #{root.fn.name} does not exist in LIGO. Statement translated as is"
+            perr "WARNING (Translate). #{root.fn.name} does not exist in LIGO. Statement translated as is"
             msg = arg_list[0]
             return "selfdestruct(#{msg}) (* unsupported *)"
 
           when "blockhash"
             msg = arg_list[0]
-            perr "WARNING #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
+            perr "WARNING (Translate). #{root.fn.name} does not exist in LIGO. We replaced it with (\"#{msg}\" : bytes)."
             return "(\"00\" : bytes) (* Should be blockhash of #{msg} *)"
           
           when "ripemd160"
-            perr "WARNING #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
+            perr "WARNING (Translate). #{root.fn.name} hash function will be translated as blake2b. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#hash-functions"
             msg = arg_list[0]
             return "blake2b(#{msg})"
           
           when "ecrecover"
-            perr "WARNING ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
+            perr "WARNING (Translate). ecrecover function does not exist in LIGO. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#ecrecover"
             # do not mangle, because it can be user-defined function
             fn = "ecrecover"
           
@@ -734,7 +758,7 @@ walk = (root, ctx)->
             for v in root.arg_list
               type_list.push translate_type v.type, ctx
             type_str = type_list.join " * "
-            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str})) end)"
+            return "var #{config.op_list} : list(operation) := cons(#{arg_list[0]}, list transaction((#{arg_list[1..].join ' * '}), 0mutez, (get_contract(match_action.#{config.callback_address}) : contract(#{type_str}))) end)"
           
           else
             fn = root.fn.name
@@ -774,7 +798,7 @@ walk = (root, ctx)->
           return call_expr if decl.constructor.name == "Fn_decl_multiret"
           return "#{config.contract_storage}.#{root.fn.name}"
         else
-          perr "WARNING !root.fn_decl #{root.fn.name}"
+          perr "WARNING (Translate). !root.fn_decl #{root.fn.name}"
           return call_expr
         
         ret_types_list = []
@@ -785,7 +809,7 @@ walk = (root, ctx)->
           call_expr
         else if ret_types_list.length == 1 and returns_value
           ctx.terminate_expr_replace_fn = ()->
-            perr "WARNING #{call_expr} was terminated with dummy variable declaration"
+            perr "WARNING (Translate). #{call_expr} was terminated with dummy variable declaration"
             tmp_var = "terminate_tmp_#{ctx.tmp_idx++}"
             "const #{tmp_var} : (#{ret_types_list.join ' * '}) = #{call_expr}"
           ctx.terminate_expr_check = call_expr
@@ -823,7 +847,6 @@ walk = (root, ctx)->
       "record [ #{arg_list.join ";\n  "} ]"
 
     when "Type_cast"
-      # TODO detect 'address(0)' here
       target_type = translate_type root.target_type, ctx
       t = walk root.t, ctx
       if t == "" and target_type == "address"
@@ -837,8 +860,8 @@ walk = (root, ctx)->
         type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or  t == "0")
-        "(#{JSON.stringify config.default_address} : #{target_type})"
+      else if target_type == "address" and (t == "0x0" or t == "0")
+        "burn_address"
       else
         "(#{t} : #{target_type})"
     
@@ -864,7 +887,7 @@ walk = (root, ctx)->
     when "Var_decl"
       name = root.name
       type = translate_type root.type, ctx
-      if ctx.is_class_scope
+      if ctx.is_class_scope and !root.is_const
         if root.special_type # FIXME user-defined type
           type = "#{ctx.current_class.name}_#{root.type.main}"
         type = translate_var_name type, ctx
@@ -907,7 +930,7 @@ walk = (root, ctx)->
         #{join_list jl}
         """
       else
-        perr "WARNING Var_decl_multi with no assign value should be unreachable, but something went wrong"
+        perr "WARNING (Translate). Var_decl_multi with no assign value should be unreachable, but something went wrong"
         module.warning_counter++
         jl = []
         for _var in root.list
@@ -930,16 +953,31 @@ walk = (root, ctx)->
       for v,idx in root.t_list
         jl.push walk v, ctx
       
-      jl.push "unit" if jl.length == 0
-      """
-      with (#{jl.join ', '})
-      """
+      if ctx.scope_root.constructor.name == "Fn_decl_multiret"
+        # TODO fix bug in router, that return value is tuple
+        if ctx.scope_root.name != "main"
+          for type, idx in ctx.scope_root.type_o.nest_list
+            if !root.t_list[idx]
+              jl.push type2default_value type, ctx
+          
+        jl.push "unit" if jl.length == 0
+        """
+        with (#{jl.join ', '})
+        """
+      else
+        perr "WARNING (Translate). Return at non end-of-function position is prohibited"
+        """
+        failwith("return at non end-of-function position is prohibited")
+        """
     
     when "If"
       cond = walk root.cond,  ctx
       cond = "(#{cond})" if !last_bracket_state
+      old_scope_root = ctx.scope_root
+      ctx.scope_root = root
       t    = walk root.t,     ctx
       f    = walk root.f,     ctx
+      ctx.scope_root = old_scope_root
       """
       if #{cond} then #{t} else #{f};
       """
@@ -947,7 +985,10 @@ walk = (root, ctx)->
     when "While"
       cond = walk root.cond,  ctx
       cond = "(#{cond})" if !last_bracket_state
+      old_scope_root = ctx.scope_root
+      ctx.scope_root = root
       scope= walk root.scope, ctx
+      ctx.scope_root = old_scope_root
       """
       while #{cond} #{scope};
       """
@@ -989,6 +1030,7 @@ walk = (root, ctx)->
       
       ret_jl.push "unit" if ret_jl.length == 0
       
+      ctx.scope_root = root
       body = walk root.scope, ctx
       """
       function #{root.name} (#{arg_jl.join '; '}) : (#{ret_jl.join ' * '}) is
@@ -1027,7 +1069,10 @@ walk = (root, ctx)->
       for v in root.scope.list
         switch v.constructor.name
           when "Var_decl"
-            field_decl_jl.push walk v, ctx
+            if !v.is_const
+              field_decl_jl.push walk v, ctx
+            else
+              ctx.sink_list.push walk v, ctx
           
           when "Fn_decl_multiret"
             ctx.contract_var_map[v.name] = v
@@ -1040,7 +1085,7 @@ walk = (root, ctx)->
             ctx.sink_list.push code if code
           
           when "Comment"
-            ctx.sink_list.push walk v, ctx
+            "skip"
           
           when "Event_decl"
             ctx.sink_list.push walk v, ctx
@@ -1061,10 +1106,13 @@ walk = (root, ctx)->
           when "Enum_decl"
             jl.unshift walk v, ctx
 
+          when "Comment"
+            jl.push walk v, ctx
+            
           when "Fn_decl_multiret"
             jl.push walk v, ctx
           
-          when "Class_decl", "Comment", "Event_decl"
+          when "Class_decl", "Event_decl"
             "skip"
           
           else

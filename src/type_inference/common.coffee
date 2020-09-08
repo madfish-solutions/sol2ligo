@@ -43,6 +43,7 @@ Type = require "type"
     revert        : new Type "function2<function<string>,function<>>"
     sha256        : new Type "function2<function<bytes>,function<bytes32>>"
     sha3          : new Type "function2<function<bytes>,function<bytes32>>"
+    blockhash     : new Type "function2<function<uint256>,function<bytes32>>"
     selfdestruct  : new Type "function2<function<address>,function<>>"
     blockmap      : new Type "function2<function<address>,function<bytes32>>"
     keccak256     : new Type "function2<function<bytes>,function<bytes32>>"
@@ -327,13 +328,13 @@ class @Ti_context
     else
       throw new Error "unknown is_not_defined_type spread case"
     a_type = b_type.clone()
-    change_count++
+    ctx.change_count++
   else if !@is_not_defined_type(a_type) and @is_not_defined_type(b_type)
     # will check, but not spread
     if b_type.main in ["number", "unsigned_number", "signed_number"]
       unless is_defined_number_or_byte_type a_type
         if a_type.main == "address"
-          perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
+          perr "WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO"
           return a_type
         throw new Error "can't spread '#{b_type}' to '#{a_type}'. Reverse spread collision detected"
     # p "NOTE Reverse spread collision detected", new Error "..."
@@ -384,15 +385,15 @@ class @Ti_context
         return a_type
       
       if a_type.main == "address" and config.any_int_type_map.hasOwnProperty(b_type)
-        perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
+        perr "WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO"
         return a_type
       
       if b_type.main == "address" and config.any_int_type_map.hasOwnProperty(a_type)
-        perr "TI WARNING address <-> number operation detected. Generated code will be not compilable by LIGO"
+        perr "WARNING (Type inference). address <-> number operation detected. Generated code will be not compilable by LIGO"
         return a_type
       
       if config.bytes_type_map.hasOwnProperty(a_type.main) and config.bytes_type_map.hasOwnProperty(b_type.main)
-        perr "TI WARNING bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
+        perr "WARNING (Type inference). Bytes with different sizes are in type collision '#{a_type}' '#{b_type}'. This can lead to runtime error."
         return a_type
       
       # throw new Error "spread scalar collision '#{a_type}' '#{b_type}'. Reason: type mismatch"

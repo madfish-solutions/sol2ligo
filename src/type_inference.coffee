@@ -1,5 +1,9 @@
 { Ti_context } = require "./type_inference/common.coffee"
 
+# type inference is split into two stages
+# first one infers immediately obvious types
+# second one brute forces the rest of them
+
 stage1 = require "./type_inference/stage1"
 stage2 = require "./type_inference/stage2"
 
@@ -17,5 +21,3 @@ stage2 = require "./type_inference/stage2"
     break if ctx.change_count == 0
 
   ast_tree
-  # first_stage_walk : null
-  # change_count : 0

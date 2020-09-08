@@ -111,12 +111,13 @@ describe "translate ligo section var type", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const value_bool : bool = False;
         const value_int : int = 0;
         const value_uint : nat = 0n;
-        const value_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const value_address : address = burn_address;
         const value_string : string = "";
       } with (unit);
     
@@ -370,4 +371,45 @@ describe "translate ligo section var type", ()->
       } with (unit);
     """#"
     make_test text_i, text_o
+
+  it "cast to address from bytes and uint", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+
+    contract eee {
+      function foo(address arg) returns (address) {
+          return arg;
+      }
+      
+      function bar() public {
+          address a = 0x01;
+          address b = 4242;
+
+          if (a == 0x01) {
+              b = foo(0x02);
+          }
+      }
+    }
+    """#"
+    text_o = """
+    type state is unit;
+    
+    function foo (const arg : address) : (address) is
+      block {
+        skip
+      } with (arg);
+
+    function bar (const test_reserved_long___unit : unit) : (unit) is
+      block {
+        const a : address = (0x01 : address);
+        const b : address = (4242 : address);
+        if (a = (0x01 : address)) then block {
+          b := foo((0x02 : address));
+        } else block {
+          skip
+        };
+      } with (unit);
+    """#"
+    make_test text_i, text_o
+
   

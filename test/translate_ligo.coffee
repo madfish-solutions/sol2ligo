@@ -118,11 +118,12 @@ describe "translate ligo section unsorted", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
         const i : int = int(abs(255));
-        const addr : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+        const addr : address = burn_address;
         const str : string = "123";
         const b1 : bytes = bytes_pack(str);
       } with (unit);
@@ -278,7 +279,7 @@ describe "translate ligo section unsorted", ()->
     
     function transferOwnership (const contract_storage : state; const newOwner : address) : (state) is
       block {
-        contract_storage := transferOwnership_(contract_storage, newOwner);
+        contract_storage := transferOwnership_((contract_storage : address), newOwner);
         contract_storage.owner := self_address;
       } with (contract_storage);
     
@@ -318,3 +319,88 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  it "global const", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal one = uint(1);
+      uint constant internal ones = uint(~0);
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const one : nat = abs(1)
+    
+    const ones : nat = abs(not (0));
+    """
+    make_test text_i, text_o
+  
+  it "inline assembly", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Inline_assembly {
+      function test() public {
+        assembly {
+          let x := 7
+        }
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        failwith("Unsupported InlineAssembly");
+        (* InlineAssembly { let x := 7 } *)
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
+  it "uppercase ids", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Global_const {
+      uint constant internal ONE = uint(1);
+      
+      function GetRet() public {}
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    const oNE : nat = abs(1)
+    
+    function getRet (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        skip
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
+  it "bytes.length", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+
+    contract BytesLength {
+      function bytes_length(string memory s) public returns (uint256) {
+        bytes memory b = bytes(s);
+        uint256 l = b.length;
+        return l;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+
+    function bytes_length (const s : string) : (nat) is
+      block {
+        const b : bytes = bytes_pack(s);
+        const l : nat = size(b);
+      } with (l);
+    """
+    make_test text_i, text_o

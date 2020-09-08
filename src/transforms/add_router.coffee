@@ -15,7 +15,7 @@ func2struct = (name)->
   name = name.capitalize()
   if name.length > 31
     new_name = name.substr 0, 31
-    perr "WARNING entrypoint names longer than 31 character are not supported in LIGO. We trimmed #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
+    perr "WARNING (AST transform). Entrypoint names longer than 31 character are not supported in LIGO. We trimmed #{name} to #{new_name}. Read more: https://github.com/madfish-solutions/sol2ligo/wiki/Known-issues#name-length-for-types"
     name = new_name
   name
 
@@ -53,7 +53,7 @@ walk = (root, ctx)->
             arg.type = new Type "address"
         
         root.scope.list.push _enum = new ast.Enum_decl
-        _enum.name = "router_enum"
+        _enum.name = config.router_enum
         for func in ctx.router_func_list
           _enum.value_list.push decl = new ast.Var_decl
           decl.name = func2struct func.name
@@ -70,7 +70,7 @@ walk = (root, ctx)->
         _main.type_o = new Type "function"
         
         _main.arg_name_list.push "action"
-        _main.type_i.nest_list.push new Type "router_enum"
+        _main.type_i.nest_list.push new Type config.router_enum
         _main.arg_name_list.push config.contract_storage
         _main.type_i.nest_list.push new Type config.storage
         
@@ -145,7 +145,7 @@ walk = (root, ctx)->
             if !func.returns_value
               _case.scope.list.push comment = new ast.Comment
               comment.text = "This function does nothing, but it's present in router"
-              perr "WARNING. Function named #{func.name} does nothing, but we put it in the router nonetheless"
+              perr "WARNING (AST transform). Function named #{func.name} does nothing, but we put it in the router nonetheless"
             # tmp var is needed in any case
             _case.scope.list.push tmp = new ast.Var_decl
             tmp.name = "tmp"
@@ -200,6 +200,8 @@ walk = (root, ctx)->
                 ops_extract.name = "0"
                 ops_extract.t = var_tmp = new ast.Var
                 var_tmp.name = "tmp"
+                var_tmp.type = tmp.type.clone()
+                ops_extract.type = tmp.type.nest_list[0].clone()
                 
                 proxy_call.fn.name = "@respond_append"
                 proxy_call.arg_list = [ops_extract, ret_val]

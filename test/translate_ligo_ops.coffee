@@ -77,7 +77,7 @@ describe "translate ligo section ops", ()->
           await make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr"']
+            ligo_arg_list : ["Expr"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, on_end)->
               await contract.expr().cb defer(err, result); return on_end err if err
@@ -113,7 +113,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -145,7 +145,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -177,7 +177,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -209,7 +209,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -241,7 +241,7 @@ describe "translate ligo section ops", ()->
           make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr(record a=100n end)"']
+            ligo_arg_list : ["Expr(record a=100n end)"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, loc_on_end)->
               await contract.expr(100).cb defer(err, result); return loc_on_end err if err
@@ -288,6 +288,8 @@ describe "translate ligo section ops", ()->
             c = a & b;
             c = a | b;
             c = a ^ b;
+            c = a << b;
+            c = a >> b;
             c += b;
             c -= b;
             c *= b;
@@ -296,6 +298,8 @@ describe "translate ligo section ops", ()->
             c &= b;
             c |= b;
             c ^= b;
+            c <<= b;
+            c >>= b;
             ret = c;
           }
           function getRet() public view returns (#{type} ret_val) {
@@ -318,17 +322,21 @@ describe "translate ligo section ops", ()->
               c := (a * b);
               c := (a / b);
               c := (a mod b);
-              c := bitwise_and(a, b);
-              c := bitwise_or(a, b);
-              c := bitwise_xor(a, b);
+              c := Bitwise.and(a, b);
+              c := Bitwise.or(a, b);
+              c := Bitwise.xor(a, b);
+              c := Bitwise.shift_left(a, b);
+              c := Bitwise.shift_right(a, b);
               c := (c + b);
               c := abs(c - b);
               c := (c * b);
               c := (c / b);
               c := (c mod b);
-              c := bitwise_and(c, b);
-              c := bitwise_or(c, b);
-              c := bitwise_xor(c, b);
+              c := Bitwise.and(c, b);
+              c := Bitwise.or(c, b);
+              c := Bitwise.xor(c, b);
+              c := Bitwise.shift_left(c, b);
+              c := Bitwise.shift_right(c, b);
               contract_storage.ret := c;
             } with (contract_storage);
           
@@ -343,7 +351,7 @@ describe "translate ligo section ops", ()->
           await make_emulator_test {
             sol_code      : text_i
             contract_name : "Expr"
-            ligo_arg_list : ['"Expr"']
+            ligo_arg_list : ["Expr"]
             ligo_state    : "record ret = 99999n; end"
             sol_test_fn   : (contract, on_end)->
               await contract.expr().cb defer(err, result); return on_end err if err
@@ -390,7 +398,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                  "Expr(record a=#{v[0]}n; b=#{v[1]}n end)"
                 ligo_state    : "record ret = 99999n; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -436,7 +444,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}n; b=#{v[1]}n end)\""
+                  "Expr(record a=#{v[0]}n; b=#{v[1]}n end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -578,17 +586,17 @@ describe "translate ligo section ops", ()->
   #         c := (a * b);
   #         c := (a / b);
   #         c := (a mod b);
-  #         c := bitwise_and(a, b);
-  #         c := bitwise_or(a, b);
-  #         c := bitwise_xor(a, b);
+  #         c := Bitwise.and(a, b);
+  #         c := Bitwise.or(a, b);
+  #         c := Bitwise.xor(a, b);
   #         c := (c + b);
   #         c := (c - b);
   #         c := (c * b);
   #         c := (c / b);
   #         c := (c mod b);
-  #         c := bitwise_and(c, b);
-  #         c := bitwise_or(c, b);
-  #         c := bitwise_xor(c, b);
+  #         c := Bitwise.and(c, b);
+  #         c := Bitwise.or(c, b);
+  #         c := Bitwise.xor(c, b);
   #       } with (c);
   #     
   #   """
@@ -720,7 +728,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                  "Expr(record a=#{v[0]}; b=#{v[1]} end)"
                 ligo_state    : "record ret = 99999; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -765,7 +773,7 @@ describe "translate ligo section ops", ()->
                 sol_code      : text_i
                 contract_name : "Expr"
                 ligo_arg_list : test_value_list.map (v)->
-                  "\"Expr(record a=#{v[0]}; b=#{v[1]} end)\""
+                  "Expr(record a=#{v[0]}; b=#{v[1]} end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -838,7 +846,7 @@ describe "translate ligo section ops", ()->
         await make_emulator_test {
           sol_code      : text_i
           contract_name : "Expr"
-          ligo_arg_list : ['"Expr"']
+          ligo_arg_list : ["Expr"]
           ligo_state    : "record ret = False; end"
           sol_test_fn   : (contract, on_end)->
             await contract.expr().cb defer(err, result); return on_end err if err
@@ -885,7 +893,7 @@ describe "translate ligo section ops", ()->
                   [a,b] = v
                   a = JSON.stringify(a).capitalize()
                   b = JSON.stringify(b).capitalize()
-                  "\"Expr(record a=#{a}; b=#{b} end)\""
+                  "Expr(record a=#{a}; b=#{b} end)"
                 ligo_state    : "record ret = False; end"
                 sol_test_fn   : (contract, loc_on_end)->
                   for v in test_value_list
@@ -953,8 +961,8 @@ describe "translate ligo section ops", ()->
           sol_code      : text_i
           contract_name : "Expr"
           ligo_arg_list : [
-            '"Call_set(record key=1n; value=100n end)"'
-            '"Call_get(record key=2n end)"'
+            "Call_set(record key=1n; value=100n end)"
+            "Call_get(record key=2n end)"
           ]
           ligo_state    : "record ret = 99999n; store_map = (map [2n->100n] : map(nat,nat)) end"
           sol_test_fn   : (contract, loc_on_end)->

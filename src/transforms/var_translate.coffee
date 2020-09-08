@@ -25,7 +25,7 @@ do() =>
       when "Field_access"
         if root.t.type?.main == "enum"
           name = translate_var_name root.name, ctx
-          if root.t?.name != "router_enum"
+          if root.t?.name != config.router_enum
             prefix = ""
             if ctx.current_class.name
               prefix = "#{ctx.current_class.name}_"

@@ -14,7 +14,7 @@ walk = (root, ctx)->
           ctx_lvalue.lvalue = true
           root.a.a = walk root.a.a, ctx_lvalue
         else
-          perr "WARNING DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)"
+          perr "WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)"
           # fallback
           root.a = walk root.a, ctx_lvalue
       
@@ -33,7 +33,7 @@ walk = (root, ctx)->
       root
     
     when "Var_decl"
-      if !ctx.loc_var_decl and !root.is_enum_decl
+      if !ctx.loc_var_decl and !root.is_enum_decl and !root.is_const
         ctx.global_var_decl_map.set root.name, true
       
       if root.assign_value?
@@ -188,7 +188,7 @@ walk = (root, ctx)->
     root = walk root, ctx
   
   if ctx.change_count.val
-    perr "WARNING prevent infinite loop trigger catched. Please notify developer about it with code example. Generated code can be invalid"
+    perr "WARNING (AST transform). prevent infinite loop trigger catched. Please notify developer about it with code example. Generated code can be invalid"
   
   root
   

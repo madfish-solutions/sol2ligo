@@ -14,7 +14,7 @@
   if opt.contract?
     if !seek_contract
       if opt.contract
-        perr "WARNING Can't find contract '#{opt.contract}' . Using last contract named '#{last_contract?.name}' instead"
+        perr "WARNING (AST transform). Can't find contract '#{opt.contract}' . Using last contract named '#{last_contract?.name}' instead"
     else
       if last_contract
         last_contract.is_last = false

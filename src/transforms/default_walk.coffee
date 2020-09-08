@@ -70,7 +70,11 @@
         walk root.t, ctx
       root
     
-    when "Enum_decl", "Type_cast", "PM_switch"
+    when "Type_cast"
+      walk root.t, ctx
+      root
+
+    when "Enum_decl", "PM_switch"
       root
     
     when "Ret_multi"

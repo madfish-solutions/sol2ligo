@@ -1,6 +1,10 @@
 m_path = require "path"
 fs = require "fs"
-{execSync} = require "child_process"
+{execSync}  = require "child_process"
+shellEscape = require "shell-escape"
+
+# resolves and embeds files in Solidity `import` clauses
+# optionally downloads from remote urls as well
 
 import_placeholder_count = 0
 
@@ -30,16 +34,17 @@ url_resolve = (url)->
   pseudo_path = "import_url_cache/#{pseudo_path}"
   if !fs.existsSync pseudo_path
     folder = get_folder pseudo_path
-    # NOTE insecure shell
-    execSync "mkdir -p #{folder}"
-    execSync "curl #{url} > #{pseudo_path}"
+    execSync shellEscape ["mkdir", "-p", folder]
+    execSync "#{shellEscape ["curl", url]} > #{shellEscape [pseudo_path]}"
   
   code = fs.readFileSync pseudo_path, "utf-8"
   if /^404: Not Found/.test code
     throw new Error "404. failed to load #{url}"
   return code
 
-module.exports = (path, import_cache = {})->
+module.exports = (path, import_cache)->
+  is_root = !import_cache?
+  import_cache ?= {}
   is_url = /^https?:\/\/(.*)/.test path
   if !is_url
     path = m_path.resolve path
@@ -108,4 +113,10 @@ module.exports = (path, import_cache = {})->
   
   # code = code.replace(/pragma experimental .*/g, "")
   code = code.replace(/pragma experimental "v0.5.0";?/g, "")
+  code = code.replace(/^\/\/ SPDX-License-Identifier.*/g, "")
+  if is_root
+    code = """
+      // SPDX-License-Identifier: MIT
+      #{code}
+      """
   import_cache[path] = code
