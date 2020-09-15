@@ -114,4 +114,113 @@ describe "erc721 conversions", ()->
     """
     make_test text_i, text_o
 
+it "erc721 interface skeleton", ()->
+  text_i = """
+  pragma solidity ^0.6.0;
+
+  contract ERC721 {
+    function balanceOf(address owner) public view returns (uint256) {
+        return 100;
+    }
+
+    function ownerOf(uint256 tokenId) public view returns (address) {
+        return address(0x00);
+    }
+
+    function approve(address to, uint256 tokenId) public virtual {
+        require(tokenId != 0);
+    }
+
+    function getApproved(uint256 tokenId) public view returns (address) {
+        return msg.sender;
+    }
+
+    function setApprovalForAll(address operator, bool approved) public virtual {
+        require(operator != msg.sender);
+    }
+
+    function isApprovedForAll(address owner, address operator) public view returns (bool) {
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public virtual {
+        require(from != to);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public virtual {
+        require(from != to);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public virtual {
+        require(from != to);
+    }
+  }
+  """
+  text_o = """
+  type test_storage is unit;
+
+  (* in Tezos `balanceOf` method should not return a value, but perform a transaction to the passed contract callback with a needed value *)
+
+  function balance_of (const param : balance_of_param_michelson) : (nat) is
+    block {
+      skip
+    } with (100n);
+
+  (* ownerOf is not present in FA2. Read more https://git.io/JJFij *)
+
+  function ownerOf (const tokenId : nat) : (address) is
+    block {
+      skip
+    } with ((0x00 : address));
+
+  (* in Tezos approval methods are merged into one `Update_operators` method. You ought to handle Add_operator and Remove_operator params inside of it *)
+
+  function update_operators__approve (const param : list(update_operator_michelson)) : (unit) is
+    block {
+      assert((tokenId =/= 0n));
+    } with (unit);
+
+  (* getApproved is not present in FA2. Read more https://git.io/JJFij *)
+
+  function getApproved (const tokenId : nat) : (address) is
+    block {
+      skip
+    } with (Tezos.sender);
+
+  (* in Tezos approval methods are merged into one `Update_operators` method. You ought to handle Add_operator and Remove_operator params inside of it *)
+
+  function update_operators__setApprovalForAll (const param : list(update_operator_michelson)) : (unit) is
+    block {
+      assert((operator =/= Tezos.sender));
+    } with (unit);
+
+  (* isApprovedForAll is not present in FA2. Read more https://git.io/JJFij *)
+
+  function isApprovedForAll (const owner : address; const operator : address) : (bool) is
+    block {
+      skip
+    } with (True);
+
+  (* `safeTransferFrom` and `transferFrom` methods should be merged into one in Tezos' FA2. Read more https://git.io/JJFij *)
+
+  function transfer (const param : list(transfer_michelson)) : (unit) is
+    block {
+      assert((from =/= test_reserved_long___to));
+    } with (unit);
+
+  (* `safeTransferFrom` and `transferFrom` methods should be merged into one in Tezos' FA2. Read more https://git.io/JJFij *)
+
+  function safeTransfer (const param : list(transfer_michelson)) : (unit) is
+    block {
+      assert((from =/= test_reserved_long___to));
+    } with (unit);
+
+  (* `safeTransferFrom` and `transferFrom` methods should be merged into one in Tezos' FA2. Read more https://git.io/JJFij *)
+
+  function safeTransfer (const param : list(transfer_michelson)) : (unit) is
+    block {
+      assert((from =/= test_reserved_long___to));
+    } with (unit);
+  """
+  make_test text_i, text_o
 

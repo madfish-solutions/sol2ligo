@@ -20,7 +20,6 @@ describe "erc20 conversions", ()->
   perr "NOTE all those tests are broken and need to be fixed; Problem is with opList usage. Only 1 test remains broken intentionally"
   @timeout 10000
   it "erc20_convert", ()->
-    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
     ### TODO mechanism and tests for returned values like
       uint supply = ERC20TokenFace(0x0).totalSupply();
       uint bal = ERC20TokenFace(0x0).balanceOf(msg.sender);
@@ -151,7 +150,6 @@ describe "erc20 conversions", ()->
     make_test text_i, text_o
 
  it "erc20 preassigned var", ()->
-    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
     text_i = """
     pragma solidity ^0.4.16;
 
@@ -179,7 +177,6 @@ describe "erc20 conversions", ()->
     make_test text_i, text_o
 
   it "erc20 interface skeleton", ()->
-    #TODO make calls from 'token' not 'ERC20TokenFace(0x0)'
     text_i = """
     pragma solidity ^0.4.26;
 
