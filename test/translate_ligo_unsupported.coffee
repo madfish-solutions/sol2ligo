@@ -78,6 +78,7 @@ describe "translate ligo section unsupported", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     function isAuthorized (const test_reserved_long___unit : unit) : (unit) is
       block {
         burn_address;

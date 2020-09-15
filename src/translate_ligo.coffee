@@ -434,6 +434,7 @@ walk = (root, ctx)->
             if code
               if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
+                code += "\n" if v.name in ["burn_address", "pow"]
               jls[path] ?= []
               jls[path].push code
         

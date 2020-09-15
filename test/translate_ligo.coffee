@@ -119,6 +119,7 @@ describe "translate ligo section unsorted", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
@@ -426,6 +427,7 @@ describe "translate ligo section unsorted", ()->
           ret := ret * base;
         }
       } with ret;
+    
     function pow_test (const #{config.reserved}__unit : unit) : (nat) is
       block {
         const v : nat = pow(5n, 2n);

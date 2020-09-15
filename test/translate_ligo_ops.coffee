@@ -320,6 +320,7 @@ describe "translate ligo section ops", ()->
                 ret := ret * base;
               }
             } with ret;
+          
           function expr (const contract_storage : state) : (state) is
             block {
               const a : nat = 0n;

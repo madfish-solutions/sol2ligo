@@ -587,6 +587,7 @@ describe "translate ligo online examples", ()->
       secretKey = ("00": bytes) ];
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     const states_INVALID : nat = 0n;
     const states_OPEN : nat = 1n;
     const states_CLOSED : nat = 2n;
@@ -1590,7 +1591,9 @@ describe "translate ligo online examples", ()->
           ret := ret * base;
         }
       } with ret;
+    
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     type router_enum is
       | Constructor of constructor_args
      | ApproveNextOwner of approveNextOwner_args
@@ -2263,6 +2266,7 @@ describe "translate ligo online examples", ()->
       timestamp = 0n ];
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     type router_enum is
       | NewCaller of newCaller_args
      | NewStorage of newStorage_args
