@@ -1586,11 +1586,17 @@ describe "translate ligo online examples", ()->
     
     function pow (const base : nat; const exp : nat) : nat is
       block {
-        var ret : nat := 1n;
-        for i := 1 to int(exp) block {
-          ret := ret * base;
+        var b : nat := base;
+        var e : nat := exp;
+        var r : nat := 1n;
+        while e > 0n block {
+          if e mod 2n = 1n then {
+            r := r * b;
+          } else skip;
+          b := b * b;
+          e := e / 2n;
         }
-      } with ret;
+      } with r;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     

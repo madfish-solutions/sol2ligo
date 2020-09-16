@@ -406,13 +406,15 @@ describe "translate ligo section unsorted", ()->
     """
     make_test text_i, text_o
   
+  # to see it working, run, for example:
+  # for i in {0..25}; do ligo run-function tmp/Pow.ligo pow_test \(2n\,\ "$i"n\); done;
   it "pow", ()->
     text_i = """
     pragma solidity ^0.5.0;
     
     contract Pow {
-      function pow_test() public returns (uint256) {
-        uint256 v = 5 ** 2;
+      function pow_test(uint256 a, uint256 b) public returns (uint256) {
+        uint256 v = a ** b;
         return v;
       }
     }
@@ -422,15 +424,21 @@ describe "translate ligo section unsorted", ()->
     
     function pow (const base : nat; const exp : nat) : nat is
       block {
-        var ret : nat := 1n;
-        for i := 1 to int(exp) block {
-          ret := ret * base;
+        var b : nat := base;
+        var e : nat := exp;
+        var r : nat := 1n;
+        while e > 0n block {
+          if e mod 2n = 1n then {
+            r := r * b;
+          } else skip;
+          b := b * b;
+          e := e / 2n;
         }
-      } with ret;
+      } with r;
     
-    function pow_test (const #{config.reserved}__unit : unit) : (nat) is
+    function pow_test (const a : nat; const b : nat) : (nat) is
       block {
-        const v : nat = pow(5n, 2n);
+        const v : nat = pow(a, b);
       } with (v);
     """
     make_test text_i, text_o
