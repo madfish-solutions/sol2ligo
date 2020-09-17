@@ -29,7 +29,6 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
-  POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -60,6 +59,10 @@ number2bytes = (val, precision = 32)->
   ret.push "0x"
   ret.reverse()
   ret.join ""
+
+# patch config to handle an edge case - when Type Inference fails to infer more specific type (such as uint256)
+config.uint_type_map["unsigned_number"] = true
+config.int_type_map["signed_number"] = true
 
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
@@ -126,6 +129,11 @@ number2bytes = (val, precision = 32)->
       "int(#{a} mod #{b})"
     else
       "(#{a} mod #{b})"
+  POW : (a, b, ctx, ast) ->
+    if config.uint_type_map.hasOwnProperty(ast.a.type.main) and config.uint_type_map.hasOwnProperty(ast.b.type.main)
+      "pow(#{a}, #{b})"
+    else
+      "failwith('Exponentiation is only available for unsigned types. Here operands #{a} and #{b} have types #{ast.a.type.main} and #{ast.a.type.main}');"
 
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
@@ -426,6 +434,7 @@ walk = (root, ctx)->
             if code
               if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
+                code += "\n" if v.name in ["burn_address", "pow"]
               jls[path] ?= []
               jls[path].push code
         
@@ -1013,6 +1022,22 @@ walk = (root, ctx)->
         "unit"
     
     when "Fn_decl_multiret"
+      if root.name == "pow"
+        return """
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var b : nat := base;
+              var e : nat := exp;
+              var r : nat := 1n;
+              while e > 0n block {
+                if e mod 2n = 1n then {
+                  r := r * b;
+                } else skip;
+                b := b * b;
+                e := e / 2n;
+              }
+            } with r;
+          """
       orig_ctx = ctx
       ctx = ctx.mk_nest()
       arg_jl = []

@@ -587,6 +587,7 @@ describe "translate ligo online examples", ()->
       secretKey = ("00": bytes) ];
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     const states_INVALID : nat = 0n;
     const states_OPEN : nat = 1n;
     const states_CLOSED : nat = 2n;
@@ -1583,7 +1584,22 @@ describe "translate ligo online examples", ()->
       mask = 0n;
       gambler = burn_address ];
     
+    function pow (const base : nat; const exp : nat) : nat is
+      block {
+        var b : nat := base;
+        var e : nat := exp;
+        var r : nat := 1n;
+        while e > 0n block {
+          if e mod 2n = 1n then {
+            r := r * b;
+          } else skip;
+          b := b * b;
+          e := e / 2n;
+        }
+      } with r;
+    
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     type router_enum is
       | Constructor of constructor_args
      | ApproveNextOwner of approveNextOwner_args
@@ -1618,7 +1634,7 @@ describe "translate ligo online examples", ()->
     
     const mAX_MASK_MODULO : nat = 40n
     
-    const mAX_BET_MASK : nat = (2n LIGO_IMPLEMENT_ME_PLEASE_POW mAX_MASK_MODULO)
+    const mAX_BET_MASK : nat = pow(2n, mAX_MASK_MODULO)
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
@@ -1786,7 +1802,7 @@ describe "translate ligo online examples", ()->
         const diceWin : nat = 0n;
         const jackpotWin : nat = 0n;
         if (modulo <= mAX_MASK_MODULO) then block {
-          if (Bitwise.and((2n LIGO_IMPLEMENT_ME_PLEASE_POW dice), bet.mask) =/= 0n) then block {
+          if (Bitwise.and(pow(2n, dice), bet.mask) =/= 0n) then block {
             diceWin := diceWinAmount;
           } else block {
             skip
@@ -1798,7 +1814,7 @@ describe "translate ligo online examples", ()->
             skip
           };
         };
-        test_self.lockedInBets := (test_self.lockedInBets - abs(diceWinAmount));
+        test_self.lockedInBets := abs(test_self.lockedInBets - abs(diceWinAmount));
         if (#{config.reserved}__amount >= mIN_JACKPOT_BET) then block {
           const jackpotRng : nat = ((abs(entropy) / modulo) mod jACKPOT_MODULO);
           if (jackpotRng = 0n) then block {
@@ -1841,9 +1857,9 @@ describe "translate ligo online examples", ()->
           } *)
           dest := (dest + 32n);
           src := (src + 32n);
-          len := (len - 32n);
+          len := abs(len - 32n);
         };
-        const mask : nat = ((256n LIGO_IMPLEMENT_ME_PLEASE_POW (32n - len)) - 1n);
+        const mask : nat = abs(pow(256n, abs(32n - len)) - 1n);
         failwith("Unsupported InlineAssembly");
         (* InlineAssembly {
             let srcpart := and(mload(src), not(mask))
@@ -1947,7 +1963,7 @@ describe "translate ligo online examples", ()->
             leafHeaderByte := byte(0, calldataload(offset))
         } *)
         assert((leafHeaderByte >= 0xf7n)) (* "Receipt leaf longer than 55 bytes." *);
-        offset := (offset + (leafHeaderByte - 0xf6n));
+        offset := (offset + abs(leafHeaderByte - 0xf6n));
         const pathHeaderByte : nat = 0n;
         failwith("Unsupported InlineAssembly");
         (* InlineAssembly {
@@ -1957,7 +1973,7 @@ describe "translate ligo online examples", ()->
           offset := (offset + 1n);
         } else block {
           assert(((pathHeaderByte >= 0x80n) and (pathHeaderByte <= 0xb7n))) (* "Path is an RLP string." *);
-          offset := (offset + (pathHeaderByte - 0x7fn));
+          offset := (offset + abs(pathHeaderByte - 0x7fn));
         };
         const receiptStringHeaderByte : nat = 0n;
         failwith("Unsupported InlineAssembly");
@@ -1989,7 +2005,7 @@ describe "translate ligo online examples", ()->
           offset := (offset + 1n);
         } else block {
           assert(((cumGasHeaderByte >= 0x80n) and (cumGasHeaderByte <= 0xb7n))) (* "Cumulative gas is an RLP string." *);
-          offset := (offset + (cumGasHeaderByte - 0x7fn));
+          offset := (offset + abs(cumGasHeaderByte - 0x7fn));
         };
         const bloomHeaderByte : nat = 0n;
         failwith("Unsupported InlineAssembly");
@@ -2052,8 +2068,8 @@ describe "translate ligo online examples", ()->
         const diceWinAmount : nat = 0n;
         const jackpotFee : nat = 0n;
         (diceWinAmount, jackpotFee) := getDiceWinAmount(test_self, #{config.reserved}__amount, bet.modulo, bet.rollUnder);
-        test_self.lockedInBets := (test_self.lockedInBets - abs(diceWinAmount));
-        test_self.jackpotSize := (test_self.jackpotSize - abs(jackpotFee));
+        test_self.lockedInBets := abs(test_self.lockedInBets - abs(diceWinAmount));
+        test_self.jackpotSize := abs(test_self.jackpotSize - abs(jackpotFee));
         opList := sendFunds((test_self : address), bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
       } with (opList, test_self);
     
@@ -2256,6 +2272,7 @@ describe "translate ligo online examples", ()->
       timestamp = 0n ];
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     type router_enum is
       | NewCaller of newCaller_args
      | NewStorage of newStorage_args
@@ -2343,7 +2360,7 @@ describe "translate ligo online examples", ()->
           eyeColor = eyeColor_;
           timestamp = abs(#{config.reserved}__now) ];
         const tmp_0 : map(nat, creatures_Creature) = test_self.creatures;
-        const newCreatureID : nat = (tmp_0[size(tmp_0)] := creature_ - 1n);
+        const newCreatureID : nat = abs(tmp_0[size(tmp_0)] := creature_ - 1n);
         transfer(burn_address, owner_, newCreatureID);
         (* EmitStatement CreateCreature(newCreatureID, _owner) *)
       } with (opList, test_self);

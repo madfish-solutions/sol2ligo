@@ -41,6 +41,7 @@ describe "erc721 conversions", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa2.ligo"
     function balance_ofCallback (const arg : list(balance_of_response_michelson)) : (unit) is
       block {
@@ -76,6 +77,7 @@ describe "erc721 conversions", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa2.ligo"
     function test (const test_reserved_long___unit : unit) : (unit) is
       block {

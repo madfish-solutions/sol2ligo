@@ -45,6 +45,7 @@ describe "erc20 conversions", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -93,6 +94,7 @@ describe "erc20 conversions", ()->
     type state is unit;
 
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa1.2.ligo"
     type router_enum is
       | GetAllowanceCallback of getAllowanceCallback_args;
@@ -135,6 +137,7 @@ describe "erc20 conversions", ()->
     type state is unit;
 
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa1.2.ligo"
     function getAllowanceCallback (const arg : nat) : (unit) is
       block {
@@ -167,6 +170,7 @@ describe "erc20 conversions", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     #include "interfaces/fa1.2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {

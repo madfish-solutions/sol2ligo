@@ -24,6 +24,7 @@ module = @
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {make_calls_external}               = require "./transforms/make_calls_external"
 {add_burn_address}                  = require "./transforms/add_burn_address"
+{add_pow}                           = require "./transforms/add_pow"
 {cast_to_address}                   = require "./transforms/cast_to_address"
 {contract_object_to_address}        = require "./transforms/contract_object_to_address"
 {erc20_interface_converter}         = require "./transforms/erc20_interface_converter"
@@ -73,6 +74,7 @@ module = @
   
   root = return_op_list_count root, opt
   root = add_burn_address root, opt
+  root = add_pow root, opt
   root
 
 ercs_translate = (root, opt) ->

@@ -119,6 +119,7 @@ describe "translate ligo section map", ()->
     end;
 
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     function nest (const contract_storage : state; const dummy : nat) : (state) is
       block {
         contract_storage.nested_mapping[burn_address] := map
