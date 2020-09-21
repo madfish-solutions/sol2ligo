@@ -644,7 +644,10 @@ walk = (root, ctx)->
         if decl.typeName
           ret.type = walk_type decl.typeName, ctx
         else
-          ret.type = unpack_id_type decl.typeDescriptions, ctx
+          try
+            ret.type = unpack_id_type decl.typeDescriptions, ctx
+          catch err
+            perr "WARNING (AST gen). Can't resolve type #{err}"
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         [ret.pos, ret.line] = parse_line_pos(root.src)
