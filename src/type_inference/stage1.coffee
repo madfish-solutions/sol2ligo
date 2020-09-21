@@ -180,11 +180,11 @@ type_generalize = require "../type_generalize"
         root.type = ti.type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
 
     when "Struct_init"
-      root_type = ctx.walk root.fn, ctx
-      root_type = ti.type_resolve root_type, ctx
-      if !root_type
-        perr "WARNING (Type inference). Can't resolve function type for Struct_init"
-        return root.type
+      try
+        for val, idx in root.val_list
+          val.type = ti.type_spread_left val.type, ctx.type_map[root.type.main].scope.list[idx].type, ctx
+      catch e
+        perr "WARNING (Type inference). TI failed for Struct_init.", e.name, e.message
       for arg,i in root.val_list
         ctx.walk arg, ctx
       root.type
@@ -200,11 +200,7 @@ type_generalize = require "../type_generalize"
     
     when "Var_decl"
       if root.assign_value
-        if root.assign_value.val_list
-          for val, idx in root.assign_value.val_list
-            val.type = ti.type_spread_left val.type, ctx.type_map[root.type.main].scope.list[idx].type, ctx
-        else
-          root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
+        root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
         ctx.walk root.assign_value, ctx
       ctx.var_map[root.name] = root.type
       null
