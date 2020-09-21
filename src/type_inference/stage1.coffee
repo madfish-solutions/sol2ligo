@@ -179,7 +179,7 @@ type_generalize = require "../type_generalize"
       else
         root.type = ti.type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
 
-    when "Struct_init"        
+    when "Struct_init"
       root_type = ctx.walk root.fn, ctx
       root_type = ti.type_resolve root_type, ctx
       if !root_type
@@ -200,7 +200,11 @@ type_generalize = require "../type_generalize"
     
     when "Var_decl"
       if root.assign_value
-        root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
+        if root.assign_value.val_list
+          for val, idx in root.assign_value.val_list
+            val.type = ti.type_spread_left val.type, ctx.type_map[root.type.main].scope.list[idx].type, ctx
+        else
+          root.assign_value.type = ti.type_spread_left root.assign_value.type, root.type, ctx
         ctx.walk root.assign_value, ctx
       ctx.var_map[root.name] = root.type
       null
