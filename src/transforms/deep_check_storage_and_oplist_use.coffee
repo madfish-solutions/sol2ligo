@@ -8,17 +8,27 @@ ast = require "../ast"
 walk = (root, ctx)->
   switch root.constructor.name
     when "Un_op"
-      if root.op == "DELETE"
-        if root.a.constructor.name == "Bin_op" and root.a.op == "INDEX_ACCESS"
+      switch root.op
+        when "RET_INC", \
+             "RET_DEC", \
+             "INC_RET", \
+             "DEC_RET"
           ctx_lvalue = clone ctx
           ctx_lvalue.lvalue = true
-          root.a.a = walk root.a.a, ctx_lvalue
-        else
-          perr "WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)"
-          # fallback
           root.a = walk root.a, ctx_lvalue
-      
-      root.a = walk root.a, ctx
+          
+        when "DELETE"
+          if root.a.constructor.name == "Bin_op" and root.a.op == "INDEX_ACCESS"
+            ctx_lvalue = clone ctx
+            ctx_lvalue.lvalue = true
+            root.a.a = walk root.a.a, ctx_lvalue
+          else
+            perr "WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)"
+            # fallback
+            root.a = walk root.a, ctx_lvalue
+        
+        else
+          root.a = walk root.a, ctx
       root
     
     when "Bin_op"
