@@ -10,8 +10,6 @@ walk = (root, ctx)->
       if root.type?.main == "address"
         if root.assign_value?.type
           if root.assign_value.type.main != "address"
-            if root.assign_value.constructor.name == "Const"
-              root.assign_value.type = new Type "string"
             root.assign_value = astBuilder.cast_to_address(root.assign_value)
       ctx.next_gen root, ctx
     

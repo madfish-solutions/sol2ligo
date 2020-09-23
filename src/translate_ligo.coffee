@@ -865,12 +865,17 @@ walk = (root, ctx)->
         "int(abs(#{t}))"
       else if target_type == "nat"
         "abs(#{t})"
-      else if target_type == "address" and t == "0"
-        type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or t == "0")
-        "burn_address"
+      else if target_type == "address"
+        if (t == "0x0" or t == "0")
+          "burn_address"
+        else if root.t.constructor.name == "Const"
+          root.t.type = new Type "string"
+          t = walk root.t, ctx
+          "(#{t} : #{target_type})"
+        else
+          "(#{t} : #{target_type})"
       else
         "(#{t} : #{target_type})"
     
