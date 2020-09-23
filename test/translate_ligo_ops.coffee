@@ -1072,4 +1072,71 @@ describe "translate ligo section ops", ()->
       } with (unit);
     """
     make_test text_i, text_o
-    
+  
+  # ###################################################################################################
+  #    state change
+  # ###################################################################################################
+  describe "state change", ()->
+    it "un_op", ()->
+      text_i = """
+      pragma solidity ^0.4.16;
+
+      contract State_change {
+        uint private quality;
+        function post_inc() public {
+          quality++;
+        }
+        function post_dec() public {
+          quality--;
+        }
+        function pre_inc() public {
+          ++quality;
+        }
+        function pre_dec() public {
+          --quality;
+        }
+        function upd_inc() public {
+          quality += 1;
+        }
+        function upd_dec() public {
+          quality -= 1;
+        }
+      }
+      """#"
+      text_o = """
+      type state is record
+        quality : nat;
+      end;
+
+      function post_inc (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := contract_storage.quality + 1n;
+        } with (contract_storage);
+
+      function post_dec (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := abs(contract_storage.quality - 1n);
+        } with (contract_storage);
+
+      function pre_inc (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := contract_storage.quality + 1n;
+        } with (contract_storage);
+
+      function pre_dec (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := abs(contract_storage.quality - 1n);
+        } with (contract_storage);
+
+      function upd_inc (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := (contract_storage.quality + 1n);
+        } with (contract_storage);
+
+      function upd_dec (const contract_storage : state) : (state) is
+        block {
+          contract_storage.quality := abs(contract_storage.quality - 1n);
+        } with (contract_storage);
+      """
+      make_test text_i, text_o
+      
