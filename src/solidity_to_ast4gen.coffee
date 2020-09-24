@@ -150,6 +150,13 @@ unpack_id_type = (root, ctx)->
       else if match = (/^struct \w+\.(\w+) (?:memory|storage)$/.exec root.typeString) or (/^type\(struct \w+\.(\w+) (?:memory|storage) pointer\)$/.exec root.typeString)
         new Type match[1]
       
+      # contract call
+      else if match = /^contract (\w+)$/.exec root.typeString
+        if match[1] != ctx.contract_name
+          perr "WARNING (AST gen). Call to another contract found. It can't be translated correctly."
+          ctx.need_prevent_deploy = true
+        new Type match[1]
+      
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 

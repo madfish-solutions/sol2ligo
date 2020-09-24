@@ -442,3 +442,27 @@ describe "translate ligo section unsorted", ()->
       } with (v);
     """
     make_test text_i, text_o
+  
+  it "new Foreign_class() call [need_prevent_deploy]", ()->
+    text_i = """
+    pragma solidity ^0.4.21;
+    
+    contract Swap {
+      uint256 value;
+    }
+    
+    contract Test {
+      function test() public {
+        var b = new Swap();
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const b : address = (UNKNOWN_TYPE_Swap() : address);
+      } with (unit);
+    """
+    make_test text_i, text_o, allow_need_prevent_deploy: true

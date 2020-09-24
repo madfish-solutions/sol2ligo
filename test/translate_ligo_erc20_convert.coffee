@@ -155,9 +155,9 @@ describe "erc20 conversions", ()->
  it "erc20 preassigned var", ()->
     text_i = """
     pragma solidity ^0.4.16;
-
+    
     #{sol_erc20face_template}
-
+    
     contract eee {
       function test() private {
         ERC20TokenFace token = ERC20TokenFace(0x0);
@@ -178,8 +178,9 @@ describe "erc20 conversions", ()->
         const op0 : operation = transaction((Transfer(Tezos.sender, burn_address, 64n)), 0mutez, (get_contract(token) : contract(fa12_action)));
       } with (list [op0]);
     """
-    make_test text_i, text_o
-
+    # a foreign contract call raises the need_prevent_deploy flag
+    make_test text_i, text_o, allow_need_prevent_deploy: true
+  
   it "erc20 interface skeleton", ()->
     text_i = """
     pragma solidity ^0.4.26;
