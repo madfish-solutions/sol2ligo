@@ -178,16 +178,28 @@ type_generalize = require "../type_generalize"
         root.type = ti.type_spread_left root.type, root_type, ctx
       else
         root.type = ti.type_spread_left root.type, root_type.nest_list[1].nest_list[offset], ctx
-
+    
     when "Struct_init"
-      try
-        for val, idx in root.val_list
-          val.type = ti.type_spread_left val.type, ctx.type_map[root.type.main].scope.list[idx].type, ctx
-      catch e
-        perr "WARNING (Type inference). TI failed for Struct_init.", e.name, e.message
-      for arg,i in root.val_list
-        ctx.walk arg, ctx
-      root.type
+      root_type = ctx.walk root.fn, ctx
+      root_type = ti.type_resolve root_type, ctx
+      if !root_type
+        perr "WARNING (Type inference). Can't resolve function type for Struct_init"
+        return root.type
+      
+      if root.type
+        type_key = root.type.main
+      else if root.fn
+        type_key = root.fn.name
+      else
+        throw new Error "ERROR (Type inference). Can't find struct's type in this AST branch"
+      if !(type_cached = ctx.type_map[type_key])
+        perr "WARNING (Type inference). No type declaration for #{type_key}."
+        return root_type
+      for val, idx in root.val_list
+        val.type = ti.type_spread_left val.type, type_cached.scope.list[idx].type, ctx
+        ctx.walk val, ctx
+      
+      root_type
     
     # ###################################################################################################
     #    stmt

@@ -145,6 +145,11 @@ unpack_id_type = (root, ctx)->
         new Type root.typeString
       else if config.int_type_map.hasOwnProperty type_string
         new Type root.typeString
+      
+      # structs
+      else if match = (/^struct \w+\.(\w+) (?:memory|storage)$/.exec root.typeString) or (/^type\(struct \w+\.(\w+) (?:memory|storage) pointer\)$/.exec root.typeString)
+        new Type match[1]
+      
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 

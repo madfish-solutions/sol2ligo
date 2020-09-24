@@ -17,7 +17,7 @@ sol_erc20face_template = """
 """
 
 describe "erc20 conversions", ()->
-  perr "NOTE all those tests are broken and need to be fixed; Problem is with opList usage. Only 1 test remains broken intentionally"
+  perr "NOTE all those tests are broken and need to be fixed; Problem is with opList usage."
   @timeout 10000
   it "erc20_convert", ()->
     ### TODO mechanism and tests for returned values like

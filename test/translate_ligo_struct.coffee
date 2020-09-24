@@ -66,10 +66,10 @@ describe "translate ligo section struct", ()->
     """
     make_test text_i, text_o
   
-  it "struct type inference", ()->
+  it "struct type inference 1", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract C {
       struct S {
         int8 v;
@@ -85,12 +85,45 @@ describe "translate ligo section struct", ()->
       v : int;
       w : nat;
     end;
-
+    
     type state is unit;
-
+    
     const c_S_default : c_S = record [ v = 0;
       w = 0n ];
-
+    
+    function f (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const s : c_S = record [ v = 2;
+          w = 5n ];
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
+  it "struct type inference 2", ()->
+    text_i = """
+    pragma solidity ^0.4.21;
+    
+    contract C {
+      struct S {
+        int8 v;
+        uint8 w;
+      }
+      function f() public {
+        var s = S(2, 5);
+      }
+    }
+    """
+    text_o = """
+    type c_S is record
+      v : int;
+      w : nat;
+    end;
+    
+    type state is unit;
+    
+    const c_S_default : c_S = record [ v = 0;
+      w = 0n ];
+    
     function f (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const s : c_S = record [ v = 2;
