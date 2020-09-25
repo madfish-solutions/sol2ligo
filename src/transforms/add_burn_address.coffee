@@ -10,6 +10,11 @@ walk = (root, ctx)->
     
     when "Class_decl"
       ctx.scope = "class"
+      if root.is_struct
+        for v in root.scope.list
+          if v.constructor.name == "Var_decl"
+            if v.type?.main == "address"
+              ctx.need_burn_address = true
     
     when "Fn_decl_multiret"
       old_scope = ctx.scope
