@@ -29,4 +29,25 @@ describe "translate ligo section address", ()->
     """
     make_test text_i, text_o
   
+  it "convert var assign", ()->
+    text_i = """
+    pragma solidity ^0.4.26;
+    
+    contract Transfer_test {
+      
+      function test() public {
+        address addressVar = 0x0000000000000000000000000000000000000000;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const addressVar : address = ("0x0000000000000000000000000000000000000000" : address);
+      } with (unit);
+    """
+    make_test text_i, text_o
+  
   it "transfer"

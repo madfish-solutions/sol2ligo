@@ -110,8 +110,8 @@ describe "erc721 conversions", ()->
     #include "interfaces/fa2.ligo"
     function test (const opList : list(operation)) : (list(operation)) is
       block {
-        const token : address = (0x01 : address);
-        const op0 : operation = transaction((Transfer(list [(list [(64n, ((0x1 : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
+        const token : address = ("0x01" : address);
+        const op0 : operation = transaction((Transfer(list [(list [(64n, (("0x1" : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
       } with (list [op0]);
     """
     make_test text_i, text_o
@@ -173,7 +173,7 @@ it "erc721 interface skeleton", ()->
   function ownerOf (const tokenId : nat) : (address) is
     block {
       skip
-    } with ((0x00 : address));
+    } with (("0x00" : address));
 
   (* in Tezos approval methods are merged into one `Update_operators` method. You ought to handle Add_operator and Remove_operator params inside of it *)
 
