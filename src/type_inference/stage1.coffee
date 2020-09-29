@@ -315,6 +315,8 @@ type_generalize = require "../type_generalize"
       root.t.type = ti.type_spread_left root.t.type, root.f.type, ctx
       root.f.type = ti.type_spread_left root.f.type, root.t.type, ctx
       root.type = ti.type_spread_left root.type, root.t.type, ctx
+      root.t.type = ti.type_spread_left root.t.type, root.type, ctx
+      root.f.type = ti.type_spread_left root.f.type, root.type, ctx
       root.type
     
     when "New"

@@ -466,3 +466,27 @@ describe "translate ligo section unsorted", ()->
       } with (unit);
     """
     make_test text_i, text_o, allow_need_prevent_deploy: true
+  
+  it "Type inference in ternary expression", ()->
+    text_i = """
+    pragma solidity ^0.4.21;
+    
+    contract Test {
+      function test() public {
+        var a = true?1:0; // first example
+        uint b = a + 0;
+        uint8 c = true?1:0; // second example
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function test (const #{config.reserved}__unit : unit) : (unit) is
+      block {
+        const a : nat = (case True of | True -> 1n | False -> 0n end);
+        const b : nat = (a + 0n);
+        const c : nat = (case True of | True -> 1n | False -> 0n end);
+      } with (unit);
+    """
+    make_test text_i, text_o, allow_need_prevent_deploy: true
