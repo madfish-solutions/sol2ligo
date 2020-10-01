@@ -181,6 +181,8 @@ type_generalize = require "../type_generalize"
     
     when "Struct_init"
       root_type = ctx.walk root.fn, ctx
+      if !root_type and root.fn
+        root_type = new Type root.fn.name
       root_type = ti.type_resolve root_type, ctx
       if !root_type
         perr "WARNING (Type inference). Can't resolve function type for Struct_init"
@@ -195,8 +197,11 @@ type_generalize = require "../type_generalize"
       if !(type_cached = ctx.type_map[type_key])
         perr "WARNING (Type inference). No type declaration for #{type_key}."
         return root_type
+      
+      if root_type?.main == "struct"
+        for val, idx in root.val_list
+          val.type = ti.type_spread_left val.type, type_cached.scope.list[idx].type, ctx
       for val, idx in root.val_list
-        val.type = ti.type_spread_left val.type, type_cached.scope.list[idx].type, ctx
         ctx.walk val, ctx
       
       root_type
