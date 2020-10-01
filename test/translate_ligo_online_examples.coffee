@@ -579,14 +579,14 @@ describe "translate ligo online examples", ()->
       swapStates : map(bytes, nat);
     end;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     const atomicSwapEther_Swap_default : atomicSwapEther_Swap = record [ timelock = 0n;
       value = 0n;
       ethTrader = burn_address;
       withdrawTrader = burn_address;
       secretLock = ("00": bytes);
       secretKey = ("00": bytes) ];
-    
-    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     
     const states_INVALID : nat = 0n;
     const states_OPEN : nat = 1n;
@@ -1577,13 +1577,6 @@ describe "translate ligo online examples", ()->
       croupier : address;
     end;
     
-    const dice2Win_Bet_default : dice2Win_Bet = record [ #{config.reserved}__amount = 0n;
-      modulo = 0n;
-      rollUnder = 0n;
-      placeBlockNumber = 0n;
-      mask = 0n;
-      gambler = burn_address ];
-    
     function pow (const base : nat; const exp : nat) : nat is
       block {
         var b : nat := base;
@@ -1599,6 +1592,13 @@ describe "translate ligo online examples", ()->
       } with r;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
+    const dice2Win_Bet_default : dice2Win_Bet = record [ #{config.reserved}__amount = 0n;
+      modulo = 0n;
+      rollUnder = 0n;
+      placeBlockNumber = 0n;
+      mask = 0n;
+      gambler = burn_address ];
     
     type router_enum is
       | Constructor of constructor_args
@@ -1638,7 +1638,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = (0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE : address)
+    const dUMMY_ADDRESS : address = ("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
@@ -2266,12 +2266,12 @@ describe "translate ligo online examples", ()->
       ownershipTokenCount : map(address, nat);
     end;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     const creatures_Creature_default : creatures_Creature = record [ species = 0n;
       subSpecies = 0n;
       eyeColor = 0n;
       timestamp = 0n ];
-    
-    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
     
     type router_enum is
       | NewCaller of newCaller_args

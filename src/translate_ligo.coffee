@@ -427,6 +427,7 @@ walk = (root, ctx)->
         when "SourceUnit" #top-level scope
           jls = {}
           jls[main_file] = []
+          main_file_unshift_list = []
           for v in root.list
             code = walk v, ctx
             path = if ctx.keep_dir_structure then v.file else null
@@ -434,7 +435,12 @@ walk = (root, ctx)->
             if code
               if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
-                code += "\n" if v.name in ["burn_address", "pow"]
+                # 2 different types: Const burn_address, Fn_decl_multiret pow
+                if v.name in ["burn_address", "pow"]
+                  code += "\n"
+                  main_file_unshift_list.push code
+                  continue
+                  
               jls[path] ?= []
               jls[path].push code
         
@@ -443,6 +449,12 @@ walk = (root, ctx)->
               #{join_list ctx.structs_default_list}
               """
           name = config.storage
+          
+          # TODO move this below
+          # this movement will break a lot of tests
+          while (v = main_file_unshift_list.pop())?
+            jls[main_file].unshift v
+          
           jls[main_file].unshift ""
           if Object.keys(ctx.storage_sink_list).length == 0
             jls[main_file].unshift """
@@ -460,6 +472,8 @@ walk = (root, ctx)->
                     #{join_list v, '  '}
                   end;
                   """
+          
+          # TODO move here
           ctx.storage_sink_list = {} 
 
           if ctx.type_decl_sink_list.length
@@ -865,12 +879,17 @@ walk = (root, ctx)->
         "int(abs(#{t}))"
       else if target_type == "nat"
         "abs(#{t})"
-      else if target_type == "address" and t == "0"
-        type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or t == "0")
-        "burn_address"
+      else if target_type == "address"
+        if (t == "0x0" or t == "0")
+          "burn_address"
+        else if root.t.constructor.name == "Const"
+          root.t.type = new Type "string"
+          t = walk root.t, ctx
+          "(#{t} : #{target_type})"
+        else
+          "(#{t} : #{target_type})"
       else
         "(#{t} : #{target_type})"
     
