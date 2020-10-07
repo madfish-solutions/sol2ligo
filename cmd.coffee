@@ -53,18 +53,15 @@ process_file = (file)->
     suggest_solc_version  : argv.solc
     quiet                 : argv.quiet
     allow_download        : true
-
+  
   if argv.print_solidity_ast
     puts ast
   
   solidity_to_ast4gen = require("./src/solidity_to_ast4gen").gen
   new_ast = solidity_to_ast4gen ast
   
-  if new_ast.need_prevent_deploy
-    puts "WARNING. Generated code is not correct. DO NOT deploy it without prior thorough checking!"
-  
   outfile = path.parse(argv.outfile) if argv.outfile
-
+  
   opt = {
       router  : argv.router,
       contract : argv.contract
@@ -74,7 +71,7 @@ process_file = (file)->
   new_ast = ast_transform.pre_ti new_ast, opt
   new_ast = type_inference new_ast, opt
   new_ast = ast_transform.post_ti new_ast, opt
-
+  
   code = translate new_ast, opt
   code += """\n(* this code is generated from #{file} by sol2ligo transpiler *)\n"""
   if argv.outfile
@@ -90,7 +87,6 @@ process_file = (file)->
     fs.writeFileSync name, code
   else
     puts code
-
   
   if argv.ds or argv.outfile
     ds_code = translate_ds new_ast
@@ -116,7 +112,8 @@ process_file = (file)->
       puts fs.readFileSync "./ligo_tmp.log", "utf-8"
   
   if new_ast.need_prevent_deploy
-    puts "WARNING. Generated code is not correct. DO NOT deploy it without prior thorough checking!"
+    perr "WARNING. Generated code is not correct. DO NOT deploy it without prior thorough checking!"
+    process.exitCode = 1
   
   return
 
@@ -143,7 +140,7 @@ if !(file = argv._[0])? and !(file = argv.file) and !(argv.dir)
 if argv.dir
   files = walkSync argv.dir
   dirname = path.basename argv.dir
-
+  
   for file in files
     rel = path.relative argv.dir, file
     filepath = path.parse rel
