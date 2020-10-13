@@ -1638,7 +1638,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = ("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" : address)
+    const dUMMY_ADDRESS : address = ("PLEASE_REPLACE_ETH_ADDRESS_0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE_WITH_A_TEZOS_ADDRESS" : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
