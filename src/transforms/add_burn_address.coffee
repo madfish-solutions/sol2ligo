@@ -5,7 +5,7 @@ Type = require "type"
 walk = (root, ctx)->
   switch root.constructor.name
     when "Type_cast"
-      if root.target_type.main == "address" and (root.t?.val == "0" or root.t?.val == "0x0")
+      if root.target_type.main == "address" and +root.t?.val == 0
         ctx.need_burn_address = true
     
     when "Class_decl"

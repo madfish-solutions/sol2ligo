@@ -882,7 +882,7 @@ walk = (root, ctx)->
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
       else if target_type == "address"
-        if (t == "0x0" or t == "0")
+        if +t == 0
           "burn_address"
         else if root.t.constructor.name == "Const"
           root.t.type = new Type "string"

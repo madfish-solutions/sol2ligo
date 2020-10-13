@@ -161,6 +161,8 @@ it "erc721 interface skeleton", ()->
   text_o = """
   type test_storage is unit;
 
+  const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+
   (* in Tezos `balanceOf` method should not return a value, but perform a transaction to the passed contract callback with a needed value *)
 
   function balance_of (const param : balance_of_param_michelson) : (nat) is
@@ -173,7 +175,7 @@ it "erc721 interface skeleton", ()->
   function ownerOf (const tokenId : nat) : (address) is
     block {
       skip
-    } with (("0x00" : address));
+    } with (burn_address);
 
   (* in Tezos approval methods are merged into one `Update_operators` method. You ought to handle Add_operator and Remove_operator params inside of it *)
 
