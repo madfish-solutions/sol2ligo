@@ -402,10 +402,10 @@ describe "translate ligo section var type", ()->
 
     function bar (const test_reserved_long___unit : unit) : (unit) is
       block {
-        const a : address = ("0x01" : address);
-        const b : address = ("4242" : address);
-        if (a = ("0x01" : address)) then block {
-          b := foo(("0x02" : address));
+        const a : address = ("PLEASE_REPLACE_ETH_ADDRESS_0x01_WITH_A_TEZOS_ADDRESS" : address);
+        const b : address = ("PLEASE_REPLACE_ETH_ADDRESS_4242_WITH_A_TEZOS_ADDRESS" : address);
+        if (a = ("PLEASE_REPLACE_ETH_ADDRESS_0x01_WITH_A_TEZOS_ADDRESS" : address)) then block {
+          b := foo(("PLEASE_REPLACE_ETH_ADDRESS_0x02_WITH_A_TEZOS_ADDRESS" : address));
         } else block {
           skip
         };
