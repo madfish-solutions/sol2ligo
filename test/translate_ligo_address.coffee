@@ -43,9 +43,11 @@ describe "translate ligo section address", ()->
     text_o = """
     type state is unit;
     
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     function test (const #{config.reserved}__unit : unit) : (unit) is
       block {
-        const addressVar : address = ("0x0000000000000000000000000000000000000000" : address);
+        const addressVar : address = burn_address;
       } with (unit);
     """
     make_test text_i, text_o
