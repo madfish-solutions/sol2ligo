@@ -109,7 +109,7 @@ do () =>
         ret_select root, res_list
       
       when "If", "Ternary"
-        res_list = []
+        res_list =  []
         root.cond = array_side_unpack res_list, walk root.cond, ctx
         root.t    = array_side_unpack res_list, walk root.t,    ctx
         root.f    = array_side_unpack res_list, walk root.f,    ctx
@@ -118,7 +118,7 @@ do () =>
         ret_select root, res_list
       
       when "While"
-        res_list = []
+        res_list =  []
         root.cond = array_side_unpack res_list, walk root.cond, ctx
         root.scope= array_side_unpack res_list, walk root.scope,ctx # should not be list
         
