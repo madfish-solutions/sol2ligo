@@ -897,6 +897,116 @@ describe "translate ligo section ops", ()->
         make_test text_i, text_o
     
     for type in config.int_type_list
+      it "#{type} bin_ops with a const", ()->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public value;
+          
+          function expr() public returns (#{type}) {
+            #{type} b = 0;
+            #{type} c = 0;
+            c = -c;
+            c = 1 + b;
+            c = 1 - b;
+            c = 1 * b;
+            c = 1 / b;
+            c = 1 << b;
+            c = 1 >> b;
+            c += b;
+            c -= b;
+            c *= b;
+            c /= b;
+            c <<= b;
+            c >>= b;
+            return c;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            value : int;
+          end;
+          
+          function expr (const #{config.reserved}__unit : unit) : (int) is
+            block {
+              const b : int = 0;
+              const c : int = 0;
+              c := -(c);
+              c := (1 + b);
+              c := (1 - b);
+              c := (1 * b);
+              c := (1 / b);
+              c := int(Bitwise.shift_left(1n, abs(b)));
+              c := int(Bitwise.shift_right(1n, abs(b)));
+              c := (c + b);
+              c := (c - b);
+              c := (c * b);
+              c := (c / b);
+              c := int(Bitwise.shift_left(abs(c), abs(b)));
+              c := int(Bitwise.shift_right(abs(c), abs(b)));
+            } with (c);
+          
+        """
+        make_test text_i, text_o
+    
+    for type in config.int_type_list
+      it "#{type} bin_ops with b const", ()->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public value;
+          
+          function expr() public returns (#{type}) {
+            #{type} a = 0;
+            #{type} c = 0;
+            c = -c;
+            c = a + 1;
+            c = a - 1;
+            c = a * 1;
+            c = a / 1;
+            c = a << 1;
+            c = a >> 1;
+            c += 1;
+            c -= 1;
+            c *= 1;
+            c /= 1;
+            c <<= 1;
+            c >>= 1;
+            return c;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            value : int;
+          end;
+          
+          function expr (const #{config.reserved}__unit : unit) : (int) is
+            block {
+              const a : int = 0;
+              const c : int = 0;
+              c := -(c);
+              c := (a + 1);
+              c := (a - 1);
+              c := (a * 1);
+              c := (a / 1);
+              c := int(Bitwise.shift_left(abs(a), 1n));
+              c := int(Bitwise.shift_right(abs(a), 1n));
+              c := (c + 1);
+              c := (c - 1);
+              c := (c * 1);
+              c := (c / 1);
+              c := int(Bitwise.shift_left(abs(c), 1n));
+              c := int(Bitwise.shift_right(abs(c), 1n));
+            } with (c);
+          
+        """
+        make_test text_i, text_o
+    
+    for type in config.int_type_list
       it "cmp #{type}", ()->
         text_i = """
         pragma solidity ^0.5.11;

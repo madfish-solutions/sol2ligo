@@ -44,7 +44,10 @@ string2bytes = (val)->
 
 some2nat = (val, type)->
   if config.int_type_map.hasOwnProperty(type)
-    val = "abs(#{val})"
+    if /^\d+$/.test val
+      val = "#{val}n"
+    else
+      val = "abs(#{val})"
   if type.match /^byte[s]?\d{0,2}$/
     val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
   val
