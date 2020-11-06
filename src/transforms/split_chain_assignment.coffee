@@ -152,6 +152,6 @@ do () =>
       
       else
         ctx.next_gen root, ctx
-    
+  
   @split_chain_assignment = (root, ctx)->
     walk root, {walk, next_gen: default_walk}

@@ -1157,7 +1157,7 @@ describe "translate ligo section ops", ()->
       """#"
       text_o = """
       type state is unit;
-
+      
       function test (const #{config.reserved}__unit : unit) : (unit) is
         block {
           const boolean0 : bool = False;
