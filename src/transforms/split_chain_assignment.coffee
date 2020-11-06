@@ -74,7 +74,8 @@ do () =>
       
       when "Field_access", "Throw", "Type_cast"
         res_list = []
-        root.t = array_side_unpack res_list, walk root.t, ctx
+        if root.t
+          root.t = array_side_unpack res_list, walk root.t, ctx
         ret_select root, res_list
       
       when "Fn_call"
