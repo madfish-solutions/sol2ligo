@@ -1139,4 +1139,31 @@ describe "translate ligo section ops", ()->
         } with (contract_storage);
       """
       make_test text_i, text_o
+  # ###################################################################################################
+  #    chain assignment
+  # ###################################################################################################
+  describe "chain assignment", ()->
+    it "basic", ()->
+      text_i = """
+      pragma solidity ^0.5.0;
       
+      contract Test {
+       function test() public {
+          bool boolean0 = false;
+          bool boolean1 = true;
+          bool boolean = boolean0 = boolean1; 
+        }
+      }
+      """#"
+      text_o = """
+      type state is unit;
+
+      function test (const #{config.reserved}__unit : unit) : (unit) is
+        block {
+          const boolean0 : bool = False;
+          const boolean1 : bool = True;
+          boolean0 := boolean1;
+          const boolean : bool = boolean0;
+        } with (unit);
+      """
+      make_test text_i, text_o
