@@ -67,11 +67,11 @@
     
     when "Throw"
       if root.t
-        walk root.t, ctx
+        root.t = walk root.t, ctx
       root
     
     when "Type_cast"
-      walk root.t, ctx
+      root.t = walk root.t, ctx
       root
 
     when "Enum_decl", "PM_switch"
