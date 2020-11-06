@@ -43,7 +43,7 @@ string2bytes = (val)->
   ret.join ""
 
 some2nat = (val, type)->
-  if type.match /^int\d{0,3}$/
+  if config.int_type_map.hasOwnProperty(type)
     val = "abs(#{val})"
   if type.match /^byte[s]?\d{0,2}$/
     val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
@@ -638,7 +638,7 @@ walk = (root, ctx)->
       
       ret = if op = module.bin_op_name_map[root.op]
         last_bracket_state = true
-        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
+        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type && root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
           switch op
             when "="
               "(#{_a} = #{_b})"
