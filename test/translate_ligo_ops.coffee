@@ -856,10 +856,14 @@ describe "translate ligo section ops", ()->
             c = a - b;
             c = a * b;
             c = a / b;
+            c = a << b;
+            c = a >> b;
             c += b;
             c -= b;
             c *= b;
             c /= b;
+            c <<= b;
+            c >>= b;
             return c;
           }
         }
@@ -879,10 +883,14 @@ describe "translate ligo section ops", ()->
               c := (a - b);
               c := (a * b);
               c := (a / b);
+              c := int(Bitwise.shift_left(abs(a), abs(b)));
+              c := int(Bitwise.shift_right(abs(a), abs(b)));
               c := (c + b);
               c := (c - b);
               c := (c * b);
               c := (c / b);
+              c := int(Bitwise.shift_left(abs(c), abs(b)));
+              c := int(Bitwise.shift_right(abs(c), abs(b)));
             } with (c);
           
         """
