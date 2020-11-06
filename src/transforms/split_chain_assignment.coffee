@@ -131,13 +131,15 @@ do () =>
         if root.cond
           res = walk root.cond, ctx
           if res instanceof Array
-            perr "ERROR. chained assignment in for condition is not supported"
+            perr "WARNING (AST transform). Chained assignment in a for condition is not supported; prevent_deploy flag raised."
+            ctx.need_prevent_deploy_obj.value = true
           else
             root.cond = res
         if root.iter
           res = walk root.iter, ctx
           if res instanceof Array
-            perr "ERROR. chained assignment in for iterator is not supported"
+            perr "WARNING (AST transform). Chained assignment in a for iterator is not supported; prevent_deploy flag raised."
+            ctx.need_prevent_deploy_obj.value = true
           else
             root.iter = res
         root.scope= walk root.scope, ctx # should not be list
@@ -153,5 +155,15 @@ do () =>
       else
         ctx.next_gen root, ctx
   
-  @split_chain_assignment = (root, ctx)->
-    walk root, {walk, next_gen: default_walk}
+  @split_chain_assignment = (root)->
+    ctx = {
+      walk,
+      next_gen: default_walk,
+      need_prevent_deploy_obj: value: false
+    }
+    walk root, ctx
+    
+    if ctx.need_prevent_deploy_obj.value
+      root.need_prevent_deploy = true
+    
+    root
