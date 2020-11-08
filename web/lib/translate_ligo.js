@@ -33,7 +33,6 @@
     LT: "<",
     GTE: ">=",
     LTE: "<=",
-    POW: "LIGO_IMPLEMENT_ME_PLEASE_POW",
     BOOL_AND: "and",
     BOOL_OR: "or"
   };
@@ -52,8 +51,12 @@
   };
 
   some2nat = function(val, type) {
-    if (type.match(/^int\d{0,3}$/)) {
-      val = "abs(" + val + ")";
+    if (config.int_type_map.hasOwnProperty(type)) {
+      if (/^\d+$/.test(val)) {
+        val = "" + val + "n";
+      } else {
+        val = "abs(" + val + ")";
+      }
     }
     if (type.match(/^byte[s]?\d{0,2}$/)) {
       val = "(case (bytes_unpack (" + val + ") : option (nat)) of | Some(a) -> a | None -> 0n end)";
@@ -77,6 +80,10 @@
     ret.reverse();
     return ret.join("");
   };
+
+  config.uint_type_map["unsigned_number"] = true;
+
+  config.int_type_map["signed_number"] = true;
 
   this.bin_op_name_cb_map = {
     ASSIGN: function(a, b, ctx, ast) {
@@ -156,6 +163,13 @@
         return "int(" + a + " mod " + b + ")";
       } else {
         return "(" + a + " mod " + b + ")";
+      }
+    },
+    POW: function(a, b, ctx, ast) {
+      if (config.uint_type_map.hasOwnProperty(ast.a.type.main) && config.uint_type_map.hasOwnProperty(ast.b.type.main)) {
+        return "pow(" + a + ", " + b + ")";
+      } else {
+        return "failwith('Exponentiation is only available for unsigned types. Here operands " + a + " and " + b + " have types " + ast.a.type.main + " and " + ast.a.type.main + "');";
       }
     }
   };
@@ -474,7 +488,7 @@
   last_bracket_state = false;
 
   walk = function(root, ctx) {
-    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, jls, k, loc_code, main_file, modifies_storage, msg, name, old_scope_root, op, orig_ctx, path, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, text, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _ai, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len25, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
+    var a, arg, arg_jl, arg_list, arg_num, args, aux, body, call_expr, case_scope, cb, chk_ret, code, cond, ctx_lvalue, decl, decls, entry, f, field_access_translation, field_decl_jl, fn, get_tmp, i, idx, jl, jls, k, loc_code, main_file, main_file_unshift_list, modifies_storage, msg, name, old_scope_root, op, orig_ctx, path, prefix, ret, ret_jl, ret_types_list, returns_op_list, returns_value, scope, shift_self, state_name, str, t, target_type, text, tmp_var, translated_type, type, type_decl, type_decl_jl, type_list, type_o, type_str, uses_storage, v, val, _a, _aa, _ab, _ac, _ad, _ae, _af, _ag, _ah, _ai, _b, _base, _case, _i, _j, _k, _l, _len, _len1, _len10, _len11, _len12, _len13, _len14, _len15, _len16, _len17, _len18, _len19, _len2, _len20, _len21, _len22, _len23, _len24, _len25, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref3, _ref30, _ref31, _ref32, _ref33, _ref34, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _s, _t, _u, _v, _var, _w, _x, _y, _z;
     main_file = "";
     last_bracket_state = false;
     switch (root.constructor.name) {
@@ -483,6 +497,7 @@
           case "SourceUnit":
             jls = {};
             jls[main_file] = [];
+            main_file_unshift_list = [];
             _ref1 = root.list;
             for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
               v = _ref1[_i];
@@ -496,6 +511,11 @@
                   if (!/;$/.test(code)) {
                     code += ";";
                   }
+                  if ((_ref3 = v.name) === "burn_address" || _ref3 === "pow") {
+                    code += "\n";
+                    main_file_unshift_list.push(code);
+                    continue;
+                  }
                 }
                 if (jls[path] == null) {
                   jls[path] = [];
@@ -507,13 +527,16 @@
               jls[main_file].unshift("" + (join_list(ctx.structs_default_list)));
             }
             name = config.storage;
+            while ((v = main_file_unshift_list.pop()) != null) {
+              jls[main_file].unshift(v);
+            }
             jls[main_file].unshift("");
             if (Object.keys(ctx.storage_sink_list).length === 0) {
               jls[main_file].unshift("type " + name + " is unit;");
             } else {
-              _ref3 = ctx.storage_sink_list;
-              for (k in _ref3) {
-                v = _ref3[k];
+              _ref4 = ctx.storage_sink_list;
+              for (k in _ref4) {
+                v = _ref4[k];
                 if (v.length === 0) {
                   jls[main_file].unshift("type " + k + " is unit;");
                 } else {
@@ -524,9 +547,9 @@
             ctx.storage_sink_list = {};
             if (ctx.type_decl_sink_list.length) {
               type_decl_jl = [];
-              _ref4 = ctx.type_decl_sink_list;
-              for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
-                type_decl = _ref4[_j];
+              _ref5 = ctx.type_decl_sink_list;
+              for (_j = 0, _len1 = _ref5.length; _j < _len1; _j++) {
+                type_decl = _ref5[_j];
                 name = type_decl.name, field_decl_jl = type_decl.field_decl_jl;
                 if (field_decl_jl.length === 0) {
                   type_decl_jl.push("type " + name + " is unit;");
@@ -550,9 +573,9 @@
             if (!root.original_node_type) {
               jls = {};
               jls[main_file] = [];
-              _ref5 = root.list;
-              for (_k = 0, _len2 = _ref5.length; _k < _len2; _k++) {
-                v = _ref5[_k];
+              _ref6 = root.list;
+              for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
+                v = _ref6[_k];
                 path = ctx.keep_dir_structure ? v.file : null;
                 if (path == null) {
                   path = main_file;
@@ -561,9 +584,9 @@
                   jls[path] = [];
                 }
                 code = walk(v, ctx);
-                _ref6 = ctx.sink_list;
-                for (_l = 0, _len3 = _ref6.length; _l < _len3; _l++) {
-                  loc_code = _ref6[_l];
+                _ref7 = ctx.sink_list;
+                for (_l = 0, _len3 = _ref7.length; _l < _len3; _l++) {
+                  loc_code = _ref7[_l];
                   if (!/;$/.test(loc_code)) {
                     loc_code += ";";
                   }
@@ -579,7 +602,7 @@
                   code = ctx.terminate_expr_replace_fn();
                 }
                 if (code) {
-                  if ((_ref7 = v.constructor.name) !== "Comment" && _ref7 !== "Scope" && _ref7 !== "Include") {
+                  if ((_ref8 = v.constructor.name) !== "Comment" && _ref8 !== "Scope" && _ref8 !== "Include") {
                     if (!/;$/.test(code)) {
                       code += ";";
                     }
@@ -758,16 +781,16 @@
         chk_ret = "" + t + "." + root.name;
         ret = "" + t + "." + root.name;
         if (root.t.constructor.name === "Var") {
-          if ((_ref8 = ctx.type_decl_map[root.t.name]) != null ? _ref8.is_library : void 0) {
+          if ((_ref9 = ctx.type_decl_map[root.t.name]) != null ? _ref9.is_library : void 0) {
             ret = translate_var_name("" + t + "_" + root.name, ctx);
           }
         }
         return spec_id_translate(chk_ret, ret);
       case "Fn_call":
         arg_list = [];
-        _ref9 = root.arg_list;
-        for (_m = 0, _len4 = _ref9.length; _m < _len4; _m++) {
-          v = _ref9[_m];
+        _ref10 = root.arg_list;
+        for (_m = 0, _len4 = _ref10.length; _m < _len4; _m++) {
+          v = _ref10[_m];
           arg_list.push(walk(v, ctx));
         }
         field_access_translation = null;
@@ -829,18 +852,18 @@
               break;
             case "@respond":
               type_list = [];
-              _ref10 = root.arg_list;
-              for (_n = 0, _len5 = _ref10.length; _n < _len5; _n++) {
-                v = _ref10[_n];
+              _ref11 = root.arg_list;
+              for (_n = 0, _len5 = _ref11.length; _n < _len5; _n++) {
+                v = _ref11[_n];
                 type_list.push(translate_type(v.type, ctx));
               }
               type_str = type_list.join(" * ");
               return "var " + config.op_list + " : list(operation) := list transaction((" + (arg_list.join(' * ')) + "), 0mutez, (get_contract(match_action." + config.callback_address + ") : contract(" + type_str + "))) end";
             case "@respond_append":
               type_list = [];
-              _ref11 = root.arg_list;
-              for (_o = 0, _len6 = _ref11.length; _o < _len6; _o++) {
-                v = _ref11[_o];
+              _ref12 = root.arg_list;
+              for (_o = 0, _len6 = _ref12.length; _o < _len6; _o++) {
+                v = _ref12[_o];
                 type_list.push(translate_type(v.type, ctx));
               }
               type_str = type_list.join(" * ");
@@ -859,7 +882,7 @@
           return call_expr;
         } else {
           if (root.fn_decl) {
-            _ref12 = root.fn_decl, returns_op_list = _ref12.returns_op_list, uses_storage = _ref12.uses_storage, modifies_storage = _ref12.modifies_storage, returns_value = _ref12.returns_value;
+            _ref13 = root.fn_decl, returns_op_list = _ref13.returns_op_list, uses_storage = _ref13.uses_storage, modifies_storage = _ref13.modifies_storage, returns_value = _ref13.returns_value;
             type_o = root.fn_decl.type_o;
             if (root.is_fn_decl_from_using) {
               if (uses_storage) {
@@ -887,9 +910,9 @@
             return call_expr;
           }
           ret_types_list = [];
-          _ref13 = type_o.nest_list;
-          for (_p = 0, _len7 = _ref13.length; _p < _len7; _p++) {
-            v = _ref13[_p];
+          _ref14 = type_o.nest_list;
+          for (_p = 0, _len7 = _ref14.length; _p < _len7; _p++) {
+            v = _ref14[_p];
             ret_types_list.push(translate_type(v, ctx));
           }
           if (ret_types_list.length === 0) {
@@ -934,7 +957,7 @@
         break;
       case "Struct_init":
         arg_list = [];
-        for (i = _q = 0, _ref14 = root.val_list.length - 1; 0 <= _ref14 ? _q <= _ref14 : _q >= _ref14; i = 0 <= _ref14 ? ++_q : --_q) {
+        for (i = _q = 0, _ref15 = root.val_list.length - 1; 0 <= _ref15 ? _q <= _ref15 : _q >= _ref15; i = 0 <= _ref15 ? ++_q : --_q) {
           arg_list.push("" + root.arg_names[i] + " = " + (walk(root.val_list[i], ctx)));
         }
         return "record [ " + (arg_list.join(";\n  ")) + " ]";
@@ -948,12 +971,18 @@
           return "int(abs(" + t + "))";
         } else if (target_type === "nat") {
           return "abs(" + t + ")";
-        } else if (target_type === "address" && t === "0") {
-          return type2default_value(root.target_type, ctx);
-        } else if (target_type === "bytes" && ((_ref15 = root.t.type) != null ? _ref15.main : void 0) === "string") {
+        } else if (target_type === "bytes" && ((_ref16 = root.t.type) != null ? _ref16.main : void 0) === "string") {
           return "bytes_pack(" + t + ")";
-        } else if (target_type === "address" && (t === "0x0" || t === "0")) {
-          return "burn_address";
+        } else if (target_type === "address") {
+          if (+t === 0) {
+            return "burn_address";
+          } else if (root.t.constructor.name === "Const") {
+            root.t.type = new Type("string");
+            t = walk(root.t, ctx);
+            return "(" + t + " : " + target_type + ")";
+          } else {
+            return "(" + t + " : " + target_type + ")";
+          }
         } else {
           return "(" + t + " : " + target_type + ")";
         }
@@ -984,7 +1013,7 @@
           return "" + name + " : " + type + ";";
         } else {
           if (root.assign_value) {
-            if (((_ref16 = root.assign_value) != null ? _ref16.constructor.name : void 0) === "Struct_init") {
+            if (((_ref17 = root.assign_value) != null ? _ref17.constructor.name : void 0) === "Struct_init") {
               type = "" + ctx.current_class.name + "_" + root.type.main;
               type = translate_var_name(type, ctx);
             }
@@ -1007,9 +1036,9 @@
           tmp_var = "tmp_" + (ctx.tmp_idx++);
           jl = [];
           type_list = [];
-          _ref17 = root.list;
-          for (idx = _r = 0, _len8 = _ref17.length; _r < _len8; idx = ++_r) {
-            _var = _ref17[idx];
+          _ref18 = root.list;
+          for (idx = _r = 0, _len8 = _ref18.length; _r < _len8; idx = ++_r) {
+            _var = _ref18[idx];
             name = _var.name;
             type_list.push(type = translate_type(_var.type, ctx));
             jl.push("const " + name + " : " + type + " = " + tmp_var + "." + idx + ";");
@@ -1019,9 +1048,9 @@
           perr("WARNING (Translate). Var_decl_multi with no assign value should be unreachable, but something went wrong");
           module.warning_counter++;
           jl = [];
-          _ref18 = root.list;
-          for (_s = 0, _len9 = _ref18.length; _s < _len9; _s++) {
-            _var = _ref18[_s];
+          _ref19 = root.list;
+          for (_s = 0, _len9 = _ref19.length; _s < _len9; _s++) {
+            _var = _ref19[_s];
             name = _var.name;
             type = translate_type(root.type, ctx);
             jl.push("const " + name + " : " + type + " = " + (type2default_value(_var.type, ctx)));
@@ -1039,16 +1068,16 @@
         break;
       case "Ret_multi":
         jl = [];
-        _ref19 = root.t_list;
-        for (idx = _t = 0, _len10 = _ref19.length; _t < _len10; idx = ++_t) {
-          v = _ref19[idx];
+        _ref20 = root.t_list;
+        for (idx = _t = 0, _len10 = _ref20.length; _t < _len10; idx = ++_t) {
+          v = _ref20[idx];
           jl.push(walk(v, ctx));
         }
         if (ctx.scope_root.constructor.name === "Fn_decl_multiret") {
           if (ctx.scope_root.name !== "main") {
-            _ref20 = ctx.scope_root.type_o.nest_list;
-            for (idx = _u = 0, _len11 = _ref20.length; _u < _len11; idx = ++_u) {
-              type = _ref20[idx];
+            _ref21 = ctx.scope_root.type_o.nest_list;
+            for (idx = _u = 0, _len11 = _ref21.length; _u < _len11; idx = ++_u) {
+              type = _ref21[idx];
               if (!root.t_list[idx]) {
                 jl.push(type2default_value(type, ctx));
               }
@@ -1088,9 +1117,9 @@
         cond = walk(root.cond, ctx);
         ctx = ctx.mk_nest();
         jl = [];
-        _ref21 = root.scope.list;
-        for (_v = 0, _len12 = _ref21.length; _v < _len12; _v++) {
-          _case = _ref21[_v];
+        _ref22 = root.scope.list;
+        for (_v = 0, _len12 = _ref22.length; _v < _len12; _v++) {
+          _case = _ref22[_v];
           case_scope = walk(_case.scope, ctx);
           if (/;$/.test(case_scope)) {
             case_scope = case_scope.slice(0, -1);
@@ -1104,12 +1133,15 @@
         }
         break;
       case "Fn_decl_multiret":
+        if (root.name === "pow") {
+          return "function pow (const base : nat; const exp : nat) : nat is\n  block {\n    var b : nat := base;\n    var e : nat := exp;\n    var r : nat := 1n;\n    while e > 0n block {\n      if e mod 2n = 1n then {\n        r := r * b;\n      } else skip;\n      b := b * b;\n      e := e / 2n;\n    }\n  } with r;";
+        }
         orig_ctx = ctx;
         ctx = ctx.mk_nest();
         arg_jl = [];
-        _ref22 = root.arg_name_list;
-        for (idx = _w = 0, _len13 = _ref22.length; _w < _len13; idx = ++_w) {
-          v = _ref22[idx];
+        _ref23 = root.arg_name_list;
+        for (idx = _w = 0, _len13 = _ref23.length; _w < _len13; idx = ++_w) {
+          v = _ref23[idx];
           type = translate_type(root.type_i.nest_list[idx], ctx);
           arg_jl.push("const " + v + " : " + type);
         }
@@ -1117,9 +1149,9 @@
           arg_jl.push("const " + config.reserved + "__unit : unit");
         }
         ret_jl = [];
-        _ref23 = root.type_o.nest_list;
-        for (_x = 0, _len14 = _ref23.length; _x < _len14; _x++) {
-          v = _ref23[_x];
+        _ref24 = root.type_o.nest_list;
+        for (_x = 0, _len14 = _ref24.length; _x < _len14; _x++) {
+          v = _ref24[_x];
           type = translate_type(v, ctx);
           ret_jl.push("" + type);
         }
@@ -1149,18 +1181,18 @@
         ctx = ctx.mk_nest();
         ctx.current_class = root;
         ctx.is_class_scope = true;
-        _ref24 = root.scope.list;
-        for (_y = 0, _len15 = _ref24.length; _y < _len15; _y++) {
-          v = _ref24[_y];
+        _ref25 = root.scope.list;
+        for (_y = 0, _len15 = _ref25.length; _y < _len15; _y++) {
+          v = _ref25[_y];
           switch (v.constructor.name) {
             case "Enum_decl":
             case "Class_decl":
               ctx.type_decl_map[v.name] = v;
               break;
             case "PM_switch":
-              _ref25 = root.scope.list;
-              for (_z = 0, _len16 = _ref25.length; _z < _len16; _z++) {
-                _case = _ref25[_z];
+              _ref26 = root.scope.list;
+              for (_z = 0, _len16 = _ref26.length; _z < _len16; _z++) {
+                _case = _ref26[_z];
                 ctx.type_decl_map[_case.var_decl.type.main] = _case.var_decl;
               }
               break;
@@ -1169,9 +1201,9 @@
           }
         }
         field_decl_jl = [];
-        _ref26 = root.scope.list;
-        for (_aa = 0, _len17 = _ref26.length; _aa < _len17; _aa++) {
-          v = _ref26[_aa];
+        _ref27 = root.scope.list;
+        for (_aa = 0, _len17 = _ref27.length; _aa < _len17; _aa++) {
+          v = _ref27[_aa];
           switch (v.constructor.name) {
             case "Var_decl":
               if (!v.is_const) {
@@ -1193,7 +1225,7 @@
               }
               break;
             case "Comment":
-              ctx.sink_list.push(walk(v, ctx));
+              "skip";
               break;
             case "Event_decl":
               ctx.sink_list.push(walk(v, ctx));
@@ -1205,9 +1237,9 @@
         jl = [];
         jl.append(ctx.sink_list);
         ctx.sink_list.clear();
-        _ref27 = root.scope.list;
-        for (_ab = 0, _len18 = _ref27.length; _ab < _len18; _ab++) {
-          v = _ref27[_ab];
+        _ref28 = root.scope.list;
+        for (_ab = 0, _len18 = _ref28.length; _ab < _len18; _ab++) {
+          v = _ref28[_ab];
           switch (v.constructor.name) {
             case "Var_decl":
               "skip";
@@ -1215,11 +1247,13 @@
             case "Enum_decl":
               jl.unshift(walk(v, ctx));
               break;
+            case "Comment":
+              jl.push(walk(v, ctx));
+              break;
             case "Fn_decl_multiret":
               jl.push(walk(v, ctx));
               break;
             case "Class_decl":
-            case "Comment":
             case "Event_decl":
               "skip";
               break;
@@ -1241,9 +1275,9 @@
           name = translate_var_name(name, ctx);
           if (root.is_struct) {
             arg_list = [];
-            _ref28 = root.scope.list;
-            for (_ac = 0, _len19 = _ref28.length; _ac < _len19; _ac++) {
-              v = _ref28[_ac];
+            _ref29 = root.scope.list;
+            for (_ac = 0, _len19 = _ref29.length; _ac < _len19; _ac++) {
+              v = _ref29[_ac];
               arg_list.push("" + v.name + " = " + (type2default_value(v.type, ctx)));
             }
             ctx.structs_default_list.push("const " + name + "_default : " + name + " = record [ " + (arg_list.join(";\n  ")) + " ];\n");
@@ -1256,9 +1290,9 @@
         return jl.join("\n\n");
       case "Enum_decl":
         jl = [];
-        _ref29 = root.value_list;
-        for (idx = _ad = 0, _len20 = _ref29.length; _ad < _len20; idx = ++_ad) {
-          v = _ref29[idx];
+        _ref30 = root.value_list;
+        for (idx = _ad = 0, _len20 = _ref30.length; _ad < _len20; idx = ++_ad) {
+          v = _ref30[idx];
           ctx.contract_var_map[v.name] = v;
           aux = "";
           if (v.type) {
@@ -1279,9 +1313,9 @@
         return "(case " + cond + " of | True -> " + t + " | False -> " + f + " end)";
       case "New":
         arg_list = [];
-        _ref30 = root.arg_list;
-        for (_ae = 0, _len21 = _ref30.length; _ae < _len21; _ae++) {
-          v = _ref30[_ae];
+        _ref31 = root.arg_list;
+        for (_ae = 0, _len21 = _ref31.length; _ae < _len21; _ae++) {
+          v = _ref31[_ae];
           arg_list.push(walk(v, ctx));
         }
         args = "" + (join_list(arg_list, ', '));
@@ -1296,17 +1330,17 @@
         break;
       case "Tuple":
         arg_list = [];
-        _ref31 = root.list;
-        for (_af = 0, _len22 = _ref31.length; _af < _len22; _af++) {
-          v = _ref31[_af];
+        _ref32 = root.list;
+        for (_af = 0, _len22 = _ref32.length; _af < _len22; _af++) {
+          v = _ref32[_af];
           arg_list.push(walk(v, ctx));
         }
         return "(" + (arg_list.join(', ')) + ")";
       case "Array_init":
         arg_list = [];
-        _ref32 = root.list;
-        for (_ag = 0, _len23 = _ref32.length; _ag < _len23; _ag++) {
-          v = _ref32[_ag];
+        _ref33 = root.list;
+        for (_ag = 0, _len23 = _ref33.length; _ag < _len23; _ag++) {
+          v = _ref33[_ag];
           arg_list.push(walk(v, ctx));
         }
         if (root.type.main === "built_in_op_list") {
@@ -1322,9 +1356,9 @@
         break;
       case "Event_decl":
         args = [];
-        _ref33 = root.arg_list;
-        for (_ai = 0, _len25 = _ref33.length; _ai < _len25; _ai++) {
-          arg = _ref33[_ai];
+        _ref34 = root.arg_list;
+        for (_ai = 0, _len25 = _ref34.length; _ai < _len25; _ai++) {
+          arg = _ref34[_ai];
           name = arg._name;
           type = translate_type(arg, ctx);
           args.push("" + name + " : " + type);

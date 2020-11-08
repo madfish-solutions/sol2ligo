@@ -1,5 +1,5 @@
 (function() {
-  var add_burn_address, add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, cast_to_address, contract_object_to_address, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc721_converter, erc_detector, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, make_calls_external, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_nested_index_access, translate_type, translate_var_name, var_translate;
+  var add_burn_address, add_pow, add_router, address_calls_converter, ass_op_unpack, call_storage_and_oplist_inject, cast_to_address, contract_object_to_address, decl_storage_and_oplist_inject, deep_check_storage_and_oplist_use, erc20_converter, erc20_interface_converter, erc721_converter, erc721_interface_converter, erc_detector, ercs_translate, fix_missing_emit, fix_modifier_order, for3_unpack, inheritance_unpack, intrinsics_converter, make_calls_external, mark_last, math_funcs_convert, modifier_unpack, module, replace_enums_by_nat, require_distinguish, return_op_list_count, router_collector, split_chain_assignment, split_nested_index_access, translate_type, translate_var_name, var_translate;
 
   module = this;
 
@@ -51,9 +51,17 @@
 
   add_burn_address = require("./transforms/add_burn_address").add_burn_address;
 
+  add_pow = require("./transforms/add_pow").add_pow;
+
   cast_to_address = require("./transforms/cast_to_address").cast_to_address;
 
   contract_object_to_address = require("./transforms/contract_object_to_address").contract_object_to_address;
+
+  erc20_interface_converter = require("./transforms/erc20_interface_converter").erc20_interface_converter;
+
+  erc721_interface_converter = require("./transforms/erc721_interface_converter").erc721_interface_converter;
+
+  split_chain_assignment = require("./transforms/split_chain_assignment").split_chain_assignment;
 
   erc_detector = require("./transforms/erc_detector").erc_detector;
 
@@ -91,6 +99,7 @@
       opt.router = true;
     }
     root = split_nested_index_access(root);
+    root = split_chain_assignment(root);
     root = address_calls_converter(root);
     root = ercs_translate(root, opt);
     root = contract_object_to_address(root, opt);
@@ -110,6 +119,7 @@
     }
     root = return_op_list_count(root, opt);
     root = add_burn_address(root, opt);
+    root = add_pow(root, opt);
     return root;
   };
 
@@ -125,6 +135,8 @@
         interface_name: ctx.erc20_name
       });
     }
+    root = erc20_interface_converter(root, opt);
+    root = erc721_interface_converter(root, opt);
     return root;
   };
 
