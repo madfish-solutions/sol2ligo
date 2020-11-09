@@ -744,9 +744,6 @@ walk = (root, ctx)->
                 tmp_var = "tmp_#{ctx.tmp_idx++}"
                 return """
                   const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};
-                  if (size(#{tmp_var}) = 0n) then block {
-                    failwith("pop underflow")
-                  } else skip;
                   #{field_access_translation} := Bytes.sub(0n, abs(size(#{tmp_var})-1), #{tmp_var});
                 """#"
               

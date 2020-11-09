@@ -162,9 +162,6 @@ describe "translate ligo section ops bytes", ()->
         const bx : bytes = ("00": bytes);
         contract_storage.b0 := Bytes.concat(contract_storage.b0, bx);
         const tmp_0 : bytes = contract_storage.b0;
-        if (size(tmp_0) = 0n) then block {
-          failwith("pop underflow")
-        } else skip;
         contract_storage.b0 := Bytes.sub(0n, abs(size(tmp_0)-1), tmp_0);
         const tmp_1 : nat = 0n;
         const a : bytes = Bytes.sub(tmp_1, tmp_1+1n, contract_storage.b0);
