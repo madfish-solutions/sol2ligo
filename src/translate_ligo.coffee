@@ -725,6 +725,18 @@ walk = (root, ctx)->
                   ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};"
                   return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
                 
+                when "pop"
+                  tmp_var = "tmp_#{ctx.tmp_idx++}"
+                  ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};"
+                  tmp_var_value = "tmp_value_#{ctx.tmp_idx++}"
+                  tmp_var_idx = "tmp_idx_#{ctx.tmp_idx++}"
+                  val_type = root.fn.t.type.nest_list[0]
+                  val = type2default_value val_type, ctx
+                  ctx.sink_list.push "const #{tmp_var_idx} : nat = abs(size(#{tmp_var})-1);"
+                  ctx.sink_list.push "const #{tmp_var_value} : #{translate_type val_type, ctx} = (case #{tmp_var}[#{tmp_var_idx}] of | None -> #{val} | Some(x) -> x end);"
+                  ctx.sink_list.push "remove #{tmp_var_idx} from map #{tmp_var};"
+                  return ctx.trim_expr = tmp_var_value
+                
                 else
                   throw new Error "unknown array field function #{root.fn.name}"
             
@@ -1224,7 +1236,7 @@ walk = (root, ctx)->
       translated_type = translate_type root.cls, ctx
       
       if root.cls.main == "array"
-        """map end (* args: #{args} *)"""
+        """(map [] : #{translate_type root.type, ctx}) (* args: #{args} *)"""
       else if translated_type == "bytes"
         """(\"00\": bytes) (* args: #{args} *)"""
       else

@@ -201,7 +201,7 @@ describe "translate ligo section unsorted", ()->
       block {
         const tokenCount : nat = 4n;
         const emptyBytes : bytes = ("00": bytes) (* args: 0 *);
-        const newArray : map(nat, nat) = map end (* args: tokenCount *);
+        const newArray : map(nat, nat) = (map [] : map(nat, nat)) (* args: tokenCount *);
       } with (unit);
     """#"
     make_test text_i, text_o

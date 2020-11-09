@@ -57,6 +57,10 @@ Type = require "type"
     ret = new Type "function2<function<>,function<>>"
     ret.nest_list[0].nest_list.push type.nest_list[0]
     ret
+  "pop"  : (type)->
+    ret = new Type "function2<function<>,function<>>"
+    ret.nest_list[1].nest_list.push type.nest_list[0]
+    ret
 
 @bytes_field_map =
   "length": new Type "uint256"
