@@ -114,7 +114,8 @@ describe "erc721 conversions", ()->
         const op0 : operation = transaction((Transfer(list [(list [(64n, (("PLEASE_REPLACE_ETH_ADDRESS_0x1_WITH_A_TEZOS_ADDRESS" : address), 1n))], Tezos.sender)])), 0mutez, (get_contract(token) : contract(fa2_entry_points)));
       } with (list [op0]);
     """
-    make_test text_i, text_o
+    # a foreign contract call raises the need_prevent_deploy flag
+    make_test text_i, text_o, allow_need_prevent_deploy: true
 
 it "erc721 interface skeleton", ()->
   text_i = """
