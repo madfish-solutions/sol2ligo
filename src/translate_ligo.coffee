@@ -725,6 +725,17 @@ walk = (root, ctx)->
                   ctx.sink_list.push "const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};"
                   return "#{tmp_var}[size(#{tmp_var})] := #{arg_list[0]}"
                 
+                when "pop"
+                  tmp_var = "tmp_#{ctx.tmp_idx++}"
+                  
+                  return """
+                    const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};
+                    if (size(#{tmp_var}) = 0n) then block {
+                      failwith("pop underflow")
+                    } else skip;
+                    remove abs(size(#{tmp_var})-1) from map #{tmp_var};
+                    """#"
+                
                 else
                   throw new Error "unknown array field function #{root.fn.name}"
             
@@ -1224,7 +1235,7 @@ walk = (root, ctx)->
       translated_type = translate_type root.cls, ctx
       
       if root.cls.main == "array"
-        """map end (* args: #{args} *)"""
+        """(map [] : #{translate_type root.type, ctx}) (* args: #{args} *)"""
       else if translated_type == "bytes"
         """(\"00\": bytes) (* args: #{args} *)"""
       else
