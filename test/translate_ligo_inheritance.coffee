@@ -398,5 +398,6 @@ describe "translate ligo section inheritance", ()->
       } with (list [op0], True);
     """
     make_test text_i, text_o, {
-      contract: "Parent1"
+      contract: "Parent1",
+      allow_need_prevent_deploy: true # because of a foreign contract call
     }

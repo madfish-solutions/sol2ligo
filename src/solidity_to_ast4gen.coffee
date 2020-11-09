@@ -145,6 +145,18 @@ unpack_id_type = (root, ctx)->
         new Type root.typeString
       else if config.int_type_map.hasOwnProperty type_string
         new Type root.typeString
+      
+      # structs
+      else if match = (/^struct \w+\.(\w+) (?:memory|storage)$/.exec root.typeString) or (/^type\(struct \w+\.(\w+) (?:memory|storage) pointer\)$/.exec root.typeString)
+        new Type match[1]
+      
+      # contract call
+      else if match = /^contract (\w+)$/.exec root.typeString
+        if match[1] != ctx.contract_name
+          perr "WARNING (AST gen). Call to another contract found. It can't be translated correctly."
+          ctx.need_prevent_deploy = true
+        new Type match[1]
+      
       else
         throw new Error("unpack_id_type unknown typeString '#{root.typeString}'")
 
@@ -644,7 +656,10 @@ walk = (root, ctx)->
         if decl.typeName
           ret.type = walk_type decl.typeName, ctx
         else
-          ret.type = unpack_id_type decl.typeDescriptions, ctx
+          try
+            ret.type = unpack_id_type decl.typeDescriptions, ctx
+          catch err
+            perr "WARNING (AST gen). Can't resolve type #{err}"
         if root.initialValue
           ret.assign_value = walk root.initialValue, ctx
         [ret.pos, ret.line] = parse_line_pos(root.src)
