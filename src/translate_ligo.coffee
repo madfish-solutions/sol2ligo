@@ -874,9 +874,16 @@ walk = (root, ctx)->
 
     when "Type_cast"
       target_type = translate_type root.target_type, ctx
+      if root.t.type
+        t_type = translate_type root.t.type, ctx
+      else
+        t_type = null
+      
       t = walk root.t, ctx
       if t == "" and target_type == "address"
         return "self_address"
+      
+      return t if t_type == target_type
       
       if target_type == "int"
         "int(abs(#{t}))"

@@ -207,7 +207,7 @@ describe "translate ligo section array", ()->
         end;
         const foo3 : map(nat, int) = map
           0n -> int(abs(1));
-          1n -> int(abs(-(1)));
+          1n -> -(1);
           2n -> int(abs(0));
           3n -> int(abs(0));
           4n -> int(abs(0));
