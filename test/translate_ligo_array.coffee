@@ -136,6 +136,40 @@ describe "translate ligo section array", ()->
     
     """
     make_test text_i, text_o
+  
+  it "pop element", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Array {
+      int[] public storageArray;
+      
+      function array() public returns (uint) {
+        storageArray.push(0);
+        storageArray.pop();
+        return 0;
+      }
+    }
+    """
+    text_o = """
+    type state is record
+      storageArray : map(nat, int);
+    end;
+    
+    function array (const contract_storage : state) : (state * nat) is
+      block {
+        const tmp_0 : map(nat, int) = contract_storage.storageArray;
+        tmp_0[size(tmp_0)] := 0;
+        const tmp_1 : map(nat, int) = contract_storage.storageArray;
+        if (size(tmp_1) = 0n) then block {
+          failwith("pop underflow")
+        } else skip;
+        remove abs(size(tmp_1)-1) from map tmp_1;
+      } with (contract_storage, 0n);
+    
+    """
+    make_test text_i, text_o
+    
 
   it "inline array", ()->
     text_i = """
