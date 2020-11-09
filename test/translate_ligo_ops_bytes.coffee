@@ -70,7 +70,7 @@ describe "translate ligo section ops bytes", ()->
         assert((b0 <= b1));
         assert((b2 > b3));
         assert((b4 >= b5));
-        assert(((b4 : bytes) < b5));
+        assert((b4 < b5));
       } with (unit);
     """#"
     make_test text_i, text_o

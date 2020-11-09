@@ -1707,7 +1707,7 @@ describe "translate ligo online examples", ()->
         assert((Tezos.sender = test_self.owner)) (* "OnlyOwner methods called by non-owner." *);
         assert((increaseAmount <= self_address.#{config.reserved}__balance)) (* "Increase amount larger than balance." *);
         assert((((test_self.jackpotSize + test_self.lockedInBets) + increaseAmount) <= self_address.#{config.reserved}__balance)) (* "Not enough funds." *);
-        test_self.jackpotSize := (test_self.jackpotSize + abs(increaseAmount));
+        test_self.jackpotSize := (test_self.jackpotSize + increaseAmount);
       } with (test_self);
     
     function sendFunds (const opList : list(operation); const test_self : state; const beneficiary : address; const #{config.reserved}__amount : nat; const successLogAmount : nat) : (list(operation)) is
@@ -1759,7 +1759,7 @@ describe "translate ligo online examples", ()->
         assert(((#{config.reserved}__amount >= mIN_BET) and (#{config.reserved}__amount <= mAX_AMOUNT))) (* "Amount should be within range." *);
         assert(((betMask > 0n) and (betMask < mAX_BET_MASK))) (* "Mask should be within range." *);
         assert((0n <= commitLastBlock)) (* "Commit has expired." *);
-        const signatureHash : bytes = sha_256((abs(commitLastBlock), commit));
+        const signatureHash : bytes = sha_256((commitLastBlock, commit));
         assert((test_self.secretSigner = ecrecover(signatureHash, 27n, r, s))) (* "ECDSA signature is not valid." *);
         const rollUnder : nat = 0n;
         const mask : nat = 0n;
@@ -1774,15 +1774,15 @@ describe "translate ligo online examples", ()->
         const jackpotFee : nat = 0n;
         (possibleWinAmount, jackpotFee) := getDiceWinAmount(test_self, #{config.reserved}__amount, modulo, rollUnder);
         assert((possibleWinAmount <= (#{config.reserved}__amount + test_self.maxProfit))) (* "maxProfit limit violation." *);
-        test_self.lockedInBets := (test_self.lockedInBets + abs(possibleWinAmount));
-        test_self.jackpotSize := (test_self.jackpotSize + abs(jackpotFee));
+        test_self.lockedInBets := (test_self.lockedInBets + possibleWinAmount);
+        test_self.jackpotSize := (test_self.jackpotSize + jackpotFee);
         assert(((test_self.jackpotSize + test_self.lockedInBets) <= self_address.#{config.reserved}__balance)) (* "Cannot afford to lose this bet." *);
         (* EmitStatement Commit(commit) *)
         bet.#{config.reserved}__amount := #{config.reserved}__amount;
-        bet.modulo := abs(modulo);
-        bet.rollUnder := abs(rollUnder);
-        bet.placeBlockNumber := abs(0n);
-        bet.mask := abs(mask);
+        bet.modulo := modulo;
+        bet.rollUnder := rollUnder;
+        bet.placeBlockNumber := 0n;
+        bet.mask := mask;
         bet.gambler := Tezos.sender;
       } with (test_self);
     
@@ -1814,7 +1814,7 @@ describe "translate ligo online examples", ()->
             skip
           };
         };
-        test_self.lockedInBets := abs(test_self.lockedInBets - abs(diceWinAmount));
+        test_self.lockedInBets := abs(test_self.lockedInBets - diceWinAmount);
         if (#{config.reserved}__amount >= mIN_JACKPOT_BET) then block {
           const jackpotRng : nat = ((abs(entropy) / modulo) mod jACKPOT_MODULO);
           if (jackpotRng = 0n) then block {
@@ -2068,8 +2068,8 @@ describe "translate ligo online examples", ()->
         const diceWinAmount : nat = 0n;
         const jackpotFee : nat = 0n;
         (diceWinAmount, jackpotFee) := getDiceWinAmount(test_self, #{config.reserved}__amount, bet.modulo, bet.rollUnder);
-        test_self.lockedInBets := abs(test_self.lockedInBets - abs(diceWinAmount));
-        test_self.jackpotSize := abs(test_self.jackpotSize - abs(jackpotFee));
+        test_self.lockedInBets := abs(test_self.lockedInBets - diceWinAmount);
+        test_self.jackpotSize := abs(test_self.jackpotSize - jackpotFee);
         opList := sendFunds((test_self : address), bet.gambler, #{config.reserved}__amount, #{config.reserved}__amount);
       } with (opList, test_self);
     

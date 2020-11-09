@@ -62,7 +62,7 @@ ast = require "./ast"
   contract_cast.target_type.val = contract_type
   
   get_contract = new ast.Fn_call
-  get_contract.type = "function2<function<uint>, function<address>>"
+  get_contract.type = new Type "function2<function<uint>, function<address>>"
   get_contract.fn = new ast.Var
   get_contract.fn.name = "@get_contract"
 
@@ -77,7 +77,7 @@ ast = require "./ast"
   contract_cast.target_type = type
   
   get_entrypoint = new ast.Fn_call
-  get_entrypoint.type = "function2<function<uint>, function<address>>"
+  get_entrypoint.type = new Type "function2<function<uint>, function<address>>"
   get_entrypoint.fn = new ast.Var
   get_entrypoint.fn.name = "@get_entrypoint"
 

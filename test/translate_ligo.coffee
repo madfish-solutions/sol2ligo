@@ -130,6 +130,45 @@ describe "translate ligo section unsorted", ()->
       } with (unit);
     """#"
     make_test text_i, text_o
+    
+  it "typecast enum", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract Test {
+      enum Direction { Left, Right, Straight, Back }
+      Direction public direction = Direction.Back;
+      
+      function test() public {
+        Direction correctDirection;
+        direction = correctDirection;
+        correctDirection = Direction.Straight;
+        bool check = correctDirection == direction;
+        check = uint(correctDirection) == uint(direction);
+      }
+    }
+    """#"
+    text_o = """
+    type state is record
+      direction : nat;
+    end;
+    
+    const direction_Left : nat = 0n;
+    const direction_Right : nat = 1n;
+    const direction_Straight : nat = 2n;
+    const direction_Back : nat = 3n;
+    (* enum Direction converted into list of nats *)
+    
+    function test (const contract_storage : state) : (state) is
+      block {
+        const correctDirection : nat = 0n;
+        contract_storage.direction := correctDirection;
+        correctDirection := direction_Straight;
+        const check : bool = (correctDirection = contract_storage.direction);
+        check := (correctDirection = contract_storage.direction);
+      } with (contract_storage);
+    """#"
+    make_test text_i, text_o
   
   it "constants", ()->
       text_i = """
