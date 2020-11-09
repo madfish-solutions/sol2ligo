@@ -48,7 +48,7 @@ some2nat = (val, type)->
       val = "#{val}n"
     else
       val = "abs(#{val})"
-  if type.match /^byte[s]?\d{0,2}$/
+  if config.bytes_type_map.hasOwnProperty(type)
     val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
   val
 
@@ -119,7 +119,23 @@ config.int_type_map["signed_number"] = true
       "#{a}[#{b}]"
     else
       val = type2default_value ast.type, ctx
-      "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
+      if config.bytes_type_map.hasOwnProperty ast.a.type?.main
+        tmp_var = "tmp_#{ctx.tmp_idx++}"
+        
+        is_b_nat = false
+        if ast.b.type
+          b_type = translate_type ast.b.type, ctx
+          is_b_nat = b_type == "nat"
+        else
+          is_b_nat = true
+        
+        if is_b_nat
+          ctx.sink_list.push "const #{tmp_var} : nat = #{b};"
+        else
+          ctx.sink_list.push "const #{tmp_var} : nat = abs(#{b});"
+        "Bytes.sub(#{tmp_var}, #{tmp_var}+1n, #{a});"
+      else
+        "(case #{a}[#{b}] of | None -> #{val} | Some(x) -> x end)"
       # "get_force(#{b}, #{a})"
   # nat - nat edge case
   SUB : (a, b, ctx, ast)->
@@ -284,7 +300,7 @@ config.int_type_map["signed_number"] = true
           name = "#{ctx.current_class.name}_#{name}"
         name = translate_var_name name, ctx
         name
-      else if type.main.match /^byte[s]?\d{0,2}$/
+      else if config.bytes_type_map.hasOwnProperty type.main
         "bytes"
       else if config.uint_type_map.hasOwnProperty type.main
         "nat"
@@ -676,16 +692,16 @@ walk = (root, ctx)->
       if !root.t.type
         perr "WARNING (Translate). Some of types in Field_access aren't resolved. This can cause invalid code generated"
       else
+        if config.bytes_type_map.hasOwnProperty(root.t.type.main)
+          switch root.name
+            when "length"
+              return "size(#{t})"
+            
+            else
+              throw new Error "unknown bytes field #{root.name}"
+        
         switch root.t.type.main
           when "array"
-            switch root.name
-              when "length"
-                return "size(#{t})"
-              
-              else
-                throw new Error "unknown array field #{root.name}"
-          
-          when "bytes"
             switch root.name
               when "length"
                 return "size(#{t})"
@@ -717,6 +733,26 @@ walk = (root, ctx)->
       if root.fn.constructor.name == "Field_access"
         field_access_translation =  walk root.fn.t, ctx
         if root.fn.t.type
+          if config.bytes_type_map.hasOwnProperty(root.fn.t.type.main)
+            switch root.fn.name
+              when "push"
+                return """
+                  #{field_access_translation} := Bytes.concat(#{field_access_translation}, #{arg_list[0]});
+                """
+              
+              when "pop"
+                tmp_var = "tmp_#{ctx.tmp_idx++}"
+                return """
+                  const #{tmp_var} : #{translate_type root.fn.t.type, ctx} = #{field_access_translation};
+                  if (size(#{tmp_var}) = 0n) then block {
+                    failwith("pop underflow")
+                  } else skip;
+                  #{field_access_translation} := Bytes.sub(0n, abs(size(#{tmp_var})-1), #{tmp_var});
+                """#"
+              
+              else
+                throw new Error "unknown bytes field #{root.fn.name}"
+          
           switch root.fn.t.type.main
             when "array"
               switch root.fn.name
