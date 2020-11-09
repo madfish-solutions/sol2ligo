@@ -28,7 +28,8 @@ module = @
 {cast_to_address}                   = require "./transforms/cast_to_address"
 {contract_object_to_address}        = require "./transforms/contract_object_to_address"
 {erc20_interface_converter}         = require "./transforms/erc20_interface_converter"
-{erc721_interface_converter}         = require "./transforms/erc721_interface_converter"
+{erc721_interface_converter}        = require "./transforms/erc721_interface_converter"
+{split_chain_assignment}            = require "./transforms/split_chain_assignment"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -53,6 +54,7 @@ module = @
   opt.router ?= true
   
   root = split_nested_index_access root
+  root = split_chain_assignment root
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = contract_object_to_address root, opt

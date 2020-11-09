@@ -43,8 +43,11 @@ string2bytes = (val)->
   ret.join ""
 
 some2nat = (val, type)->
-  if type.match /^int\d{0,3}$/
-    val = "abs(#{val})"
+  if config.int_type_map.hasOwnProperty(type)
+    if /^\d+$/.test val
+      val = "#{val}n"
+    else
+      val = "abs(#{val})"
   if type.match /^byte[s]?\d{0,2}$/
     val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
   val
@@ -638,7 +641,7 @@ walk = (root, ctx)->
       
       ret = if op = module.bin_op_name_map[root.op]
         last_bracket_state = true
-        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
+        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type && root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
           switch op
             when "="
               "(#{_a} = #{_b})"
@@ -882,7 +885,7 @@ walk = (root, ctx)->
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
       else if target_type == "address"
-        if (t == "0x0" or t == "0")
+        if +t == 0
           "burn_address"
         else if root.t.constructor.name == "Const"
           root.t.type = new Type "string"

@@ -380,6 +380,226 @@ describe "translate ligo section ops", ()->
               on_end()
           }, defer(err); return on_end err if err
         on_end()
+      
+      it "#{type} bin_ops with a const", (on_end)->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public ret;
+          
+          function expr() public {
+            #{type} b = 1;
+            #{type} c = 0;
+            c = 1 + b;
+            c = 1 - b;
+            c = 1 * b;
+            c = 1 / b;
+            c = 1 % b;
+            c = 1 ** b;
+            c = 1 & b;
+            c = 1 | b;
+            c = 1 ^ b;
+            c = 1 << b;
+            c = 1 >> b;
+            c += b;
+            c -= b;
+            c *= b;
+            c /= b;
+            c %= b;
+            c &= b;
+            c |= b;
+            c ^= b;
+            c <<= b;
+            c >>= b;
+            ret = c;
+          }
+          function getRet() public view returns (#{type} ret_val) {
+            ret_val = ret;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            ret : nat;
+          end;
+          
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var b : nat := base;
+              var e : nat := exp;
+              var r : nat := 1n;
+              while e > 0n block {
+                if e mod 2n = 1n then {
+                  r := r * b;
+                } else skip;
+                b := b * b;
+                e := e / 2n;
+              }
+            } with r;
+          
+          function expr (const contract_storage : state) : (state) is
+            block {
+              const b : nat = 1n;
+              const c : nat = 0n;
+              c := (1n + b);
+              c := abs(1n - b);
+              c := (1n * b);
+              c := (1n / b);
+              c := (1n mod b);
+              c := pow(1n, b);
+              c := Bitwise.and(1n, b);
+              c := Bitwise.or(1n, b);
+              c := Bitwise.xor(1n, b);
+              c := Bitwise.shift_left(1n, b);
+              c := Bitwise.shift_right(1n, b);
+              c := (c + b);
+              c := abs(c - b);
+              c := (c * b);
+              c := (c / b);
+              c := (c mod b);
+              c := Bitwise.and(c, b);
+              c := Bitwise.or(c, b);
+              c := Bitwise.xor(c, b);
+              c := Bitwise.shift_left(c, b);
+              c := Bitwise.shift_right(c, b);
+              contract_storage.ret := c;
+            } with (contract_storage);
+          
+          function getRet (const contract_storage : state) : (nat) is
+            block {
+              const ret_val : nat = 0n;
+              ret_val := contract_storage.ret;
+            } with (ret_val);
+        """
+        make_test text_i, text_o
+        if process.env.EMULATOR and type == "uint"
+          await make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ["Expr"]
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, on_end)->
+              await contract.expr().cb defer(err, result); return on_end err if err
+              await contract.getRet.call().cb defer(err, result); return on_end err if err
+              
+              await async_assert_strict result.toNumber(), 0, defer(err); return on_end err if err
+              on_end()
+            ligo_test_fn  : (res_list, on_end)->
+              await async_assert_strict +res_list[0], 0, defer(err); return on_end err if err
+              on_end()
+          }, defer(err); return on_end err if err
+        on_end()
+      
+      it "#{type} bin_ops with b const", (on_end)->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public ret;
+          
+          function expr() public {
+            #{type} a = 0;
+            #{type} c = 0;
+            c = a + 1;
+            c = a - 1;
+            c = a * 1;
+            c = a / 1;
+            c = a % 1;
+            c = a ** 1;
+            c = a & 1;
+            c = a | 1;
+            c = a ^ 1;
+            c = a << 1;
+            c = a >> 1;
+            c += 1;
+            c -= 1;
+            c *= 1;
+            c /= 1;
+            c %= 1;
+            c &= 1;
+            c |= 1;
+            c ^= 1;
+            c <<= 1;
+            c >>= 1;
+            ret = c;
+          }
+          function getRet() public view returns (#{type} ret_val) {
+            ret_val = ret;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            ret : nat;
+          end;
+          
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var b : nat := base;
+              var e : nat := exp;
+              var r : nat := 1n;
+              while e > 0n block {
+                if e mod 2n = 1n then {
+                  r := r * b;
+                } else skip;
+                b := b * b;
+                e := e / 2n;
+              }
+            } with r;
+          
+          function expr (const contract_storage : state) : (state) is
+            block {
+              const a : nat = 0n;
+              const c : nat = 0n;
+              c := (a + 1n);
+              c := abs(a - 1n);
+              c := (a * 1n);
+              c := (a / 1n);
+              c := (a mod 1n);
+              c := pow(a, 1n);
+              c := Bitwise.and(a, 1n);
+              c := Bitwise.or(a, 1n);
+              c := Bitwise.xor(a, 1n);
+              c := Bitwise.shift_left(a, 1n);
+              c := Bitwise.shift_right(a, 1n);
+              c := (c + 1n);
+              c := abs(c - 1n);
+              c := (c * 1n);
+              c := (c / 1n);
+              c := (c mod 1n);
+              c := Bitwise.and(c, 1n);
+              c := Bitwise.or(c, 1n);
+              c := Bitwise.xor(c, 1n);
+              c := Bitwise.shift_left(c, 1n);
+              c := Bitwise.shift_right(c, 1n);
+              contract_storage.ret := c;
+            } with (contract_storage);
+          
+          function getRet (const contract_storage : state) : (nat) is
+            block {
+              const ret_val : nat = 0n;
+              ret_val := contract_storage.ret;
+            } with (ret_val);
+        """
+        make_test text_i, text_o
+        if process.env.EMULATOR and type == "uint"
+          await make_emulator_test {
+            sol_code      : text_i
+            contract_name : "Expr"
+            ligo_arg_list : ["Expr"]
+            ligo_state    : "record ret = 99999n; end"
+            sol_test_fn   : (contract, on_end)->
+              await contract.expr().cb defer(err, result); return on_end err if err
+              await contract.getRet.call().cb defer(err, result); return on_end err if err
+              
+              await async_assert_strict result.toNumber(), 0, defer(err); return on_end err if err
+              on_end()
+            ligo_test_fn  : (res_list, on_end)->
+              await async_assert_strict +res_list[0], 0, defer(err); return on_end err if err
+              on_end()
+          }, defer(err); return on_end err if err
+        on_end()
     
     if process.env.EMULATOR
       describe "emulator a op b -> uint", ()->
@@ -636,10 +856,20 @@ describe "translate ligo section ops", ()->
             c = a - b;
             c = a * b;
             c = a / b;
+            c = a & b;
+            c = a | b;
+            c = a ^ b;
+            c = a << b;
+            c = a >> b;
             c += b;
             c -= b;
             c *= b;
             c /= b;
+            c &= b;
+            c |= b;
+            c ^= b;
+            c <<= b;
+            c >>= b;
             return c;
           }
         }
@@ -659,10 +889,154 @@ describe "translate ligo section ops", ()->
               c := (a - b);
               c := (a * b);
               c := (a / b);
+              c := int(Bitwise.and(abs(a), abs(b)));
+              c := int(Bitwise.or(abs(a), abs(b)));
+              c := int(Bitwise.xor(abs(a), abs(b)));
+              c := int(Bitwise.shift_left(abs(a), abs(b)));
+              c := int(Bitwise.shift_right(abs(a), abs(b)));
               c := (c + b);
               c := (c - b);
               c := (c * b);
               c := (c / b);
+              c := int(Bitwise.and(abs(c), abs(b)));
+              c := int(Bitwise.or(abs(c), abs(b)));
+              c := int(Bitwise.xor(abs(c), abs(b)));
+              c := int(Bitwise.shift_left(abs(c), abs(b)));
+              c := int(Bitwise.shift_right(abs(c), abs(b)));
+            } with (c);
+          
+        """
+        make_test text_i, text_o
+    
+    for type in config.int_type_list
+      it "#{type} bin_ops with a const", ()->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public value;
+          
+          function expr() public returns (#{type}) {
+            #{type} b = 0;
+            #{type} c = 0;
+            c = -c;
+            c = 1 + b;
+            c = 1 - b;
+            c = 1 * b;
+            c = 1 / b;
+            c = 1 & b;
+            c = 1 | b;
+            c = 1 ^ b;
+            c = 1 << b;
+            c = 1 >> b;
+            c += b;
+            c -= b;
+            c *= b;
+            c /= b;
+            c &= b;
+            c |= b;
+            c ^= b;
+            c <<= b;
+            c >>= b;
+            return c;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            value : int;
+          end;
+          
+          function expr (const #{config.reserved}__unit : unit) : (int) is
+            block {
+              const b : int = 0;
+              const c : int = 0;
+              c := -(c);
+              c := (1 + b);
+              c := (1 - b);
+              c := (1 * b);
+              c := (1 / b);
+              c := int(Bitwise.and(1n, abs(b)));
+              c := int(Bitwise.or(1n, abs(b)));
+              c := int(Bitwise.xor(1n, abs(b)));
+              c := int(Bitwise.shift_left(1n, abs(b)));
+              c := int(Bitwise.shift_right(1n, abs(b)));
+              c := (c + b);
+              c := (c - b);
+              c := (c * b);
+              c := (c / b);
+              c := int(Bitwise.and(abs(c), abs(b)));
+              c := int(Bitwise.or(abs(c), abs(b)));
+              c := int(Bitwise.xor(abs(c), abs(b)));
+              c := int(Bitwise.shift_left(abs(c), abs(b)));
+              c := int(Bitwise.shift_right(abs(c), abs(b)));
+            } with (c);
+          
+        """
+        make_test text_i, text_o
+    
+    for type in config.int_type_list
+      it "#{type} bin_ops with b const", ()->
+        text_i = """
+        pragma solidity ^0.5.11;
+        
+        contract Expr {
+          #{type} public value;
+          
+          function expr() public returns (#{type}) {
+            #{type} a = 0;
+            #{type} c = 0;
+            c = -c;
+            c = a + 1;
+            c = a - 1;
+            c = a * 1;
+            c = a / 1;
+            c = a & 1;
+            c = a | 1;
+            c = a ^ 1;
+            c = a << 1;
+            c = a >> 1;
+            c += 1;
+            c -= 1;
+            c *= 1;
+            c /= 1;
+            c &= 1;
+            c |= 1;
+            c ^= 1;
+            c <<= 1;
+            c >>= 1;
+            return c;
+          }
+        }
+        """#"
+        text_o = """
+          type state is record
+            value : int;
+          end;
+          
+          function expr (const #{config.reserved}__unit : unit) : (int) is
+            block {
+              const a : int = 0;
+              const c : int = 0;
+              c := -(c);
+              c := (a + 1);
+              c := (a - 1);
+              c := (a * 1);
+              c := (a / 1);
+              c := int(Bitwise.and(abs(a), 1n));
+              c := int(Bitwise.or(abs(a), 1n));
+              c := int(Bitwise.xor(abs(a), 1n));
+              c := int(Bitwise.shift_left(abs(a), 1n));
+              c := int(Bitwise.shift_right(abs(a), 1n));
+              c := (c + 1);
+              c := (c - 1);
+              c := (c * 1);
+              c := (c / 1);
+              c := int(Bitwise.and(abs(c), 1n));
+              c := int(Bitwise.or(abs(c), 1n));
+              c := int(Bitwise.xor(abs(c), 1n));
+              c := int(Bitwise.shift_left(abs(c), 1n));
+              c := int(Bitwise.shift_right(abs(c), 1n));
             } with (c);
           
         """
@@ -1139,4 +1513,31 @@ describe "translate ligo section ops", ()->
         } with (contract_storage);
       """
       make_test text_i, text_o
+  # ###################################################################################################
+  #    chain assignment
+  # ###################################################################################################
+  describe "chain assignment", ()->
+    it "basic", ()->
+      text_i = """
+      pragma solidity ^0.5.0;
       
+      contract Test {
+       function test() public {
+          bool boolean0 = false;
+          bool boolean1 = true;
+          bool boolean = boolean0 = boolean1; 
+        }
+      }
+      """#"
+      text_o = """
+      type state is unit;
+      
+      function test (const #{config.reserved}__unit : unit) : (unit) is
+        block {
+          const boolean0 : bool = False;
+          const boolean1 : bool = True;
+          boolean0 := boolean1;
+          const boolean : bool = boolean0;
+        } with (unit);
+      """
+      make_test text_i, text_o

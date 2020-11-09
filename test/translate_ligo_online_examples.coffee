@@ -1638,7 +1638,7 @@ describe "translate ligo online examples", ()->
     
     const bET_EXPIRATION_BLOCKS : nat = 250n
     
-    const dUMMY_ADDRESS : address = ("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" : address)
+    const dUMMY_ADDRESS : address = ("PLEASE_REPLACE_ETH_ADDRESS_0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE_WITH_A_TEZOS_ADDRESS" : address)
     
     (* EventDefinition FailedPayment(beneficiary : address; #{config.reserved}__amount : nat) *)
     
@@ -2358,7 +2358,7 @@ describe "translate ligo online examples", ()->
         const creature_ : creatures_Creature = record [ species = species_;
           subSpecies = subSpecies_;
           eyeColor = eyeColor_;
-          timestamp = abs(#{config.reserved}__now) ];
+          timestamp = abs(abs(now - ("1970-01-01T00:00:00Z" : timestamp))) ];
         const tmp_0 : map(nat, creatures_Creature) = test_self.creatures;
         const newCreatureID : nat = abs(tmp_0[size(tmp_0)] := creature_ - 1n);
         transfer(burn_address, owner_, newCreatureID);
