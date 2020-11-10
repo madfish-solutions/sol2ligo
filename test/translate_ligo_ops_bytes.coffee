@@ -106,7 +106,7 @@ describe "translate ligo section ops bytes", ()->
       } with (unit);
     """
     make_test text_i, text_o
-
+  
   it "bytes length", ()->
     text_i = """
     pragma solidity ^0.4.16;
