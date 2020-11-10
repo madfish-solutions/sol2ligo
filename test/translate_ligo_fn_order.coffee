@@ -53,13 +53,13 @@ describe "translate ligo section fn order", ()->
     text_o = """
     type state is unit;
     
-    (* modifier auth inlined *)
-    
     function isAuthorized (const #{config.reserved}__unit : unit) : (bool) is
       block {
         skip
       } with (False);
     
+    (* modifier auth inlined *)
+
     function setAuthority (const #{config.reserved}__unit : unit) : (unit) is
       block {
         assert(isAuthorized(unit));

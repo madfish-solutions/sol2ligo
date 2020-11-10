@@ -119,6 +119,7 @@ describe "translate ligo section unsorted", ()->
     type state is unit;
     
     const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     function castType (const #{config.reserved}__unit : unit) : (unit) is
       block {
         const u : nat = abs(-(1));
@@ -385,7 +386,7 @@ describe "translate ligo section unsorted", ()->
   it "bytes.length", ()->
     text_i = """
     pragma solidity ^0.5.0;
-
+    
     contract BytesLength {
       function bytes_length(string memory s) public returns (uint256) {
         bytes memory b = bytes(s);
@@ -396,11 +397,48 @@ describe "translate ligo section unsorted", ()->
     """
     text_o = """
     type state is unit;
-
+    
     function bytes_length (const s : string) : (nat) is
       block {
         const b : bytes = bytes_pack(s);
         const l : nat = size(b);
       } with (l);
+    """
+    make_test text_i, text_o
+  
+  # to see it working, run, for example:
+  # for i in {0..25}; do ligo run-function tmp/Pow.ligo pow_test \(2n\,\ "$i"n\); done;
+  it "pow", ()->
+    text_i = """
+    pragma solidity ^0.5.0;
+    
+    contract Pow {
+      function pow_test(uint256 a, uint256 b) public returns (uint256) {
+        uint256 v = a ** b;
+        return v;
+      }
+    }
+    """
+    text_o = """
+    type state is unit;
+    
+    function pow (const base : nat; const exp : nat) : nat is
+      block {
+        var b : nat := base;
+        var e : nat := exp;
+        var r : nat := 1n;
+        while e > 0n block {
+          if e mod 2n = 1n then {
+            r := r * b;
+          } else skip;
+          b := b * b;
+          e := e / 2n;
+        }
+      } with r;
+    
+    function pow_test (const a : nat; const b : nat) : (nat) is
+      block {
+        const v : nat = pow(a, b);
+      } with (v);
     """
     make_test text_i, text_o

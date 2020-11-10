@@ -7,9 +7,9 @@ get_list_sign = (list)->
   has_unsigned = false
   has_wtf      = false
   for v in list
-    if config.int_type_map.hasOwnProperty(v) or v == "signed_number"
+    if config.int_type_map.hasOwnProperty(v)
       has_signed = true
-    else if config.uint_type_map.hasOwnProperty(v) or v == "unsigned_number"
+    else if config.uint_type_map.hasOwnProperty(v)
       has_unsigned = true
     else if v == "number"
       has_signed = true

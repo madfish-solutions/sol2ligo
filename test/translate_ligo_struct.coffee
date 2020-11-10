@@ -54,7 +54,9 @@ describe "translate ligo section struct", ()->
     end;
     
     type state is unit;
-
+    
+    const burn_address : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+    
     const ballot_Voter_default : ballot_Voter = record [ votee = burn_address;
       voted = False ];
 

@@ -29,7 +29,6 @@ walk = null
   LT  : "<"
   GTE : ">="
   LTE : "<="
-  POW : "LIGO_IMPLEMENT_ME_PLEASE_POW"
   
   BOOL_AND: "and"
   BOOL_OR : "or"
@@ -44,8 +43,11 @@ string2bytes = (val)->
   ret.join ""
 
 some2nat = (val, type)->
-  if type.match /^int\d{0,3}$/
-    val = "abs(#{val})"
+  if config.int_type_map.hasOwnProperty(type)
+    if /^\d+$/.test val
+      val = "#{val}n"
+    else
+      val = "abs(#{val})"
   if type.match /^byte[s]?\d{0,2}$/
     val = "(case (bytes_unpack (#{val}) : option (nat)) of | Some(a) -> a | None -> 0n end)"
   val
@@ -60,6 +62,10 @@ number2bytes = (val, precision = 32)->
   ret.push "0x"
   ret.reverse()
   ret.join ""
+
+# patch config to handle an edge case - when Type Inference fails to infer more specific type (such as uint256)
+config.uint_type_map["unsigned_number"] = true
+config.int_type_map["signed_number"] = true
 
 @bin_op_name_cb_map =
   ASSIGN  : (a, b, ctx, ast)->
@@ -126,6 +132,11 @@ number2bytes = (val, precision = 32)->
       "int(#{a} mod #{b})"
     else
       "(#{a} mod #{b})"
+  POW : (a, b, ctx, ast) ->
+    if config.uint_type_map.hasOwnProperty(ast.a.type.main) and config.uint_type_map.hasOwnProperty(ast.b.type.main)
+      "pow(#{a}, #{b})"
+    else
+      "failwith('Exponentiation is only available for unsigned types. Here operands #{a} and #{b} have types #{ast.a.type.main} and #{ast.a.type.main}');"
 
 @un_op_name_cb_map =
   MINUS   : (a)->"-(#{a})"
@@ -419,6 +430,7 @@ walk = (root, ctx)->
         when "SourceUnit" #top-level scope
           jls = {}
           jls[main_file] = []
+          main_file_unshift_list = []
           for v in root.list
             code = walk v, ctx
             path = if ctx.keep_dir_structure then v.file else null
@@ -426,6 +438,12 @@ walk = (root, ctx)->
             if code
               if v.constructor.name not in ["Comment", "Scope", "Include"]
                 code += ";" if !/;$/.test code
+                # 2 different types: Const burn_address, Fn_decl_multiret pow
+                if v.name in ["burn_address", "pow"]
+                  code += "\n"
+                  main_file_unshift_list.push code
+                  continue
+                  
               jls[path] ?= []
               jls[path].push code
         
@@ -434,6 +452,12 @@ walk = (root, ctx)->
               #{join_list ctx.structs_default_list}
               """
           name = config.storage
+          
+          # TODO move this below
+          # this movement will break a lot of tests
+          while (v = main_file_unshift_list.pop())?
+            jls[main_file].unshift v
+          
           jls[main_file].unshift ""
           if Object.keys(ctx.storage_sink_list).length == 0
             jls[main_file].unshift """
@@ -451,6 +475,8 @@ walk = (root, ctx)->
                     #{join_list v, '  '}
                   end;
                   """
+          
+          # TODO move here
           ctx.storage_sink_list = {} 
 
           if ctx.type_decl_sink_list.length
@@ -615,7 +641,7 @@ walk = (root, ctx)->
       
       ret = if op = module.bin_op_name_map[root.op]
         last_bracket_state = true
-        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type &&root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
+        if ((root.a.type && root.a.type.main == 'bool') || ( root.b.type && root.b.type.main == 'bool')) and op in ['>=', '=/=', '<=','>','<','=']
           switch op
             when "="
               "(#{_a} = #{_b})"
@@ -856,12 +882,17 @@ walk = (root, ctx)->
         "int(abs(#{t}))"
       else if target_type == "nat"
         "abs(#{t})"
-      else if target_type == "address" and t == "0"
-        type2default_value root.target_type, ctx
       else if target_type == "bytes" and root.t.type?.main == "string"
         "bytes_pack(#{t})"
-      else if target_type == "address" and (t == "0x0" or t == "0")
-        "burn_address"
+      else if target_type == "address"
+        if +t == 0
+          "burn_address"
+        else if root.t.constructor.name == "Const"
+          root.t.type = new Type "string"
+          t = walk root.t, ctx
+          "(#{t} : #{target_type})"
+        else
+          "(#{t} : #{target_type})"
       else
         "(#{t} : #{target_type})"
     
@@ -1013,6 +1044,22 @@ walk = (root, ctx)->
         "unit"
     
     when "Fn_decl_multiret"
+      if root.name == "pow"
+        return """
+          function pow (const base : nat; const exp : nat) : nat is
+            block {
+              var b : nat := base;
+              var e : nat := exp;
+              var r : nat := 1n;
+              while e > 0n block {
+                if e mod 2n = 1n then {
+                  r := r * b;
+                } else skip;
+                b := b * b;
+                e := e / 2n;
+              }
+            } with r;
+          """
       orig_ctx = ctx
       ctx = ctx.mk_nest()
       arg_jl = []
@@ -1085,7 +1132,7 @@ walk = (root, ctx)->
             ctx.sink_list.push code if code
           
           when "Comment"
-            ctx.sink_list.push walk v, ctx
+            "skip"
           
           when "Event_decl"
             ctx.sink_list.push walk v, ctx
@@ -1106,10 +1153,13 @@ walk = (root, ctx)->
           when "Enum_decl"
             jl.unshift walk v, ctx
 
+          when "Comment"
+            jl.push walk v, ctx
+            
           when "Fn_decl_multiret"
             jl.push walk v, ctx
           
-          when "Class_decl", "Comment", "Event_decl"
+          when "Class_decl", "Event_decl"
             "skip"
           
           else

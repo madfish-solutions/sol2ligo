@@ -14,9 +14,9 @@
     has_wtf = false;
     for (_i = 0, _len = list.length; _i < _len; _i++) {
       v = list[_i];
-      if (config.int_type_map.hasOwnProperty(v) || v === "signed_number") {
+      if (config.int_type_map.hasOwnProperty(v)) {
         has_signed = true;
-      } else if (config.uint_type_map.hasOwnProperty(v) || v === "unsigned_number") {
+      } else if (config.uint_type_map.hasOwnProperty(v)) {
         has_unsigned = true;
       } else if (v === "number") {
         has_signed = true;

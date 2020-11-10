@@ -24,8 +24,12 @@ module = @
 {split_nested_index_access}         = require "./transforms/split_nested_index_access"
 {make_calls_external}               = require "./transforms/make_calls_external"
 {add_burn_address}                  = require "./transforms/add_burn_address"
+{add_pow}                           = require "./transforms/add_pow"
 {cast_to_address}                   = require "./transforms/cast_to_address"
 {contract_object_to_address}        = require "./transforms/contract_object_to_address"
+{erc20_interface_converter}         = require "./transforms/erc20_interface_converter"
+{erc721_interface_converter}        = require "./transforms/erc721_interface_converter"
+{split_chain_assignment}            = require "./transforms/split_chain_assignment"
 
 {erc_detector} = require "./transforms/erc_detector"
 
@@ -50,6 +54,7 @@ module = @
   opt.router ?= true
   
   root = split_nested_index_access root
+  root = split_chain_assignment root
   root = address_calls_converter root
   root = ercs_translate root, opt
   root = contract_object_to_address root, opt
@@ -71,6 +76,7 @@ module = @
   
   root = return_op_list_count root, opt
   root = add_burn_address root, opt
+  root = add_pow root, opt
   root
 
 ercs_translate = (root, opt) ->
@@ -79,4 +85,6 @@ ercs_translate = (root, opt) ->
     root = erc721_converter root, interface_name: ctx.erc721_name
   else if !!ctx.erc20_name
     root = erc20_converter root,  interface_name: ctx.erc20_name
+  root = erc20_interface_converter root, opt
+  root = erc721_interface_converter root, opt
   root

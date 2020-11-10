@@ -17,17 +17,28 @@
     var ctx_lvalue, found, idx, nest_fn, prev_class, synthetic_name, using, using_list, v, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3, _ref4, _type;
     switch (root.constructor.name) {
       case "Un_op":
-        if (root.op === "DELETE") {
-          if (root.a.constructor.name === "Bin_op" && root.a.op === "INDEX_ACCESS") {
+        switch (root.op) {
+          case "RET_INC":
+          case "RET_DEC":
+          case "INC_RET":
+          case "DEC_RET":
             ctx_lvalue = clone(ctx);
             ctx_lvalue.lvalue = true;
-            root.a.a = walk(root.a.a, ctx_lvalue);
-          } else {
-            perr("WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)");
             root.a = walk(root.a, ctx_lvalue);
-          }
+            break;
+          case "DELETE":
+            if (root.a.constructor.name === "Bin_op" && root.a.op === "INDEX_ACCESS") {
+              ctx_lvalue = clone(ctx);
+              ctx_lvalue.lvalue = true;
+              root.a.a = walk(root.a.a, ctx_lvalue);
+            } else {
+              perr("WARNING (AST transform). DELETE without INDEX_ACCESS can be handled improperly (extra state pass + return)");
+              root.a = walk(root.a, ctx_lvalue);
+            }
+            break;
+          default:
+            root.a = walk(root.a, ctx);
         }
-        root.a = walk(root.a, ctx);
         return root;
       case "Bin_op":
         if (/^ASS/.test(root.op)) {
