@@ -106,7 +106,69 @@ describe "translate ligo section ops bytes", ()->
       } with (unit);
     """
     make_test text_i, text_o
-
+  
+  it "bytes length", ()->
+    text_i = """
+    pragma solidity ^0.4.16;
+    
+    contract BytesTest {
+        function test0(
+            bytes2 b0,
+            bytes30 b1,
+            bytes1 b2,
+            bytes b3
+        ) public {
+            uint len0 = b0.length;
+            uint len1 = b1.length;
+            uint len2 = b2.length;
+            uint len3 = b3.length;
+        }
+    }
+    """#"
+    text_o = """
+    type state is unit;
+    
+    function test0 (const b0 : bytes; const b1 : bytes; const b2 : bytes; const b3 : bytes) : (unit) is
+      block {
+        const len0 : nat = size(b0);
+        const len1 : nat = size(b1);
+        const len2 : nat = size(b2);
+        const len3 : nat = size(b3);
+      } with (unit);
+    """#"
+    make_test text_i, text_o
+  
+  it "bytes push/pop/access", ()->
+    text_i = """
+    pragma solidity ^0.5.11;
+    
+    contract BytesTest {
+        bytes b0;
+        function test0() public {
+            bytes1 bx;
+            b0.push(bx);
+            b0.pop();
+            byte a = b0[0];
+        }
+    }
+    """#"
+    text_o = """
+    type state is record
+      b0 : bytes;
+    end;
+    
+    function test0 (const contract_storage : state) : (state) is
+      block {
+        const bx : bytes = ("00": bytes);
+        contract_storage.b0 := Bytes.concat(contract_storage.b0, bx);
+        const tmp_0 : bytes = contract_storage.b0;
+        contract_storage.b0 := Bytes.sub(0n, abs(size(tmp_0)-1), tmp_0);
+        const tmp_1 : nat = 0n;
+        const a : bytes = Bytes.sub(tmp_1, tmp_1+1n, contract_storage.b0);
+      } with (contract_storage);
+    """#"
+    make_test text_i, text_o
+  
   it "larger byte literals", ()->
     text_i = """
     pragma solidity ^0.4.16;

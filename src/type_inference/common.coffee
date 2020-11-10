@@ -61,6 +61,8 @@ Type = require "type"
 
 @bytes_field_map =
   "length": new Type "uint256"
+  "push"  : new Type "function2<function<bytes>,function<>>"
+  "pop"   : new Type "function2<function<>,function<>>"
 
 @address_field_map =
   "send"    : new Type "function2<function2<uint256>,function2<bool>>"
