@@ -4,16 +4,15 @@ type_inference  = require("./type_inference").gen
 translate       = require("./translate_ligo").gen
 translate_ds    = require("./translate_ligo_default_state").gen
 
-import_resolver     = require "./import_resolver"
 solidity_to_ast4gen = require("./solidity_to_ast4gen").gen
 
-compile = (sol_code) ->
-  ast = ast_gen sol_code
+compile = (sol_code, opt = {}) ->
+  ast = ast_gen sol_code, opt
   ast = solidity_to_ast4gen ast
-  ast = ast_transform.pre_ti ast
-  ast = type_inference ast
-  ast = ast_transform.post_ti ast
-  ligo_code = translate ast
+  ast = ast_transform.pre_ti ast, opt
+  ast = type_inference ast, opt
+  ast = ast_transform.post_ti ast, opt
+  ligo_code = translate ast, opt
   ligo_code
 
 module.exports = { compile }
