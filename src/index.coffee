@@ -7,10 +7,15 @@ translate_ds    = require("./translate_ligo_default_state").gen
 solidity_to_ast4gen = require("./solidity_to_ast4gen").gen
 
 compile = (sol_code, opt = {}) ->
-  error = ligo_code = default_state = ""
+  ligo_code = default_state = ""
+  errors = []
+  warnings = []
   perr_orig = perr
   global.perr = (e) ->
-    error += JSON.stringify(e) + '\n'
+    if (e.startsWith? "WARNING") or (e.startsWith? "NOTE")
+      warnings.push e
+    else
+      errors.push e
   try
     ast = ast_gen sol_code, opt
     ast = solidity_to_ast4gen ast
@@ -20,13 +25,14 @@ compile = (sol_code, opt = {}) ->
     ligo_code = translate ast, opt
     default_state = translate_ds ast
   catch e
-    # do nothing
+    console.error e
   global.perr = perr_orig
   return {
-    error
+    errors
+    warnings
     ligo_code
     default_state
-    prevent_deploy: ast.need_prevent_deploy
+    prevent_deploy: ast?.need_prevent_deploy
   }
 
 module.exports = { compile }
