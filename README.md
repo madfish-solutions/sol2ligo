@@ -102,6 +102,7 @@ To add sol2ligo as a dependency, you need to install Iced Coffee Script first:
 npm i -g iced-coffee-script
 npm i madfish-solutions/sol2ligo
 ```
+Use `sol2ligo.compile` function:
 ```javascript
 const sol2ligo = require("sol2ligo");
 
