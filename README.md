@@ -95,6 +95,39 @@ To run specific test case
 npm run test-specific <test-name>
 ```
 
+## ⚒ Using sol2ligo as a node module
+
+```sh
+npm i madfish-solutions/sol2ligo
+```
+```javascript
+const sol2ligo = require("sol2ligo");
+
+console.log(sol2ligo.compile(sol_code, opt));
+```
+`opt` is optional. It's an object that can have these possible fields:
+```javascript
+{
+  solc_version: String,           // self explanatory
+  suggest_solc_version: String,   // suggested solc version if pragma is not specified
+  auto_version: String,           // pick solc version based on the pragma directive in sol_code
+  allow_download: Boolean,        // download solc catalog
+  router: Boolean,                // generate router
+  contract: String,               // name of contract to generate router for
+  replace_enums_by_nats: Boolean, // transform enums to number constants
+  debug: Boolean
+}
+```
+The function returns an object with the following fields:
+```javascript
+{
+  errors: Array,
+  warnings: Array,
+  ligo_code: String,
+  default_state: String,
+  prevent_deploy: Boolean
+}
+```
 
 ## 📑️ Documentation
 Check out [wiki](https://github.com/madfish-solutions/sol2ligo/wiki) for the knowledge base
