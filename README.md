@@ -97,7 +97,9 @@ npm run test-specific <test-name>
 
 ## ⚒ Using sol2ligo as a node module
 
+To add sol2ligo as a dependency, you need to install Iced Coffee Script first:
 ```sh
+npm i -g iced-coffee-script
 npm i madfish-solutions/sol2ligo
 ```
 ```javascript
