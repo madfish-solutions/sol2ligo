@@ -102,18 +102,30 @@ To add sol2ligo as a dependency, you need to install Iced Coffee Script first:
 npm i -g iced-coffee-script
 npm i madfish-solutions/sol2ligo
 ```
-Use `sol2ligo.compile` function:
+Then use `sol2ligo.compile` function like this:
 ```javascript
 const sol2ligo = require("sol2ligo");
 
-console.log(sol2ligo.compile(sol_code, opt));
+console.log(sol2ligo.compile(`
+  pragma solidity ^0.5.12;
+  
+  contract FooBarContract {
+    function foo(uint number) internal returns (int) {
+      string[2] memory arr = ["hello", "world"];
+      bool isEven = number % 2 == 0;
+      int result = 42 * 42;
+      return isEven ? -1 : result;
+    }
+  }`, {
+    // you can specify compilation options here
+  }));
 ```
-`opt` is optional. It's an object that can have these possible fields:
+The second argument `opt` is optional. It's an object that can have these possible fields:
 ```javascript
 {
-  solc_version: String,           // self explanatory
+  solc_version: String,           // override solc version specified in pragma
   suggest_solc_version: String,   // suggested solc version if pragma is not specified
-  auto_version: String,           // pick solc version based on the pragma directive in sol_code
+  auto_version: Boolean,          // pick solc version based on the pragma directive in sol_code
   allow_download: Boolean,        // download solc catalog
   router: Boolean,                // generate router
   contract: String,               // name of contract to generate router for
@@ -121,6 +133,7 @@ console.log(sol2ligo.compile(sol_code, opt));
   debug: Boolean
 }
 ```
+If `allow_download` is `false` and no necessary solc version is found in the solc catalog, compilation fails with an error.
 The function returns an object with the following fields:
 ```javascript
 {
