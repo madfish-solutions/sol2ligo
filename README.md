@@ -123,17 +123,20 @@ console.log(sol2ligo.compile(`
 The second argument `opt` is optional. It's an object that can have these possible fields:
 ```javascript
 {
-  solc_version: String,           // override solc version specified in pragma
-  suggest_solc_version: String,   // suggested solc version if pragma is not specified
-  auto_version: Boolean,          // pick solc version based on the pragma directive in sol_code
-  allow_download: Boolean,        // download solc catalog
-  router: Boolean,                // generate router
-  contract: String,               // name of contract to generate router for
-  replace_enums_by_nats: Boolean, // transform enums to number constants
-  debug: Boolean
+  solc_version: String,           //                  override solc version specified in pragma
+  suggest_solc_version: String,   //                  suggested solc version if pragma is not specified
+  auto_version: Boolean,          // (default: true)  setting this to false disables reading solc version from pragma
+  allow_download: Boolean,        // (default: true)  download solc catalog
+  router: Boolean,                // (default: false) generate router
+  contract: String,               //                  name of contract to generate router for
+  replace_enums_by_nats: Boolean, // (default: true)  transform enums to number constants
+  debug: Boolean                  // (default: false) self explanatory
 }
 ```
+When deciding which Solidity compiler version to use, `solc_version` has the highest priority. If `solc_version` is not specified, `sol2ligo` uses solc version from the `pragma` directive in sol_code. If `pragma` is absent too, or if `auto_version` is set to `false`, `suggest_solc_version`, which has the least priority, will be used.
+
 If `allow_download` is `false` and no necessary solc version is found in the solc catalog, compilation fails with an error.
+
 The function returns an object with the following fields:
 ```javascript
 {
