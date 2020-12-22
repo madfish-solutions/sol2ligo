@@ -3,6 +3,7 @@ ast_transform   = require "./ast_transform"
 type_inference  = require("./type_inference").gen
 translate       = require("./translate_ligo").gen
 translate_ds    = require("./translate_ligo_default_state").gen
+import_resolver = require "./import_resolver"
 
 solidity_to_ast4gen = require("./solidity_to_ast4gen").gen
 
@@ -35,4 +36,7 @@ compile = (sol_code, opt = {}) ->
     prevent_deploy: ast?.need_prevent_deploy
   }
 
-module.exports = { compile }
+module.exports = {
+  compile
+  import_resolver
+}
