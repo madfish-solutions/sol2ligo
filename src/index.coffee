@@ -16,7 +16,7 @@ compile = (sol_code, opt = {}) ->
     if (e.startsWith? "WARNING") or (e.startsWith? "NOTE")
       warnings.push e
     else
-      errors.push e
+      errors.push if typeof e == "object" then e else message: e
   try
     ast = ast_gen sol_code, opt
     ast = solidity_to_ast4gen ast
@@ -33,7 +33,7 @@ compile = (sol_code, opt = {}) ->
     warnings
     ligo_code
     default_state
-    prevent_deploy: ast?.need_prevent_deploy
+    prevent_deploy: if !ast? then true else !!ast.need_prevent_deploy
   }
 
 module.exports = {

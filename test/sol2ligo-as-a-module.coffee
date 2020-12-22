@@ -45,11 +45,13 @@ describe "sol2ligo-as-a-module section", ()->
     compiled = sol2ligo.compile sol_code
     assert.strictEqual compiled.ligo_code, ligo_code
     assert.strictEqual compiled.default_state, default_state
+    assert.strictEqual compiled.errors.length, 0
+    assert.strictEqual compiled.prevent_deploy, false
   
   it "works with no router", ()->
     ligo_code = """
     type test_storage is unit;
-
+    
     function foo (const number : nat) : (int) is
       block {
         const arr : map(nat, string) = map
@@ -63,6 +65,8 @@ describe "sol2ligo-as-a-module section", ()->
     compiled = sol2ligo.compile sol_code, router: false
     assert.strictEqual compiled.ligo_code, ligo_code
     assert.strictEqual compiled.default_state, default_state
+    assert.strictEqual compiled.errors.length, 0
+    assert.strictEqual compiled.prevent_deploy, false
   
   it "works with invalid input", ()->
     bad_sol_code = "WTF??!"
@@ -72,6 +76,7 @@ describe "sol2ligo-as-a-module section", ()->
     assert.strictEqual compiled.errors[0].type, "ParserError"
     assert.strictEqual compiled.ligo_code, ""
     assert.strictEqual compiled.default_state, ""
+    assert.strictEqual compiled.prevent_deploy, true
   
   it "sets prevent_deploy", ()->
     bad_sol_code = """
@@ -85,4 +90,3 @@ describe "sol2ligo-as-a-module section", ()->
     """
     compiled = sol2ligo.compile bad_sol_code
     assert.strictEqual compiled.prevent_deploy, true
-
