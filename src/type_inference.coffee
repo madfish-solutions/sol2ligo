@@ -1,4 +1,4 @@
-{ Ti_context } = require "./type_inference/common.coffee"
+{ Ti_context } = require "./type_inference/common"
 
 # type inference is split into two stages
 # first one infers immediately obvious types
