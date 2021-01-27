@@ -118,6 +118,7 @@ describe "erc721 conversions", ()->
     make_test text_i, text_o, allow_need_prevent_deploy: true
 
 it "erc721 interface skeleton", ()->
+  @timeout 10000
   text_i = """
   pragma solidity ^0.6.0;
 
