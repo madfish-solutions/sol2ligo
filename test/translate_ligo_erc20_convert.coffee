@@ -182,6 +182,7 @@ describe "erc20 conversions", ()->
     make_test text_i, text_o, allow_need_prevent_deploy: true
   
   it "erc20 interface skeleton", ()->
+    @timeout 10000
     text_i = """
     pragma solidity ^0.4.26;
 
