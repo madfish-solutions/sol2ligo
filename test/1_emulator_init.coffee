@@ -97,7 +97,7 @@ describe "emulator section", ()->
     execSync "rm -rf db"
     execSync "rm -rf contracts/Test*.sol"
     execSync "rm -rf migrations/*Test*.js"
-    global.__sandbox_proc = spawn "./node_modules/.bin/ganache-cli", [
+    global.__sandbox_proc = spawn "stdbuf", ["-i0", "-o0", "-e0", "./node_modules/.bin/ganache-cli"
       "--db", "db"
       "--accounts", "10"
       "--defaultBalanceEther", "1000",
