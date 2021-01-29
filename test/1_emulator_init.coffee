@@ -91,7 +91,7 @@ global.make_emulator_test = (opt, on_end)->
 
 describe "emulator section", ()->
   it "init", (done)->
-    @timeout 30000
+    @timeout 60000
     # https://developer.kyber.network/docs/Reserves-Ganache/
     execSync "rm -rf build"
     execSync "rm -rf db"
@@ -117,7 +117,7 @@ describe "emulator section", ()->
         puts "ganache is ready"
     
     puts "waiting until ganache would up"
-    for i in [0 ... 300] # 300*100 = 30000 = 30 sec
+    for i in [0 ... 600] # 600*100 = 60000 = 60 sec
       await setTimeout defer(), 100
       break if ready
     
