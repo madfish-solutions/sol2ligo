@@ -108,8 +108,11 @@ describe "emulator section", ()->
     ]
     stdout = []
     ready = false
+    global.__sandbox_proc.stderr.on "data", (data)->
+      puts "ganache stderr:", data.toString()
     global.__sandbox_proc.stdout.on "data", (data)->
       return if ready
+      puts "ganache stdout:", data.toString()
       stdout.push data
       str = stdout.join ""
       if -1 != str.indexOf "Listening on 127.0.0.1:7545"
