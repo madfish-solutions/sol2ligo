@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Transpiler from Solidity to PascalLIGO language",
   "main": "lib/index.js",
+  "types": "src/index.d.ts",
   "scripts": {
     "install": "iced -o lib -c src",
     "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
