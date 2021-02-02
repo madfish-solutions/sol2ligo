@@ -1,4 +1,4 @@
-if window
+if window?
   ast_gen       = window.ast_gen
 else
   ast_gen       = require "./ast_gen"
@@ -30,7 +30,7 @@ compile = (sol_code, opt = {}) ->
     ligo_code = translate ast, opt
     default_state = translate_ds ast
   catch e
-    if window
+    if window?
       throw e
     else
       console.error e
