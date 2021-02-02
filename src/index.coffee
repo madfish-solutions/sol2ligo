@@ -1,4 +1,8 @@
-ast_gen         = require "./ast_gen"
+if window
+  ast_gen       = window.ast_gen
+else
+  ast_gen       = require "./ast_gen"
+
 ast_transform   = require "./ast_transform"
 type_inference  = require("./type_inference").gen
 translate       = require("./translate_ligo").gen
@@ -26,7 +30,10 @@ compile = (sol_code, opt = {}) ->
     ligo_code = translate ast, opt
     default_state = translate_ds ast
   catch e
-    console.error e
+    if window
+      throw e
+    else
+      console.error e
   global.perr = perr_orig
   return {
     errors
@@ -36,7 +43,14 @@ compile = (sol_code, opt = {}) ->
     prevent_deploy: if !ast? then true else !!ast.need_prevent_deploy
   }
 
+# compile_for_browser = (sol_code, opt = {}) ->
+#   {
+#     result: "Here goes Ligo code",
+#     result_default_state: "Here goes default state"
+#   }
+
 module.exports = {
   compile
+  # compile_for_browser
   import_resolver
 }
