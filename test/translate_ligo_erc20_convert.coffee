@@ -152,7 +152,8 @@ describe "erc20 conversions", ()->
     """#"
     make_test text_i, text_o
 
- it "erc20 preassigned var", ()->
+  it "erc20 preassigned var", ()->
+    @timeout 10000
     text_i = """
     pragma solidity ^0.4.16;
     
