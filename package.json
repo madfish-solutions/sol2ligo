@@ -6,7 +6,7 @@
   "types": "src/index.d.ts",
   "scripts": {
     "install": "iced -o lib -c src",
-    "test": "mocha --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
+    "test": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-fast": "SKIP_SOLC=1 mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-ext-compiler": "EXT_COMPILER=1 mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-emulator": "EMULATOR=1 npm run test-specific emulator",
