@@ -69,6 +69,7 @@ describe "sol2ligo-as-a-module section", ()->
     assert.strictEqual compiled.prevent_deploy, false
   
   it "works with invalid input", ()->
+    @timeout 10000
     bad_sol_code = "WTF??!"
     compiled = sol2ligo.compile bad_sol_code
     assert.strictEqual compiled.errors.length, 1
