@@ -97,7 +97,7 @@ describe "emulator section", ()->
     execSync "rm -rf db"
     execSync "rm -rf contracts/Test*.sol"
     execSync "rm -rf migrations/*Test*.js"
-    global.__sandbox_proc = spawn "./node_modules/.bin/ganache-cli", [
+    global.__sandbox_proc = spawn "stdbuf", ["-i0", "-o0", "-e0", "./node_modules/.bin/ganache-cli"
       "--db", "db"
       "--accounts", "10"
       "--defaultBalanceEther", "1000",
@@ -108,8 +108,11 @@ describe "emulator section", ()->
     ]
     stdout = []
     ready = false
+    global.__sandbox_proc.stderr.on "data", (data)->
+      puts "ganache stderr:", data.toString()
     global.__sandbox_proc.stdout.on "data", (data)->
       return if ready
+      puts "ganache stdout:", data.toString()
       stdout.push data
       str = stdout.join ""
       if -1 != str.indexOf "Listening on 127.0.0.1:7545"
