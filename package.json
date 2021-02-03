@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "install": "iced -o lib -c src",
+    "install": "npx iced -o lib -c src",
     "test": "mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-fast": "SKIP_SOLC=1 mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
     "test-ext-compiler": "EXT_COMPILER=1 mocha --timeout 5000 --recursive --compilers coffee:iced-coffee-script/register --require iced-coffee-coverage/register-istanbul test && istanbul report",
@@ -30,6 +30,7 @@
   "dependencies": {
     "ast4gen": "github:madfish-solutions/ast4gen",
     "fy": "github:hu2prod/fy",
+    "iced-coffee-script": "^108.0.14",
     "minimist": "^1.2.3",
     "shell-escape": "^0.2.0",
     "solc": "^0.5.14",
@@ -44,7 +45,6 @@
     "truffle-hdwallet-provider": "^1.0.17",
     "ganache-cli": "^6.9.1",
     "iced-coffee-coverage": "^1.0.21",
-    "iced-coffee-script": "^108.0.14",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0"
   }
