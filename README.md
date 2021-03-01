@@ -85,7 +85,7 @@ For full test run
 npm test 
 ```
 
-For quick testing run
+For quick testing run (requires ligo)
 ```sh
 npm run test-ext-compiler-fast
 ```
@@ -93,6 +93,16 @@ npm run test-ext-compiler-fast
 To run specific test case
 ```sh
 npm run test-specific <test-name>
+```
+
+Other tests
+```sh
+# same as test, but excluding solidity_samples
+npm run test-fast
+# same ast test-ext-compiler-fast, but with solidity_samples (usually produces a lot of ligo errors)
+npm run test-ext-compiler
+# special tests with launch ligo dry-run (head-to-head compare ligo result vs eth ganache result)
+npm run test-emulator
 ```
 
 ## ⚒ Using sol2ligo as a node module
