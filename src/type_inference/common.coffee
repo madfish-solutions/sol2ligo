@@ -236,6 +236,11 @@ class @Ti_context
     @type_map= module.default_type_map_gen()
     @library_map = {}
   
+  change_count_inc : ()->
+    @change_count++
+    @parent?.change_count_inc()
+    return
+  
   mk_nest : ()->
     ret = new Ti_context
     ret.parent = @
@@ -309,11 +314,11 @@ class @Ti_context
   return a_type if !b_type
   if !a_type and b_type
     a_type = b_type.clone()
-    ctx.change_count++
+    ctx.change_count_inc()
   else if a_type.main == "number"
     if b_type.main in ["unsigned_number", "signed_number"]
       a_type = b_type.clone()
-      ctx.change_count++
+      ctx.change_count_inc()
     else if b_type.main == "number"
       "nothing"
     else
@@ -323,7 +328,7 @@ class @Ti_context
       unless is_defined_number_or_byte_type b_type
         throw new Error "can't spread '#{b_type}' to '#{a_type}'"
       a_type = b_type.clone()
-      ctx.change_count++
+      ctx.change_count_inc()
   else if @is_not_defined_type(a_type) and !@is_not_defined_type(b_type)
     if a_type.main in ["unsigned_number", "signed_number"]
       unless is_defined_number_or_byte_type b_type
@@ -331,7 +336,7 @@ class @Ti_context
     else
       throw new Error "unknown is_not_defined_type spread case"
     a_type = b_type.clone()
-    ctx.change_count++
+    ctx.change_count_inc()
   else if !@is_not_defined_type(a_type) and @is_not_defined_type(b_type)
     # will check, but not spread
     if b_type.main in ["number", "unsigned_number", "signed_number"]
